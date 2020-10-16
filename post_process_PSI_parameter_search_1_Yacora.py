@@ -12,6 +12,7 @@ exec(open("/home/ffederic/work/analysis_scripts/scripts/preamble_import_batch.py
 #import .functions
 os.chdir('/home/ffederic/work/Collaboratory/test/experimental_data')
 from functions.fabio_add import find_index_of_file, examine_current_trace, shift_between_TS_and_power_source
+from generate_merge88_TS import generate_merge88_TS
 import collections
 
 from adas import read_adf15,read_adf11
@@ -5323,13 +5324,13 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 	# 	merge_time_window = [-1,2]
 
 	# merge_ID_target_multipulse = np.flip([851,86,87,89,92, 93, 94],axis=0)
-	# merge_ID_target_multipulse = [73,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99]
+	# merge_ID_target_multipulse = np.flip([73,78,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
 	# merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99]
 	# merge_ID_target_multipulse = np.flip([95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 88],axis=0)
 	# merge_ID_target_multipulse = np.flip([95, 94, 93, 92, 89, 87, 86, 85],axis=0)
 	# merge_ID_target_multipulse = [73,78,79]
 	# merge_ID_target_multipulse = np.flip([99,85,97,89,92, 93,95],axis=0)
-	merge_ID_target_multipulse = [79]
+	merge_ID_target_multipulse = [88]
 
 	for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don't have a temperature profile
 		merge_time_window = [-1,2]
@@ -5606,7 +5607,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 						inverted_profiles_sigma = cp.deepcopy(inverted_profiles_sigma_original)
 						TS_dt = np.nanmedian(np.diff(merge_time))
 
-						if np.max(merge_Te_prof_multipulse) <= 0:
+						if (np.max(merge_Te_prof_multipulse) <= 0) and merge_ID_target!=88 :
 							print('merge' + str(merge_ID_target) + " has no recorded temperature")
 							continue
 
@@ -5823,6 +5824,12 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 						all_fits_crop = all_fits[start_time:end_time]
 						# inverted_profiles_crop[inverted_profiles_crop<0] = 0
 
+						if merge_ID_target == 88:
+							merge_Te_prof_multipulse_interp_crop,merge_dTe_prof_multipulse_interp_crop,merge_ne_prof_multipulse_interp_crop,merge_dne_prof_multipulse_interp_crop = generate_merge88_TS()
+							print(merge_Te_prof_multipulse_interp_crop)
+							print(merge_dTe_prof_multipulse_interp_crop)
+							print(merge_ne_prof_multipulse_interp_crop)
+							print(merge_dne_prof_multipulse_interp_crop)
 
 						gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
 						averaged_profile_sigma = []
@@ -5881,7 +5888,6 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 						merge_dne_prof_multipulse_interp_crop_limited[merge_ne_prof_multipulse_interp_crop < 5e-07] = 0
 						merge_ne_prof_multipulse_interp_crop_limited = cp.deepcopy(merge_ne_prof_multipulse_interp_crop)
 						merge_ne_prof_multipulse_interp_crop_limited[merge_ne_prof_multipulse_interp_crop < 5e-07] = 0
-
 
 						excitation = []
 						for isel in [2, 3, 4, 5, 6, 7, 8, 9, 10]:
