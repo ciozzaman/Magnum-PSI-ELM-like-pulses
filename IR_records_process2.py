@@ -143,9 +143,9 @@ def dl2temp_generator(de,beta_sample,tau,t_exp,target_material,out_emissivity=Fa
 
 
 plt.figure()
-all_j = [231,232,233,234,244,245,393,394,305,306]
-time_shift = [1562076516.351,1562076678.708+4,1562077276.157,1562077372.03,1562080690.253,1562080859.278,1562165683.122,1562165819.007,1562169014.003,1562169074.379]
-de = [0.07,0.07,0.2,0.2,0.4,0.4,0.05,0.05,-0.1,-0.1]                                                                           # emissivity offset, -0.03 for polished tungsten
+all_j = [231,232,233,234,244,245,275,393,394,305,306,416]
+time_shift = [1562076516.351,1562076678.708+4,1562077276.157,1562077372.03,1562080690.253,1562080859.278,1562157127.002,1562165683.122,1562165819.007,1562169014.003,1562169074.379,1562251726.311]
+de = [0.07,0.07,0.2,0.2,0.4,0.4,0.05,0.05,0.05,-0.1,-0.1,0]                                                                           # emissivity offset, -0.03 for polished tungsten
 for i_j,j in enumerate(all_j):
 
 	print('analysing item n '+str(j))
@@ -293,62 +293,38 @@ for i_j,j in enumerate(all_j):
 		plt.plot(time_IR,selected_2_max_temp,'--C4')
 		# plt.plot([time_IR.min(),time_IR.max()],[T_pyro]*2,'C5')
 
+for i_date_label,date_label in enumerate(['2019-07-02/20190702','2019-07-03/20190703','2019-07-04/20190704']):
+	multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/'+date_label+'_1.csv',index_col=False,sep='|')
+	index1 = list(multi_1.head(0))
+	for index in range(len(index1)//3):
+		index1[index*3]=index1[index*3+1]
+		index1[index*3+2]=index1[index*3+1]
+	multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/'+date_label+'_1.csv',index_col=False,header=1,sep='|')
+	index2 = list(multi_1.head(0))
+	index = [_+' '+__ for _,__ in zip(index1,index2)]
+	for i_text,text in enumerate(index):
+		if (text.find('.'))!=-1:
+			index[i_text] = text[:text.find('.')]
+	multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/'+date_label+'_1.csv',index_col=False,header=2,sep='|')
+	multi_1_array = np.array(multi_1)
 
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-02/20190702_1.csv',index_col=False,sep='|')
-index1 = list(multi_1.head(0))
-for index in range(len(index1)//3):
-	index1[index*3]=index1[index*3+1]
-	index1[index*3+2]=index1[index*3+1]
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-02/20190702_1.csv',index_col=False,header=1,sep='|')
-index2 = list(multi_1.head(0))
-index = [_+' '+__ for _,__ in zip(index1,index2)]
-for i_text,text in enumerate(index):
-	if (text.find('.'))!=-1:
-		index[i_text] = text[:text.find('.')]
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-02/20190702_1.csv',index_col=False,header=2,sep='|')
-multi_1_array = np.array(multi_1)
+	# plt.title(index[i_index*3+2])
+	# for i_index in range(0,13):
+	# for i_index in [4,11]:
+	i_index = 11
+	date_time_stamp = multi_1[multi_1.keys()[i_index*3]]
+	date_time_stamp2time = DOM52sec_for_list(date_time_stamp)
+	temp = []
+	for i in range(len(date_time_stamp2time)):
+		temp.append(date_time_stamp2time[i].timestamp())
+	temp = np.array(temp)
+	# temp -= temp[376]
+	# date_time_stamp2time = [dt.datetime.fromtimestamp(int(_)) for _ in date_time_stamp2sec//1 ]
+	if i_date_label==0:
+		plt.errorbar(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,yerr=multi_1[multi_1.keys()[i_index*3+2+3]][:len(date_time_stamp2time)],label=index[i_index*3+2])
+	else:
+		plt.errorbar(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,yerr=multi_1[multi_1.keys()[i_index*3+2+3]][:len(date_time_stamp2time)])
 
-# plt.title(index[i_index*3+2])
-# for i_index in range(0,13):
-# for i_index in [4,11]:
-i_index = 11
-date_time_stamp = multi_1[multi_1.keys()[i_index*3]]
-date_time_stamp2time = DOM52sec_for_list(date_time_stamp)
-temp = []
-for i in range(len(date_time_stamp2time)):
-	temp.append(date_time_stamp2time[i].timestamp())
-temp = np.array(temp)
-# temp -= temp[376]
-# date_time_stamp2time = [dt.datetime.fromtimestamp(int(_)) for _ in date_time_stamp2sec//1 ]
-plt.errorbar(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,yerr=multi_1[multi_1.keys()[i_index*3+2+3]][:len(date_time_stamp2time)],label=index[i_index*3+2])
-
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-03/20190703_1.csv',index_col=False,sep='|')
-index1 = list(multi_1.head(0))
-for index in range(len(index1)//3):
-	index1[index*3]=index1[index*3+1]
-	index1[index*3+2]=index1[index*3+1]
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-03/20190703_1.csv',index_col=False,header=1,sep='|')
-index2 = list(multi_1.head(0))
-index = [_+' '+__ for _,__ in zip(index1,index2)]
-for i_text,text in enumerate(index):
-	if (text.find('.'))!=-1:
-		index[i_text] = text[:text.find('.')]
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-03/20190703_1.csv',index_col=False,header=2,sep='|')
-multi_1_array = np.array(multi_1)
-
-# plt.title(index[i_index*3+2])
-# for i_index in range(0,13):
-# for i_index in [4,11]:
-i_index = 11
-date_time_stamp = multi_1[multi_1.keys()[i_index*3]]
-date_time_stamp2time = DOM52sec_for_list(date_time_stamp)
-temp = []
-for i in range(len(date_time_stamp2time)):
-	temp.append(date_time_stamp2time[i].timestamp())
-temp = np.array(temp)
-# temp -= temp[376]
-# date_time_stamp2time = [dt.datetime.fromtimestamp(int(_)) for _ in date_time_stamp2sec//1 ]
-plt.errorbar(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,yerr=multi_1[multi_1.keys()[i_index*3+2+3]][:len(date_time_stamp2time)],label=index[i_index*3+2])
 
 
 plt.legend(loc='best', fontsize='xx-small')

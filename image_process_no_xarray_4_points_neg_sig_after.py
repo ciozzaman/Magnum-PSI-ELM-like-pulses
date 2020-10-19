@@ -240,15 +240,15 @@ if no_calculate_presets==0:
 				dataDark = load_dark(j,df_settings,df_log,fdir,geom_null)
 				(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
 				type = '.tif'
-				filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0', type)
+				filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)
 				type = '.txt'
-				filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
+				filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
 				(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder,sequence, untitled,filename_metadata)
 
 				# plt.figure()
 				data_all = []
 				for index, filename in enumerate(filenames):
-					fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + filename
+					fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + filename
 					im = Image.open(fname)
 					data = np.array(im)
 					data = (data - dataDark) * Gain[index]
@@ -280,15 +280,15 @@ if no_calculate_presets==0:
 				dataDark = load_dark(j,df_settings,df_log,fdir,geom_null)
 				(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
 				type = '.tif'
-				filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0', type)
+				filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)
 				type = '.txt'
-				filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
+				filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
 				(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder,sequence, untitled,filename_metadata)
 
 				# plt.figure()
 				data_all = []
 				for index, filename in enumerate(filenames):
-					fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + \
+					fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + \
 							filename
 					im = Image.open(fname)
 					data = np.array(im)
@@ -325,15 +325,15 @@ if no_calculate_presets==0:
 				dataDark = load_dark(j,df_settings,df_log,fdir,geom_null)
 				(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
 				type = '.tif'
-				filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0', type)
+				filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)
 				type = '.txt'
-				filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
+				filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
 				(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder,sequence, untitled,filename_metadata)
 
 				# plt.figure()
 				data_all = []
 				for index, filename in enumerate(filenames):
-					fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + \
+					fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + \
 							filename
 					im = Image.open(fname)
 					data = np.array(im)
@@ -375,15 +375,15 @@ if no_calculate_presets==0:
 				dataDark = load_dark(j,df_settings,df_log,fdir,geom_null)
 				(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
 				type = '.tif'
-				filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0', type)
+				filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)
 				type = '.txt'
-				filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
+				filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
 				(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder,sequence, untitled,filename_metadata)
 
 				# plt.figure()
 				data_all = []
 				for index, filename in enumerate(filenames):
-					fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + \
+					fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + \
 							filename
 					im = Image.open(fname)
 					data = np.array(im)
@@ -542,7 +542,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 	for j in all_j:
 		(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
 		type = '.txt'
-		filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0', type)[0]
+		filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0', type)[0]
 		# filename_metadata = functions.all_file_names(pathfiles, type)[0]
 		(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder, sequence,untitled,filename_metadata)
 		temp_gain.append(Gain[0])
@@ -553,7 +553,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 	for j in all_j:
 		(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
 		type = '.tif'
-		filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2g}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0', type)
+		filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2g}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)
 		(CB_to_OES_initial_delay,incremental_step,first_pulse_at_this_frame,bad_pulses_indexes,number_of_pulses) = df_log.loc[j,['CB_to_OES_initial_delay','incremental_step','first_pulse_at_this_frame','bad_pulses_indexes','number_of_pulses']]
 		first_pulse_at_this_frame = int(first_pulse_at_this_frame)
 		number_of_pulses = int(number_of_pulses)
@@ -578,7 +578,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 				if index%(1+time_resolution_extra_skip)!=0:
 					continue	# The purpose of this is to test how things change for different time skippings
 			print(filename)
-			fname = fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0/'+filename
+			fname = fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0/'+filename
 			im = Image.open(fname)
 			data = np.array(im)
 			data_all.append(data)
@@ -595,10 +595,10 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 		dataDark_all.append(dataDark)
 		(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
 		type = '.tif'
-		filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2g}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0', type)
+		filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2g}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)
 		#filenames = functions.all_file_names(pathfiles, type)
 		type = '.txt'
-		filename_metadata = all_file_names(fdir+'/'+folder+'/'+"{0:0=2g}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0', type)[0]
+		filename_metadata = all_file_names(fdir+'/'+folder+'/'+"{0:0=2g}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)[0]
 		#filename_metadata = functions.all_file_names(pathfiles, type)[0]
 		(bof,eof,roi_lb,roi_tr,elapsed_time,real_exposure_time,PixelType,Gain,Noise) = get_metadata(fdir,folder,sequence,untitled,filename_metadata)
 		if PixelType[-1]==12:
@@ -624,8 +624,8 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 			os.makedirs(path_where_to_save_everything)
 		if isinstance(df_log.loc[j,['current_trace_file']][0],str):
 			fname_current_trace = df_log.loc[j,['current_trace_file']][0]
-			trash1, trash2, trash3, trash4, trash5, trash6, good_pulses, time_of_pulses = examine_current_trace(fdir + '/' + folder + '/' + "{0:0=2g}".format(sequence) + '/', fname_current_trace,number_of_pulses)
-			current_traces = pd.read_csv(fdir+'/'+folder+'/'+"{0:0=2g}".format(sequence)+'/' + fname_current_trace+'.tsf',index_col=False, delimiter='\t')
+			trash1, trash2, trash3, trash4, trash5, trash6, good_pulses, time_of_pulses = examine_current_trace(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/', fname_current_trace,number_of_pulses)
+			current_traces = pd.read_csv(fdir+'/'+folder+'/'+"{0:0=2g}".format(int(sequence))+'/' + fname_current_trace+'.tsf',index_col=False, delimiter='\t')
 			current_traces_time = current_traces['Time [s]']
 			current_traces_total = current_traces['I_Src_AC [A]']
 			plt.figure(figsize=(20, 10))
@@ -741,7 +741,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 				if index%(1+time_resolution_extra_skip)!=0:
 					continue	# The purpose of this is to test how things change for different time skippings
 			print(filename)
-			fname = fdir+'/'+folder+'/'+"{0:0=2g}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0/'+filename
+			fname = fdir+'/'+folder+'/'+"{0:0=2g}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0/'+filename
 			im = Image.open(fname)
 			data = np.array(im)
 
@@ -989,7 +989,7 @@ else:
 	j = all_j[-1]
 	(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
 	type = '.txt'
-	filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
+	filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
 	(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir,folder,sequence,untitled,filename_metadata)
 	if PixelType[-1] == 12:
 		time_range_for_interp = rows_range_for_interp * row_shift / 2
@@ -1006,7 +1006,7 @@ else:
 	for j in all_j:
 		(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
 		type = '.tif'
-		filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2g}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0', type)
+		filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2g}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)
 		(CB_to_OES_initial_delay,incremental_step,first_pulse_at_this_frame,bad_pulses_indexes,number_of_pulses) = df_log.loc[j,['CB_to_OES_initial_delay','incremental_step','first_pulse_at_this_frame','bad_pulses_indexes','number_of_pulses']]
 		first_pulse_at_this_frame = int(first_pulse_at_this_frame)
 		number_of_pulses = int(number_of_pulses)
@@ -1031,7 +1031,7 @@ else:
 				if index%(1+time_resolution_extra_skip)!=0:
 					continue	# The purpose of this is to test how things change for different time skippings
 			print(filename)
-			fname = fdir+'/'+folder+'/'+"{0:0=2g}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0/'+filename
+			fname = fdir+'/'+folder+'/'+"{0:0=2g}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0/'+filename
 			im = Image.open(fname)
 			data = np.array(im)
 			data_all.append(data)
@@ -1048,10 +1048,10 @@ else:
 		dataDark_all.append(dataDark)
 		(folder, date, sequence, untitled) = df_log.loc[j, ['folder', 'date', 'sequence', 'untitled']]
 		type = '.tif'
-		filenames = all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0', type)
+		filenames = all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0', type)
 		# filenames = functions.all_file_names(pathfiles, type)
 		type = '.txt'
-		filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0', type)[0]
+		filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0', type)[0]
 		# filename_metadata = functions.all_file_names(pathfiles, type)[0]
 		(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder,sequence,untitled,filename_metadata)
 		if PixelType[-1] == 12:
@@ -1082,7 +1082,7 @@ else:
 				if index % (1 + time_resolution_extra_skip) != 0:
 					continue  # The purpose of this is to test how things change for different time skippings
 			print(filename)
-			fname = fdir + '/' + folder + '/' + "{0:0=2g}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + filename
+			fname = fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + filename
 			im = Image.open(fname)
 			data = np.array(im)
 			# data = data - dataDark  # I checked that for 16 or 12 bit the dark is always around 100 counts
@@ -2292,7 +2292,7 @@ plt.close()
 # 	(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
 # 	type = '.txt'
 # 	filename_metadata = \
-# 	all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(sequence) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
+# 	all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0',type)[0]
 # 	(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain) = get_metadata(fdir,folder,sequence,untitled,filename_metadata)
 # 	(CB_to_OES_initial_delay,incremental_step,first_pulse_at_this_frame,bad_pulses_indexes,number_of_pulses) = df_log.loc[j,['CB_to_OES_initial_delay','incremental_step','first_pulse_at_this_frame','bad_pulses_indexes','number_of_pulses']]
 # 	new_timesteps = np.linspace(merge_time_window[0]+0.5, merge_time_window[1]-0.5,int((merge_time_window[1]-0.5-(merge_time_window[0]+0.5))/conventional_time_step+1))
@@ -3577,7 +3577,7 @@ bad = np.array(bad)
 
 bof=[]
 eof=[]
-metadata= open(os.path.join(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(int(untitled))+'/Pos0', filename_metadata), 'r')
+metadata= open(os.path.join(fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', filename_metadata), 'r')
 flag=0
 roi_lb=[0,0]
 roi_tr=[0,0]

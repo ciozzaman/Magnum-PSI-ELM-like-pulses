@@ -1,3 +1,4 @@
+
 # echo 'running batch'
 
 import os,sys
@@ -31,7 +32,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from functools import partial
 import traceback
 # set_start_method('spawn')
-number_cpu_available = 14	#cpu_count()
+number_cpu_available = 4	#cpu_count()
 # pool = get_context('spawn').Pool(number_cpu_available)
 print('Number of cores available: '+str(number_cpu_available))
 # number_cpu_available = 10
@@ -5324,13 +5325,13 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 	# 	merge_time_window = [-1,2]
 
 	# merge_ID_target_multipulse = np.flip([851,86,87,89,92, 93, 94],axis=0)
-	# merge_ID_target_multipulse = np.flip([73,78,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
+	merge_ID_target_multipulse = np.flip([73,77,78,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
 	# merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99]
 	# merge_ID_target_multipulse = np.flip([95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 88],axis=0)
 	# merge_ID_target_multipulse = np.flip([95, 94, 93, 92, 89, 87, 86, 85],axis=0)
-	# merge_ID_target_multipulse = [73,78,79]
+	# merge_ID_target_multipulse = [73,77,78,79]
 	# merge_ID_target_multipulse = np.flip([99,85,97,89,92, 93,95],axis=0)
-	merge_ID_target_multipulse = [88]
+	# merge_ID_target_multipulse = [79]
 
 	for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don't have a temperature profile
 		merge_time_window = [-1,2]
@@ -5340,7 +5341,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 		# 	merge_time_window = [-10,10]
 
 
-		recorded_data_override = [True,True,True]
+		recorded_data_override = [False,False,False]
 		# recorded_data_override = [True,True]
 		include_particles_limitation = True
 

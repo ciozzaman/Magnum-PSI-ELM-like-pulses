@@ -1079,13 +1079,14 @@ if initial_conditions:
 	plot_index = 0
 	im = ax[plot_index,0].errorbar(temp_time_crop, interpolated_power_pulse_shape(temp_time_crop)/1000,yerr=interpolated_power_pulse_shape_std(temp_time_crop)/1000)
 	ax[plot_index,0].set_ylabel('source power [kW]')
+	ax[plot_index,0].set_ylim(bottom=0,top=150)
 	ax[plot_index,0].grid()
 	plot_index +=1
-	im1 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9], cmap='rainbow');
+	im1 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9], cmap='rainbow',vmax=9);
 	#fig.colorbar(im, ax=ax[plot_index,0],orientation="vertical").set_label('temperature [eV]')
 	ax[plot_index,0].set_ylabel('radial loc [m]')
 	plot_index +=1
-	im2 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9], cmap='rainbow')
+	im2 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9], cmap='rainbow',vmax=50)
 	#fig.colorbar(im, ax=ax[plot_index,0],orientation="vertical").set_label('density [10^20 # m^-3]')
 	ax[plot_index,0].set_ylabel('radial loc [m]')
 	ax[plot_index,0].set_xlabel('time [ms]')
@@ -1094,12 +1095,68 @@ if initial_conditions:
 	box = ax[1,0].get_position()
 	pad, width = 0.02, 0.02
 	cax = fig.add_axes([box.xmax + pad, box.ymin, width, box.height])
-	fig.colorbar(im1, cax=cax).set_label('Te [eV]')
+	# cbar1 = fig.colorbar(im1, cax=cax).set_label('Te [eV]')
+
+	cbar1 = fig.colorbar(im1, cax=cax)
+	cbar1.set_label('Te [eV]')
+	CS1 = ax[1,0].contour(time_crop[time_crop<=0.9],r_crop,merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9].T,levels=np.linspace(0,merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9].max(),num=6)[1:-1],colors=['k','grey','w','b'],linewidths=2,linestyles='--')
+	cbar1.add_lines(CS1)
 
 	box = ax[2,0].get_position()
 	pad, width = 0.02, 0.02
 	cax = fig.add_axes([box.xmax + pad, box.ymin, width, box.height])
-	fig.colorbar(im2, cax=cax).set_label('ne [10^20 # m^-3]')
+	# cbar2 = fig.colorbar(im2, cax=cax).set_label('ne [10^20 # m^-3]')
+
+	cbar2 = fig.colorbar(im2, cax=cax)
+	cbar2.set_label('ne [10^20 # m^-3]')
+	CS2 = ax[2,0].contour(time_crop[time_crop<=0.9],r_crop,merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9].T,levels=np.linspace(0,merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9].max(),num=6)[1:-1],colors=['k','grey','w','b'],linewidths=2,linestyles='--')
+	cbar2.add_lines(CS2)
+
+	fig.suptitle(pre_title)
+	figure_index += 1
+	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+		figure_index) + '.eps', bbox_inches='tight')
+	plt.close()
+
+	fig, ax = plt.subplots( 3,1,figsize=(5, 7), squeeze=False, sharex=True)
+	plot_index = 0
+	im = ax[plot_index,0].errorbar(temp_time_crop, interpolated_power_pulse_shape(temp_time_crop)/1000,yerr=interpolated_power_pulse_shape_std(temp_time_crop)/1000)
+	ax[plot_index,0].set_ylabel('source power [kW]')
+	ax[plot_index,0].set_ylim(bottom=0,top=150)
+	ax[plot_index,0].grid()
+	plot_index +=1
+	im1 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9], cmap='rainbow',vmax=9);
+	#fig.colorbar(im, ax=ax[plot_index,0],orientation="vertical").set_label('temperature [eV]')
+	ax[plot_index,0].set_ylabel('radial loc [m]')
+	plot_index +=1
+	im2 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9], cmap='rainbow',vmax=50)
+	#fig.colorbar(im, ax=ax[plot_index,0],orientation="vertical").set_label('density [10^20 # m^-3]')
+	ax[plot_index,0].set_ylabel('radial loc [m]')
+	ax[plot_index,0].set_xlabel('time [ms]')
+
+	fig.subplots_adjust(left=0.07, right=0.87)
+	box = ax[1,0].get_position()
+	pad, width = 0.02, 0.02
+	cax = fig.add_axes([box.xmax + pad, box.ymin, width, box.height])
+	# cbar1 = fig.colorbar(im1, cax=cax).set_label('Te [eV]')
+
+	cbar1 = fig.colorbar(im1, cax=cax)
+	cbar1.set_label('Te [eV]')
+	CS1 = ax[1,0].contour(time_crop[time_crop<=0.9],r_crop,merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9].T,levels=np.linspace(0,merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9].max(),num=6)[1:-1],colors='k',linewidths=2,linestyles='--')
+	ax[1,0].clabel(CS1, inline=1, fontsize=14,fmt='%.2f',inline_spacing=9)
+	# cbar1.add_lines(CS1)
+
+	box = ax[2,0].get_position()
+	pad, width = 0.02, 0.02
+	cax = fig.add_axes([box.xmax + pad, box.ymin, width, box.height])
+	# cbar2 = fig.colorbar(im2, cax=cax).set_label('ne [10^20 # m^-3]')
+
+	cbar2 = fig.colorbar(im2, cax=cax)
+	cbar2.set_label('ne [10^20 # m^-3]')
+	CS2 = ax[2,0].contour(time_crop[time_crop<=0.9],r_crop,merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9].T,levels=np.linspace(0,merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9].max(),num=6)[1:-1],colors='k',linewidths=2,linestyles='--')
+	ax[2,0].clabel(CS2, inline=1, fontsize=14,fmt='%.1f',inline_spacing=9)
+	# cbar2.add_lines(CS2)
+
 	fig.suptitle(pre_title)
 	figure_index += 1
 	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
@@ -4591,62 +4648,63 @@ else:
 					actual_values_H2_destruction_RR[i_t][i_r] = [0]
 				else:
 					intervals_power_rad_excit[i_t][i_r] = power_balance_data[i][0]
-					prob_power_rad_excit[i_t][i_r] = power_balance_data[i][1]
+					prob_power_rad_excit[i_t][i_r] = power_balance_data[i][1]/np.sum(power_balance_data[i][1])
 					actual_values_power_rad_excit[i_t][i_r] = power_balance_data[i][2]
 					intervals_power_rad_rec_bremm[i_t][i_r] = power_balance_data[i][3]
-					prob_power_rad_rec_bremm[i_t][i_r] = power_balance_data[i][4]
+					prob_power_rad_rec_bremm[i_t][i_r] = power_balance_data[i][4]/np.sum(power_balance_data[i][4])
 					actual_values_power_rad_rec_bremm[i_t][i_r] = power_balance_data[i][5]
 					intervals_power_rad_mol[i_t][i_r] = power_balance_data[i][6]
-					prob_power_rad_mol[i_t][i_r] = power_balance_data[i][7]
+					prob_power_rad_mol[i_t][i_r] = power_balance_data[i][7]/np.sum(power_balance_data[i][7])
 					actual_values_power_rad_mol[i_t][i_r] = power_balance_data[i][8]
 					intervals_power_via_ionisation[i_t][i_r] = power_balance_data[i][9]
-					prob_power_via_ionisation[i_t][i_r] = power_balance_data[i][10]
+					prob_power_via_ionisation[i_t][i_r] = power_balance_data[i][10]/np.sum(power_balance_data[i][10])
 					actual_values_power_via_ionisation[i_t][i_r] = power_balance_data[i][11]
 					intervals_power_via_recombination[i_t][i_r] = power_balance_data[i][12]
-					prob_power_via_recombination[i_t][i_r] = power_balance_data[i][13]
+					prob_power_via_recombination[i_t][i_r] = power_balance_data[i][13]/np.sum(power_balance_data[i][13])
 					actual_values_power_via_recombination[i_t][i_r] = power_balance_data[i][14]
 					intervals_tot_rad_power[i_t][i_r] = power_balance_data[i][15]
-					prob_tot_rad_power[i_t][i_r] = power_balance_data[i][16]
+					prob_tot_rad_power[i_t][i_r] = power_balance_data[i][16]/np.sum(power_balance_data[i][16])
 					actual_values_tot_rad_power[i_t][i_r] = power_balance_data[i][17]
 					intervals_power_rad_Hm[i_t][i_r] = power_balance_data[i][18]
-					prob_power_rad_Hm[i_t][i_r] = power_balance_data[i][19]
+					prob_power_rad_Hm[i_t][i_r] = power_balance_data[i][19]/np.sum(power_balance_data[i][19])
 					actual_values_power_rad_Hm[i_t][i_r] = power_balance_data[i][20]
 					intervals_power_rad_H2[i_t][i_r] = power_balance_data[i][21]
-					prob_power_rad_H2[i_t][i_r] = power_balance_data[i][22]
+					prob_power_rad_H2[i_t][i_r] = power_balance_data[i][22]/np.sum(power_balance_data[i][22])
 					actual_values_power_rad_H2[i_t][i_r] = power_balance_data[i][23]
 					intervals_power_rad_H2p[i_t][i_r] = power_balance_data[i][24]
-					prob_power_rad_H2p[i_t][i_r] = power_balance_data[i][25]
+					prob_power_rad_H2p[i_t][i_r] = power_balance_data[i][25]/np.sum(power_balance_data[i][25])
 					actual_values_power_rad_H2p[i_t][i_r] = power_balance_data[i][26]
 					intervals_power_heating_rec[i_t][i_r] = power_balance_data[i][27]
-					prob_power_heating_rec[i_t][i_r] = power_balance_data[i][28]
+					prob_power_heating_rec[i_t][i_r] = power_balance_data[i][28]/np.sum(power_balance_data[i][28])
 					actual_values_power_heating_rec[i_t][i_r] = power_balance_data[i][29]
 					intervals_power_rec_neutral[i_t][i_r] = power_balance_data[i][30]
-					prob_power_rec_neutral[i_t][i_r] = power_balance_data[i][31]
+					prob_power_rec_neutral[i_t][i_r] = power_balance_data[i][31]/np.sum(power_balance_data[i][31])
 					actual_values_power_rec_neutral[i_t][i_r] = power_balance_data[i][32]
 					intervals_power_via_brem[i_t][i_r] = power_balance_data[i][33]
-					prob_power_via_brem[i_t][i_r] = power_balance_data[i][34]
+					prob_power_via_brem[i_t][i_r] = power_balance_data[i][34]/np.sum(power_balance_data[i][34])
 					actual_values_power_via_brem[i_t][i_r] = power_balance_data[i][35]
 					intervals_total_removed_power[i_t][i_r] = power_balance_data[i][36]
-					prob_total_removed_power[i_t][i_r] = power_balance_data[i][37]
+					prob_total_removed_power[i_t][i_r] = power_balance_data[i][37]/np.sum(power_balance_data[i][37])
 					actual_values_total_removed_power[i_t][i_r] = power_balance_data[i][38]
 					intervals_local_CX[i_t][i_r] = power_balance_data[i][72]
-					prob_local_CX[i_t][i_r] = power_balance_data[i][73]
+					prob_local_CX[i_t][i_r] = power_balance_data[i][73]/np.sum(power_balance_data[i][73])
 					actual_values_local_CX[i_t][i_r] = power_balance_data[i][74]
 					intervals_H_destruction_RR[i_t][i_r] = power_balance_data[i][75]
-					prob_H_destruction_RR[i_t][i_r] = power_balance_data[i][76]
+					prob_H_destruction_RR[i_t][i_r] = power_balance_data[i][76]/np.sum(power_balance_data[i][76])
 					actual_values_H_destruction_RR[i_t][i_r] = power_balance_data[i][77]
 					intervals_eff_CX_RR[i_t][i_r] = power_balance_data[i][78]
-					prob_eff_CX_RR[i_t][i_r] = power_balance_data[i][79]
+					prob_eff_CX_RR[i_t][i_r] = power_balance_data[i][79]/np.sum(power_balance_data[i][79])
 					actual_values_eff_CX_RR[i_t][i_r] = power_balance_data[i][80]
 					intervals_H2_destruction_RR[i_t][i_r] = power_balance_data[i][81]
-					prob_H2_destruction_RR[i_t][i_r] = power_balance_data[i][82]
+					prob_H2_destruction_RR[i_t][i_r] = power_balance_data[i][82]/np.sum(power_balance_data[i][82])
 					actual_values_H2_destruction_RR[i_t][i_r] = power_balance_data[i][83]
 
 		most_likely_power_rad_excit = []
 		for i_t in range(len(prob_power_rad_excit)):
 			temp=[]
 			for i_r in range(len(prob_power_rad_excit[i_t])):
-				temp.append((np.add(intervals_power_rad_excit[i_t][i_r][1:],intervals_power_rad_excit[i_t][i_r][:-1])/2)[np.array(prob_power_rad_excit[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_power_rad_excit[i_t][i_r][1:],intervals_power_rad_excit[i_t][i_r][:-1])/2)[np.array(prob_power_rad_excit[i_t][i_r]).argmax()])
+				temp.append(actual_values_power_rad_excit[i_t][i_r][np.array(prob_power_rad_excit[i_t][i_r]).argmax()])
 			most_likely_power_rad_excit.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_power_rad_excit,cmap='rainbow',vmin=max(max(1,np.min(most_likely_power_rad_excit)),np.max(most_likely_power_rad_excit)*1e-6), norm=LogNorm());
@@ -4663,7 +4721,8 @@ else:
 		for i_t in range(len(prob_power_rad_rec_bremm)):
 			temp=[]
 			for i_r in range(len(prob_power_rad_rec_bremm[i_t])):
-				temp.append((np.add(intervals_power_rad_rec_bremm[i_t][i_r][1:],intervals_power_rad_rec_bremm[i_t][i_r][:-1])/2)[np.array(prob_power_rad_rec_bremm[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_power_rad_rec_bremm[i_t][i_r][1:],intervals_power_rad_rec_bremm[i_t][i_r][:-1])/2)[np.array(prob_power_rad_rec_bremm[i_t][i_r]).argmax()])
+				temp.append(actual_values_power_rad_rec_bremm[i_t][i_r][np.array(prob_power_rad_rec_bremm[i_t][i_r]).argmax()])
 			most_likely_power_rad_rec_bremm.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_power_rad_rec_bremm,cmap='rainbow',vmin=max(max(1,np.min(most_likely_power_rad_rec_bremm)),np.max(most_likely_power_rad_rec_bremm)*1e-6), norm=LogNorm());
@@ -4680,7 +4739,8 @@ else:
 		for i_t in range(len(prob_power_rad_mol)):
 			temp=[]
 			for i_r in range(len(prob_power_rad_mol[i_t])):
-				temp.append((np.add(intervals_power_rad_mol[i_t][i_r][1:],intervals_power_rad_mol[i_t][i_r][:-1])/2)[np.array(prob_power_rad_mol[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_power_rad_mol[i_t][i_r][1:],intervals_power_rad_mol[i_t][i_r][:-1])/2)[np.array(prob_power_rad_mol[i_t][i_r]).argmax()])
+				temp.append(actual_values_power_rad_mol[i_t][i_r][np.array(prob_power_rad_mol[i_t][i_r]).argmax()])
 			most_likely_power_rad_mol.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_power_rad_mol,cmap='rainbow',vmin=max(max(1,np.min(most_likely_power_rad_mol)),np.max(most_likely_power_rad_mol)*1e-6), norm=LogNorm());
@@ -4697,7 +4757,8 @@ else:
 		for i_t in range(len(prob_power_via_ionisation)):
 			temp=[]
 			for i_r in range(len(prob_power_via_ionisation[i_t])):
-				temp.append((np.add(intervals_power_via_ionisation[i_t][i_r][1:],intervals_power_via_ionisation[i_t][i_r][:-1])/2)[np.array(prob_power_via_ionisation[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_power_via_ionisation[i_t][i_r][1:],intervals_power_via_ionisation[i_t][i_r][:-1])/2)[np.array(prob_power_via_ionisation[i_t][i_r]).argmax()])
+				temp.append(actual_values_power_via_ionisation[i_t][i_r][np.array(prob_power_via_ionisation[i_t][i_r]).argmax()])
 			most_likely_power_via_ionisation.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_power_via_ionisation,cmap='rainbow',vmin=max(max(1,np.min(most_likely_power_via_ionisation)),np.max(most_likely_power_via_ionisation)*1e-6), norm=LogNorm());
@@ -4769,7 +4830,8 @@ else:
 		for i_t in range(len(prob_power_via_recombination)):
 			temp=[]
 			for i_r in range(len(prob_power_via_recombination[i_t])):
-				temp.append((np.add(intervals_power_via_recombination[i_t][i_r][1:],intervals_power_via_recombination[i_t][i_r][:-1])/2)[np.array(prob_power_via_recombination[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_power_via_recombination[i_t][i_r][1:],intervals_power_via_recombination[i_t][i_r][:-1])/2)[np.array(prob_power_via_recombination[i_t][i_r]).argmax()])
+				temp.append(actual_values_power_via_recombination[i_t][i_r][np.array(prob_power_via_recombination[i_t][i_r]).argmax()])
 			most_likely_power_via_recombination.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_power_via_recombination,cmap='rainbow',vmin=max(max(1,np.min(most_likely_power_via_recombination)),np.max(most_likely_power_via_recombination)*1e-6), norm=LogNorm());
@@ -4799,7 +4861,8 @@ else:
 		for i_t in range(len(prob_tot_rad_power)):
 			temp=[]
 			for i_r in range(len(prob_tot_rad_power[i_t])):
-				temp.append((np.add(intervals_tot_rad_power[i_t][i_r][1:],intervals_tot_rad_power[i_t][i_r][:-1])/2)[np.array(prob_tot_rad_power[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_tot_rad_power[i_t][i_r][1:],intervals_tot_rad_power[i_t][i_r][:-1])/2)[np.array(prob_tot_rad_power[i_t][i_r]).argmax()])
+				temp.append(actual_values_tot_rad_power[i_t][i_r][np.array(prob_tot_rad_power[i_t][i_r]).argmax()])
 			most_likely_tot_rad_power.append(temp)
 		most_likely_tot_rad_power = np.array(most_likely_tot_rad_power)
 
@@ -4900,7 +4963,8 @@ else:
 		for i_t in range(len(prob_power_rad_Hm)):
 			temp=[]
 			for i_r in range(len(prob_power_rad_Hm[i_t])):
-				temp.append((np.add(intervals_power_rad_Hm[i_t][i_r][1:],intervals_power_rad_Hm[i_t][i_r][:-1])/2)[np.array(prob_power_rad_Hm[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_power_rad_Hm[i_t][i_r][1:],intervals_power_rad_Hm[i_t][i_r][:-1])/2)[np.array(prob_power_rad_Hm[i_t][i_r]).argmax()])
+				temp.append(actual_values_power_rad_Hm[i_t][i_r][np.array(prob_power_rad_Hm[i_t][i_r]).argmax()])
 			most_likely_power_rad_Hm.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_power_rad_Hm,cmap='rainbow',vmin=max(max(1,np.min(most_likely_power_rad_Hm)),np.max(most_likely_power_rad_Hm)*1e-6), norm=LogNorm());
@@ -4917,7 +4981,8 @@ else:
 		for i_t in range(len(prob_power_rad_H2)):
 			temp=[]
 			for i_r in range(len(prob_power_rad_H2[i_t])):
-				temp.append((np.add(intervals_power_rad_H2[i_t][i_r][1:],intervals_power_rad_H2[i_t][i_r][:-1])/2)[np.array(prob_power_rad_H2[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_power_rad_H2[i_t][i_r][1:],intervals_power_rad_H2[i_t][i_r][:-1])/2)[np.array(prob_power_rad_H2[i_t][i_r]).argmax()])
+				temp.append(actual_values_power_rad_H2[i_t][i_r][np.array(prob_power_rad_H2[i_t][i_r]).argmax()])
 			most_likely_power_rad_H2.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_power_rad_H2,cmap='rainbow',vmin=max(max(1,np.min(most_likely_power_rad_H2)),np.max(most_likely_power_rad_H2)*1e-6), norm=LogNorm());
@@ -4934,7 +4999,8 @@ else:
 		for i_t in range(len(prob_power_rad_H2p)):
 			temp=[]
 			for i_r in range(len(prob_power_rad_H2p[i_t])):
-				temp.append((np.add(intervals_power_rad_H2p[i_t][i_r][1:],intervals_power_rad_H2p[i_t][i_r][:-1])/2)[np.array(prob_power_rad_H2p[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_power_rad_H2p[i_t][i_r][1:],intervals_power_rad_H2p[i_t][i_r][:-1])/2)[np.array(prob_power_rad_H2p[i_t][i_r]).argmax()])
+				temp.append(actual_values_power_rad_H2p[i_t][i_r][np.array(prob_power_rad_H2p[i_t][i_r]).argmax()])
 			most_likely_power_rad_H2p.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_power_rad_H2p,cmap='rainbow',vmin=max(max(1,np.min(most_likely_power_rad_H2p)),np.max(most_likely_power_rad_H2p)*1e-6), norm=LogNorm());
@@ -4951,7 +5017,8 @@ else:
 		for i_t in range(len(prob_power_heating_rec)):
 			temp=[]
 			for i_r in range(len(prob_power_heating_rec[i_t])):
-				temp.append((np.add(intervals_power_heating_rec[i_t][i_r][1:],intervals_power_heating_rec[i_t][i_r][:-1])/2)[np.array(prob_power_heating_rec[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_power_heating_rec[i_t][i_r][1:],intervals_power_heating_rec[i_t][i_r][:-1])/2)[np.array(prob_power_heating_rec[i_t][i_r]).argmax()])
+				temp.append(actual_values_power_heating_rec[i_t][i_r][np.array(prob_power_heating_rec[i_t][i_r]).argmax()])
 			most_likely_power_heating_rec.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_power_heating_rec,cmap='rainbow');
@@ -4968,7 +5035,8 @@ else:
 		for i_t in range(len(prob_power_rec_neutral)):
 			temp=[]
 			for i_r in range(len(prob_power_rec_neutral[i_t])):
-				temp.append((np.add(intervals_power_rec_neutral[i_t][i_r][1:],intervals_power_rec_neutral[i_t][i_r][:-1])/2)[np.array(prob_power_rec_neutral[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_power_rec_neutral[i_t][i_r][1:],intervals_power_rec_neutral[i_t][i_r][:-1])/2)[np.array(prob_power_rec_neutral[i_t][i_r]).argmax()])
+				temp.append(actual_values_power_rec_neutral[i_t][i_r][np.array(prob_power_rec_neutral[i_t][i_r]).argmax()])
 			most_likely_power_rec_neutral.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_power_rec_neutral,cmap='rainbow',vmin=max(max(1,np.min(most_likely_power_rec_neutral)),np.max(most_likely_power_rec_neutral)*1e-6), norm=LogNorm());
@@ -4985,7 +5053,8 @@ else:
 		for i_t in range(len(prob_power_via_brem)):
 			temp=[]
 			for i_r in range(len(prob_power_via_brem[i_t])):
-				temp.append((np.add(intervals_power_via_brem[i_t][i_r][1:],intervals_power_via_brem[i_t][i_r][:-1])/2)[np.array(prob_power_via_brem[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_power_via_brem[i_t][i_r][1:],intervals_power_via_brem[i_t][i_r][:-1])/2)[np.array(prob_power_via_brem[i_t][i_r]).argmax()])
+				temp.append(actual_values_power_via_brem[i_t][i_r][np.array(prob_power_via_brem[i_t][i_r]).argmax()])
 			most_likely_power_via_brem.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_power_via_brem,cmap='rainbow',vmin=max(max(1,np.min(most_likely_power_via_brem)),np.max(most_likely_power_via_brem)*1e-6), norm=LogNorm());
@@ -5002,7 +5071,8 @@ else:
 		for i_t in range(len(prob_total_removed_power)):
 			temp=[]
 			for i_r in range(len(prob_total_removed_power[i_t])):
-				temp.append((np.add(intervals_total_removed_power[i_t][i_r][1:],intervals_total_removed_power[i_t][i_r][:-1])/2)[np.array(prob_total_removed_power[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_total_removed_power[i_t][i_r][1:],intervals_total_removed_power[i_t][i_r][:-1])/2)[np.array(prob_total_removed_power[i_t][i_r]).argmax()])
+				temp.append(actual_values_total_removed_power[i_t][i_r][np.array(prob_total_removed_power[i_t][i_r]).argmax()])
 			most_likely_total_removed_power.append(temp)
 		plt.figure(figsize=(8, 5));
 		plt.pcolor(temp_t, temp_r, most_likely_total_removed_power,cmap='rainbow',vmin=max(max(1,np.min(most_likely_total_removed_power)),np.max(most_likely_total_removed_power)*1e-6), norm=LogNorm());
@@ -5025,7 +5095,8 @@ else:
 		for i_t in range(len(prob_local_CX)):
 			temp=[]
 			for i_r in range(len(prob_local_CX[i_t])):
-				temp.append((np.add(intervals_local_CX[i_t][i_r][1:],intervals_local_CX[i_t][i_r][:-1])/2)[np.array(prob_local_CX[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_local_CX[i_t][i_r][1:],intervals_local_CX[i_t][i_r][:-1])/2)[np.array(prob_local_CX[i_t][i_r]).argmax()])
+				temp.append(actual_values_local_CX[i_t][i_r][np.array(prob_local_CX[i_t][i_r]).argmax()])
 			most_likely_local_CX.append(temp)
 		most_likely_local_CX = np.array(most_likely_local_CX)
 		plt.figure(figsize=(8, 5));
@@ -5050,7 +5121,8 @@ else:
 		for i_t in range(len(prob_H_destruction_RR)):
 			temp=[]
 			for i_r in range(len(prob_H_destruction_RR[i_t])):
-				temp.append((np.add(intervals_H_destruction_RR[i_t][i_r][1:],intervals_H_destruction_RR[i_t][i_r][:-1])/2)[np.array(prob_H_destruction_RR[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_H_destruction_RR[i_t][i_r][1:],intervals_H_destruction_RR[i_t][i_r][:-1])/2)[np.array(prob_H_destruction_RR[i_t][i_r]).argmax()])
+				temp.append(actual_values_H_destruction_RR[i_t][i_r][np.array(prob_H_destruction_RR[i_t][i_r]).argmax()])
 			most_likely_H_destruction_RR.append(temp)
 		most_likely_H_destruction_RR = np.array(most_likely_H_destruction_RR)
 		thermal_velocity_H = ( (T_H*boltzmann_constant_J)/ hydrogen_mass)**0.5
@@ -5083,7 +5155,8 @@ else:
 		for i_t in range(len(prob_eff_CX_RR)):
 			temp=[]
 			for i_r in range(len(prob_eff_CX_RR[i_t])):
-				temp.append((np.add(intervals_eff_CX_RR[i_t][i_r][1:],intervals_eff_CX_RR[i_t][i_r][:-1])/2)[np.array(prob_eff_CX_RR[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_eff_CX_RR[i_t][i_r][1:],intervals_eff_CX_RR[i_t][i_r][:-1])/2)[np.array(prob_eff_CX_RR[i_t][i_r]).argmax()])
+				temp.append(actual_values_eff_CX_RR[i_t][i_r][np.array(prob_eff_CX_RR[i_t][i_r]).argmax()])
 			most_likely_eff_CX_RR.append(temp)
 		most_likely_eff_CX_RR = np.array(most_likely_eff_CX_RR)
 		thermal_velocity_H = ( (T_H*boltzmann_constant_J)/ hydrogen_mass)**0.5
@@ -5111,7 +5184,8 @@ else:
 		for i_t in range(len(prob_H2_destruction_RR)):
 			temp=[]
 			for i_r in range(len(prob_H2_destruction_RR[i_t])):
-				temp.append((np.add(intervals_H2_destruction_RR[i_t][i_r][1:],intervals_H2_destruction_RR[i_t][i_r][:-1])/2)[np.array(prob_H2_destruction_RR[i_t][i_r]).argmax()])
+				# temp.append((np.add(intervals_H2_destruction_RR[i_t][i_r][1:],intervals_H2_destruction_RR[i_t][i_r][:-1])/2)[np.array(prob_H2_destruction_RR[i_t][i_r]).argmax()])
+				temp.append(actual_values_H2_destruction_RR[i_t][i_r][np.array(prob_H2_destruction_RR[i_t][i_r]).argmax()])
 			most_likely_H2_destruction_RR.append(temp)
 		most_likely_H2_destruction_RR = np.array(most_likely_H2_destruction_RR)
 		thermal_velocity_H2 = ( (T_H2*boltzmann_constant_J)/ (hydrogen_mass*2))**0.5
@@ -5222,190 +5296,231 @@ else:
 				# plt.close()
 			return out_values,out_prob_sum
 
+		def radial_sum_PDF_MC(actual_values_power,prob_power,intervals=30,samples=100000):
+			out_values = []
+			out_prob_sum = []
+			out_actual_values = []
+			for i_t in range(np.shape(Te_all)[0]):
+				temp_values = np.zeros((samples))
+				for i_r in range(np.shape(Te_all)[1]):
+					if len(actual_values_power[i_t][i_r])>1:
+						temp_values += np.random.choice(actual_values_power[i_t][i_r],size=samples,p=prob_power[i_t][i_r]) * area[i_r]
+				if all(temp_values==0):
+					out_values.append(np.array([0,0]))
+					out_prob_sum.append(np.array([1]))
+					out_actual_values.append(np.array([0]))
+				else:
+					temp_prob,temp_intervals = np.histogram(temp_values,bins=np.logspace(np.log10(temp_values.min()),np.log10(temp_values.max()),intervals+1))
+					temp_actual_values = []
+					for i in range(intervals):
+						if i!=intervals-1:
+							temp_actual_values.append(np.mean(temp_values[np.logical_and(temp_values>=temp_intervals[i]/(1+10*np.finfo(float).eps),temp_values<temp_intervals[i+1]*(1+10*np.finfo(float).eps))]))
+						else:
+							temp_actual_values.append(np.mean(temp_values[np.logical_and(temp_values>=temp_intervals[i]/(1+10*np.finfo(float).eps),temp_values<=temp_intervals[i+1]*(1+10*np.finfo(float).eps))]))
+					temp_actual_values = length*np.array(temp_actual_values)
+					temp_actual_values[np.isnan(temp_actual_values)]=0
+					out_values.append(length*temp_intervals)
+					out_prob_sum.append(temp_prob/np.sum(temp_prob))
+					out_actual_values.append(temp_actual_values)
+			return out_values,out_prob_sum,out_actual_values
 
-		intervals_power_rad_excit_r, prob_power_rad_excit_r = radial_sum_PDF(intervals_power_rad_excit,prob_power_rad_excit)
-		intervals_power_rad_rec_bremm_r, prob_power_rad_rec_bremm_r = radial_sum_PDF(intervals_power_rad_rec_bremm,prob_power_rad_rec_bremm)
-		intervals_power_rad_mol_r, prob_power_rad_mol_r = radial_sum_PDF(intervals_power_rad_mol,prob_power_rad_mol)
-		intervals_power_via_ionisation_r, prob_power_via_ionisation_r = radial_sum_PDF(intervals_power_via_ionisation,prob_power_via_ionisation)
-		intervals_power_via_recombination_r, prob_power_via_recombination_r = radial_sum_PDF(intervals_power_via_recombination,prob_power_via_recombination)
-		intervals_tot_rad_power_r, prob_tot_rad_power_r = radial_sum_PDF(intervals_tot_rad_power,prob_tot_rad_power)
-		intervals_power_rad_Hm_r, prob_power_rad_Hm_r = radial_sum_PDF(intervals_power_rad_Hm,prob_power_rad_Hm)
-		intervals_power_rad_H2_r, prob_power_rad_H2_r = radial_sum_PDF(intervals_power_rad_H2,prob_power_rad_H2)
-		intervals_power_rad_H2p_r, prob_power_rad_H2p_r = radial_sum_PDF(intervals_power_rad_H2p,prob_power_rad_H2p)
-		intervals_power_heating_rec_r, prob_power_heating_rec_r = radial_sum_PDF(intervals_power_heating_rec,prob_power_heating_rec)
-		intervals_power_rec_neutral_r, prob_power_rec_neutral_r = radial_sum_PDF(intervals_power_rec_neutral,prob_power_rec_neutral)
-		intervals_power_via_brem_r, prob_power_via_brem_r = radial_sum_PDF(intervals_power_via_brem,prob_power_via_brem)
-		intervals_total_removed_power_r, prob_total_removed_power_r = radial_sum_PDF(intervals_total_removed_power,prob_total_removed_power)
-		intervals_local_CX_r, prob_local_CX_r = radial_sum_PDF(intervals_local_CX,prob_local_CX)
+
+		# intervals_power_rad_excit_r, prob_power_rad_excit_r = radial_sum_PDF(intervals_power_rad_excit,prob_power_rad_excit)
+		# intervals_power_rad_rec_bremm_r, prob_power_rad_rec_bremm_r = radial_sum_PDF(intervals_power_rad_rec_bremm,prob_power_rad_rec_bremm)
+		# intervals_power_rad_mol_r, prob_power_rad_mol_r = radial_sum_PDF(intervals_power_rad_mol,prob_power_rad_mol)
+		# intervals_power_via_ionisation_r, prob_power_via_ionisation_r = radial_sum_PDF(intervals_power_via_ionisation,prob_power_via_ionisation)
+		# intervals_power_via_recombination_r, prob_power_via_recombination_r = radial_sum_PDF(intervals_power_via_recombination,prob_power_via_recombination)
+		# intervals_tot_rad_power_r, prob_tot_rad_power_r = radial_sum_PDF(intervals_tot_rad_power,prob_tot_rad_power)
+		# intervals_power_rad_Hm_r, prob_power_rad_Hm_r = radial_sum_PDF(intervals_power_rad_Hm,prob_power_rad_Hm)
+		# intervals_power_rad_H2_r, prob_power_rad_H2_r = radial_sum_PDF(intervals_power_rad_H2,prob_power_rad_H2)
+		# intervals_power_rad_H2p_r, prob_power_rad_H2p_r = radial_sum_PDF(intervals_power_rad_H2p,prob_power_rad_H2p)
+		# intervals_power_heating_rec_r, prob_power_heating_rec_r = radial_sum_PDF(intervals_power_heating_rec,prob_power_heating_rec)
+		# intervals_power_rec_neutral_r, prob_power_rec_neutral_r = radial_sum_PDF(intervals_power_rec_neutral,prob_power_rec_neutral)
+		# intervals_power_via_brem_r, prob_power_via_brem_r = radial_sum_PDF(intervals_power_via_brem,prob_power_via_brem)
+		# intervals_total_removed_power_r, prob_total_removed_power_r = radial_sum_PDF(intervals_total_removed_power,prob_total_removed_power)
+		# intervals_local_CX_r, prob_local_CX_r = radial_sum_PDF(intervals_local_CX,prob_local_CX)
+		intervals_power_rad_excit_r, prob_power_rad_excit_r, actual_values_power_rad_excit_r = radial_sum_PDF_MC(actual_values_power_rad_excit,prob_power_rad_excit)
+		intervals_power_rad_rec_bremm_r, prob_power_rad_rec_bremm_r, actual_values_power_rad_rec_bremm_r = radial_sum_PDF_MC(actual_values_power_rad_rec_bremm,prob_power_rad_rec_bremm)
+		intervals_power_rad_mol_r, prob_power_rad_mol_r, actual_values_power_rad_mol_r = radial_sum_PDF_MC(actual_values_power_rad_mol,prob_power_rad_mol)
+		intervals_power_via_ionisation_r, prob_power_via_ionisation_r, actual_values_power_via_ionisation_r = radial_sum_PDF_MC(actual_values_power_via_ionisation,prob_power_via_ionisation)
+		intervals_power_via_recombination_r, prob_power_via_recombination_r, actual_values_power_via_recombination_r = radial_sum_PDF_MC(actual_values_power_via_recombination,prob_power_via_recombination)
+		intervals_tot_rad_power_r, prob_tot_rad_power_r, actual_values_tot_rad_power_r = radial_sum_PDF_MC(actual_values_tot_rad_power,prob_tot_rad_power)
+		intervals_power_rad_Hm_r, prob_power_rad_Hm_r, actual_values_power_rad_Hm_r = radial_sum_PDF_MC(actual_values_power_rad_Hm,prob_power_rad_Hm)
+		intervals_power_rad_H2_r, prob_power_rad_H2_r, actual_values_power_rad_H2_r = radial_sum_PDF_MC(actual_values_power_rad_H2,prob_power_rad_H2)
+		intervals_power_rad_H2p_r, prob_power_rad_H2p_r, actual_values_power_rad_H2p_r = radial_sum_PDF_MC(actual_values_power_rad_H2p,prob_power_rad_H2p)
+		intervals_power_heating_rec_r, prob_power_heating_rec_r, actual_values_power_heating_rec_r = radial_sum_PDF_MC(actual_values_power_heating_rec,prob_power_heating_rec)
+		intervals_power_rec_neutral_r, prob_power_rec_neutral_r, actual_values_power_rec_neutral_r = radial_sum_PDF_MC(actual_values_power_rec_neutral,prob_power_rec_neutral)
+		intervals_power_via_brem_r, prob_power_via_brem_r, actual_values_power_via_brem_r = radial_sum_PDF_MC(actual_values_power_via_brem,prob_power_via_brem)
+		intervals_total_removed_power_r, prob_total_removed_power_r, actual_values_total_removed_power_r = radial_sum_PDF_MC(actual_values_total_removed_power,prob_total_removed_power)
+		intervals_local_CX_r, prob_local_CX_r, actual_values_local_CX_r = radial_sum_PDF_MC(actual_values_local_CX,prob_local_CX)
 
 
-
-		actual_values_power_rad_excit_r = []
+		most_likely_power_rad_excit_r = []
 		actual_values_power_rad_excit_r_up=[]
 		actual_values_power_rad_excit_r_down=[]
 		for i_t in range(len(prob_power_rad_excit_r)):
-			actual_values_power_rad_excit_r.append(((intervals_power_rad_excit_r[i_t][1:]+intervals_power_rad_excit_r[i_t][:-1])/2)[np.array(prob_power_rad_excit_r[i_t]).argmax()])
+			most_likely_power_rad_excit_r.append(actual_values_power_rad_excit_r[i_t][np.array(prob_power_rad_excit_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_power_rad_excit_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_power_rad_excit_r[i_t],axis=0))-0.159).argmin()
 			actual_values_power_rad_excit_r_down.append(intervals_power_rad_excit_r[i_t][loc_down+1])
 			actual_values_power_rad_excit_r_up.append(intervals_power_rad_excit_r[i_t][-(loc_up+1)])
-		actual_values_power_rad_excit_r = np.array(actual_values_power_rad_excit_r)
+		most_likely_power_rad_excit_r = np.array(most_likely_power_rad_excit_r)
 		actual_values_power_rad_excit_r_up = np.array(actual_values_power_rad_excit_r_up)
 		actual_values_power_rad_excit_r_down = np.array(actual_values_power_rad_excit_r_down)
-		actual_values_power_rad_rec_bremm_r = []
+		most_likely_power_rad_rec_bremm_r = []
 		actual_values_power_rad_rec_bremm_r_up=[]
 		actual_values_power_rad_rec_bremm_r_down=[]
 		for i_t in range(len(prob_power_rad_rec_bremm_r)):
-			actual_values_power_rad_rec_bremm_r.append(((intervals_power_rad_rec_bremm_r[i_t][1:]+intervals_power_rad_rec_bremm_r[i_t][:-1])/2)[np.array(prob_power_rad_rec_bremm_r[i_t]).argmax()])
+			most_likely_power_rad_rec_bremm_r.append(actual_values_power_rad_rec_bremm_r[i_t][np.array(prob_power_rad_rec_bremm_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_power_rad_rec_bremm_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_power_rad_rec_bremm_r[i_t],axis=0))-0.159).argmin()
 			actual_values_power_rad_rec_bremm_r_down.append(intervals_power_rad_rec_bremm_r[i_t][loc_down+1])
 			actual_values_power_rad_rec_bremm_r_up.append(intervals_power_rad_rec_bremm_r[i_t][-(loc_up+1)])
-		actual_values_power_rad_rec_bremm_r = np.array(actual_values_power_rad_rec_bremm_r)
+		most_likely_power_rad_rec_bremm_r = np.array(most_likely_power_rad_rec_bremm_r)
 		actual_values_power_rad_rec_bremm_r_up = np.array(actual_values_power_rad_rec_bremm_r_up)
 		actual_values_power_rad_rec_bremm_r_down = np.array(actual_values_power_rad_rec_bremm_r_down)
-		actual_values_power_rad_mol_r = []
+		most_likely_power_rad_mol_r = []
 		actual_values_power_rad_mol_r_up=[]
 		actual_values_power_rad_mol_r_down=[]
 		for i_t in range(len(prob_power_rad_mol_r)):
-			actual_values_power_rad_mol_r.append(((intervals_power_rad_mol_r[i_t][1:]+intervals_power_rad_mol_r[i_t][:-1])/2)[np.array(prob_power_rad_mol_r[i_t]).argmax()])
+			most_likely_power_rad_mol_r.append(actual_values_power_rad_mol_r[i_t][np.array(prob_power_rad_mol_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_power_rad_mol_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_power_rad_mol_r[i_t],axis=0))-0.159).argmin()
 			actual_values_power_rad_mol_r_down.append(intervals_power_rad_mol_r[i_t][loc_down+1])
 			actual_values_power_rad_mol_r_up.append(intervals_power_rad_mol_r[i_t][-(loc_up+1)])
-		actual_values_power_rad_mol_r = np.array(actual_values_power_rad_mol_r)
+		most_likely_power_rad_mol_r = np.array(most_likely_power_rad_mol_r)
 		actual_values_power_rad_mol_r_up = np.array(actual_values_power_rad_mol_r_up)
 		actual_values_power_rad_mol_r_down = np.array(actual_values_power_rad_mol_r_down)
-		actual_values_power_via_ionisation_r = []
+		most_likely_power_via_ionisation_r = []
 		actual_values_power_via_ionisation_r_up=[]
 		actual_values_power_via_ionisation_r_down=[]
 		for i_t in range(len(prob_power_via_ionisation_r)):
-			actual_values_power_via_ionisation_r.append(((intervals_power_via_ionisation_r[i_t][1:]+intervals_power_via_ionisation_r[i_t][:-1])/2)[np.array(prob_power_via_ionisation_r[i_t]).argmax()])
+			most_likely_power_via_ionisation_r.append(actual_values_power_via_ionisation_r[i_t][np.array(prob_power_via_ionisation_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_power_via_ionisation_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_power_via_ionisation_r[i_t],axis=0))-0.159).argmin()
 			actual_values_power_via_ionisation_r_down.append(intervals_power_via_ionisation_r[i_t][loc_down+1])
 			actual_values_power_via_ionisation_r_up.append(intervals_power_via_ionisation_r[i_t][-(loc_up+1)])
-		actual_values_power_via_ionisation_r = np.array(actual_values_power_via_ionisation_r)
+		most_likely_power_via_ionisation_r = np.array(most_likely_power_via_ionisation_r)
 		actual_values_power_via_ionisation_r_up = np.array(actual_values_power_via_ionisation_r_up)
 		actual_values_power_via_ionisation_r_down = np.array(actual_values_power_via_ionisation_r_down)
-		actual_values_power_via_recombination_r = []
+		most_likely_power_via_recombination_r = []
 		actual_values_power_via_recombination_r_up=[]
 		actual_values_power_via_recombination_r_down=[]
 		for i_t in range(len(prob_power_via_recombination_r)):
-			actual_values_power_via_recombination_r.append(((intervals_power_via_recombination_r[i_t][1:]+intervals_power_via_recombination_r[i_t][:-1])/2)[np.array(prob_power_via_recombination_r[i_t]).argmax()])
+			most_likely_power_via_recombination_r.append(actual_values_power_via_recombination_r[i_t][np.array(prob_power_via_recombination_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_power_via_recombination_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_power_via_recombination_r[i_t],axis=0))-0.159).argmin()
 			actual_values_power_via_recombination_r_down.append(intervals_power_via_recombination_r[i_t][loc_down+1])
 			actual_values_power_via_recombination_r_up.append(intervals_power_via_recombination_r[i_t][-(loc_up+1)])
-		actual_values_power_via_recombination_r = np.array(actual_values_power_via_recombination_r)
+		most_likely_power_via_recombination_r = np.array(most_likely_power_via_recombination_r)
 		actual_values_power_via_recombination_r_up = np.array(actual_values_power_via_recombination_r_up)
 		actual_values_power_via_recombination_r_down = np.array(actual_values_power_via_recombination_r_down)
-		actual_values_tot_rad_power_r = []
+		most_likely_tot_rad_power_r = []
 		actual_values_tot_rad_power_r_up=[]
 		actual_values_tot_rad_power_r_down=[]
 		for i_t in range(len(prob_tot_rad_power_r)):
-			actual_values_tot_rad_power_r.append(((intervals_tot_rad_power_r[i_t][1:]+intervals_tot_rad_power_r[i_t][:-1])/2)[np.array(prob_tot_rad_power_r[i_t]).argmax()])
+			most_likely_tot_rad_power_r.append(actual_values_tot_rad_power_r[i_t][np.array(prob_tot_rad_power_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_tot_rad_power_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_tot_rad_power_r[i_t],axis=0))-0.159).argmin()
 			actual_values_tot_rad_power_r_down.append(intervals_tot_rad_power_r[i_t][loc_down+1])
 			actual_values_tot_rad_power_r_up.append(intervals_tot_rad_power_r[i_t][-(loc_up+1)])
-		actual_values_tot_rad_power_r = np.array(actual_values_tot_rad_power_r)
+		most_likely_tot_rad_power_r = np.array(most_likely_tot_rad_power_r)
 		actual_values_tot_rad_power_r_up = np.array(actual_values_tot_rad_power_r_up)
 		actual_values_tot_rad_power_r_down = np.array(actual_values_tot_rad_power_r_down)
-		actual_values_power_rad_Hm_r = []
+		most_likely_power_rad_Hm_r = []
 		actual_values_power_rad_Hm_r_up=[]
 		actual_values_power_rad_Hm_r_down=[]
 		for i_t in range(len(prob_power_rad_Hm_r)):
-			actual_values_power_rad_Hm_r.append(((intervals_power_rad_Hm_r[i_t][1:]+intervals_power_rad_Hm_r[i_t][:-1])/2)[np.array(prob_power_rad_Hm_r[i_t]).argmax()])
+			most_likely_power_rad_Hm_r.append(actual_values_power_rad_Hm_r[i_t][np.array(prob_power_rad_Hm_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_power_rad_Hm_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_power_rad_Hm_r[i_t],axis=0))-0.159).argmin()
 			actual_values_power_rad_Hm_r_down.append(intervals_power_rad_Hm_r[i_t][loc_down+1])
 			actual_values_power_rad_Hm_r_up.append(intervals_power_rad_Hm_r[i_t][-(loc_up+1)])
-		actual_values_power_rad_Hm_r = np.array(actual_values_power_rad_Hm_r)
+		most_likely_power_rad_Hm_r = np.array(most_likely_power_rad_Hm_r)
 		actual_values_power_rad_Hm_r_up = np.array(actual_values_power_rad_Hm_r_up)
 		actual_values_power_rad_Hm_r_down = np.array(actual_values_power_rad_Hm_r_down)
-		actual_values_power_rad_H2_r = []
+		most_likely_power_rad_H2_r = []
 		actual_values_power_rad_H2_r_up=[]
 		actual_values_power_rad_H2_r_down=[]
 		for i_t in range(len(prob_power_rad_H2_r)):
-			actual_values_power_rad_H2_r.append(((intervals_power_rad_H2_r[i_t][1:]+intervals_power_rad_H2_r[i_t][:-1])/2)[np.array(prob_power_rad_H2_r[i_t]).argmax()])
+			most_likely_power_rad_H2_r.append(actual_values_power_rad_H2_r[i_t][np.array(prob_power_rad_H2_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_power_rad_H2_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_power_rad_H2_r[i_t],axis=0))-0.159).argmin()
 			actual_values_power_rad_H2_r_down.append(intervals_power_rad_H2_r[i_t][loc_down+1])
 			actual_values_power_rad_H2_r_up.append(intervals_power_rad_H2_r[i_t][-(loc_up+1)])
-		actual_values_power_rad_H2_r = np.array(actual_values_power_rad_H2_r)
+		most_likely_power_rad_H2_r = np.array(most_likely_power_rad_H2_r)
 		actual_values_power_rad_H2_r_up = np.array(actual_values_power_rad_H2_r_up)
 		actual_values_power_rad_H2_r_down = np.array(actual_values_power_rad_H2_r_down)
-		actual_values_power_rad_H2p_r = []
+		most_likely_power_rad_H2p_r = []
 		actual_values_power_rad_H2p_r_up=[]
 		actual_values_power_rad_H2p_r_down=[]
 		for i_t in range(len(prob_power_rad_H2p_r)):
-			actual_values_power_rad_H2p_r.append(((intervals_power_rad_H2p_r[i_t][1:]+intervals_power_rad_H2p_r[i_t][:-1])/2)[np.array(prob_power_rad_H2p_r[i_t]).argmax()])
+			most_likely_power_rad_H2p_r.append(actual_values_power_rad_H2p_r[i_t][np.array(prob_power_rad_H2p_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_power_rad_H2p_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_power_rad_H2p_r[i_t],axis=0))-0.159).argmin()
 			actual_values_power_rad_H2p_r_down.append(intervals_power_rad_H2p_r[i_t][loc_down+1])
 			actual_values_power_rad_H2p_r_up.append(intervals_power_rad_H2p_r[i_t][-(loc_up+1)])
-		actual_values_power_rad_H2p_r = np.array(actual_values_power_rad_H2p_r)
+		most_likely_power_rad_H2p_r = np.array(most_likely_power_rad_H2p_r)
 		actual_values_power_rad_H2p_r_up = np.array(actual_values_power_rad_H2p_r_up)
 		actual_values_power_rad_H2p_r_down = np.array(actual_values_power_rad_H2p_r_down)
-		actual_values_power_heating_rec_r = []
+		most_likely_power_heating_rec_r = []
 		actual_values_power_heating_rec_r_up=[]
 		actual_values_power_heating_rec_r_down=[]
 		for i_t in range(len(prob_power_heating_rec_r)):
-			actual_values_power_heating_rec_r.append(((intervals_power_heating_rec_r[i_t][1:]+intervals_power_heating_rec_r[i_t][:-1])/2)[np.array(prob_power_heating_rec_r[i_t]).argmax()])
+			most_likely_power_heating_rec_r.append(actual_values_power_heating_rec_r[i_t][np.array(prob_power_heating_rec_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_power_heating_rec_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_power_heating_rec_r[i_t],axis=0))-0.159).argmin()
 			actual_values_power_heating_rec_r_down.append(intervals_power_heating_rec_r[i_t][loc_down+1])
 			actual_values_power_heating_rec_r_up.append(intervals_power_heating_rec_r[i_t][-(loc_up+1)])
-		actual_values_power_heating_rec_r = np.array(actual_values_power_heating_rec_r)
+		most_likely_power_heating_rec_r = np.array(most_likely_power_heating_rec_r)
 		actual_values_power_heating_rec_r_up = np.array(actual_values_power_heating_rec_r_up)
 		actual_values_power_heating_rec_r_down = np.array(actual_values_power_heating_rec_r_down)
-		actual_values_power_rec_neutral_r = []
+		most_likely_power_rec_neutral_r = []
 		actual_values_power_rec_neutral_r_up=[]
 		actual_values_power_rec_neutral_r_down=[]
 		for i_t in range(len(prob_power_rec_neutral_r)):
-			actual_values_power_rec_neutral_r.append(((intervals_power_rec_neutral_r[i_t][1:]+intervals_power_rec_neutral_r[i_t][:-1])/2)[np.array(prob_power_rec_neutral_r[i_t]).argmax()])
+			most_likely_power_rec_neutral_r.append(actual_values_power_rec_neutral_r[i_t][np.array(prob_power_rec_neutral_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_power_rec_neutral_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_power_rec_neutral_r[i_t],axis=0))-0.159).argmin()
 			actual_values_power_rec_neutral_r_down.append(intervals_power_rec_neutral_r[i_t][loc_down+1])
 			actual_values_power_rec_neutral_r_up.append(intervals_power_rec_neutral_r[i_t][-(loc_up+1)])
-		actual_values_power_rec_neutral_r = np.array(actual_values_power_rec_neutral_r)
+		most_likely_power_rec_neutral_r = np.array(most_likely_power_rec_neutral_r)
 		actual_values_power_rec_neutral_r_up = np.array(actual_values_power_rec_neutral_r_up)
 		actual_values_power_rec_neutral_r_down = np.array(actual_values_power_rec_neutral_r_down)
-		actual_values_power_via_brem_r = []
+		most_likely_power_via_brem_r = []
 		actual_values_power_via_brem_r_up=[]
 		actual_values_power_via_brem_r_down=[]
 		for i_t in range(len(prob_power_via_brem_r)):
-			actual_values_power_via_brem_r.append(((intervals_power_via_brem_r[i_t][1:]+intervals_power_via_brem_r[i_t][:-1])/2)[np.array(prob_power_via_brem_r[i_t]).argmax()])
+			most_likely_power_via_brem_r.append(actual_values_power_via_brem_r[i_t][np.array(prob_power_via_brem_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_power_via_brem_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_power_via_brem_r[i_t],axis=0))-0.159).argmin()
 			actual_values_power_via_brem_r_down.append(intervals_power_via_brem_r[i_t][loc_down+1])
 			actual_values_power_via_brem_r_up.append(intervals_power_via_brem_r[i_t][-(loc_up+1)])
-		actual_values_power_via_brem_r = np.array(actual_values_power_via_brem_r)
+		most_likely_power_via_brem_r = np.array(most_likely_power_via_brem_r)
 		actual_values_power_via_brem_r_up = np.array(actual_values_power_via_brem_r_up)
 		actual_values_power_via_brem_r_down = np.array(actual_values_power_via_brem_r_down)
-		actual_values_total_removed_power_r = []
+		most_likely_total_removed_power_r = []
 		actual_values_total_removed_power_r_up=[]
 		actual_values_total_removed_power_r_down=[]
 		for i_t in range(len(prob_total_removed_power_r)):
-			actual_values_total_removed_power_r.append(((intervals_total_removed_power_r[i_t][1:]+intervals_total_removed_power_r[i_t][:-1])/2)[np.array(prob_total_removed_power_r[i_t]).argmax()])
+			most_likely_total_removed_power_r.append(actual_values_total_removed_power_r[i_t][np.array(prob_total_removed_power_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_total_removed_power_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_total_removed_power_r[i_t],axis=0))-0.159).argmin()
 			actual_values_total_removed_power_r_down.append(intervals_total_removed_power_r[i_t][loc_down+1])
 			actual_values_total_removed_power_r_up.append(intervals_total_removed_power_r[i_t][-(loc_up+1)])
-		actual_values_total_removed_power_r = np.array(actual_values_total_removed_power_r)
+		most_likely_total_removed_power_r = np.array(most_likely_total_removed_power_r)
 		actual_values_total_removed_power_r_up = np.array(actual_values_total_removed_power_r_up)
 		actual_values_total_removed_power_r_down = np.array(actual_values_total_removed_power_r_down)
-		actual_values_local_CX_r = []
+		most_likely_local_CX_r = []
 		actual_values_local_CX_r_up=[]
 		actual_values_local_CX_r_down=[]
 		for i_t in range(len(prob_local_CX_r)):
-			actual_values_local_CX_r.append(((intervals_local_CX_r[i_t][1:]+intervals_local_CX_r[i_t][:-1])/2)[np.array(prob_local_CX_r[i_t]).argmax()])
+			most_likely_local_CX_r.append(actual_values_local_CX_r[i_t][np.array(prob_local_CX_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_local_CX_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_local_CX_r[i_t],axis=0))-0.159).argmin()
 			actual_values_local_CX_r_down.append(intervals_local_CX_r[i_t][loc_down+1])
 			actual_values_local_CX_r_up.append(intervals_local_CX_r[i_t][-(loc_up+1)])
-		actual_values_local_CX_r = np.array(actual_values_local_CX_r)
+		most_likely_local_CX_r = np.array(most_likely_local_CX_r)
 		actual_values_local_CX_r_up = np.array(actual_values_local_CX_r_up)
 		actual_values_local_CX_r_down = np.array(actual_values_local_CX_r_down)
 
@@ -5571,17 +5686,48 @@ else:
 					out_values.append(values)
 					out_prob_sum.append(prob_sum)
 			return out_values,out_prob_sum
-		intervals_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r = net_lost_power_radially_averaged_PDF()
-		actual_values_net_power_removed_plasma_column_r = []
+		# intervals_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r = net_lost_power_radially_averaged_PDF()
+
+		def radial_sum_net_lost_power_PDF_MC(intervals=30,samples=100000):
+			out_values = []
+			out_prob_sum = []
+			out_actual_values = []
+			for i_t in range(np.shape(Te_all)[0]):
+				temp_values = np.zeros((samples))
+				for i_r in range(np.shape(Te_all)[1]):
+					if ((len(actual_values_power_rec_neutral[i_t][i_r])>1) and (len(actual_values_tot_rad_power[i_t][i_r])>1)):
+						temp_values += (np.random.choice(actual_values_power_rec_neutral[i_t][i_r],size=samples,p=prob_power_rec_neutral[i_t][i_r]) + np.random.choice(actual_values_tot_rad_power[i_t][i_r],size=samples,p=prob_tot_rad_power[i_t][i_r]))* area[i_r]
+				if all(temp_values==0):
+					out_values.append(np.array([0,0]))
+					out_prob_sum.append(np.array([1]))
+					out_actual_values.append(np.array([0]))
+				else:
+					temp_prob,temp_intervals = np.histogram(temp_values,bins=np.logspace(np.log10(temp_values.min()),np.log10(temp_values.max()),intervals+1))
+					temp_actual_values = []
+					for i in range(intervals):
+						if i!=intervals-1:
+							temp_actual_values.append(np.mean(temp_values[np.logical_and(temp_values>=temp_intervals[i]/(1+10*np.finfo(float).eps),temp_values<temp_intervals[i+1]*(1+10*np.finfo(float).eps))]))
+						else:
+							temp_actual_values.append(np.mean(temp_values[np.logical_and(temp_values>=temp_intervals[i]/(1+10*np.finfo(float).eps),temp_values<=temp_intervals[i+1]*(1+10*np.finfo(float).eps))]))
+					temp_actual_values = length*np.array(temp_actual_values)
+					temp_actual_values[np.isnan(temp_actual_values)]=0
+					out_values.append(length*temp_intervals)
+					out_prob_sum.append(temp_prob/np.sum(temp_prob))
+					out_actual_values.append(temp_actual_values)
+			return out_values,out_prob_sum,out_actual_values
+
+		intervals_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r,actual_values_net_power_removed_plasma_column_r = radial_sum_net_lost_power_PDF_MC()
+
+		most_likely_net_power_removed_plasma_column_r = []
 		actual_values_net_power_removed_plasma_column_r_up=[]
 		actual_values_net_power_removed_plasma_column_r_down=[]
 		for i_t in range(len(prob_net_power_removed_plasma_column_r)):
-			actual_values_net_power_removed_plasma_column_r.append(((intervals_net_power_removed_plasma_column_r[i_t][1:]+intervals_net_power_removed_plasma_column_r[i_t][:-1])/2)[np.array(prob_net_power_removed_plasma_column_r[i_t]).argmax()])
+			most_likely_net_power_removed_plasma_column_r.append(actual_values_net_power_removed_plasma_column_r[i_t][np.array(prob_net_power_removed_plasma_column_r[i_t]).argmax()])
 			loc_down = np.abs(np.cumsum(prob_net_power_removed_plasma_column_r[i_t])-0.159).argmin()
 			loc_up = np.abs(np.cumsum(np.flip(prob_net_power_removed_plasma_column_r[i_t],axis=0))-0.159).argmin()
 			actual_values_net_power_removed_plasma_column_r_down.append(intervals_net_power_removed_plasma_column_r[i_t][loc_down+1])
 			actual_values_net_power_removed_plasma_column_r_up.append(intervals_net_power_removed_plasma_column_r[i_t][-(loc_up+1)])
-		actual_values_net_power_removed_plasma_column_r = np.array(actual_values_net_power_removed_plasma_column_r)
+		most_likely_net_power_removed_plasma_column_r = np.array(most_likely_net_power_removed_plasma_column_r)
 		actual_values_net_power_removed_plasma_column_r_up = np.array(actual_values_net_power_removed_plasma_column_r_up)
 		actual_values_net_power_removed_plasma_column_r_down = np.array(actual_values_net_power_removed_plasma_column_r_down)
 
@@ -5607,7 +5753,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_power_rad_excit_r,yerr=[actual_values_power_rad_excit_r-actual_values_power_rad_excit_r_down,actual_values_power_rad_excit_r_up-actual_values_power_rad_excit_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_power_rad_excit_r,yerr=[most_likely_power_rad_excit_r-actual_values_power_rad_excit_r_down,actual_values_power_rad_excit_r_up-most_likely_power_rad_excit_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5626,7 +5772,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_power_rad_rec_bremm_r,yerr=[actual_values_power_rad_rec_bremm_r-actual_values_power_rad_rec_bremm_r_down,actual_values_power_rad_rec_bremm_r_up-actual_values_power_rad_rec_bremm_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_power_rad_rec_bremm_r,yerr=[most_likely_power_rad_rec_bremm_r-actual_values_power_rad_rec_bremm_r_down,actual_values_power_rad_rec_bremm_r_up-most_likely_power_rad_rec_bremm_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5645,7 +5791,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_power_rad_mol_r,yerr=[actual_values_power_rad_mol_r-actual_values_power_rad_mol_r_down,actual_values_power_rad_mol_r_up-actual_values_power_rad_mol_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_power_rad_mol_r,yerr=[most_likely_power_rad_mol_r-actual_values_power_rad_mol_r_down,actual_values_power_rad_mol_r_up-most_likely_power_rad_mol_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5664,7 +5810,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_power_via_ionisation_r,yerr=[actual_values_power_via_ionisation_r-actual_values_power_via_ionisation_r_down,actual_values_power_via_ionisation_r_up-actual_values_power_via_ionisation_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_power_via_ionisation_r,yerr=[most_likely_power_via_ionisation_r-actual_values_power_via_ionisation_r_down,actual_values_power_via_ionisation_r_up-most_likely_power_via_ionisation_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5683,7 +5829,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_power_via_recombination_r,yerr=[actual_values_power_via_recombination_r-actual_values_power_via_recombination_r_down,actual_values_power_via_recombination_r_up-actual_values_power_via_recombination_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_power_via_recombination_r,yerr=[most_likely_power_via_recombination_r-actual_values_power_via_recombination_r_down,actual_values_power_via_recombination_r_up-most_likely_power_via_recombination_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5702,7 +5848,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_tot_rad_power_r,yerr=[actual_values_tot_rad_power_r-actual_values_tot_rad_power_r_down,actual_values_tot_rad_power_r_up-actual_values_tot_rad_power_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_tot_rad_power_r,yerr=[most_likely_tot_rad_power_r-actual_values_tot_rad_power_r_down,actual_values_tot_rad_power_r_up-most_likely_tot_rad_power_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5721,7 +5867,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_power_rad_Hm_r,yerr=[actual_values_power_rad_Hm_r-actual_values_power_rad_Hm_r_down,actual_values_power_rad_Hm_r_up-actual_values_power_rad_Hm_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_power_rad_Hm_r,yerr=[most_likely_power_rad_Hm_r-actual_values_power_rad_Hm_r_down,actual_values_power_rad_Hm_r_up-most_likely_power_rad_Hm_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5740,7 +5886,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_power_rad_H2_r,yerr=[actual_values_power_rad_H2_r-actual_values_power_rad_H2_r_down,actual_values_power_rad_H2_r_up-actual_values_power_rad_H2_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_power_rad_H2_r,yerr=[most_likely_power_rad_H2_r-actual_values_power_rad_H2_r_down,actual_values_power_rad_H2_r_up-most_likely_power_rad_H2_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5759,7 +5905,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_power_rad_H2p_r,yerr=[actual_values_power_rad_H2p_r-actual_values_power_rad_H2p_r_down,actual_values_power_rad_H2p_r_up-actual_values_power_rad_H2p_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_power_rad_H2p_r,yerr=[most_likely_power_rad_H2p_r-actual_values_power_rad_H2p_r_down,actual_values_power_rad_H2p_r_up-most_likely_power_rad_H2p_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5778,7 +5924,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_power_heating_rec_r,yerr=[actual_values_power_heating_rec_r-actual_values_power_heating_rec_r_down,actual_values_power_heating_rec_r_up-actual_values_power_heating_rec_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_power_heating_rec_r,yerr=[most_likely_power_heating_rec_r-actual_values_power_heating_rec_r_down,actual_values_power_heating_rec_r_up-most_likely_power_heating_rec_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5797,7 +5943,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_power_rec_neutral_r,yerr=[actual_values_power_rec_neutral_r-actual_values_power_rec_neutral_r_down,actual_values_power_rec_neutral_r_up-actual_values_power_rec_neutral_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_power_rec_neutral_r,yerr=[most_likely_power_rec_neutral_r-actual_values_power_rec_neutral_r_down,actual_values_power_rec_neutral_r_up-most_likely_power_rec_neutral_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5816,7 +5962,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_power_via_brem_r,yerr=[actual_values_power_via_brem_r-actual_values_power_via_brem_r_down,actual_values_power_via_brem_r_up-actual_values_power_via_brem_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_power_via_brem_r,yerr=[most_likely_power_via_brem_r-actual_values_power_via_brem_r_down,actual_values_power_via_brem_r_up-most_likely_power_via_brem_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5835,7 +5981,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_total_removed_power_r,yerr=[actual_values_total_removed_power_r-actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up-actual_values_total_removed_power_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_total_removed_power_r,yerr=[most_likely_total_removed_power_r-actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up-most_likely_total_removed_power_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5854,7 +6000,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_local_CX_r,yerr=[actual_values_local_CX_r-actual_values_local_CX_r_down,actual_values_local_CX_r_up-actual_values_local_CX_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_local_CX_r,yerr=[most_likely_local_CX_r-actual_values_local_CX_r_down,actual_values_local_CX_r_up-most_likely_local_CX_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5873,7 +6019,7 @@ else:
 		# plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		# plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		# plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		# plt.errorbar(time_crop,actual_values_total_power_removed_plasma_fluid_r,yerr=[actual_values_total_power_removed_plasma_fluid_r-actual_values_total_power_removed_plasma_fluid_r_down,actual_values_total_power_removed_plasma_fluid_r_up-actual_values_total_power_removed_plasma_fluid_r],color='r',capsize=5)
+		# plt.errorbar(time_crop,most_likely_total_power_removed_plasma_fluid_r,yerr=[most_likely_total_power_removed_plasma_fluid_r-actual_values_total_power_removed_plasma_fluid_r_down,actual_values_total_power_removed_plasma_fluid_r_up-most_likely_total_power_removed_plasma_fluid_r],color='r',capsize=5)
 		# plt.semilogy()
 		# plt.ylim(bottom=0.1)
 		# plt.xlabel('time from beginning of pulse [ms]')
@@ -5892,7 +6038,7 @@ else:
 		plt.plot(time_crop, heat_inflow_upstream_max,'k--');
 		plt.plot(time_crop, heat_inflow_upstream_min,'k--');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,color='y',ls='--',capsize=2)
-		plt.errorbar(time_crop,actual_values_net_power_removed_plasma_column_r,yerr=[actual_values_net_power_removed_plasma_column_r-actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up-actual_values_net_power_removed_plasma_column_r],color='r',capsize=5)
+		plt.errorbar(time_crop,most_likely_net_power_removed_plasma_column_r,yerr=[most_likely_net_power_removed_plasma_column_r-actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up-most_likely_net_power_removed_plasma_column_r],color='r',capsize=5)
 		plt.semilogy()
 		plt.ylim(bottom=0.1)
 		plt.xlabel('time from beginning of pulse [ms]')
@@ -5908,27 +6054,27 @@ else:
 		conventional_end_pulse = np.abs(time_crop-0.8).argmin()
 
 		plt.figure(figsize=(12, 6));
-		# plt.errorbar(time_crop,actual_values_power_rad_excit_r,yerr=[actual_values_power_rad_excit_r-actual_values_power_rad_excit_r_down,actual_values_power_rad_excit_r_up-actual_values_power_rad_excit_r],capsize=5,label='power_rad_excit')
-		# plt.errorbar(time_crop,actual_values_power_rad_rec_bremm_r,yerr=[actual_values_power_rad_rec_bremm_r-actual_values_power_rad_rec_bremm_r_down,actual_values_power_rad_rec_bremm_r_up-actual_values_power_rad_rec_bremm_r],capsize=5,label='power_rad_rec_bremm')
-		# plt.errorbar(time_crop,actual_values_power_rad_mol_r,yerr=[actual_values_power_rad_mol_r-actual_values_power_rad_mol_r_down,actual_values_power_rad_mol_r_up-actual_values_power_rad_mol_r],capsize=5,label='power_rad_mol')
-		plt.plot(time_crop,actual_values_power_rad_excit_r,label='power_rad_excit')
-		plt.plot(time_crop,actual_values_power_rad_rec_bremm_r,label='power_rad_rec_bremm')
-		plt.plot(time_crop,actual_values_power_rad_mol_r,label='power_rad_mol')
-		plt.errorbar(time_crop,actual_values_power_via_ionisation_r,yerr=[actual_values_power_via_ionisation_r-actual_values_power_via_ionisation_r_down,actual_values_power_via_ionisation_r_up-actual_values_power_via_ionisation_r],capsize=5,label='power_via_ionisation (only potential)')
-		plt.errorbar(time_crop,actual_values_power_via_recombination_r,yerr=[actual_values_power_via_recombination_r-actual_values_power_via_recombination_r_down,actual_values_power_via_recombination_r_up-actual_values_power_via_recombination_r],capsize=5,label='power_via_recombination (only potential)')
-		plt.errorbar(time_crop,actual_values_tot_rad_power_r,yerr=[actual_values_tot_rad_power_r-actual_values_tot_rad_power_r_down,actual_values_tot_rad_power_r_up-actual_values_tot_rad_power_r],capsize=5,label='tot_rad_power')
-		plt.errorbar(time_crop,actual_values_net_power_removed_plasma_column_r,yerr=[actual_values_net_power_removed_plasma_column_r-actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up-actual_values_net_power_removed_plasma_column_r],capsize=5,label='net power removed from plasma column\nradiated + recombination neutral')
-		# plt.errorbar(time_crop,actual_values_power_rad_Hm_r,yerr=[actual_values_power_rad_Hm_r-actual_values_power_rad_Hm_r_down,actual_values_power_rad_Hm_r_up-actual_values_power_rad_Hm_r],capsize=5,label='power_rad_Hm')
-		# plt.errorbar(time_crop,actual_values_power_rad_H2_r,yerr=[actual_values_power_rad_H2_r-actual_values_power_rad_H2_r_down,actual_values_power_rad_H2_r_up-actual_values_power_rad_H2_r],capsize=5,label='power_rad_H2')
-		# plt.errorbar(time_crop,actual_values_power_rad_H2p_r,yerr=[actual_values_power_rad_H2p_r-actual_values_power_rad_H2p_r_down,actual_values_power_rad_H2p_r_up-actual_values_power_rad_H2p_r],capsize=5,label='power_rad_H2p')
-		plt.plot(time_crop,actual_values_power_rad_Hm_r,label='power_rad_Hm')
-		plt.plot(time_crop,actual_values_power_rad_H2_r,label='power_rad_H2')
-		plt.plot(time_crop,actual_values_power_rad_H2p_r,label='power_rad_H2p')
-		plt.plot(time_crop,actual_values_power_heating_rec_r,label='power_heating_rec')
-		plt.plot(time_crop,actual_values_power_rec_neutral_r,label='power_rec_neutral')
-		plt.plot(time_crop,actual_values_power_via_brem_r,label='power_via_brem')
-		plt.plot(time_crop,actual_values_local_CX_r,label='local_CX')
-		plt.plot(time_crop,actual_values_total_removed_power_r,label='total_removed_power from plasma fliud\nionisation*pot + rad_mol + rad_excit + recombination*pot + brem + rec_neutral')
+		# plt.errorbar(time_crop,most_likely_power_rad_excit_r,yerr=[most_likely_power_rad_excit_r-actual_values_power_rad_excit_r_down,actual_values_power_rad_excit_r_up-most_likely_power_rad_excit_r],capsize=5,label='power_rad_excit')
+		# plt.errorbar(time_crop,most_likely_power_rad_rec_bremm_r,yerr=[most_likely_power_rad_rec_bremm_r-actual_values_power_rad_rec_bremm_r_down,actual_values_power_rad_rec_bremm_r_up-most_likely_power_rad_rec_bremm_r],capsize=5,label='power_rad_rec_bremm')
+		# plt.errorbar(time_crop,most_likely_power_rad_mol_r,yerr=[most_likely_power_rad_mol_r-actual_values_power_rad_mol_r_down,actual_values_power_rad_mol_r_up-most_likely_power_rad_mol_r],capsize=5,label='power_rad_mol')
+		plt.plot(time_crop,most_likely_power_rad_excit_r,label='power_rad_excit')
+		plt.plot(time_crop,most_likely_power_rad_rec_bremm_r,label='power_rad_rec_bremm')
+		plt.plot(time_crop,most_likely_power_rad_mol_r,label='power_rad_mol')
+		plt.errorbar(time_crop,most_likely_power_via_ionisation_r,yerr=[most_likely_power_via_ionisation_r-actual_values_power_via_ionisation_r_down,actual_values_power_via_ionisation_r_up-most_likely_power_via_ionisation_r],capsize=5,label='power_via_ionisation (only potential)')
+		plt.errorbar(time_crop,most_likely_power_via_recombination_r,yerr=[most_likely_power_via_recombination_r-actual_values_power_via_recombination_r_down,actual_values_power_via_recombination_r_up-most_likely_power_via_recombination_r],capsize=5,label='power_via_recombination (only potential)')
+		plt.errorbar(time_crop,most_likely_tot_rad_power_r,yerr=[most_likely_tot_rad_power_r-actual_values_tot_rad_power_r_down,actual_values_tot_rad_power_r_up-most_likely_tot_rad_power_r],capsize=5,label='tot_rad_power')
+		plt.errorbar(time_crop,most_likely_net_power_removed_plasma_column_r,yerr=[most_likely_net_power_removed_plasma_column_r-actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up-most_likely_net_power_removed_plasma_column_r],capsize=5,label='net power removed from plasma column\nradiated + recombination neutral')
+		# plt.errorbar(time_crop,most_likely_power_rad_Hm_r,yerr=[most_likely_power_rad_Hm_r-actual_values_power_rad_Hm_r_down,actual_values_power_rad_Hm_r_up-most_likely_power_rad_Hm_r],capsize=5,label='power_rad_Hm')
+		# plt.errorbar(time_crop,most_likely_power_rad_H2_r,yerr=[most_likely_power_rad_H2_r-actual_values_power_rad_H2_r_down,actual_values_power_rad_H2_r_up-most_likely_power_rad_H2_r],capsize=5,label='power_rad_H2')
+		# plt.errorbar(time_crop,most_likely_power_rad_H2p_r,yerr=[most_likely_power_rad_H2p_r-actual_values_power_rad_H2p_r_down,actual_values_power_rad_H2p_r_up-most_likely_power_rad_H2p_r],capsize=5,label='power_rad_H2p')
+		plt.plot(time_crop,most_likely_power_rad_Hm_r,label='power_rad_Hm')
+		plt.plot(time_crop,most_likely_power_rad_H2_r,label='power_rad_H2')
+		plt.plot(time_crop,most_likely_power_rad_H2p_r,label='power_rad_H2p')
+		plt.plot(time_crop,most_likely_power_heating_rec_r,label='power_heating_rec')
+		plt.plot(time_crop,most_likely_power_rec_neutral_r,label='power_rec_neutral')
+		plt.plot(time_crop,most_likely_power_via_brem_r,label='power_via_brem')
+		plt.plot(time_crop,most_likely_local_CX_r,label='local_CX')
+		plt.plot(time_crop,most_likely_total_removed_power_r,label='total_removed_power from plasma fliud\nionisation*pot + rad_mol + rad_excit + recombination*pot + brem + rec_neutral')
 		plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		plt.plot(time_crop, heat_inflow_upstream_min,'--k');
 		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop_limited+13.6+2.2)*merge_ne_prof_multipulse_interp_crop_limited*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
@@ -5951,11 +6097,11 @@ else:
 		plt.close('all')
 
 		plt.figure(figsize=(12, 6));
-		plt.errorbar(time_crop,actual_values_power_via_ionisation_r,yerr=[actual_values_power_via_ionisation_r-actual_values_power_via_ionisation_r_down,actual_values_power_via_ionisation_r_up-actual_values_power_via_ionisation_r],capsize=5,label='power_via_ionisation (only potential)')
-		plt.errorbar(time_crop,actual_values_power_via_recombination_r,yerr=[actual_values_power_via_recombination_r-actual_values_power_via_recombination_r_down,actual_values_power_via_recombination_r_up-actual_values_power_via_recombination_r],capsize=5,label='power_via_recombination (only potential)')
-		# plt.errorbar(time_crop,actual_values_tot_rad_power_r,yerr=[actual_values_tot_rad_power_r-actual_values_tot_rad_power_r_down,actual_values_tot_rad_power_r_up-actual_values_tot_rad_power_r],capsize=5,label='tot_rad_power')
-		plt.errorbar(time_crop,actual_values_net_power_removed_plasma_column_r,yerr=[actual_values_net_power_removed_plasma_column_r-actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up-actual_values_net_power_removed_plasma_column_r],capsize=5,label='net power removed from plasma column\nradiated + recombination neutral')
-		plt.errorbar(time_crop,actual_values_total_removed_power_r,yerr=[actual_values_total_removed_power_r-actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up-actual_values_total_removed_power_r],capsize=5,label='total_removed_power from plasma fliud\nionisation + rad_mol + rad_excit + recombination*pot + brem + rec_neutral')
+		plt.errorbar(time_crop,most_likely_power_via_ionisation_r,yerr=[most_likely_power_via_ionisation_r-actual_values_power_via_ionisation_r_down,actual_values_power_via_ionisation_r_up-most_likely_power_via_ionisation_r],capsize=5,label='power_via_ionisation (only potential)')
+		plt.errorbar(time_crop,most_likely_power_via_recombination_r,yerr=[most_likely_power_via_recombination_r-actual_values_power_via_recombination_r_down,actual_values_power_via_recombination_r_up-most_likely_power_via_recombination_r],capsize=5,label='power_via_recombination (only potential)')
+		# plt.errorbar(time_crop,most_likely_tot_rad_power_r,yerr=[most_likely_tot_rad_power_r-actual_values_tot_rad_power_r_down,actual_values_tot_rad_power_r_up-most_likely_tot_rad_power_r],capsize=5,label='tot_rad_power')
+		plt.errorbar(time_crop,most_likely_net_power_removed_plasma_column_r,yerr=[most_likely_net_power_removed_plasma_column_r-actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up-most_likely_net_power_removed_plasma_column_r],capsize=5,label='net power removed from plasma column\nradiated + recombination neutral')
+		plt.errorbar(time_crop,most_likely_total_removed_power_r,yerr=[most_likely_total_removed_power_r-actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up-most_likely_total_removed_power_r],capsize=5,label='total_removed_power from plasma fliud\nionisation + rad_mol + rad_excit + recombination*pot + brem + rec_neutral')
 		plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		plt.plot(time_crop, heat_inflow_upstream_min,'--k');
 		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop_limited+13.6+2.2)*merge_ne_prof_multipulse_interp_crop_limited*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
@@ -5979,12 +6125,12 @@ else:
 
 		plt.figure(figsize=(12, 6));
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,ls=':',label='Power from plasma source')
-		plt.plot(time_crop,actual_values_power_via_ionisation_r,color=color[0],label='power_via_ionisation (only potential)')
-		plt.plot(time_crop,actual_values_power_via_recombination_r,color=color[1],label='power_via_recombination (only potential)')
-		plt.plot(time_crop,actual_values_tot_rad_power_r,color=color[2],label='tot_rad_power')
-		plt.plot(time_crop,actual_values_power_rad_excit_r,'--',color=color[3],label='power_rad_excit')
-		plt.plot(time_crop,actual_values_power_rad_rec_bremm_r,'--',color=color[4],label='power_rad_rec_bremm')
-		plt.plot(time_crop,actual_values_power_rad_mol_r,'--',color=color[5],label='power_rad_mol')
+		plt.plot(time_crop,most_likely_power_via_ionisation_r,color=color[0],label='power_via_ionisation (only potential)')
+		plt.plot(time_crop,most_likely_power_via_recombination_r,color=color[1],label='power_via_recombination (only potential)')
+		plt.plot(time_crop,most_likely_tot_rad_power_r,color=color[2],label='tot_rad_power')
+		plt.plot(time_crop,most_likely_power_rad_excit_r,'--',color=color[3],label='power_rad_excit')
+		plt.plot(time_crop,most_likely_power_rad_rec_bremm_r,'--',color=color[4],label='power_rad_rec_bremm')
+		plt.plot(time_crop,most_likely_power_rad_mol_r,'--',color=color[5],label='power_rad_mol')
 		# plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		# plt.plot(time_crop, heat_inflow_upstream_min,'--k');
 		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop_limited+13.6+2.2)*merge_ne_prof_multipulse_interp_crop_limited*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
@@ -6007,12 +6153,12 @@ else:
 
 		plt.figure(figsize=(12, 6));
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,ls=':',label='Power from plasma source')
-		plt.errorbar(time_crop,actual_values_net_power_removed_plasma_column_r,yerr=[actual_values_net_power_removed_plasma_column_r-actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up-actual_values_net_power_removed_plasma_column_r],color=color[0],capsize=5,label='net power removed from plasma column\nradiated + recombination neutral')
-		plt.plot(time_crop,actual_values_tot_rad_power_r,color=color[1],label='tot_rad_power')
-		plt.plot(time_crop,actual_values_power_rad_excit_r,'--',color=color[2],label='power_rad_excit')
-		plt.plot(time_crop,actual_values_power_rad_rec_bremm_r,'--',color=color[3],label='power_rad_rec_bremm')
-		plt.plot(time_crop,actual_values_power_rad_mol_r,'--',color=color[4],label='power_rad_mol')
-		plt.plot(time_crop,actual_values_power_rec_neutral_r,color=color[5],label='power_rec_neutral')
+		plt.errorbar(time_crop,most_likely_net_power_removed_plasma_column_r,yerr=[most_likely_net_power_removed_plasma_column_r-actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up-most_likely_net_power_removed_plasma_column_r],color=color[0],capsize=5,label='net power removed from plasma column\nradiated + recombination neutral')
+		plt.plot(time_crop,most_likely_tot_rad_power_r,color=color[1],label='tot_rad_power')
+		plt.plot(time_crop,most_likely_power_rad_excit_r,'--',color=color[2],label='power_rad_excit')
+		plt.plot(time_crop,most_likely_power_rad_rec_bremm_r,'--',color=color[3],label='power_rad_rec_bremm')
+		plt.plot(time_crop,most_likely_power_rad_mol_r,'--',color=color[4],label='power_rad_mol')
+		plt.plot(time_crop,most_likely_power_rec_neutral_r,color=color[5],label='power_rec_neutral')
 		# plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		# plt.plot(time_crop, heat_inflow_upstream_min,'--k');
 		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop_limited+13.6+2.2)*merge_ne_prof_multipulse_interp_crop_limited*1e20/6.24e18*area,axis=1)*length/dt*1000,':',color='gray',label='stored in plasma');
@@ -6035,17 +6181,17 @@ else:
 
 
 		plt.figure(figsize=(10, 5));
-		temp = actual_values_power_via_ionisation_r + actual_values_power_via_recombination_r + actual_values_power_rad_mol_r + actual_values_power_rad_excit_r + actual_values_power_via_brem_r + actual_values_power_rec_neutral_r
+		temp = most_likely_power_via_ionisation_r + most_likely_power_via_recombination_r + most_likely_power_rad_mol_r + most_likely_power_rad_excit_r + most_likely_power_via_brem_r + most_likely_power_rec_neutral_r
 		labels = ['ionisation (only potential)', 'recombination (only potential)', 'radiated via molecules', 'radiated via excitation', 'bremsstrahlung', 'neutral temp from rec']
-		# plt.stackplot(time_crop,actual_values_power_via_ionisation_r/temp,actual_values_power_via_recombination_r/temp,actual_values_power_rad_mol_r/temp,actual_values_power_rad_excit_r/temp,actual_values_power_via_brem_r/temp,actual_values_power_rec_neutral_r/temp,labels=labels)
-		plt.stackplot(time_crop,actual_values_power_via_ionisation_r,actual_values_power_via_recombination_r,actual_values_power_rad_mol_r,actual_values_power_rad_excit_r,actual_values_power_via_brem_r,actual_values_power_rec_neutral_r,labels=labels)
+		# plt.stackplot(time_crop,most_likely_power_via_ionisation_r/temp,most_likely_power_via_recombination_r/temp,most_likely_power_rad_mol_r/temp,most_likely_power_rad_excit_r/temp,most_likely_power_via_brem_r/temp,most_likely_power_rec_neutral_r/temp,labels=labels)
+		plt.stackplot(time_crop,most_likely_power_via_ionisation_r,most_likely_power_via_recombination_r,most_likely_power_rad_mol_r,most_likely_power_rad_excit_r,most_likely_power_via_brem_r,most_likely_power_rec_neutral_r,labels=labels)
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,ls='--')
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
 		plt.plot([time_crop[conventional_end_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--')
 		plt.legend(loc='best', fontsize='xx-small')
-		# plt.ylim(bottom=0,top=max(np.max(actual_values_power_via_ionisation_r_up),np.max(power_pulse_shape_crop)))
+		# plt.ylim(bottom=0,top=max(np.max(most_likely_power_via_ionisation_r_up),np.max(power_pulse_shape_crop)))
 		# plt.ylim(bottom=1e-1)
 		plt.xlabel('time from beginning of pulse [ms]')
 		# plt.ylabel('fraction of the total power removed from plasma [au]')
@@ -6057,10 +6203,10 @@ else:
 		plt.close('all')
 
 		plt.figure(figsize=(10, 5));
-		temp = actual_values_power_via_ionisation_r + actual_values_power_via_recombination_r + actual_values_power_rad_mol_r + actual_values_power_rad_excit_r + actual_values_power_via_brem_r + actual_values_power_rec_neutral_r
+		temp = most_likely_power_via_ionisation_r + most_likely_power_via_recombination_r + most_likely_power_rad_mol_r + most_likely_power_rad_excit_r + most_likely_power_via_brem_r + most_likely_power_rec_neutral_r
 		labels = ['ionisation (only potential)', 'recombination (only potential)', 'radiated via molecules', 'radiated via excitation', 'bremsstrahlung', 'neutral temp from rec']
-		plt.stackplot(time_crop,actual_values_power_via_ionisation_r/temp,actual_values_power_via_recombination_r/temp,actual_values_power_rad_mol_r/temp,actual_values_power_rad_excit_r/temp,actual_values_power_via_brem_r/temp,actual_values_power_rec_neutral_r/temp,labels=labels)
-		# plt.stackplot(time_crop,actual_values_power_via_ionisation_r,actual_values_power_via_recombination_r,actual_values_power_rad_mol_r,actual_values_power_rad_excit_r,actual_values_power_via_brem_r,actual_values_power_rec_neutral_r,labels=labels)
+		plt.stackplot(time_crop,most_likely_power_via_ionisation_r/temp,most_likely_power_via_recombination_r/temp,most_likely_power_rad_mol_r/temp,most_likely_power_rad_excit_r/temp,most_likely_power_via_brem_r/temp,most_likely_power_rec_neutral_r/temp,labels=labels)
+		# plt.stackplot(time_crop,most_likely_power_via_ionisation_r,most_likely_power_via_recombination_r,most_likely_power_rad_mol_r,most_likely_power_rad_excit_r,most_likely_power_via_brem_r,most_likely_power_rec_neutral_r,labels=labels)
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,1],'k--',label='conventional start/end pulse')
@@ -6078,17 +6224,17 @@ else:
 		plt.close('all')
 
 		plt.figure(figsize=(10, 5));
-		temp = actual_values_power_rad_mol_r + actual_values_power_rad_excit_r + actual_values_power_rad_rec_bremm_r + actual_values_power_rec_neutral_r
+		temp = most_likely_power_rad_mol_r + most_likely_power_rad_excit_r + most_likely_power_rad_rec_bremm_r + most_likely_power_rec_neutral_r
 		labels = ['radiated via molecules', 'radiated via excitation', 'radiated via recombination and bremsstrahlung', 'neutral kin. energy from recombination']
-		# plt.stackplot(time_crop,actual_values_power_rad_mol_r/temp,actual_values_power_rad_excit_r/temp,actual_values_power_rad_rec_bremm_r/temp,actual_values_power_rec_neutral_r/temp,labels=labels)
-		plt.stackplot(time_crop,actual_values_power_rad_mol_r,actual_values_power_rad_excit_r,actual_values_power_rad_rec_bremm_r,actual_values_power_rec_neutral_r,labels=labels)
+		# plt.stackplot(time_crop,most_likely_power_rad_mol_r/temp,most_likely_power_rad_excit_r/temp,most_likely_power_rad_rec_bremm_r/temp,most_likely_power_rec_neutral_r/temp,labels=labels)
+		plt.stackplot(time_crop,most_likely_power_rad_mol_r,most_likely_power_rad_excit_r,most_likely_power_rad_rec_bremm_r,most_likely_power_rec_neutral_r,labels=labels)
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,ls='--')
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
 		plt.plot([time_crop[conventional_end_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--')
 		plt.legend(loc='best', fontsize='small')
-		# plt.ylim(bottom=0,top=max(np.max(actual_values_power_via_ionisation_r_up),np.max(power_pulse_shape_crop)))
+		# plt.ylim(bottom=0,top=max(np.max(most_likely_power_via_ionisation_r_up),np.max(power_pulse_shape_crop)))
 		# plt.ylim(bottom=1e-1)
 		plt.xlabel('time from beginning of pulse [ms]')
 		# plt.ylabel('fraction of the total power removed from plasma [au]')
@@ -6100,10 +6246,10 @@ else:
 		plt.close('all')
 
 		plt.figure(figsize=(10, 5));
-		temp = actual_values_power_rad_mol_r + actual_values_power_rad_excit_r + actual_values_power_rad_rec_bremm_r + actual_values_power_rec_neutral_r
+		temp = most_likely_power_rad_mol_r + most_likely_power_rad_excit_r + most_likely_power_rad_rec_bremm_r + most_likely_power_rec_neutral_r
 		labels = ['radiated via molecules', 'radiated via excitation', 'radiated via recombination and bremsstrahlung', 'neutral kin. energy from recombination']
-		plt.stackplot(time_crop,actual_values_power_rad_mol_r/temp,actual_values_power_rad_excit_r/temp,actual_values_power_rad_rec_bremm_r/temp,actual_values_power_rec_neutral_r/temp,labels=labels)
-		# plt.stackplot(time_crop,actual_values_power_rad_mol_r,actual_values_power_rad_excit_r,actual_values_power_rad_rec_bremm_r,actual_values_power_rec_neutral_r,labels=labels)
+		plt.stackplot(time_crop,most_likely_power_rad_mol_r/temp,most_likely_power_rad_excit_r/temp,most_likely_power_rad_rec_bremm_r/temp,most_likely_power_rec_neutral_r/temp,labels=labels)
+		# plt.stackplot(time_crop,most_likely_power_rad_mol_r,most_likely_power_rad_excit_r,most_likely_power_rad_rec_bremm_r,most_likely_power_rec_neutral_r,labels=labels)
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,1],'k--',label='conventional start/end pulse')
@@ -6189,23 +6335,56 @@ else:
 
 			return values*dt/1000,prob_sum
 
+		def temporal_radial_sum_PDF_MC(actual_values_power_ext,prob_power_ext,intervals=30,samples=100000,conventional_start_pulse=conventional_start_pulse,conventional_end_pulse=conventional_end_pulse):
+			if conventional_start_pulse!=0 or conventional_end_pulse!=len(prob_power_ext):
+				actual_values_power = actual_values_power_ext[conventional_start_pulse:conventional_end_pulse+1]
+				prob_power = prob_power_ext[conventional_start_pulse:conventional_end_pulse+1]
+			temp_values = np.zeros((samples))
+			for i_t in range(len(prob_power)-1):
+				if len(actual_values_power[i_t])>1:
+					temp_values += np.random.choice(actual_values_power[i_t],size=samples,p=prob_power[i_t])
+			if all(temp_values==0):
+				out_values=np.array([0,0])
+				out_prob_sum=np.array([1])
+			else:
+				temp_prob,temp_intervals = np.histogram(temp_values,bins=np.logspace(np.log10(temp_values.min()),np.log10(temp_values.max()),intervals+1))
+				out_values=temp_intervals*dt/1000
+				out_prob_sum=temp_prob/np.sum(temp_prob)
+			return out_values,out_prob_sum
 
-		intervals_power_rad_excit_tr, prob_power_rad_excit_tr = temporal_radial_sum_PDF(intervals_power_rad_excit_r,prob_power_rad_excit_r)
-		intervals_power_rad_rec_bremm_tr, prob_power_rad_rec_bremm_tr = temporal_radial_sum_PDF(intervals_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r)
-		intervals_power_rad_mol_tr, prob_power_rad_mol_tr = temporal_radial_sum_PDF(intervals_power_rad_mol_r,prob_power_rad_mol_r)
-		intervals_power_via_ionisation_tr, prob_power_via_ionisation_tr = temporal_radial_sum_PDF(intervals_power_via_ionisation_r,prob_power_via_ionisation_r)
-		intervals_power_via_recombination_tr, prob_power_via_recombination_tr = temporal_radial_sum_PDF(intervals_power_via_recombination_r,prob_power_via_recombination_r)
-		intervals_tot_rad_power_tr, prob_tot_rad_power_tr = temporal_radial_sum_PDF(intervals_tot_rad_power_r, prob_tot_rad_power_r)
-		intervals_power_rad_Hm_tr, prob_power_rad_Hm_tr = temporal_radial_sum_PDF(intervals_power_rad_Hm_r,prob_power_rad_Hm_r)
-		intervals_power_rad_H2_tr, prob_power_rad_H2_tr = temporal_radial_sum_PDF(intervals_power_rad_H2_r,prob_power_rad_H2_r)
-		intervals_power_rad_H2p_tr, prob_power_rad_H2p_tr = temporal_radial_sum_PDF(intervals_power_rad_H2p_r,prob_power_rad_H2p_r)
-		intervals_power_heating_rec_tr, prob_power_heating_rec_tr = temporal_radial_sum_PDF(intervals_power_heating_rec_r,prob_power_heating_rec_r)
-		intervals_power_rec_neutral_tr, prob_power_rec_neutral_tr = temporal_radial_sum_PDF(intervals_power_rec_neutral_r,prob_power_rec_neutral_r)
-		intervals_power_via_brem_tr, prob_power_via_brem_tr = temporal_radial_sum_PDF(intervals_power_via_brem_r,prob_power_via_brem_r)
-		intervals_total_removed_power_tr, prob_total_removed_power_tr = temporal_radial_sum_PDF(intervals_total_removed_power_r,prob_total_removed_power_r)
-		intervals_local_CX_tr, prob_local_CX_tr = temporal_radial_sum_PDF(intervals_local_CX_r,prob_local_CX_r)
-		# intervals_total_power_removed_plasma_fluid_tr, prob_total_power_removed_plasma_fluid_tr = temporal_radial_sum_PDF(intervals_total_power_removed_plasma_fluid_r,prob_total_power_removed_plasma_fluid_r)
-		intervals_net_power_removed_plasma_column_tr, prob_net_power_removed_plasma_column_tr = temporal_radial_sum_PDF(intervals_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r)
+
+		# intervals_power_rad_excit_tr, prob_power_rad_excit_tr = temporal_radial_sum_PDF(intervals_power_rad_excit_r,prob_power_rad_excit_r)
+		# intervals_power_rad_rec_bremm_tr, prob_power_rad_rec_bremm_tr = temporal_radial_sum_PDF(intervals_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r)
+		# intervals_power_rad_mol_tr, prob_power_rad_mol_tr = temporal_radial_sum_PDF(intervals_power_rad_mol_r,prob_power_rad_mol_r)
+		# intervals_power_via_ionisation_tr, prob_power_via_ionisation_tr = temporal_radial_sum_PDF(intervals_power_via_ionisation_r,prob_power_via_ionisation_r)
+		# intervals_power_via_recombination_tr, prob_power_via_recombination_tr = temporal_radial_sum_PDF(intervals_power_via_recombination_r,prob_power_via_recombination_r)
+		# intervals_tot_rad_power_tr, prob_tot_rad_power_tr = temporal_radial_sum_PDF(intervals_tot_rad_power_r, prob_tot_rad_power_r)
+		# intervals_power_rad_Hm_tr, prob_power_rad_Hm_tr = temporal_radial_sum_PDF(intervals_power_rad_Hm_r,prob_power_rad_Hm_r)
+		# intervals_power_rad_H2_tr, prob_power_rad_H2_tr = temporal_radial_sum_PDF(intervals_power_rad_H2_r,prob_power_rad_H2_r)
+		# intervals_power_rad_H2p_tr, prob_power_rad_H2p_tr = temporal_radial_sum_PDF(intervals_power_rad_H2p_r,prob_power_rad_H2p_r)
+		# intervals_power_heating_rec_tr, prob_power_heating_rec_tr = temporal_radial_sum_PDF(intervals_power_heating_rec_r,prob_power_heating_rec_r)
+		# intervals_power_rec_neutral_tr, prob_power_rec_neutral_tr = temporal_radial_sum_PDF(intervals_power_rec_neutral_r,prob_power_rec_neutral_r)
+		# intervals_power_via_brem_tr, prob_power_via_brem_tr = temporal_radial_sum_PDF(intervals_power_via_brem_r,prob_power_via_brem_r)
+		# intervals_total_removed_power_tr, prob_total_removed_power_tr = temporal_radial_sum_PDF(intervals_total_removed_power_r,prob_total_removed_power_r)
+		# intervals_local_CX_tr, prob_local_CX_tr = temporal_radial_sum_PDF(intervals_local_CX_r,prob_local_CX_r)
+		# # intervals_total_power_removed_plasma_fluid_tr, prob_total_power_removed_plasma_fluid_tr = temporal_radial_sum_PDF(intervals_total_power_removed_plasma_fluid_r,prob_total_power_removed_plasma_fluid_r)
+		# intervals_net_power_removed_plasma_column_tr, prob_net_power_removed_plasma_column_tr = temporal_radial_sum_PDF(intervals_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r)
+		intervals_power_rad_excit_tr, prob_power_rad_excit_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_excit_r,prob_power_rad_excit_r)
+		intervals_power_rad_rec_bremm_tr, prob_power_rad_rec_bremm_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r)
+		intervals_power_rad_mol_tr, prob_power_rad_mol_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_mol_r,prob_power_rad_mol_r)
+		intervals_power_via_ionisation_tr, prob_power_via_ionisation_tr = temporal_radial_sum_PDF_MC(actual_values_power_via_ionisation_r,prob_power_via_ionisation_r)
+		intervals_power_via_recombination_tr, prob_power_via_recombination_tr = temporal_radial_sum_PDF_MC(actual_values_power_via_recombination_r,prob_power_via_recombination_r)
+		intervals_tot_rad_power_tr, prob_tot_rad_power_tr = temporal_radial_sum_PDF_MC(actual_values_tot_rad_power_r, prob_tot_rad_power_r)
+		intervals_power_rad_Hm_tr, prob_power_rad_Hm_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_Hm_r,prob_power_rad_Hm_r)
+		intervals_power_rad_H2_tr, prob_power_rad_H2_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_H2_r,prob_power_rad_H2_r)
+		intervals_power_rad_H2p_tr, prob_power_rad_H2p_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_H2p_r,prob_power_rad_H2p_r)
+		intervals_power_heating_rec_tr, prob_power_heating_rec_tr = temporal_radial_sum_PDF_MC(actual_values_power_heating_rec_r,prob_power_heating_rec_r)
+		intervals_power_rec_neutral_tr, prob_power_rec_neutral_tr = temporal_radial_sum_PDF_MC(actual_values_power_rec_neutral_r,prob_power_rec_neutral_r)
+		intervals_power_via_brem_tr, prob_power_via_brem_tr = temporal_radial_sum_PDF_MC(actual_values_power_via_brem_r,prob_power_via_brem_r)
+		intervals_total_removed_power_tr, prob_total_removed_power_tr = temporal_radial_sum_PDF_MC(actual_values_total_removed_power_r,prob_total_removed_power_r)
+		intervals_local_CX_tr, prob_local_CX_tr = temporal_radial_sum_PDF_MC(actual_values_local_CX_r,prob_local_CX_r)
+		# intervals_total_power_removed_plasma_fluid_tr, prob_total_power_removed_plasma_fluid_tr = temporal_radial_sum_PDF_MC(actual_values_total_power_removed_plasma_fluid_r,prob_total_power_removed_plasma_fluid_r)
+		intervals_net_power_removed_plasma_column_tr, prob_net_power_removed_plasma_column_tr = temporal_radial_sum_PDF_MC(actual_values_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r)
 
 		ML_power_rad_excit = (np.add(intervals_power_rad_excit_tr[1:],intervals_power_rad_excit_tr[:-1])/2)[np.array(prob_power_rad_excit_tr).argmax()]
 		temp = np.cumsum(prob_power_rad_excit_tr)

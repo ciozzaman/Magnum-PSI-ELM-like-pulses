@@ -41,7 +41,7 @@ perform_convolution = True
 # for merge_ID_target in [89]:
 # for merge_ID_target in np.flip([86,87,88,90,91,92,93,94,95,96,97,98,99,89,85],axis=0):
 # for merge_ID_target in np.flip([96,97,98,89,85,86,87,88,90,91,92],axis=0):
-for merge_ID_target in np.flip([75,76,77,78],axis=0):
+for merge_ID_target in np.flip([75,76],axis=0):
 # for merge_ID_target in [85,95]:
 	# if (merge_ID_target>=93 and merge_ID_target<100):
 	# 	merge_time_window = [-1,2]

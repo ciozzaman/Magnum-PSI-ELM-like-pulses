@@ -69,18 +69,18 @@ def DOM52sec(value):
 		return np.nan
 
 
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-04/20190704_1.csv',index_col=False,sep='|')
+multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-03/20190703_1.csv',index_col=False,sep='|')
 index1 = list(multi_1.head(0))
 for index in range(len(index1)//3):
 	index1[index*3]=index1[index*3+1]
 	index1[index*3+2]=index1[index*3+1]
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-04/20190704_1.csv',index_col=False,header=1,sep='|')
+multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-03/20190703_1.csv',index_col=False,header=1,sep='|')
 index2 = list(multi_1.head(0))
 index = [_+' '+__ for _,__ in zip(index1,index2)]
 for i_text,text in enumerate(index):
 	if (text.find('.'))!=-1:
 		index[i_text] = text[:text.find('.')]
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-04/20190704_1.csv',index_col=False,header=2,sep='|')
+multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-03/20190703_1.csv',index_col=False,header=2,sep='|')
 multi_1_array = np.array(multi_1)
 
 date_time_stamp = multi_1[multi_1.keys()[6]]
@@ -148,7 +148,7 @@ if False:	# I don't think this code is usefull anymore
 	plt.pause(0.1)
 
 plt.close('all')
-for i_index in range(0,13):
+for i_index in [4,11]:#range(0,13):
 	plt.figure()
 	plt.title(index[i_index*3+2])
 	date_time_stamp = multi_1[multi_1.keys()[i_index*3]]
