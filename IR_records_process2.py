@@ -145,7 +145,7 @@ def dl2temp_generator(de,beta_sample,tau,t_exp,target_material,out_emissivity=Fa
 plt.figure()
 all_j = [231,232,233,234,244,245,275,393,394,305,306,416]
 time_shift = [1562076516.351,1562076678.708+4,1562077276.157,1562077372.03,1562080690.253,1562080859.278,1562157127.002,1562165683.122,1562165819.007,1562169014.003,1562169074.379,1562251726.311]
-de = [0.07,0.07,0.2,0.2,0.4,0.4,0.05,0.05,0.05,-0.1,-0.1,0]                                                                           # emissivity offset, -0.03 for polished tungsten
+de = [0.07,0.07,0.2,0.2,0.4,0.4,0.05,0.05,0.05,0,0,0]                                                                           # emissivity offset, -0.03 for polished tungsten
 for i_j,j in enumerate(all_j):
 
 	print('analysing item n '+str(j))

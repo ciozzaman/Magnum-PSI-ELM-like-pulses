@@ -166,9 +166,9 @@ plt.figure(figure_index+3,figsize=(12,6))
 counter=0
 # for merge_ID_target in [30,27,28,29]:	# distance scan
 # for merge_ID_target in [22,23,17,24,25,26]:	# distance scan
-for merge_ID_target in [99,98,96,97]:	# pressure scan
+# for merge_ID_target in [99,98,96,97]:	# pressure scan
 # for merge_ID_target in [70,69,68,67,66]:	# pressure scan
-# for merge_ID_target in [95,89,88,87,86,85]:	# pressure scan
+for merge_ID_target in [95,89,88,87,86,85]:	# pressure scan
 # for merge_ID_target in [72,71,66,73]:	# distance scan
 # for merge_ID_target in [82,81,80,79,83,84]:	# distance scan
 # for merge_ID_target in [91,90,85,92,93]:	# distance scan
@@ -179,7 +179,9 @@ for merge_ID_target in [99,98,96,97]:	# pressure scan
 	# plt.figure()
 	for j in all_j:
 		(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
+		sequence = int(sequence)
 		(file_index,target_OES_distance,magnetic_field,SS_pressure,pulse_voltage) = df_log.loc[j,['fast_camera_trace','T_axial','B','p_n [Pa]','Vc']]
+		pulse_voltage = int(pulse_voltage)
 		if np.isnan(file_index):
 			continue
 		full_folder = '/home/ffederic/work/Collaboratory/test/experimental_data/'+folder+'/'+"{0:0=2d}".format(sequence)+'/fast_camera/'
@@ -570,6 +572,7 @@ plt.legend(loc='best', fontsize='x-small')
 plt.title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field,target_OES_distance,pulse_voltage)+'\nAverage of emissivity in the radial direction')
 plt.grid()
 plt.yscale('log')
+plt.ylim(bottom=0.1)
 plt.pause(0.01)
 
 plt.figure(figsize=(12,6))
