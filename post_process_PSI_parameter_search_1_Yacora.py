@@ -5448,6 +5448,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 					power_pulse_shape_time_dependent_std.append(mean_peak_std)
 					steady_state_power.append(mean_steady_state_power)
 					steady_state_power_std.append(mean_steady_state_power_std)
+					target_material = df_log.loc[j,['Target']][0]
 				target_chamber_pressure = np.nanmean(target_chamber_pressure)	# Pa
 				target_OES_distance = np.nanmean(target_OES_distance)	# Pa
 				feed_rate_SLM = np.nanmean(feed_rate_SLM)	# SLM
