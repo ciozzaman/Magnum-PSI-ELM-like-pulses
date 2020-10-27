@@ -1057,12 +1057,14 @@ if initial_conditions:
 
 	area = 2*np.pi*(r_crop + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))
 	area_equivalent_to_downstream_peak_total_pressure = merge_ne_prof_multipulse_interp_crop_limited*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass + (nHp_ne_all*merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J))
+	temp_index = np.sum(area_equivalent_to_downstream_peak_total_pressure*area,axis=-1).argmax()
 	area_equivalent_to_downstream_peak_total_pressure = np.sum(area_equivalent_to_downstream_peak_total_pressure*area,axis=-1)/np.max(area_equivalent_to_downstream_peak_total_pressure,axis=-1)
-	area_equivalent_to_downstream_peak_total_pressure = (area_equivalent_to_downstream_peak_total_pressure/3.14)**0.5
+	radious_equivalent_to_downstream_peak_total_pressure = (area_equivalent_to_downstream_peak_total_pressure/3.14)**0.5
 	plt.figure(figsize=(8, 5));
 	plt.pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop_limited*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass + (nHp_ne_all*merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J)), cmap='rainbow');
-	plt.plot(time_crop,area_equivalent_to_downstream_peak_total_pressure,'--',color='grey',label='area equivalent to\nmaximum tot pressure')
-	# plt.legend(loc='best', fontsize='xx-small')
+	plt.plot(time_crop,radious_equivalent_to_downstream_peak_total_pressure,'--',color='grey',label='radious equivalent to\nmaximum pressure\narea %.3gm2' %(area_equivalent_to_downstream_peak_total_pressure[temp_index]))
+	plt.plot([time_crop[temp_index]]*2,[temp_r.min(),temp_r.max()],'--',color='grey')
+	plt.legend(loc='best', fontsize='xx-small')
 	plt.colorbar(orientation="horizontal").set_label('Pressure [Pa]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -1073,15 +1075,43 @@ if initial_conditions:
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
 
+	results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
+	results_summary.loc[merge_ID_target,['area_equiv_max_pressure']]=area_equivalent_to_downstream_peak_total_pressure[temp_index]
+	results_summary.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv')
+
+	area_equivalent_to_downstream_peak_pressure = (merge_ne_prof_multipulse_interp_crop_limited*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass))
+	temp_index = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1).argmax()
+	area_equivalent_to_downstream_peak_pressure = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1)/np.max(area_equivalent_to_downstream_peak_pressure,axis=-1)
+	radious_equivalent_to_downstream_peak_pressure = (area_equivalent_to_downstream_peak_pressure/3.14)**0.5
 	plt.figure(figsize=(8, 5));
 	plt.pcolor(temp_t, temp_r, (merge_ne_prof_multipulse_interp_crop_limited*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass)), cmap='rainbow');
-	plt.plot(time_crop,area_equivalent_to_downstream_peak_total_pressure,'--',color='grey',label='area equivalent to\nmaximum tot pressure')
-	# plt.legend(loc='best', fontsize='xx-small')
+	plt.plot(time_crop,radious_equivalent_to_downstream_peak_pressure,'--',color='grey',label='radious equivalent to\nmaximum pressure\narea %.3gm2' %(radious_equivalent_to_downstream_peak_pressure[temp_index]))
+	plt.plot([time_crop[temp_index]]*2,[temp_r.min(),temp_r.max()],'--',color='grey')
+	plt.legend(loc='best', fontsize='xx-small')
 	plt.colorbar(orientation="horizontal").set_label('Pressure [Pa]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
 	plt.ylabel('radial location [m]      ')
 	plt.title(pre_title+'Downstream dynamic pressure homogeneous mach num\n'+label_ion_source_at_upstream)
+	figure_index += 1
+	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+		figure_index) + '.eps', bbox_inches='tight')
+	plt.close()
+
+	area_equivalent_to_downstream_peak_pressure = merge_ne_prof_multipulse_interp_crop_limited*1e20*( (nHp_ne_all*merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J))
+	temp_index = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1).argmax()
+	area_equivalent_to_downstream_peak_pressure = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1)/np.max(area_equivalent_to_downstream_peak_pressure,axis=-1)
+	radious_equivalent_to_downstream_peak_pressure = (area_equivalent_to_downstream_peak_pressure/3.14)**0.5
+	plt.figure(figsize=(8, 5));
+	plt.pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop_limited*1e20*( (nHp_ne_all*merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J)), cmap='rainbow');
+	plt.plot(time_crop,radious_equivalent_to_downstream_peak_pressure,'--',color='grey',label='radious equivalent to\nmaximum tot pressure\narea %.3gm2' %(radious_equivalent_to_downstream_peak_pressure[temp_index]))
+	plt.plot([time_crop[temp_index]]*2,[temp_r.min(),temp_r.max()],'--',color='grey')
+	plt.legend(loc='best', fontsize='xx-small')
+	plt.colorbar(orientation="horizontal").set_label('Pressure [Pa]')  # ;plt.pause(0.01)
+	plt.axes().set_aspect(20)
+	plt.xlabel('time [ms]')
+	plt.ylabel('radial location [m]      ')
+	plt.title(pre_title+'Downstream static pressure homogeneous mach num\n'+label_ion_source_at_upstream)
 	figure_index += 1
 	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
 		figure_index) + '.eps', bbox_inches='tight')
