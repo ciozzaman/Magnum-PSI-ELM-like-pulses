@@ -1085,7 +1085,7 @@ if initial_conditions:
 	radious_equivalent_to_downstream_peak_pressure = (area_equivalent_to_downstream_peak_pressure/3.14)**0.5
 	plt.figure(figsize=(8, 5));
 	plt.pcolor(temp_t, temp_r, (merge_ne_prof_multipulse_interp_crop_limited*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass)), cmap='rainbow');
-	plt.plot(time_crop,radious_equivalent_to_downstream_peak_pressure,'--',color='grey',label='radious equivalent to\nmaximum pressure\narea %.3gm2' %(radious_equivalent_to_downstream_peak_pressure[temp_index]))
+	plt.plot(time_crop,radious_equivalent_to_downstream_peak_pressure,'--',color='grey',label='radious equivalent to\nmaximum pressure\narea %.3gm2' %(area_equivalent_to_downstream_peak_pressure[temp_index]))
 	plt.plot([time_crop[temp_index]]*2,[temp_r.min(),temp_r.max()],'--',color='grey')
 	plt.legend(loc='best', fontsize='xx-small')
 	plt.colorbar(orientation="horizontal").set_label('Pressure [Pa]')  # ;plt.pause(0.01)
@@ -1104,7 +1104,7 @@ if initial_conditions:
 	radious_equivalent_to_downstream_peak_pressure = (area_equivalent_to_downstream_peak_pressure/3.14)**0.5
 	plt.figure(figsize=(8, 5));
 	plt.pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop_limited*1e20*( (nHp_ne_all*merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J)), cmap='rainbow');
-	plt.plot(time_crop,radious_equivalent_to_downstream_peak_pressure,'--',color='grey',label='radious equivalent to\nmaximum tot pressure\narea %.3gm2' %(radious_equivalent_to_downstream_peak_pressure[temp_index]))
+	plt.plot(time_crop,radious_equivalent_to_downstream_peak_pressure,'--',color='grey',label='radious equivalent to\nmaximum tot pressure\narea %.3gm2' %(area_equivalent_to_downstream_peak_pressure[temp_index]))
 	plt.plot([time_crop[temp_index]]*2,[temp_r.min(),temp_r.max()],'--',color='grey')
 	plt.legend(loc='best', fontsize='xx-small')
 	plt.colorbar(orientation="horizontal").set_label('Pressure [Pa]')  # ;plt.pause(0.01)
