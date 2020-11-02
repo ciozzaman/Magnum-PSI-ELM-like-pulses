@@ -32,6 +32,8 @@ TS_size=[-4.149230769230769056e+01,4.416923076923076508e+01]
 color = ['b', 'r', 'm', 'y', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro','paleturquoise']
 line_style = ['-','--',':','-.']
 marker = ['x','+']
+boltzmann_constant_J = 1.380649e-23	# J/K
+eV_to_K = 8.617333262145e-5	# eV/K
 
 compare_peak_Te = []
 compare_peak_dTe = []
@@ -40,12 +42,15 @@ compare_peak_dne = []
 distance_all=[]
 pressure_all=[]
 
-fig, ax1 = plt.subplots()
+fig, ax1 = plt.subplots(figsize=(10, 5))
 
 ax1.set_xlabel('Pressure [Pa]')
 ax1.set_ylabel('max Te [eV]', color='tab:red')
 ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+ax3 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 ax2.set_ylabel('max ne [10^20 #/m3]', color='tab:blue')  # we already handled the x-label with ax1
+ax3.set_ylabel('max average static pressure [Pa]', color='tab:green')  # we already handled the x-label with ax1
+ax3.spines["right"].set_position(("axes", 1.1))
 for i_to_scan,to_scan in enumerate([[99,98,96,97],[95,89,87,86,85]]):
 	# to_scan = [99,98,96,97]
 	# to_scan = [95,89,87,86,85]
@@ -66,6 +71,7 @@ for i_to_scan,to_scan in enumerate([[99,98,96,97],[95,89,87,86,85]]):
 	feed_rate_SLM_all = []
 	capacitor_voltage_all = []
 	magnetic_field_all = []
+	average_static_pressure_all = []
 
 	for merge_ID_target in to_scan:
 		merge_time_window = [-1,2]
@@ -343,6 +349,10 @@ for i_to_scan,to_scan in enumerate([[99,98,96,97],[95,89,87,86,85]]):
 		merge_ne_prof_multipulse_interp_crop_all.append(merge_ne_prof_multipulse_interp_crop)
 		merge_dne_prof_multipulse_interp_crop_all.append(merge_dne_prof_multipulse_interp_crop)
 
+		area = 2*np.pi*(r_crop + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))
+		average_static_pressure = merge_ne_prof_multipulse_interp_crop*1e20*( (1*merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J))
+		average_static_pressure = np.sum(average_static_pressure*area,axis=-1)/sum(area)
+		average_static_pressure_all.append(average_static_pressure)
 
 	merge_Te_prof_multipulse_interp_crop_all = np.array(merge_Te_prof_multipulse_interp_crop_all)
 	merge_dTe_prof_multipulse_interp_crop_all = np.array(merge_dTe_prof_multipulse_interp_crop_all)
@@ -356,16 +366,21 @@ for i_to_scan,to_scan in enumerate([[99,98,96,97],[95,89,87,86,85]]):
 	capacitor_voltage_all = np.array(capacitor_voltage_all)
 	magnetic_field_all = np.array(magnetic_field_all)
 
-	# ax1.plot(target_chamber_pressure_all,np.max(merge_Te_prof_multipulse_interp_crop_all,axis=(1,2)),ls=line_style[i_to_scan],color='r',label='Te B=%.3gT' %(np.mean(magnetic_field_all)))
-	# ax2.plot(target_chamber_pressure_all,np.max(merge_ne_prof_multipulse_interp_crop_all,axis=(1,2)),ls=line_style[i_to_scan],color='c',label='ne B=%.3gT' %(np.mean(magnetic_field_all)))
-	ax1.plot(target_chamber_pressure_SS_all,np.max(merge_Te_SS_all,axis=(1)),ls=line_style[i_to_scan],color='r',label='SS Te B=%.3gT' %(np.mean(magnetic_field_all)))
-	ax2.plot(target_chamber_pressure_SS_all,np.max(merge_ne_SS_all,axis=(1)),ls=line_style[i_to_scan],color='c',label='SS ne B=%.3gT' %(np.mean(magnetic_field_all)))
+
+	ax1.plot(target_chamber_pressure_all,np.max(merge_Te_prof_multipulse_interp_crop_all,axis=(1,2)),ls=line_style[i_to_scan],color='r',label='Te B=%.3gT' %(np.mean(magnetic_field_all)))
+	ax2.plot(target_chamber_pressure_all,np.max(merge_ne_prof_multipulse_interp_crop_all,axis=(1,2)),ls=line_style[i_to_scan],color='b',label='ne B=%.3gT' %(np.mean(magnetic_field_all)))
+	ax3.plot(target_chamber_pressure_all,np.max(average_static_pressure_all,axis=(1)),ls=line_style[i_to_scan],color='g',label='pressure B=%.3gT' %(np.mean(magnetic_field_all)))
+	# ax1.plot(target_chamber_pressure_SS_all,np.max(merge_Te_SS_all,axis=(1)),ls=line_style[i_to_scan],color='r',label='SS Te B=%.3gT' %(np.mean(magnetic_field_all)))
+	# ax2.plot(target_chamber_pressure_SS_all,np.max(merge_ne_SS_all,axis=(1)),ls=line_style[i_to_scan],color='c',label='SS ne B=%.3gT' %(np.mean(magnetic_field_all)))
 ax1.tick_params(axis='y', labelcolor='tab:red')
 ax2.tick_params(axis='y', labelcolor='tab:blue')
-ax1.legend(loc='best', fontsize='x-small')
-ax2.legend(loc='best', fontsize='x-small')
+ax3.tick_params(axis='y', labelcolor='tab:green')
+ax1.legend(loc=1, fontsize='x-small')
+ax2.legend(loc=2, fontsize='x-small')
+ax3.legend(loc=4, fontsize='x-small')
 ax1.set_ylim(bottom=0)
 ax2.set_ylim(bottom=0)
+ax3.set_ylim(bottom=0)
 ax1.grid()
 # ax2.grid()
 plt.pause(0.01)

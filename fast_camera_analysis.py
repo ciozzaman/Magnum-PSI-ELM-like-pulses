@@ -166,9 +166,9 @@ plt.figure(figure_index+3,figsize=(12,6))
 counter=0
 # for merge_ID_target in [30,27,28,29]:	# distance scan
 # for merge_ID_target in [22,23,17,24,25,26]:	# distance scan
-for merge_ID_target in [99,98,96,97]:	# pressure scan
+# for merge_ID_target in [99,98,96,97]:	# pressure scan
 # for merge_ID_target in [70,69,68,67,66]:	# pressure scan
-# for merge_ID_target in [95,89,88,87,86,85]:	# pressure scan
+for merge_ID_target in [95,89,88,87,86,85]:	# pressure scan
 # for merge_ID_target in [72,71,66,73]:	# distance scan
 # for merge_ID_target in [82,81,80,79,83,84]:	# distance scan
 # for merge_ID_target in [91,90,85,92,93]:	# distance scan
@@ -559,23 +559,38 @@ plt.ylabel('Emission ratio/diameter [au/mm]')
 plt.yscale('log')
 plt.pause(0.01)
 
-plt.figure(figsize=(12,6))
+color = ['b', 'r', 'm', 'y', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
+fig = plt.figure(figsize=(12,6))
+ax1 = fig.add_subplot(1,1,1)
+# ax2 = fig.add_subplot(5,5,7, facecolor='w',yscale='linear')
 for i in range(len(averaged_profile_all)):
 	temp_temp = np.mean(averaged_profile_all[i],axis=0)
 	temp_temp[np.arange(np.shape(averaged_profile_all)[1])>230]=0
-	plt.plot(np.arange(np.shape(averaged_profile_all)[1])*15/44,temp_temp,label='Pressure = %.3gPa' %(SS_pressure_all[i]))
+	ax1.plot(np.arange(np.shape(averaged_profile_all)[1])*15/44,temp_temp,color=color[i],label='Pressure = %.3gPa' %(SS_pressure_all[i]))
 # plt.yscale('log')
-plt.plot([230*15/44]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-.',label='target')
-plt.plot([158*15/44]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-',label='TS/OES')
-plt.plot([172*15/44]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-')
-plt.legend(loc=3, fontsize='x-small')
-plt.title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field,target_OES_distance,pulse_voltage)+'\nAverage of emissivity in the radial direction')
-plt.xlabel('longitudinal position [mm]')
-plt.ylabel('Average emission [au]')
-plt.grid()
-plt.yscale('log')
-plt.ylim(bottom=0.1)
+ax1.plot([230*15/44]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-.',label='target')
+ax1.plot([158*15/44]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-',label='TS/OES')
+ax1.plot([172*15/44]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-')
+ax1.set_title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field,target_OES_distance,pulse_voltage)+'\nAverage of emissivity in the radial direction')
+ax1.set_xlabel('longitudinal position [mm]')
+ax1.set_ylabel('Average emission [au]')
+ax1.grid()
+ax1.set_yscale('log')
+ax1.set_ylim(bottom=0.1)
+# ax1.plot([75,78,78,75,75],[600,600,800,800,600],'k--',label='linear detail')
+ax1.legend(loc=3, fontsize='x-small')
+# ax2 = plt.axes([.2, .5, .2, .32], facecolor='w',yscale='linear')
+# for i in range(len(averaged_profile_all)):
+# 	temp_temp = np.mean(averaged_profile_all[i],axis=0)
+# 	temp_temp[np.arange(np.shape(averaged_profile_all)[1])>230]=0
+# 	ax2.plot(np.arange(np.shape(averaged_profile_all)[1])*15/44,temp_temp,color=color[i])
+# ax2.set_xlim(left=75,right=78)
+# ax2.set_ylim(bottom=600,top=800)
+# ax2.set_yscale('linear')
+# ax2.set_title('linear detail')
 plt.pause(0.01)
+
+
 
 plt.figure(figsize=(12,6))
 plt.plot(SS_pressure_all,plasma_diameter_50,'C0',label='%.3gmm from OES' %((166-50)*15/44))

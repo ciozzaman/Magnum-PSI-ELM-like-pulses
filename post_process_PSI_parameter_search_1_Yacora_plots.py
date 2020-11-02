@@ -1075,10 +1075,6 @@ if initial_conditions:
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
 
-	results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
-	results_summary.loc[merge_ID_target,['area_equiv_max_pressure']]=area_equivalent_to_downstream_peak_total_pressure[temp_index]
-	results_summary.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv')
-
 	area_equivalent_to_downstream_peak_pressure = (merge_ne_prof_multipulse_interp_crop_limited*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass))
 	temp_index = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1).argmax()
 	area_equivalent_to_downstream_peak_pressure = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1)/np.max(area_equivalent_to_downstream_peak_pressure,axis=-1)
@@ -1100,6 +1096,9 @@ if initial_conditions:
 
 	area_equivalent_to_downstream_peak_pressure = merge_ne_prof_multipulse_interp_crop_limited*1e20*( (nHp_ne_all*merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J))
 	temp_index = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1).argmax()
+	temp = np.nanmax(np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1)/sum(area))
+	# print((np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1)/sum(area)))
+	# print(temp)
 	area_equivalent_to_downstream_peak_pressure = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1)/np.max(area_equivalent_to_downstream_peak_pressure,axis=-1)
 	radious_equivalent_to_downstream_peak_pressure = (area_equivalent_to_downstream_peak_pressure/3.14)**0.5
 	plt.figure(figsize=(8, 5));
@@ -1116,6 +1115,11 @@ if initial_conditions:
 	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
+
+	results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
+	# results_summary.loc[merge_ID_target,['area_equiv_max_static_pressure','max_static_pressure']]=area_equivalent_to_downstream_peak_pressure[temp_index],np.max((merge_ne_prof_multipulse_interp_crop_limited*1e20*( (nHp_ne_all*merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J)))[temp_index])
+	results_summary.loc[merge_ID_target,['area_equiv_max_static_pressure','max_average_static_pressure']]=area_equivalent_to_downstream_peak_pressure[temp_index],temp
+	results_summary.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv')
 
 	plt.figure(figsize=(8, 5));
 	plt.plot(time_crop, np.max(inverted_profiles_crop[:,0],axis=-1)/np.max(inverted_profiles_crop[:,0]),label='max emissivity n=4');
@@ -6113,8 +6117,16 @@ else:
 		plt.close('all')
 
 		energy_variation_dt = np.diff(np.sum((0.5*((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T **2)*hydrogen_mass*J_to_eV +5*Te_all+13.6+2.2)*ne_all*1e20/J_to_eV*area,axis=1)*length)/dt*1000
-		conventional_start_pulse = np.abs(time_crop-0.05).argmin()
-		conventional_end_pulse = np.abs(time_crop-0.8).argmin()
+		if False:	# this is not consistent with what I do for IR traces analysis
+			conventional_start_pulse = np.abs(time_crop-0.05).argmin()
+			conventional_end_pulse = np.abs(time_crop-0.8).argmin()
+		else:
+			conventional_start_pulse = power_pulse_shape_crop.argmax() - np.flip((power_pulse_shape_crop[:power_pulse_shape_crop.argmax()]-steady_state_power)>0,axis=0).argmin()
+			conventional_end_pulse = power_pulse_shape_crop.argmax() + ((power_pulse_shape_crop[power_pulse_shape_crop.argmax():]-steady_state_power)>0).argmin()
+			if (power_pulse_shape_crop[conventional_start_pulse]-steady_state_power)/(power_pulse_shape_crop.max()-steady_state_power)>0.1:
+				conventional_start_pulse -= 1
+			if (power_pulse_shape_crop[conventional_end_pulse-1]-steady_state_power)/(power_pulse_shape_crop.max()-steady_state_power)>0.1:
+				conventional_end_pulse += 1
 
 		plt.figure(figsize=(12, 6));
 		# plt.errorbar(time_crop,most_likely_power_rad_excit_r,yerr=[most_likely_power_rad_excit_r-actual_values_power_rad_excit_r_down,actual_values_power_rad_excit_r_up-most_likely_power_rad_excit_r],capsize=5,label='power_rad_excit')
@@ -6145,7 +6157,7 @@ else:
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,ls='--',label='Power from plasma source')
 		plt.grid()
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
-		plt.plot([time_crop[conventional_end_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--')
+		plt.plot([time_crop[conventional_end_pulse-1]]*2,[0,power_pulse_shape_crop.max()],'k--')
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.legend(loc='best', fontsize='xx-small')
@@ -6172,7 +6184,7 @@ else:
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,ls='--',label='Power from plasma source')
 		plt.grid()
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
-		plt.plot([time_crop[conventional_end_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--')
+		plt.plot([time_crop[conventional_end_pulse-1]]*2,[0,power_pulse_shape_crop.max()],'k--')
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.legend(loc='best', fontsize='xx-small')
@@ -6200,7 +6212,7 @@ else:
 		plt.plot(time_crop[1:], energy_variation_dt,'--',color='gray',label='stored in plasma');
 		plt.grid()
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
-		plt.plot([time_crop[conventional_end_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--')
+		plt.plot([time_crop[conventional_end_pulse-1]]*2,[0,power_pulse_shape_crop.max()],'k--')
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.legend(loc='best', fontsize='xx-small')
@@ -6228,7 +6240,7 @@ else:
 		plt.plot(time_crop[1:], energy_variation_dt,'--',color='gray',label='stored in plasma');
 		plt.grid()
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
-		plt.plot([time_crop[conventional_end_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--')
+		plt.plot([time_crop[conventional_end_pulse-1]]*2,[0,power_pulse_shape_crop.max()],'k--')
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.legend(loc='best', fontsize='xx-small')
@@ -6252,7 +6264,7 @@ else:
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
-		plt.plot([time_crop[conventional_end_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--')
+		plt.plot([time_crop[conventional_end_pulse-1]]*2,[0,power_pulse_shape_crop.max()],'k--')
 		plt.legend(loc='best', fontsize='xx-small')
 		# plt.ylim(bottom=0,top=max(np.max(most_likely_power_via_ionisation_r_up),np.max(power_pulse_shape_crop)))
 		# plt.ylim(bottom=1e-1)
@@ -6273,7 +6285,7 @@ else:
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,1],'k--',label='conventional start/end pulse')
-		plt.plot([time_crop[conventional_end_pulse]]*2,[0,1],'k--')
+		plt.plot([time_crop[conventional_end_pulse-1]]*2,[0,1],'k--')
 		plt.legend(loc='best', fontsize='xx-small')
 		plt.ylim(bottom=0,top=1)
 		# plt.ylim(bottom=1e-1)
@@ -6295,7 +6307,7 @@ else:
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
-		plt.plot([time_crop[conventional_end_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--')
+		plt.plot([time_crop[conventional_end_pulse-1]]*2,[0,power_pulse_shape_crop.max()],'k--')
 		plt.legend(loc='best', fontsize='small')
 		# plt.ylim(bottom=0,top=max(np.max(most_likely_power_via_ionisation_r_up),np.max(power_pulse_shape_crop)))
 		# plt.ylim(bottom=1e-1)
@@ -6316,7 +6328,7 @@ else:
 		# plt.semilogy()
 		# plt.ylim(bottom=1e0,top=1e6)
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,1],'k--',label='conventional start/end pulse')
-		plt.plot([time_crop[conventional_end_pulse]]*2,[0,1],'k--')
+		plt.plot([time_crop[conventional_end_pulse-1]]*2,[0,1],'k--')
 		plt.legend(loc='best', fontsize='small')
 		plt.ylim(bottom=0,top=1)
 		# plt.ylim(bottom=1e-1)
@@ -6332,8 +6344,8 @@ else:
 
 		def temporal_radial_sum_PDF(intervals_power_ext,prob_power_ext,treshold_sum=1.1,treshold_prob=1e-50,conventional_start_pulse=conventional_start_pulse,conventional_end_pulse=conventional_end_pulse):
 			if conventional_start_pulse!=0 or conventional_end_pulse!=len(prob_power_ext):
-				intervals_power = intervals_power_ext[conventional_start_pulse:conventional_end_pulse+1]
-				prob_power = prob_power_ext[conventional_start_pulse:conventional_end_pulse+1]
+				intervals_power = intervals_power_ext[conventional_start_pulse:conventional_end_pulse]
+				prob_power = prob_power_ext[conventional_start_pulse:conventional_end_pulse]
 
 			for i_t in range(len(intervals_power)-1):
 				min_interv = []
@@ -6400,8 +6412,8 @@ else:
 
 		def temporal_radial_sum_PDF_MC(actual_values_power_ext,prob_power_ext,intervals=30,samples=100000,conventional_start_pulse=conventional_start_pulse,conventional_end_pulse=conventional_end_pulse):
 			if conventional_start_pulse!=0 or conventional_end_pulse!=len(prob_power_ext):
-				actual_values_power = actual_values_power_ext[conventional_start_pulse:conventional_end_pulse+1]
-				prob_power = prob_power_ext[conventional_start_pulse:conventional_end_pulse+1]
+				actual_values_power = actual_values_power_ext[conventional_start_pulse:conventional_end_pulse]
+				prob_power = prob_power_ext[conventional_start_pulse:conventional_end_pulse]
 			temp_values = np.zeros((samples))
 			for i_t in range(len(prob_power)-1):
 				if len(actual_values_power[i_t])>1:
@@ -6496,7 +6508,7 @@ else:
 		ML_net_power_removed_plasma_column_sigma = np.mean([ML_net_power_removed_plasma_column-intervals_net_power_removed_plasma_column_tr[np.abs(temp-0.159).argmin()+1],intervals_net_power_removed_plasma_column_tr[np.abs(temp-1+0.159).argmin()]-ML_net_power_removed_plasma_column])
 
 		results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
-		results_summary.loc[merge_ID_target,['B','Seed','p_n [Pa]','Epulse [J]','T_axial','Target','power_rad_excit','power_rad_excit_sigma','power_rad_rec_bremm','power_rad_rec_bremm_sigma','power_rad_mol','power_rad_mol_sigma','power_via_ionisation','power_via_ionisation_sigma','power_via_recombination','power_via_recombination_sigma','tot_rad_power','tot_rad_power_sigma','power_rad_Hm','power_rad_Hm_sigma','power_rad_H2','power_rad_H2_sigma','power_rad_H2p','power_rad_H2p_sigma','power_heating_rec','power_heating_rec_sigma','power_rec_neutral','power_rec_neutral_sigma','power_via_brem','power_via_brem_sigma','total_removed_power','total_removed_power_sigma','local_CX','local_CX_sigma','max_CX_energy','net_power_removed_plasma_column','net_power_removed_plasma_column_sigma']]=magnetic_field,feed_rate_SLM,target_chamber_pressure,0.5*(capacitor_voltage**2)*150e-6,target_OES_distance,target_material,ML_power_rad_excit,ML_power_rad_excit_sigma,ML_power_rad_rec_bremm,ML_power_rad_rec_bremm_sigma,ML_power_rad_mol,ML_power_rad_mol_sigma,ML_power_via_ionisation,ML_power_via_ionisation_sigma,ML_power_via_recombination,ML_power_via_recombination_sigma,ML_tot_rad_power,ML_tot_rad_power_sigma,ML_power_rad_Hm,ML_power_rad_Hm_sigma,ML_power_rad_H2,ML_power_rad_H2_sigma,ML_power_rad_H2p,ML_power_rad_H2p_sigma,ML_power_heating_rec,ML_power_heating_rec_sigma,ML_power_rec_neutral,ML_power_rec_neutral_sigma,ML_power_via_brem,ML_power_via_brem_sigma,ML_total_removed_power,ML_total_removed_power_sigma,ML_local_CX,ML_local_CX_sigma,max_CX_energy,ML_net_power_removed_plasma_column,ML_net_power_removed_plasma_column_sigma
+		results_summary.loc[merge_ID_target,['B','Seed','p_n [Pa]','CB energy [J]','Delivered energy [J]','T_axial','Target','power_rad_excit','power_rad_excit_sigma','power_rad_rec_bremm','power_rad_rec_bremm_sigma','power_rad_mol','power_rad_mol_sigma','power_via_ionisation','power_via_ionisation_sigma','power_via_recombination','power_via_recombination_sigma','tot_rad_power','tot_rad_power_sigma','power_rad_Hm','power_rad_Hm_sigma','power_rad_H2','power_rad_H2_sigma','power_rad_H2p','power_rad_H2p_sigma','power_heating_rec','power_heating_rec_sigma','power_rec_neutral','power_rec_neutral_sigma','power_via_brem','power_via_brem_sigma','total_removed_power','total_removed_power_sigma','local_CX','local_CX_sigma','max_CX_energy','net_power_removed_plasma_column','net_power_removed_plasma_column_sigma']]=magnetic_field,feed_rate_SLM,target_chamber_pressure,0.5*(capacitor_voltage**2)*150e-6,energy_delivered_good_pulses,target_OES_distance,target_material,ML_power_rad_excit,ML_power_rad_excit_sigma,ML_power_rad_rec_bremm,ML_power_rad_rec_bremm_sigma,ML_power_rad_mol,ML_power_rad_mol_sigma,ML_power_via_ionisation,ML_power_via_ionisation_sigma,ML_power_via_recombination,ML_power_via_recombination_sigma,ML_tot_rad_power,ML_tot_rad_power_sigma,ML_power_rad_Hm,ML_power_rad_Hm_sigma,ML_power_rad_H2,ML_power_rad_H2_sigma,ML_power_rad_H2p,ML_power_rad_H2p_sigma,ML_power_heating_rec,ML_power_heating_rec_sigma,ML_power_rec_neutral,ML_power_rec_neutral_sigma,ML_power_via_brem,ML_power_via_brem_sigma,ML_total_removed_power,ML_total_removed_power_sigma,ML_local_CX,ML_local_CX_sigma,max_CX_energy,ML_net_power_removed_plasma_column,ML_net_power_removed_plasma_column_sigma
 		results_summary.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv')
 
 		plt.figure(figsize=(20, 10));
@@ -6515,10 +6527,10 @@ else:
 		plt.plot(np.sort(intervals_local_CX_tr.tolist()*2)[1:-1],100*np.array([prob_local_CX_tr]*2).T.flatten(),label='local_CX ML=%.3g+/-%.3gJ' %(ML_local_CX,ML_local_CX_sigma))
 		plt.plot(np.sort(intervals_total_removed_power_tr.tolist()*2)[1:-1],100*np.array([prob_total_removed_power_tr]*2).T.flatten(),label='total_removed_power from plasma fliud\nionisation*pot + rad_mol + rad_excit + recombination*pot + brem + rec_neutral ML=%.3g+/-%.3gJ' %(ML_total_removed_power,ML_total_removed_power_sigma))
 		plt.plot(np.sort(intervals_net_power_removed_plasma_column_tr.tolist()*2)[1:-1],100*np.array([prob_net_power_removed_plasma_column_tr]*2).T.flatten(),label='net power removed from plasma column\nradiated + recombination neutral ML=%.3g+/-%.3gJ' %(ML_net_power_removed_plasma_column,ML_net_power_removed_plasma_column_sigma))
-		plt.plot([np.sum(heat_inflow_upstream_max[conventional_start_pulse:conventional_end_pulse+1]*dt/1000)]*2,[0,100],'k--', label='Min/max power inflow from upstream:\n'+label_ion_source_at_upstream);
-		plt.plot([np.sum(heat_inflow_upstream_min[conventional_start_pulse:conventional_end_pulse+1]*dt/1000)]*2,[0,100],'k--');
-		plt.plot([(np.sum(power_pulse_shape_crop[conventional_start_pulse:conventional_end_pulse+1])+np.sum(power_pulse_shape_std_crop[conventional_start_pulse:conventional_end_pulse+1]**2)**0.5)*dt/1000]*2,[0,100],'r--',label='Power from plasma source ML=%.3g+/-%.3gJ, SS%.3gJ, net%.3gJ' %(np.sum(power_pulse_shape_crop[conventional_start_pulse:conventional_end_pulse+1])*dt/1000,dt/1000*np.sum(power_pulse_shape_std_crop[conventional_start_pulse:conventional_end_pulse+1]**2)**0.5,steady_state_power*(conventional_end_pulse+1 - conventional_start_pulse)*dt/1000,np.sum(power_pulse_shape_crop[conventional_start_pulse:conventional_end_pulse+1])*dt/1000-steady_state_power*(conventional_end_pulse+1 - conventional_start_pulse)*dt/1000));
-		plt.plot([(np.sum(power_pulse_shape_crop[conventional_start_pulse:conventional_end_pulse+1])-np.sum(power_pulse_shape_std_crop[conventional_start_pulse:conventional_end_pulse+1]**2)**0.5)*dt/1000]*2,[0,100],'r--');
+		plt.plot([np.sum(heat_inflow_upstream_max[conventional_start_pulse:conventional_end_pulse]*dt/1000)]*2,[0,100],'k--', label='Min/max power inflow from upstream:\n'+label_ion_source_at_upstream);
+		plt.plot([np.sum(heat_inflow_upstream_min[conventional_start_pulse:conventional_end_pulse]*dt/1000)]*2,[0,100],'k--');
+		plt.plot([(np.sum(power_pulse_shape_crop[conventional_start_pulse:conventional_end_pulse])+np.sum(power_pulse_shape_std_crop[conventional_start_pulse:conventional_end_pulse]**2)**0.5)*dt/1000]*2,[0,100],'r--',label='Power from plasma source ML=%.3g+/-%.3gJ, SS%.3gJ, net%.3gJ' %(np.sum(power_pulse_shape_crop[conventional_start_pulse:conventional_end_pulse])*dt/1000,dt/1000*np.sum(power_pulse_shape_std_crop[conventional_start_pulse:conventional_end_pulse]**2)**0.5,steady_state_power*(conventional_end_pulse - conventional_start_pulse)*dt/1000,np.sum(power_pulse_shape_crop[conventional_start_pulse:conventional_end_pulse])*dt/1000-steady_state_power*(conventional_end_pulse - conventional_start_pulse)*dt/1000));
+		plt.plot([(np.sum(power_pulse_shape_crop[conventional_start_pulse:conventional_end_pulse])-np.sum(power_pulse_shape_std_crop[conventional_start_pulse:conventional_end_pulse]**2)**0.5)*dt/1000]*2,[0,100],'r--');
 		plt.semilogx()
 		plt.grid()
 		plt.legend(loc='best', fontsize='xx-small')

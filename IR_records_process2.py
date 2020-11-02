@@ -238,7 +238,9 @@ for i_j,j in enumerate(all_j):
 	# DL to temp
 	# Background subtraction
 	dl_bkg = dark                                                                # if the real background is recorded; a manual one can be added
-	dl_sub = np.abs(dl_tot - dl_bkg);
+	dl_sub = dl_tot - dl_bkg
+	dl_sub = median_filter(dl_sub,size=[2,7,7])									# NOT part of original Yu Li script
+	dl_sub[dl_sub<0]=0															# NOT part of original Yu Li script
 	# dl_sub_center = reshape(dl_sub(Nrow-AOI_center(2),AOI_center(1),:),[],1);                     # DL at a the center
 	# dl_sub_edge = reshape(dl_sub(Nrow-AOI_edge(2),AOI_edge(1),:),[],1);
 	dl_sub_center = dl_sub[:,AOI_center[1],AOI_center[0]]                     # DL at a the center

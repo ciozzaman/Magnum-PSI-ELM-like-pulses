@@ -5435,6 +5435,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 				power_pulse_shape_time_dependent_std = []
 				steady_state_power = []
 				steady_state_power_std = []
+				energy_delivered_good_pulses = []
 				for j in all_j:
 					target_chamber_pressure.append(df_log.loc[j,['p_n [Pa]']])
 					target_OES_distance.append(df_log.loc[j,['T_axial']])
@@ -5443,7 +5444,8 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 					magnetic_field.append(df_log.loc[j,['B']])
 					(merge_folder,sequence,fname_current_trace) = df_log.loc[j,['folder','sequence','current_trace_file']]
 					sequence = int(sequence)
-					bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
+					bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_delivered_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
+					energy_delivered_good_pulses.append(median_energy_delivered_good_pulses)
 					power_pulse_shape_time_dependent.append(mean_peak_shape)
 					power_pulse_shape_time_dependent_std.append(mean_peak_std)
 					steady_state_power.append(mean_steady_state_power)
@@ -5454,6 +5456,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 				feed_rate_SLM = np.nanmean(feed_rate_SLM)	# SLM
 				capacitor_voltage = np.nanmean(capacitor_voltage)	# V
 				magnetic_field = np.nanmean(magnetic_field)	# T
+				energy_delivered_good_pulses = np.nanmean(energy_delivered_good_pulses)	# J
 				# power_pulse_shape = np.sum(np.divide(power_pulse_shape,power_pulse_shape_std),axis=0)/np.sum(np.divide(1,power_pulse_shape_std),axis=0)
 				power_pulse_shape_time_dependent = np.mean(power_pulse_shape_time_dependent,axis=0)
 				power_pulse_shape_time_dependent_std = np.sum(0.25*np.array(power_pulse_shape_time_dependent_std)**2,axis=0)**0.5

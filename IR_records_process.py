@@ -38,6 +38,7 @@ exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/IR_records_p
 
 temp=[]
 merge_id_all = [66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 92, 93, 94, 96, 97, 98, 88, 99]
+# merge_id_all = [85, 95, 86, 87, 89, 92, 93, 94, 96, 97, 98, 88, 99]
 # merge_id_all = [97]
 for merge_id in merge_id_all:
 	temp.extend(find_index_of_file(merge_id,df_settings,df_log,only_OES=False))
@@ -57,9 +58,9 @@ for i in range(len(df_log)-1):
 # all_j = [227,232,247,250]
 # all_j = [*np.arange(267,270+1),*np.arange(272,275+1),*np.arange(277,286+1),393,394,*np.arange(396,403+1)]
 
-# for j in np.flip(all_j,axis=0):
+for j in np.flip(all_j,axis=0):
 # for j in np.flip(all_j[1::2],axis=0):
-for j in all_j:
+# for j in all_j:
 # def calc_stuff(arg):
 # 	j = arg[1]
 	print('analysing item n '+str(j))
@@ -84,7 +85,7 @@ for j in all_j:
 
 	if isinstance(fname_current_trace,str):
 		if os.path.exists(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/'+fname_current_trace+'.tsf'):
-			bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse = examine_current_trace(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True)
+			bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_good_pulses,median_duration_good_pulses = examine_current_trace(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True)
 			if False:
 				current_traces = pd.read_csv(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/' + fname_current_trace+'.tsf',index_col=False, delimiter='\t')
 				current_traces_time = current_traces['Time [s]']
@@ -539,7 +540,7 @@ for j in all_j:
 			if i_peak_pos < len(peaks)/2:
 				continue
 			right = peak_pos+int(interval_between_pulses*1/3)
-			if right>=len(selected_1_max_counts):
+			if right>=len(selected_2_max_counts):
 				continue
 			very_good_pulses.append(peak_pos)
 		strongest_very_good_pulse = very_good_pulses[selected_2_max[very_good_pulses].argmax()]
@@ -586,7 +587,7 @@ for j in all_j:
 			if i_peak_pos < len(peaks)/2:
 				continue
 			right = peak_pos+int(interval_between_pulses*1/3)
-			if right>=len(selected_1_max_counts):
+			if right>=len(selected_2_max_counts):
 				continue
 			very_good_pulses.append(peak_pos)
 		strongest_very_good_pulse = very_good_pulses[selected_2_max[very_good_pulses].argmax()]
@@ -604,8 +605,8 @@ for j in all_j:
 		plt.close('all')
 
 	# sometimes the last pulse is too close to the end of the record, so I exclude it
-	peaks = peaks[peaks+round(1.5/1000*frequency)<len(selected_1_max_counts)]
-	proms = proms[peaks+round(1.5/1000*frequency)<len(selected_1_max_counts)]
+	peaks = peaks[peaks+round(1.5/1000*frequency)<len(selected_2_max_counts)]
+	proms = proms[peaks+round(1.5/1000*frequency)<len(selected_2_max_counts)]
 
 	# print(np.shape(selected_2_max))
 	# print(peaks)
@@ -613,19 +614,25 @@ for j in all_j:
 	temp2 = []
 	temp3 = []
 	temp4 = []
+	temp5 = []
 	for index in range(10):
-		temp.append(selected_1_mean[peaks-index-5])
+		# temp.append(selected_1_mean[peaks-index-5])
 		temp4.append(selected_1_mean[very_good_pulses-index-5])
-		temp2.append(selected_1_max_counts[peaks-index-5])
-		temp3.append(selected_2_mean_counts[peaks-index-5])
+		temp5.append(selected_2_max[very_good_pulses-index-5])
+		temp2.append(selected_2_max_counts[very_good_pulses-index-5])
+		temp3.append(selected_2_mean_counts[very_good_pulses-index-5])
 	ELM_temp_jump = np.median(np.max([selected_1_mean[very_good_pulses-1],selected_1_mean[very_good_pulses],selected_1_mean[very_good_pulses-1]],axis=0) - np.mean(temp4,axis=0))
+	ELM_temp_jump_large_area_max = np.mean(np.max([selected_2_max[very_good_pulses-1],selected_2_max[very_good_pulses],selected_2_max[very_good_pulses-1]],axis=0) - np.mean(temp5,axis=0))
 	ELM_temp_jump_after = np.median(selected_1_mean[very_good_pulses + round(1.5/1000*frequency)] - np.mean(temp4,axis=0))
+	ELM_temp_jump_after_large_area_max = np.mean(selected_2_max[very_good_pulses + round(1.5/1000*frequency)] - np.mean(temp5,axis=0))
 	# print(np.shape(temp))
 	# print(np.shape(np.mean(temp,axis=0)))
-	max_temp_before_peaks = np.max(np.mean(temp,axis=0))
+	max_temp_before_peaks = np.max(np.mean(temp4,axis=0))
+	mean_temp_before_peaks_large_area_max = np.mean(np.mean(temp5,axis=0))
 	max_counts_before_peaks = np.max(np.mean(temp2,axis=0))
 	mean_counts_before_peaks = np.max(np.mean(temp3,axis=0))
-	temp_before_peaks = np.mean(temp,axis=0)
+	temp_before_peaks = np.mean(temp4,axis=0)
+	temp_before_peaks_large_area_max = np.mean(temp5,axis=0)
 
 	ani = coleval.movie_from_data(np.array([corrected_frames[strongest_very_good_pulse-round(5/1000*frequency):strongest_very_good_pulse+round(15/1000*frequency)]]), frequency, integration=int_time/1000,xlabel='horizontal coord [pixels]',ylabel='vertical coord [pixels]',barlabel='Net counts [au]',time_offset=-5/1000,prelude=pre_title+'Counts around the strongest peak (%.5gs) \n' %(strongest_very_good_pulse/frequency))
 	figure_index+=1
@@ -645,9 +652,14 @@ for j in all_j:
 		all_ELM_jumps = selected_1_mean[very_good_pulses + round(1.5/1000*frequency)] - np.mean(temp4,axis=0)
 		low_end_interval_ELM_jumps = np.sort(all_ELM_jumps)[int(len(all_ELM_jumps)*0.1)]
 		up_end_interval_ELM_jumps = np.sort(all_ELM_jumps)[int(len(all_ELM_jumps)*0.9)]
+		all_ELM_jumps_large_area_max = selected_2_max[very_good_pulses + round(1.5/1000*frequency)] - np.mean(temp5,axis=0)
+		low_end_interval_ELM_jumps_large_area_max = np.sort(all_ELM_jumps_large_area_max)[int(len(all_ELM_jumps_large_area_max)*0.1)]
+		up_end_interval_ELM_jumps_large_area_max = np.sort(all_ELM_jumps_large_area_max)[int(len(all_ELM_jumps_large_area_max)*0.9)]
 	else:
 		low_end_interval_ELM_jumps = 0
 		up_end_interval_ELM_jumps = 0
+		low_end_interval_ELM_jumps_large_area_max = 0
+		up_end_interval_ELM_jumps_large_area_max = 0
 
 
 	peak_image_counts = corrected_frames[strongest_very_good_pulse]
@@ -678,14 +690,14 @@ for j in all_j:
 		return (out-peak_delta_image).flatten()
 
 	guess = [max(0,peak_delta_image.min()),peak_delta_image.max()-max(0,peak_delta_image.min()),IR_shape[0],IR_shape[1],IR_shape[2]]
-	bds=[[0,0,0,0,min(IR_shape[2],10)],[np.inf,np.inf,peak_after_image.shape[0],peak_after_image.shape[1],np.inf]]
+	bds=[[0,0,0,0,min(IR_shape[2],10)],[np.inf,np.inf,peak_after_image.shape[0],peak_after_image.shape[1],np.max(peak_after_image.shape)]]
 	spatial_coord=np.meshgrid(np.arange(np.shape(peak_after_image)[1]),np.arange(np.shape(peak_after_image)[0]))
 	fit1 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(peak_delta_image.flatten()), guess,bounds=bds)
 	x = spatial_coord[0]	# horizontal
 	y = spatial_coord[1]	# vertical
 	temp = max(1,np.median(np.sort(peak_delta_image[((x-fit1[0][2])*p2d_h)**2+((y-fit1[0][3])*p2d_v)**2<(max_diameter_to_fit/2)**2])[:10]))
 	guess = [temp,peak_delta_image.max()-temp,fit1[0][2],fit1[0][3],fit1[0][4]]
-	bds=[[0,0,fit1[0][2]-1,fit1[0][3]-1,min(IR_shape[2],10)],[temp,np.inf,fit1[0][2]+1,fit1[0][3]+1,np.inf]]
+	bds=[[0,0,fit1[0][2]-1,fit1[0][3]-1,min(IR_shape[2],10)],[temp,np.inf,fit1[0][2]+1,fit1[0][3]+1,np.max(peak_after_image.shape)]]
 	spatial_coord=np.meshgrid(np.arange(np.shape(peak_after_image)[1]),np.arange(np.shape(peak_after_image)[0]))
 	fit2 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(peak_delta_image.flatten()), guess,bounds=bds)
 	area_of_interest = 2*np.pi*(fit2[0][4]*p2d_v/1000)**2	# Area equivalent to all the overtemperature profile collapsed in a homogeneous circular spot
@@ -837,7 +849,7 @@ for j in all_j:
 		right = peak_pos+int(interval_between_pulses*1/3)
 		# if right>=len(selected_1_max_counts):
 		# 	continue
-		traces_corrected = selected_1_max_counts[left:right]
+		traces_corrected = selected_2_max_counts[left:right]
 		traces_corrected_mean = selected_2_mean_counts[left:right]
 		# tck = interpolate.splrep(np.arange(right-left)/frequency, traces_corrected,s=20,k=2)
 		# interpolated = interpolate.splev(np.arange((right-left)*10)/10/frequency, tck)
@@ -847,18 +859,18 @@ for j in all_j:
 		real_peak_loc = (np.arange((right-left)*10)/10)[traces_corrected.argmax()*10-20+(interpolated[traces_corrected.argmax()*10-20:traces_corrected.argmax()*10+20].argmax())]
 		# plt.plot(np.arange((right-left)*10)/10 - real_peak_loc,interpolated,'--')
 		# plt.plot(np.arange(right-left) - real_peak_loc,traces_corrected)
-		peak_shape.append(np.interp(np.arange((right-left)*10)/10,np.arange(right-left),traces_corrected-np.mean(selected_1_max_counts[peak_pos-15:peak_pos-5])))
+		peak_shape.append(np.interp(np.arange((right-left)*10)/10,np.arange(right-left),traces_corrected-np.mean(selected_2_max_counts[peak_pos-15:peak_pos-5])))
 		peak_mean_shape.append(np.interp(np.arange((right-left)*10)/10,np.arange(right-left),traces_corrected_mean-np.mean(selected_2_mean_counts[peak_pos-15:peak_pos-5])))
 		peak_shape_time.append((np.arange((right-left)*10)/10 - real_peak_loc)/frequency)
-	fig, ax = plt.subplots( 2,4,figsize=(28, 14), squeeze=False)
+	fig, ax = plt.subplots( 2,4,figsize=(34, 18), squeeze=False)
 	fig.suptitle(pre_title+'Shape of the max temperature increase for '+str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
 	plot_index = 0
-	ax[0,0].set_title('small area max counts')
+	ax[0,0].set_title('large area max counts')
 	im = ax[0,0].plot(1000*np.array(peak_shape_time).T,np.array(peak_shape).T,linewidth=0.5)
 	ax[1,0].set_title('large area mean counts')
 	im = ax[1,0].plot(1000*np.array(peak_shape_time).T,np.array(peak_mean_shape).T,linewidth=0.5)
 
-	ax[0,1].set_title('small area max counts')
+	ax[0,1].set_title('large area max counts')
 	im = ax[0,1].plot(1000*np.array(peak_shape_time).T,np.array(peak_shape).T,linewidth=0.5)
 	ax[1,1].set_title('large area mean counts')
 	im = ax[1,1].plot(1000*np.array(peak_shape_time).T,np.array(peak_mean_shape).T,linewidth=0.5)
@@ -967,6 +979,7 @@ for j in all_j:
 			ax[0,1].set_ylim(bottom=-1,top=max(3,ensamble_peak_shape[np.abs(peak_shape_time-1e-3).argmin()]))
 			ax[0,1].grid()
 			ensamble_peak_shape_full = ensamble_peak_shape
+			SS_ensamble = np.mean(ensamble_peak_shape[np.abs(peak_shape_time+2e-3).argmin():np.abs(peak_shape_time+1e-3).argmin()])
 			ensamble_peak_shape = ensamble_peak_shape[peak_pulse:]-interpolator(fit[0][-1]-peak_shape_time[peak_pulse:])
 			im = ax[0,0].plot(1000*peak_shape_time[peak_pulse:],ensamble_peak_shape,'-k',linewidth=2,label='decrease-mirror')
 			ax[1,0].set_xlim(left=-2,right=2)
@@ -976,6 +989,7 @@ for j in all_j:
 			ax[1,1].set_ylim(bottom=-1,top=max(3,ensamble_peak_mean_shape[np.abs(peak_shape_time-1e-3).argmin()]))
 			ax[1,1].grid()
 			ensamble_peak_mean_shape_full = ensamble_peak_mean_shape
+			SS_ensamble_mean = np.mean(ensamble_peak_mean_shape_full[np.abs(peak_shape_time+2e-3).argmin():np.abs(peak_shape_time+1e-3).argmin()])
 			ensamble_peak_mean_shape = ensamble_peak_mean_shape[peak_pulse:]-interpolator_mean(fit[0][-1]-peak_shape_time[peak_pulse:])
 			im = ax[1,0].plot(1000*peak_shape_time[peak_pulse:],ensamble_peak_mean_shape,'-k',linewidth=2,label='decrease-mirror')
 			ax[0,0].legend(loc='best', fontsize='x-small')
@@ -987,32 +1001,36 @@ for j in all_j:
 			ensamble_peak_shape[ensamble_peak_shape<0]=0
 			ensamble_peak_shape += max_counts_before_peaks
 			ensamble_peak_shape_full += max_counts_before_peaks
+			SS_ensamble += max_counts_before_peaks
 			ensamble_peak_mean_shape[ensamble_peak_mean_shape<0]=0
 			ensamble_peak_mean_shape += mean_counts_before_peaks
 			ensamble_peak_mean_shape_full += mean_counts_before_peaks
+			SS_ensamble_mean += mean_counts_before_peaks
 
 			ensamble_peak_shape = np.exp(counts_to_temperature(ensamble_peak_shape))+20
 			ensamble_peak_mean_shape = np.exp(counts_to_temperature(ensamble_peak_mean_shape))+20
 			ensamble_peak_shape_full = np.exp(counts_to_temperature(ensamble_peak_shape_full))+20
 			ensamble_peak_mean_shape_full = np.exp(counts_to_temperature(ensamble_peak_mean_shape_full))+20
+			SS_ensamble = np.exp(counts_to_temperature(max(SS_ensamble,0)))+20
 			emissivity_ensamble_peak_shape = np.exp(counts_to_emissivity(ensamble_peak_shape))
 			emissivity_ensamble_peak_mean_shape = np.exp(counts_to_emissivity(ensamble_peak_mean_shape))
 			emissivity_ensamble_peak_mean_shape_full = np.exp(counts_to_emissivity(ensamble_peak_mean_shape_full))
+			SS_ensamble_mean = np.exp(counts_to_temperature(max(SS_ensamble_mean,0)))+20
 
 			temp_time = peak_shape_time[peak_pulse:]
 			im = ax[0,2].plot(1000*temp_time,ensamble_peak_shape,'-k',linewidth=2)
-			im = ax[0,2].plot([1000*temp_time[ensamble_peak_shape.argmax()]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--',label='dT=%.3g' %(ensamble_peak_shape[ensamble_peak_shape.argmax()]-ensamble_peak_shape.min()))
-			im = ax[0,2].plot([1000*temp_time[np.abs(temp_time-1e-3).argmin()]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--',label='dT=%.3g' %(ensamble_peak_shape[np.abs(temp_time-1e-3).argmin()]-ensamble_peak_shape.min()))
-			im = ax[0,2].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--g',label='dT=%.3g' %(ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-ensamble_peak_shape.min()))
-			im = ax[0,3].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--g')
-			im = ax[0,3].plot([1000*peak_shape_time[start_pulse]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--c')
+			im = ax[0,2].plot([1000*temp_time[ensamble_peak_shape.argmax()]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--',label='dT=%.3g' %(ensamble_peak_shape[ensamble_peak_shape.argmax()]-SS_ensamble))
+			im = ax[0,2].plot([1000*temp_time[np.abs(temp_time-1e-3).argmin()]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--',label='dT=%.3g' %(ensamble_peak_shape[np.abs(temp_time-1e-3).argmin()]-SS_ensamble))
+			im = ax[0,2].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--g',label='dT=%.3g' %(ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble))
+			im = ax[0,3].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--g',label='dT=%.3g' %(ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble))
+			im = ax[0,3].plot([1000*peak_shape_time[start_pulse]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--c')
 			im = ax[0,3].plot(1000*peak_shape_time,ensamble_peak_shape_full,'k')
 			im = ax[1,2].plot(1000*temp_time,ensamble_peak_mean_shape,'-k',linewidth=2)
-			im = ax[1,2].plot([1000*temp_time[ensamble_peak_mean_shape.argmax()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--',label='dT=%.3g' %(ensamble_peak_mean_shape[ensamble_peak_mean_shape.argmax()]-ensamble_peak_mean_shape.min()))
-			im = ax[1,2].plot([1000*temp_time[np.abs(temp_time-1e-3).argmin()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--',label='dT=%.3g' %(ensamble_peak_mean_shape[np.abs(temp_time-1e-3).argmin()]-ensamble_peak_mean_shape.min()))
-			im = ax[1,2].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--g',label='dT=%.3g' %(ensamble_peak_mean_shape[np.abs(temp_time-1.5e-3).argmin()]-ensamble_peak_mean_shape.min()))
-			im = ax[1,3].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--g')
-			im = ax[1,3].plot([1000*peak_shape_time[start_pulse]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--c')
+			im = ax[1,2].plot([1000*temp_time[ensamble_peak_mean_shape.argmax()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--',label='dT=%.3g' %(ensamble_peak_mean_shape[ensamble_peak_mean_shape.argmax()]-SS_ensamble_mean))
+			im = ax[1,2].plot([1000*temp_time[np.abs(temp_time-1e-3).argmin()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--',label='dT=%.3g' %(ensamble_peak_mean_shape[np.abs(temp_time-1e-3).argmin()]-SS_ensamble_mean))
+			im = ax[1,2].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--g',label='dT=%.3g' %(ensamble_peak_mean_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble_mean))
+			im = ax[1,3].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--g',label='dT=%.3g' %(ensamble_peak_mean_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble_mean))
+			im = ax[1,3].plot([1000*peak_shape_time[start_pulse]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--c')
 			im = ax[1,3].plot(1000*peak_shape_time,ensamble_peak_mean_shape_full,'k')
 
 			end_end_pulse = np.abs(temp_time*1000-1.5).argmin()
@@ -1072,10 +1090,10 @@ for j in all_j:
 				return out
 
 			guess = [ensamble_peak_shape[-SS_time:].mean(),1e6,1e-3]
-			bds=[[20,0,1e-5],[np.inf,np.inf,temp_time[end_end_pulse]]]
+			bds=[[20,0,1e-4],[np.inf,np.inf,temp_time[end_end_pulse]]]
 			fit = curve_fit(semi_infinite_sink_decrease, temp_time[end_end_pulse:post_pulse], ensamble_peak_shape[end_end_pulse:post_pulse], guess,bounds=bds,maxfev=int(1e4))
 			ax[0,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=2,label='semi-infinite solid\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
-			ax[0,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=2)
+			ax[0,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=2,label='semi-infinite solid\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
 			ax[0,2].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=2)
 			ax[0,3].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=2)
 			ax[0,2].set_ylim(bottom=fit[0][0]-2,top=10+semi_infinite_sink_decrease(1.5e-3,*fit[0]))
@@ -1084,15 +1102,16 @@ for j in all_j:
 			# df_log.loc[j,['pulse_en [J]']] = min_power
 			df_log.loc[j,['pulse_en_semi_inf [J]']] = fit[0][1]*fit[0][2]*area_of_interest
 			df_log.loc[j,['area_of_interest [m2]']] = area_of_interest
+			df_log.loc[j,['DT_pulse']] = (ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble)
 			df_log.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/shots_3.csv')
 			unsuccessful_fit = False
 
 			guess = [fit[0][0],fit[0][1],1e-3]
 			# guess = fit[0]
-			bds=[[20,0,1e-5],[np.inf,np.inf,temp_time[end_end_pulse]]]
+			bds=[[20,0,1e-4],[np.inf,np.inf,temp_time[end_end_pulse]]]
 			fit = curve_fit(semi_infinite_sink_full_decrease, temp_time[end_end_pulse:post_pulse], ensamble_peak_shape[end_end_pulse:post_pulse], guess,bounds=bds,maxfev=int(1e4))
 			ax[0,2].plot(1000*peak_shape_time,semi_infinite_sink_full_decrease(peak_shape_time,*fit[0]),'--r',linewidth=2,label='semi-infinite solid full\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
-			ax[0,3].plot(1000*peak_shape_time,semi_infinite_sink_full_decrease(peak_shape_time,*fit[0]),'--r',linewidth=2)
+			ax[0,3].plot(1000*peak_shape_time,semi_infinite_sink_full_decrease(peak_shape_time,*fit[0]),'--r',linewidth=2,label='semi-infinite solid full\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
 			ax[0,2].plot(1000*peak_shape_time[peak_shape_time-peak_shape_time[start_pulse]<=fit[0][2]],semi_infinite_sink_full_increase(peak_shape_time[peak_shape_time-peak_shape_time[start_pulse]<=fit[0][2]],*fit[0]),'--r',linewidth=2)
 			ax[0,3].plot(1000*peak_shape_time[peak_shape_time-peak_shape_time[start_pulse]<=fit[0][2]],semi_infinite_sink_full_increase(peak_shape_time[peak_shape_time-peak_shape_time[start_pulse]<=fit[0][2]],*fit[0]),'--r',linewidth=2)
 
@@ -1116,7 +1135,7 @@ for j in all_j:
 			bds=[[20,0,1e-5],[np.inf,np.inf,temp_time[end_end_pulse]]]
 			fit = curve_fit(semi_infinite_sink_decrease, temp_time[end_end_pulse:post_pulse], ensamble_peak_mean_shape[end_end_pulse:post_pulse], guess,bounds=bds,maxfev=int(1e4))
 			ax[1,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=2,label='semi-infinite solid\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
-			ax[1,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=2)
+			ax[1,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=2,label='semi-infinite solid\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
 			ax[1,2].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=2)
 			ax[1,3].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=2)
 			ax[1,2].set_ylim(bottom=fit[0][0]-2,top=10+semi_infinite_sink_decrease(1.5e-3,*fit[0]))
@@ -1126,7 +1145,7 @@ for j in all_j:
 			bds=[[20,0,1e-5],[np.inf,np.inf,temp_time[end_end_pulse]]]
 			fit = curve_fit(semi_infinite_sink_full_decrease, temp_time[end_end_pulse:post_pulse], ensamble_peak_mean_shape[end_end_pulse:post_pulse], guess,bounds=bds,maxfev=int(1e4))
 			ax[1,2].plot(1000*peak_shape_time,semi_infinite_sink_full_decrease(peak_shape_time,*fit[0]),'--r',linewidth=2,label='semi-infinite solid full\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
-			ax[1,3].plot(1000*peak_shape_time,semi_infinite_sink_full_decrease(peak_shape_time,*fit[0]),'--r',linewidth=2)
+			ax[1,3].plot(1000*peak_shape_time,semi_infinite_sink_full_decrease(peak_shape_time,*fit[0]),'--r',linewidth=2,label='semi-infinite solid full\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
 			ax[1,2].plot(1000*peak_shape_time[peak_shape_time-peak_shape_time[start_pulse]<=fit[0][2]],semi_infinite_sink_full_increase(peak_shape_time[peak_shape_time-peak_shape_time[start_pulse]<=fit[0][2]],*fit[0]),'--r',linewidth=2)
 			ax[1,3].plot(1000*peak_shape_time[peak_shape_time-peak_shape_time[start_pulse]<=fit[0][2]],semi_infinite_sink_full_increase(peak_shape_time[peak_shape_time-peak_shape_time[start_pulse]<=fit[0][2]],*fit[0]),'--r',linewidth=2)
 	except:
@@ -1137,6 +1156,7 @@ for j in all_j:
 		# df_log.loc[j,['pulse_en [J]']] = min_power
 		df_log.loc[j,['pulse_en_semi_inf [J]']] = 0
 		df_log.loc[j,['area_of_interest [m2]']] = area_of_interest
+		df_log.loc[j,['DT_pulse']] = 0
 		df_log.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/shots_3.csv')
 
 
@@ -1146,7 +1166,7 @@ for j in all_j:
 	ax[0,2].grid()
 	ax[0,2].set_xlabel('time [ms]')
 	ax[0,2].set_ylabel('temperature [°C]')
-	ax[0,2].set_title('small area max temp\narea=%.3gm2, peak time corr=%.3gms' %(area_of_interest,-peak_shape_time[start_pulse]*1000))
+	ax[0,2].set_title('large area max temp\narea=%.3gm2, peak time corr=%.3gms' %(area_of_interest,-peak_shape_time[start_pulse]*1000))
 	ax[1,2].set_xlim(left=0,right=15)
 	# ax[plot_index,0].set_ylim(bottom=ensamble_peak_shape.min(),top=1.5*ensamble_peak_shape.max())
 	ax[1,2].legend(loc='best', fontsize='x-small')
@@ -1162,37 +1182,59 @@ for j in all_j:
 	ax[0,3].grid()
 	ax[0,3].set_xlabel('time [ms]')
 	ax[0,3].set_ylabel('temperature [°C]')
-	ax[0,3].set_title('small area max full temp')
+	ax[0,3].set_title('large area max full temp')
 	ax[1,3].set_xlim(left=-2,right=15)
 	ax[1,3].legend(loc='best', fontsize='x-small')
 	ax[1,3].grid()
 	ax[1,3].set_xlabel('time [ms]')
 	ax[1,3].set_ylabel('temperature [°C]')
-	ax[1,3].set_title('small area max full temp')
+	ax[1,3].set_title('large area max full temp')
 
 	figure_index+=1
 	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
 	plt.close()
 
-
-
-
+	color = ['b', 'r', 'm', 'y', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
 	plt.figure(figsize=(20, 10))
-	plt.plot(np.arange(len(selected_1_mean))/frequency,selected_1_mean,label='mean, centre '+str([IR_shape[0],IR_shape[1]])+' r='+str(IR_shape[2]))
+	plt.plot(np.arange(len(selected_1_mean))/frequency,selected_1_mean,color=color[0],label='centre '+str([IR_shape[0],IR_shape[1]])+' r='+str(IR_shape[2]))
 	# plt.plot(np.arange(len(selected_1_mean))/frequency,selected_2_mean,label='mean, centre '+str([IR_shape[0],IR_shape[1]])+' r='+str(IR_shape[3]))
 	# plt.plot(np.arange(len(selected_1_mean))/frequency,selected_2_max,'+',label='max, centre '+str([IR_shape[0],IR_shape[1]])+' r='+str(IR_shape[3]))
-	plt.plot([0,len(selected_1_mean)/frequency],[max_temp_before_peaks,max_temp_before_peaks],'--',label='max temp before ELM pulse (%.3g°C)' %(max_temp_before_peaks))
-	plt.plot([0,len(selected_1_mean)/frequency],[max_temp_before_peaks+ELM_temp_jump,max_temp_before_peaks+ELM_temp_jump],'--',label='max temp before ELM pulse + median ELM jump (%.3g°C)' %(ELM_temp_jump))
-	plt.plot([0,len(selected_1_mean)/frequency],[max_temp_before_peaks+ELM_temp_jump_after,max_temp_before_peaks+ELM_temp_jump_after],'--',label='max temp before ELM pulse + median ELM jump after pulse (%.3g°C)' %(ELM_temp_jump_after))
-	plt.plot([0,len(selected_1_mean)/frequency],[max_temp_before_peaks+low_end_interval_ELM_jumps,max_temp_before_peaks+low_end_interval_ELM_jumps],'-.',label='max temp before ELM pulse + ELM jump after pulse 80% interval')
-	plt.plot([0,len(selected_1_mean)/frequency],[max_temp_before_peaks+up_end_interval_ELM_jumps,max_temp_before_peaks+up_end_interval_ELM_jumps],'-.')
-	plt.plot((np.arange(len(selected_1_mean))/frequency)[peaks],temp_before_peaks,'^',label='temp before pulse')
-	plt.plot((np.arange(len(selected_1_mean))/frequency)[peaks],np.max([selected_1_mean[peaks-1],selected_1_mean[peaks],selected_1_mean[peaks-1]],axis=0),'v',label='temp at pulse')
-	plt.plot((np.arange(len(selected_1_mean))/frequency)[peaks],selected_1_mean[peaks+round(1.5/1000*frequency)],'o',label='temp 1.5ms after pulse')
-	plt.plot((np.arange(len(selected_1_mean))/frequency)[strongest_very_good_pulse],np.max([selected_1_mean[strongest_very_good_pulse-1],selected_1_mean[strongest_very_good_pulse],selected_1_mean[strongest_very_good_pulse-1]]),'y*',markersize=20,label='sample pulse for area check')
+	plt.plot([0,len(selected_1_mean)/frequency],[max_temp_before_peaks,max_temp_before_peaks],'--',color=color[1],label='max temp before ELM pulse (%.3g°C)' %(max_temp_before_peaks))
+	plt.plot([0,len(selected_1_mean)/frequency],[max_temp_before_peaks+ELM_temp_jump,max_temp_before_peaks+ELM_temp_jump],'--',color=color[2],label='max temp before ELM pulse + median ELM jump (%.3g°C)' %(ELM_temp_jump))
+	plt.plot([0,len(selected_1_mean)/frequency],[max_temp_before_peaks+ELM_temp_jump_after,max_temp_before_peaks+ELM_temp_jump_after],'--',color=color[3],label='max temp before ELM pulse + median ELM jump after pulse(%.3g°C)' %(ELM_temp_jump_after))
+	plt.plot([0,len(selected_1_mean)/frequency],[max_temp_before_peaks+low_end_interval_ELM_jumps,max_temp_before_peaks+low_end_interval_ELM_jumps],'-.',color=color[4],label='max temp before ELM pulse + ELM jump after pulse 80% interval')
+	plt.plot([0,len(selected_1_mean)/frequency],[max_temp_before_peaks+up_end_interval_ELM_jumps,max_temp_before_peaks+up_end_interval_ELM_jumps],'-.',color=color[4])
+	plt.plot((np.arange(len(selected_1_mean))/frequency)[very_good_pulses],temp_before_peaks,'^',color=color[5],label='temp before pulse')
+	plt.plot((np.arange(len(selected_1_mean))/frequency)[very_good_pulses],np.max([selected_1_mean[very_good_pulses-1],selected_1_mean[very_good_pulses],selected_1_mean[very_good_pulses-1]],axis=0),'v',color=color[6],label='temp at pulse')
+	plt.plot((np.arange(len(selected_1_mean))/frequency)[very_good_pulses],selected_1_mean[very_good_pulses+round(1.5/1000*frequency)],'o',color=color[7],label='temp 1.5ms after pulse')
+	plt.plot((np.arange(len(selected_1_mean))/frequency)[strongest_very_good_pulse],np.max([selected_1_mean[strongest_very_good_pulse-1],selected_1_mean[strongest_very_good_pulse],selected_1_mean[strongest_very_good_pulse-1]]),'*',color=color[8],markersize=20,label='sample pulse for area check')
 	# plt.plot([background_interval/frequency,background_interval/frequency],[np.min(selected_2_mean),np.max(selected_2_max)],'k--',label='limit for background in IR trace '+str(IR_reference))
 	plt.grid()
-	plt.title(pre_title+'Current trace for '+str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
+	plt.title(pre_title+'Small area mean summary for '+str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
+	plt.xlabel('time [s]')
+	plt.ylabel('Temperature [°C]')
+	plt.legend(loc='best')
+	figure_index+=1
+	# plt.show()
+	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
+	plt.close()
+
+	plt.figure(figsize=(20, 10))
+	plt.plot(np.arange(len(selected_2_max))/frequency,selected_2_max,color=color[0],label='centre '+str([IR_shape[0],IR_shape[1]])+' r='+str(IR_shape[3]))
+	# plt.plot(np.arange(len(selected_1_mean))/frequency,selected_2_mean,label='mean, centre '+str([IR_shape[0],IR_shape[1]])+' r='+str(IR_shape[3]))
+	# plt.plot(np.arange(len(selected_1_mean))/frequency,selected_2_max,'+',label='max, centre '+str([IR_shape[0],IR_shape[1]])+' r='+str(IR_shape[3]))
+	plt.plot([0,len(selected_2_max)/frequency],[mean_temp_before_peaks_large_area_max,mean_temp_before_peaks_large_area_max],'--',color=color[1],label='mean temp before ELM pulse (%.3g°C)' %(mean_temp_before_peaks_large_area_max))
+	plt.plot([0,len(selected_2_max)/frequency],[mean_temp_before_peaks_large_area_max+ELM_temp_jump_large_area_max,mean_temp_before_peaks_large_area_max+ELM_temp_jump_large_area_max],'--',color=color[2],label='mean temp before ELM pulse + mean ELM jump (%.3g°C)' %(ELM_temp_jump_large_area_max))
+	plt.plot([0,len(selected_2_max)/frequency],[mean_temp_before_peaks_large_area_max+ELM_temp_jump_after_large_area_max,mean_temp_before_peaks_large_area_max+ELM_temp_jump_after_large_area_max],'--',color=color[3],label='mean temp before ELM pulse + mean ELM jump after pulse (%.3g°C)' %(ELM_temp_jump_after_large_area_max))
+	plt.plot([0,len(selected_2_max)/frequency],[mean_temp_before_peaks_large_area_max+low_end_interval_ELM_jumps_large_area_max,mean_temp_before_peaks_large_area_max+low_end_interval_ELM_jumps_large_area_max],'-.',color=color[4],label='mean temp before ELM pulse + ELM jump after pulse 80% interval')
+	plt.plot([0,len(selected_2_max)/frequency],[mean_temp_before_peaks_large_area_max+up_end_interval_ELM_jumps_large_area_max,mean_temp_before_peaks_large_area_max+up_end_interval_ELM_jumps_large_area_max],'-.',color=color[4])
+	plt.plot((np.arange(len(selected_2_max))/frequency)[very_good_pulses],temp_before_peaks_large_area_max,'^',color=color[5],label='temp before pulse')
+	plt.plot((np.arange(len(selected_2_max))/frequency)[very_good_pulses],np.max([selected_2_max[very_good_pulses-1],selected_2_max[very_good_pulses],selected_2_max[very_good_pulses-1]],axis=0),'v',color=color[6],label='temp at pulse')
+	plt.plot((np.arange(len(selected_2_max))/frequency)[very_good_pulses],selected_2_max[very_good_pulses+round(1.5/1000*frequency)],'o',color=color[7],label='temp 1.5ms after pulse')
+	plt.plot((np.arange(len(selected_2_max))/frequency)[strongest_very_good_pulse],np.max([selected_2_max[strongest_very_good_pulse-1],selected_2_max[strongest_very_good_pulse],selected_2_max[strongest_very_good_pulse-1]]),'*',color=color[8],markersize=20,label='sample pulse for area check')
+	# plt.plot([background_interval/frequency,background_interval/frequency],[np.min(selected_2_mean),np.max(selected_2_max)],'k--',label='limit for background in IR trace '+str(IR_reference))
+	plt.grid()
+	plt.title(pre_title+'Large area max summary for '+str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
 	plt.xlabel('time [s]')
 	plt.ylabel('Temperature [°C]')
 	plt.legend(loc='best')
@@ -1356,13 +1398,13 @@ for j in all_j:
 
 
 	df_log = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/shots_3.csv',index_col=0)
-	df_log.loc[j,['DT_pulse','T_pre_pulse']] = (ELM_temp_jump_after,max_temp_before_peaks)
-	df_log.loc[j,['DT_pulse_low','DT_pulse_high']] = (low_end_interval_ELM_jumps,up_end_interval_ELM_jumps)
+	# df_log.loc[j,['DT_pulse','T_pre_pulse']] = (ELM_temp_jump_after,max_temp_before_peaks)
+	df_log.loc[j,['T_pre_pulse']] = mean_temp_before_peaks_large_area_max
+	df_log.loc[j,['DT_pulse_low','DT_pulse_high']] = (low_end_interval_ELM_jumps_large_area_max,up_end_interval_ELM_jumps_large_area_max)
 	df_log.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/shots_3.csv')
 
 	print('DONE analysing item n '+str(j))
 	# return 'success '+str(j)
-
 
 	# del spectra,magnitude,freq,corrected_frames,corrected_spectra,corrected_magnitude,selected_x,selected_y,selected_1,selected_2,peaks,proms,
 
