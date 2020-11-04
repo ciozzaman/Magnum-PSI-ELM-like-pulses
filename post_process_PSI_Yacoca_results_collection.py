@@ -30,8 +30,8 @@ df_settings = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_d
 results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
 color = ['b', 'r', 'm', 'y', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
 
-# merge_ID_target_multipulse = [95,89,88,87,86,85]
-merge_ID_target_multipulse = [99,98,96,97]
+merge_ID_target_multipulse = [95,89,88,87,86,85]
+# merge_ID_target_multipulse = [99,98,96,97]
 
 target_chamber_pressure = []
 target_chamber_pressure_2 = []
@@ -165,9 +165,9 @@ plt.errorbar(target_chamber_pressure,power_rad_excit,yerr=np.array(power_rad_exc
 plt.errorbar(target_chamber_pressure,power_rad_rec_bremm,yerr=np.array(power_rad_rec_bremm_sigma),linestyle='--',capsize=5,color=color[6],label=r'$E_{rad \: rec+brem}$')
 plt.plot(target_chamber_pressure,max_CX_energy,linewidth=3,color=color[7],label=r'$E_{CX \: max}$')
 plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6,linewidth=3,color=color[8],label=r'$6 \cdot E_{target}$')
-plt.plot(target_chamber_pressure,np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linestyle='--',color=color[9],label=r'$E_{rem}+E_{CX \: max}$')
-plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6 + np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linewidth=3,color=color[9],label=r'$6 \cdot E_{target} + E_{rem}+E_{CX \: max}$')
-plt.legend(loc='best', fontsize='xx-small',ncol=2,handleheight=2, labelspacing=0.00005)
+# plt.plot(target_chamber_pressure,np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linestyle='--',color=color[9],label=r'$E_{rem}+E_{CX \: max}$')
+plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6 + np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linewidth=3,color=color[9],label=r'$6 \cdot E_{target} +$'+'\n'+r'$ E_{rem}+E_{CX \: max}$')
+plt.legend(loc=2, fontsize='xx-small',ncol=2,handleheight=2, labelspacing=0.00005)
 plt.grid()
 plt.title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field[0],target_OES_distance[0],(2*CB_pulse_energy[0]/150e-6)**0.5))
 plt.xlabel('Pressure [Pa]')
