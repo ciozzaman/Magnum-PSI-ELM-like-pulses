@@ -190,7 +190,7 @@ for j in np.flip(all_j,axis=0):
 		frames.append(frame.flatten().reshape(np.shape(frame.T)).T)
 	print('mark3')
 
-	spectra = np.fft.fft(frames,axis=0)
+	spectra = np.fft.fft(np.array(frames).reshape((np.shape(frames)[0],np.shape(frames)[1]*np.shape(frames)[2]))[:,2000:5000],axis=0)
 	magnitude = 2 * np.abs(spectra) / len(spectra)
 	freq = np.fft.fftfreq(len(magnitude), d=1 / frequency)
 
@@ -198,11 +198,11 @@ for j in np.flip(all_j,axis=0):
 	# plt.figure();plt.imshow(magnitude[freq.argmax()]),plt.colorbar();plt.pause(0.01)
 	# plt.figure();plt.imshow(magnitude[freq.argmin()]),plt.colorbar();plt.pause(0.01)
 
-	magnitude_reshape = magnitude.reshape((magnitude.shape[0],magnitude.shape[1]*magnitude.shape[2]))
-	magnitude_reshape = magnitude_reshape[np.abs(freq)>freq.max()//10*10-1]
-	magnitude_reshape = magnitude_reshape[:magnitude_reshape.shape[0]//2,:][:,2000:5000]
+	# magnitude_reshape = magnitude.reshape((magnitude.shape[0],magnitude.shape[1]*magnitude.shape[2]))
+	magnitude_reshape = magnitude[np.abs(freq)>freq.max()//10*10-1]
+	magnitude_reshape = magnitude_reshape[:magnitude_reshape.shape[0]//2,:]
 	temp = freq[np.abs(freq)>freq.max()//10*10-1]
-	freq_2,location = np.meshgrid(temp[:temp.shape[0]//2],np.arange(magnitude.shape[1]*magnitude.shape[2])[2000:5000])
+	freq_2,location = np.meshgrid(temp[:temp.shape[0]//2],np.arange(magnitude.shape[1])+2000)
 	fig = plt.figure(figsize=(20, 10))
 	ax = fig.gca(projection='3d')
 	surf = ax.plot_surface(freq_2.T, location.T, np.log(magnitude_reshape),rstride=10,cstride=10,cmap=cm.rainbow,linewidth=0, antialiased=False)
@@ -290,15 +290,15 @@ for j in np.flip(all_j,axis=0):
 	corrected_frames = median_filter(corrected_frames,size=[2,7,7])
 	corrected_frames[corrected_frames<0] = 0
 
-	spectra = np.fft.fft(corrected_frames,axis=0)
+	spectra = np.fft.fft(np.array(corrected_frames).reshape((np.shape(frames)[0],np.shape(frames)[1]*np.shape(frames)[2]))[:,2000:5000],axis=0)
 	magnitude = 2 * np.abs(spectra) / len(spectra)
 	freq = np.fft.fftfreq(len(magnitude), d=1 / frequency)
 
-	magnitude_reshape = magnitude.reshape((magnitude.shape[0],magnitude.shape[1]*magnitude.shape[2]))
+	# magnitude_reshape = magnitude.reshape((magnitude.shape[0],magnitude.shape[1]*magnitude.shape[2]))
 	magnitude_reshape = magnitude_reshape[np.abs(freq)>freq.max()//10*10-1]
-	magnitude_reshape = magnitude_reshape[:magnitude_reshape.shape[0]//2,:][:,2000:5000]
+	magnitude_reshape = magnitude_reshape[:magnitude_reshape.shape[0]//2,:]
 	temp = freq[np.abs(freq)>freq.max()//10*10-1]
-	freq_2,location = np.meshgrid(temp[:temp.shape[0]//2],np.arange(magnitude.shape[1]*magnitude.shape[2])[2000:5000])
+	freq_2,location = np.meshgrid(temp[:temp.shape[0]//2],np.arange(magnitude.shape[1])+2000)
 	fig = plt.figure(figsize=(20, 10))
 	ax = fig.gca(projection='3d')
 	surf = ax.plot_surface(freq_2.T, location.T, np.log(magnitude_reshape),rstride=10,cstride=10,cmap=cm.rainbow,linewidth=0, antialiased=False)
