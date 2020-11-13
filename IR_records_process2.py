@@ -144,7 +144,7 @@ def dl2temp_generator(de,beta_sample,tau,t_exp,target_material,out_emissivity=Fa
 
 all_j = [231,232,233,234,244,245,275,393,394,305,306,416]
 time_shift = [1562076516.351,1562076678.708+4,1562077276.157,1562077372.03,1562080690.253,1562080859.278,1562157127.002,1562165683.122,1562165819.007,1562169014.003,1562169074.379,1562251726.311]
-de = [0.07,0.07,0.2,0.2,0.4,0.4,0.05,0.05,0.05,0.05,0.05,0.05]                                                                           # emissivity offset, -0.03 for polished tungsten
+de = [0.07,0.07,0.2,0.2,0.4,0.4,0.05,0.05,0.05,-0.05,-0.05,0.05]                                                                           # emissivity offset, -0.03 for polished tungsten
 fig, ax = plt.subplots(len(de),1,figsize=(15, 15*len(de)))
 for i_j,j in enumerate(all_j):
 
@@ -329,7 +329,7 @@ for i_j,j in enumerate(all_j):
 		# 	ax[i_j].errorbar(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,yerr=multi_1[multi_1.keys()[i_index*3+2+3]][:len(date_time_stamp2time)])
 	ax[i_j].legend(loc='best', fontsize='xx-small')
 	ax[i_j].grid()
-	ax[i_j].set_title(pre_title+str([folder,sequence,untitled])+' material '+str(target_material)+' de=%.3g, window transmissivity %.3g' %(de[i_j],tau))
+	ax[i_j].set_title(pre_title+str([folder,sequence,untitled,' ',j])+' material '+str(target_material)+' de=%.3g, window transmissivity %.3g' %(de[i_j],tau))
 	ax[i_j].set_ylabel('Temperature [K]')
 	ax[i_j].set_xlabel('time [s]')
 

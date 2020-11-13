@@ -1231,6 +1231,29 @@ if initial_conditions:
 
 	temp_r, temp_t = np.meshgrid([*r_crop-dx/2,r_crop.max()+dx/2], [*time_crop-dt/2,time_crop.max()+dt/2])
 
+	time_temp = np.arange(-0.5,1.5,0.05)
+	bi_gaussian = lambda x,A1,sig1,x10,A2,sig2,x20 : (gauss(x,A1,sig1,x10) + gauss(x,(1-A1)*A2,sig2,x20) + (1-A1)*(1-A2))*np.max(interpolated_power_pulse_shape(time_temp))
+	guess = [0.9,0.1,0.3,0.5,0.2,0.4]
+	bds = [[0.7,0,0,0,0,0],[1,0.4,0.4,1,0.5,0.8]]
+	fit = curve_fit(bi_gaussian,time_temp, interpolated_power_pulse_shape(time_temp),p0=guess,bounds=bds,maxfev=1e4)
+	plt.figure(figsize=(8, 5));
+	plt.errorbar(time_temp, interpolated_power_pulse_shape(time_temp)/np.max(interpolated_power_pulse_shape(time_temp)),yerr=interpolated_power_pulse_shape_std(time_temp)/np.max(interpolated_power_pulse_shape(time_temp)))
+	plt.plot(time_temp, gauss(time_temp,*fit[0][0:3]),':');
+	plt.plot(time_temp, gauss(time_temp,(1-fit[0][0])*fit[0][3],*fit[0][4:]),':');
+	plt.plot(time_temp, np.ones_like(time_temp)*(1-fit[0][0])*(1-fit[0][3]),':');
+	plt.plot(time_temp, bi_gaussian(time_temp,*fit[0])/np.max(interpolated_power_pulse_shape(time_temp)),'--',label='gauss1 A=%.3g%%,sig=%.3gms,t0=%.3gms\ngauss2 A=%.3g%%,sig=%.3gms,t0=%.3gms\nSS=%.3g%%, %% of %.3gW' %(fit[0][0],*tuple(fit[0][1:3]),(1-fit[0][0])*fit[0][3],*tuple(fit[0][4:]),(1-fit[0][0])*(1-fit[0][3]),np.max(interpolated_power_pulse_shape(time_temp))));
+	plt.legend(loc='best', fontsize='xx-small')
+	# plt.semilogy()
+	plt.xlabel('time from beginning of pulse [ms]')
+	plt.ylabel('fraction of peak source power')
+	plt.title(pre_title+'Fit of power profile with two gaussians, fraction of peak')
+	figure_index += 1
+	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+		figure_index) + '.eps', bbox_inches='tight')
+	plt.close()
+
+
+
 else:
 
 	# NOTE  the first value of the "_full" arrays is for Lyman alpha. I use it only to estimate n=2 population density
@@ -4193,6 +4216,68 @@ else:
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
 
+	thermal_velocity_H = ( (T_H*boltzmann_constant_J)/ hydrogen_mass)**0.5
+	thermal_velocity_Hp = ( (T_Hp*boltzmann_constant_J)/ hydrogen_mass)**0.5
+	temp = read_adf11(ccdfile, 'ccd', 1, 1, 1, Te_all.flatten(),(ne_all * 10 ** (20 - 6)).flatten())
+	temp[np.isnan(temp)] = 0
+	effective_charge_exchange_rates = temp.reshape((np.shape(merge_Te_prof_multipulse_interp_crop))) * (10 ** -6)  # in CX m^-3 s-1 / (# / m^3)**2
+	effective_charge_exchange_rates = (effective_charge_exchange_rates * (ne_all) *1e20 * nHp_ne_all).astype('float')
+	temp = (rate_destruction_H + effective_ionisation_rates)/(nH_ne_all*ne_all*1e20)
+	temp[np.isnan(temp)] = 0.
+	effective_H_destruction_rate = effective_charge_exchange_rates+ temp
+	H_inflow = effective_H_destruction_rate*dr/thermal_velocity_H
+	H_inflow = 2*target_chamber_pressure/(boltzmann_constant_J*300)* ( (300*boltzmann_constant_J)/ hydrogen_mass)**0.5 * np.exp(-np.flip(np.cumsum(np.flip(H_inflow,axis=1),axis=1),axis=1)-np.flip(np.cumsum(np.flip(effective_H_destruction_rate,axis=1),axis=1),axis=1)*dr/thermal_velocity_Hp) / thermal_velocity_H
+	delta_t = (T_Hp - T_H)
+	delta_t[delta_t<0]=0
+	P_HCX = 3/2* (delta_t * boltzmann_constant_J) * effective_charge_exchange_rates * H_inflow
+	E_HCX = np.sum(2*np.pi*r_crop*P_HCX* dr)*dt/1000*length
+
+	plt.figure(figsize=(8, 5));
+	plt.pcolor(temp_t, temp_r, P_HCX, cmap='rainbow',vmin=max(np.max(P_HCX)/1e6,1), norm=LogNorm());
+	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
+	plt.legend(loc='best', fontsize='xx-small')
+	# plt.colorbar(orientation="horizontal").set_label('ionization_length [m], limited to 1m')  # ;plt.pause(0.01)
+	cb = plt.colorbar(orientation="horizontal",format='%.3g').set_label('Power [W/m3],')  # ;plt.pause(0.01)
+	plt.axes().set_aspect(20)
+	plt.xlabel('time [ms]')
+	plt.ylabel('radial location [m]      ')
+	plt.title(pre_title+'Power for atomic hydrogen charge exchange from ADAS\ncold H (from simul), total H destruction rate (atomic, molecular, CX)\nlimit on enter=%.3gJ' %(E_HCX))
+	figure_index += 1
+	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+		figure_index) + '.eps', bbox_inches='tight')
+	plt.close()
+
+	thermal_velocity_H = ( (T_H*boltzmann_constant_J)/ hydrogen_mass)**0.5
+	temp = read_adf11(ccdfile, 'ccd', 1, 1, 1, Te_all.flatten(),(ne_all * 10 ** (20 - 6)).flatten())
+	temp[np.isnan(temp)] = 0
+	effective_charge_exchange_rates = temp.reshape((np.shape(merge_Te_prof_multipulse_interp_crop))) * (10 ** -6)  # in CX m^-3 s-1 / (# / m^3)**2
+	effective_charge_exchange_rates = (effective_charge_exchange_rates * (ne_all) *1e20 * nHp_ne_all).astype('float')
+	temp = (rate_destruction_H + effective_ionisation_rates)/(nH_ne_all*ne_all*1e20)
+	temp[np.isnan(temp)] = 0.
+	effective_H_destruction_rate = temp
+	H_inflow = effective_H_destruction_rate*dr/thermal_velocity_H
+	H_inflow = 2*target_chamber_pressure/(boltzmann_constant_J*300)* ( (300*boltzmann_constant_J)/ hydrogen_mass)**0.5 * np.exp(-np.flip(np.cumsum(np.flip(H_inflow,axis=1),axis=1),axis=1)-np.flip(np.cumsum(np.flip(effective_H_destruction_rate,axis=1),axis=1),axis=1)*dr/thermal_velocity_Hp) / thermal_velocity_H
+	delta_t = (T_Hp - T_H)
+	delta_t[delta_t<0]=0
+	P_HCX = 3/2* (delta_t * boltzmann_constant_J) * effective_charge_exchange_rates * H_inflow
+	E_HCX = np.sum(2*np.pi*r_crop*P_HCX* dr)*dt/1000*length
+
+	plt.figure(figsize=(8, 5));
+	plt.pcolor(temp_t, temp_r, P_HCX, cmap='rainbow',vmin=max(np.max(P_HCX)/1e6,1), norm=LogNorm());
+	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
+	plt.legend(loc='best', fontsize='xx-small')
+	# plt.colorbar(orientation="horizontal").set_label('ionization_length [m], limited to 1m')  # ;plt.pause(0.01)
+	cb = plt.colorbar(orientation="horizontal",format='%.3g').set_label('Power [W/m3],')  # ;plt.pause(0.01)
+	plt.axes().set_aspect(20)
+	plt.xlabel('time [ms]')
+	plt.ylabel('radial location [m]      ')
+	plt.title(pre_title+'Power for atomic hydrogen charge exchange from ADAS\ncold H (from simul), H destruction rate (atomic, molecular)\nlimit on enter=%.3gJ' %(E_HCX))
+	figure_index += 1
+	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+		figure_index) + '.eps', bbox_inches='tight')
+	plt.close()
+
+
 	# Calculation of the H- destruction mean free path
 	thermal_velocity_Hm = ( (T_Hm*boltzmann_constant_J)/ hydrogen_mass)**0.5
 	destruction_length_Hm = thermal_velocity_Hm/( rate_destruction_Hm/(nHm_ne_all*ne_all*1e20) )
@@ -4656,6 +4741,15 @@ else:
 		intervals_H2_destruction_RR = np.zeros_like(Te_all).tolist()
 		prob_H2_destruction_RR = np.zeros_like(Te_all).tolist()
 		actual_values_H2_destruction_RR = np.zeros_like(Te_all).tolist()
+		intervals_CX_term_1_1 = np.zeros_like(Te_all).tolist()
+		prob_CX_term_1_1 = np.zeros_like(Te_all).tolist()
+		actual_values_CX_term_1_1 = np.zeros_like(Te_all).tolist()
+		intervals_CX_term_1_2 = np.zeros_like(Te_all).tolist()
+		prob_CX_term_1_2 = np.zeros_like(Te_all).tolist()
+		actual_values_CX_term_1_2 = np.zeros_like(Te_all).tolist()
+		intervals_CX_term_1_3 = np.zeros_like(Te_all).tolist()
+		prob_CX_term_1_3 = np.zeros_like(Te_all).tolist()
+		actual_values_CX_term_1_3 = np.zeros_like(Te_all).tolist()
 
 		for i_t in range(np.shape(Te_all)[0]):
 			for i_r in range(np.shape(Te_all)[1]):
@@ -4712,6 +4806,15 @@ else:
 					intervals_H2_destruction_RR[i_t][i_r] = [0,0]
 					prob_H2_destruction_RR[i_t][i_r] = [1]
 					actual_values_H2_destruction_RR[i_t][i_r] = [0]
+					intervals_CX_term_1_1[i_t][i_r] = [0,0]
+					prob_CX_term_1_1[i_t][i_r] = [1]
+					actual_values_CX_term_1_1[i_t][i_r] = [0]
+					intervals_CX_term_1_2[i_t][i_r] = [0,0]
+					prob_CX_term_1_2[i_t][i_r] = [1]
+					actual_values_CX_term_1_2[i_t][i_r] = [0]
+					intervals_CX_term_1_3[i_t][i_r] = [0,0]
+					prob_CX_term_1_3[i_t][i_r] = [1]
+					actual_values_CX_term_1_3[i_t][i_r] = [0]
 				else:
 					intervals_power_rad_excit[i_t][i_r] = power_balance_data[i][0]
 					prob_power_rad_excit[i_t][i_r] = power_balance_data[i][1]/np.sum(power_balance_data[i][1])
@@ -4764,6 +4867,15 @@ else:
 					intervals_H2_destruction_RR[i_t][i_r] = power_balance_data[i][81]
 					prob_H2_destruction_RR[i_t][i_r] = power_balance_data[i][82]/np.sum(power_balance_data[i][82])
 					actual_values_H2_destruction_RR[i_t][i_r] = power_balance_data[i][83]
+					intervals_CX_term_1_1[i_t][i_r] = power_balance_data[i][78]
+					prob_CX_term_1_1[i_t][i_r] = power_balance_data[i][79]/np.sum(power_balance_data[i][79])
+					actual_values_CX_term_1_1[i_t][i_r] = power_balance_data[i][80]
+					intervals_CX_term_1_2[i_t][i_r] = power_balance_data[i][78]
+					prob_CX_term_1_2[i_t][i_r] = power_balance_data[i][79]/np.sum(power_balance_data[i][79])
+					actual_values_CX_term_1_2[i_t][i_r] = power_balance_data[i][80]
+					intervals_CX_term_1_3[i_t][i_r] = power_balance_data[i][78]
+					prob_CX_term_1_3[i_t][i_r] = power_balance_data[i][79]/np.sum(power_balance_data[i][79])
+					actual_values_CX_term_1_3[i_t][i_r] = power_balance_data[i][80]
 
 		most_likely_power_rad_excit = []
 		for i_t in range(len(prob_power_rad_excit)):
@@ -5241,7 +5353,7 @@ else:
 		plt.axes().set_aspect(20)
 		plt.xlabel('time [ms]')
 		plt.ylabel('radial location [m]      ')
-		plt.title(pre_title+'CX length of neutral H from Bayesian CX RR\ncold H (from simul), CX RR from ADAS\nlimit on enter=%.3gJ' %(np.nansum(most_likely_local_CX*(temp1>0)*area*length*dt/1000)))
+		plt.title(pre_title+'CX length of neutral H from Bayesian CX RR\ncold H (from simul), CX RR from ADAS\nlimit on enter=%.3gJ' %(max_CX_energy))
 		figure_index += 1
 		plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
 			figure_index+1) + '.eps', bbox_inches='tight')
@@ -5277,6 +5389,78 @@ else:
 		plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
 			figure_index+1) + '.eps', bbox_inches='tight')
 		plt.close()
+
+		if True:
+			def PDF_CX_MC(actual_values_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_3,prob_CX_term_1_3,intervals=30,samples=100000):
+				out_values = []
+				out_prob_sum = []
+				out_actual_values = []
+				CX_term_1_1 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],samples))
+				CX_term_1_2 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],samples))
+				CX_term_1_3 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],samples))
+				for i_t in range(np.shape(Te_all)[0]):
+					for i_r in range(np.shape(Te_all)[1]):
+						if len(actual_values_CX_term_1_1[i_t][i_r])>1:
+							CX_term_1_1[i_t][i_r] = np.random.choice(actual_values_CX_term_1_1[i_t][i_r],size=samples,p=prob_CX_term_1_1[i_t][i_r])
+							CX_term_1_2[i_t][i_r] = np.random.choice(actual_values_CX_term_1_2[i_t][i_r],size=samples,p=prob_CX_term_1_2[i_t][i_r])
+							CX_term_1_3[i_t][i_r] = np.random.choice(actual_values_CX_term_1_3[i_t][i_r],size=samples,p=prob_CX_term_1_3[i_t][i_r])
+
+				P_HCX = CX_term_1_3*2*target_chamber_pressure/(boltzmann_constant_J*300)* ( (300*boltzmann_constant_J)/ hydrogen_mass)**0.5 * np.exp(-np.flip(np.cumsum(np.flip(CX_term_1_1,axis=1),axis=1),axis=1)-np.flip(np.cumsum(np.flip(CX_term_1_2,axis=1),axis=1),axis=1))
+				P_HCX_prob = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+				P_HCX_actual_values = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+				P_HCX_intervals = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
+				for i_t in range(np.shape(Te_all)[0]):
+					for i_r in range(np.shape(Te_all)[1]):
+						if len(actual_values_CX_term_1_1[i_t][i_r])>1:
+							P_HCX_prob[i_t][i_r],P_HCX_intervals[i_t][i_r] = np.histogram(P_HCX[i_t][i_r],bins=np.logspace(np.log10(P_HCX[i_t][i_r].min()),np.log10(P_HCX[i_t][i_r].max()),intervals+1))
+							temp_actual_values = []
+							for i in range(intervals):
+								if i!=intervals-1:
+									temp_actual_values.append(np.mean(P_HCX[i_t][i_r][np.logical_and(P_HCX[i_t][i_r]>=P_HCX_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX[i_t][i_r]<P_HCX_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))]))
+								else:
+									temp_actual_values.append(np.mean(P_HCX[i_t][i_r][np.logical_and(P_HCX[i_t][i_r]>=P_HCX_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX[i_t][i_r]<=P_HCX_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))]))
+							P_HCX_actual_values[i_t][i_r] = np.array(temp_actual_values)
+				E_HCX = np.sum(2*np.pi*np.transpose(r_crop*np.transpose(P_HCX,(0,2,1)),(0,2,1))* dr,axis=(0,1))*dt/1000*length
+				E_HCX_prob,E_HCX_intervals = np.histogram(E_HCX,bins=np.logspace(np.log10(E_HCX.min()),np.log10(E_HCX.max()),intervals+1))
+				temp_actual_values = []
+				for i in range(intervals):
+					if i!=intervals-1:
+						temp_actual_values.append(np.mean(E_HCX[np.logical_and(E_HCX>=E_HCX_intervals[i]/(1+10*np.finfo(float).eps),E_HCX<E_HCX_intervals[i+1]*(1+10*np.finfo(float).eps))]))
+					else:
+						temp_actual_values.append(np.mean(E_HCX[np.logical_and(E_HCX>=E_HCX_intervals[i]/(1+10*np.finfo(float).eps),E_HCX<=E_HCX_intervals[i+1]*(1+10*np.finfo(float).eps))]))
+				E_HCX_actual_values = np.array(temp_actual_values)
+
+				P_HCX_prob = P_HCX_prob.tolist()
+				P_HCX_actual_values = P_HCX_actual_values.tolist()
+				P_HCX_intervals = P_HCX_intervals.tolist()
+				for i_t in range(np.shape(Te_all)[0]):
+					for i_r in range(np.shape(Te_all)[1]):
+						if len(actual_values_CX_term_1_1[i_t][i_r])<=1:
+							P_HCX_prob[i_t][i_r] = [1]
+							P_HCX_actual_values[i_t][i_r] = [0]
+							P_HCX_intervals[i_t][i_r] = [0]
+
+				return P_HCX_intervals,P_HCX_prob,P_HCX_actual_values,E_HCX_intervals,E_HCX_prob,E_HCX_actual_values
+
+			most_likely_power_via_brem = []
+			for i_t in range(len(prob_power_via_brem)):
+				temp=[]
+				for i_r in range(len(prob_power_via_brem[i_t])):
+					# temp.append((np.add(intervals_power_via_brem[i_t][i_r][1:],intervals_power_via_brem[i_t][i_r][:-1])/2)[np.array(prob_power_via_brem[i_t][i_r]).argmax()])
+					temp.append(actual_values_power_via_brem[i_t][i_r][np.array(prob_power_via_brem[i_t][i_r]).argmax()])
+				most_likely_power_via_brem.append(temp)
+			plt.figure(figsize=(8, 5));
+			plt.pcolor(temp_t, temp_r, most_likely_power_via_brem,cmap='rainbow',vmin=max(max(1,np.min(most_likely_power_via_brem)),np.max(most_likely_power_via_brem)*1e-6), norm=LogNorm());
+			plt.colorbar(orientation="horizontal").set_label('power [W/m3]')  # ;plt.pause(0.01)
+			plt.axes().set_aspect(20)
+			plt.xlabel('time [ms]')
+			plt.ylabel('radial location [m]      ')
+			plt.title(pre_title+'Most likely values of power_via_brem')
+			figure_index += 1
+			plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+				figure_index+1) + '.eps', bbox_inches='tight')
+			plt.close()
+
 
 		area = 2*np.pi*(r_crop + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))
 		length = 0.351+target_OES_distance/1000	# mm distance skimmer to OES/TS + OES/TS to target

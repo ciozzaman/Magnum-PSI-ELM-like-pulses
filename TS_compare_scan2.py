@@ -58,6 +58,16 @@ for i_to_scan,to_scan in enumerate([[99,98,96,97],[95,89,87,86,85]]):
 	# to_scan = [70,69,68,67,66]
 	# for merge_ID_target in [91,90,85,92,93,94]:
 	# for merge_ID_target in [95,89,88,87,86,85]:
+	fig2, ax11 = plt.subplots(figsize=(10, 5))
+
+	ax11.set_xlabel('Pressure [Pa]')
+	ax11.set_ylabel('max Te [eV]', color='tab:red')
+	ax21 = ax11.twinx()  # instantiate a second axes that shares the same x-axis
+	ax31 = ax11.twinx()  # instantiate a second axes that shares the same x-axis
+	ax21.set_ylabel('max ne [10^20 #/m3]', color='tab:blue')  # we already handled the x-label with ax1
+	ax31.set_ylabel('max average static pressure [Pa]', color='tab:green')  # we already handled the x-label with ax1
+	ax31.spines["right"].set_position(("axes", 1.1))
+
 
 	merge_Te_prof_multipulse_interp_crop_all = []
 	merge_Te_SS_all = []
@@ -365,7 +375,19 @@ for i_to_scan,to_scan in enumerate([[99,98,96,97],[95,89,87,86,85]]):
 	feed_rate_SLM_all = np.array(feed_rate_SLM_all)
 	capacitor_voltage_all = np.array(capacitor_voltage_all)
 	magnetic_field_all = np.array(magnetic_field_all)
-
+	ax11.plot(target_chamber_pressure_all,np.max(merge_Te_prof_multipulse_interp_crop_all,axis=(1,2)),color='r',label='Te B=%.3gT' %(np.mean(magnetic_field_all)))
+	ax21.plot(target_chamber_pressure_all,np.max(merge_ne_prof_multipulse_interp_crop_all,axis=(1,2)),color='b',label='ne B=%.3gT' %(np.mean(magnetic_field_all)))
+	ax31.plot(target_chamber_pressure_all,np.max(average_static_pressure_all,axis=(1)),color='g',label='pressure B=%.3gT' %(np.mean(magnetic_field_all)))
+	ax11.tick_params(axis='y', labelcolor='tab:red')
+	ax21.tick_params(axis='y', labelcolor='tab:blue')
+	ax31.tick_params(axis='y', labelcolor='tab:green')
+	# ax11.legend(loc=1, fontsize='x-small')
+	# ax21.legend(loc=2, fontsize='x-small')
+	# ax31.legend(loc=4, fontsize='x-small')
+	ax11.set_ylim(bottom=0)
+	ax21.set_ylim(bottom=0)
+	# ax31.set_ylim(bottom=0)
+	ax11.grid()
 
 	ax1.plot(target_chamber_pressure_all,np.max(merge_Te_prof_multipulse_interp_crop_all,axis=(1,2)),ls=line_style[i_to_scan],color='r',label='Te B=%.3gT' %(np.mean(magnetic_field_all)))
 	ax2.plot(target_chamber_pressure_all,np.max(merge_ne_prof_multipulse_interp_crop_all,axis=(1,2)),ls=line_style[i_to_scan],color='b',label='ne B=%.3gT' %(np.mean(magnetic_field_all)))

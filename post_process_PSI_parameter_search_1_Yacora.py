@@ -8,7 +8,8 @@ import os,sys
 import mkl
 # mkl.set_num_threads(1)
 import numpy as np
-exec(open("/home/ffederic/work/analysis_scripts/scripts/preamble_import_batch.py").read())
+exec(open("/home/ffederic/work/analysis_scripts/scripts/preamble_import_pc.py").read())
+# exec(open("/home/ffederic/work/analysis_scripts/scripts/preamble_import_batch.py").read())
 # import matplotlib.pyplot as plt
 #import .functions
 os.chdir('/home/ffederic/work/Collaboratory/test/experimental_data')
@@ -32,7 +33,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from functools import partial
 import traceback
 # set_start_method('spawn')
-number_cpu_available = 4	#cpu_count()
+number_cpu_available = 10	#cpu_count()
 # pool = get_context('spawn').Pool(number_cpu_available)
 print('Number of cores available: '+str(number_cpu_available))
 # number_cpu_available = 10
@@ -5325,13 +5326,13 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 	# 	merge_time_window = [-1,2]
 
 	# merge_ID_target_multipulse = np.flip([851,86,87,89,92, 93, 94],axis=0)
-	merge_ID_target_multipulse = np.flip([73,77,78,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
-	# merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99]
+	# merge_ID_target_multipulse = np.flip([73,77,78,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
+	merge_ID_target_multipulse = np.flip([85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
 	# merge_ID_target_multipulse = np.flip([95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 88],axis=0)
 	# merge_ID_target_multipulse = np.flip([95, 94, 93, 92, 89, 87, 86, 85],axis=0)
 	# merge_ID_target_multipulse = [73,77,78,79]
 	# merge_ID_target_multipulse = np.flip([99,85,97,89,92, 93,95],axis=0)
-	# merge_ID_target_multipulse = [79]
+	# merge_ID_target_multipulse = [85]
 
 	for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don't have a temperature profile
 		merge_time_window = [-1,2]
@@ -5341,7 +5342,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 		# 	merge_time_window = [-10,10]
 
 
-		recorded_data_override = [False,False,False]
+		recorded_data_override = [True,True,True]
 		# recorded_data_override = [True,True]
 		include_particles_limitation = True
 
@@ -10505,13 +10506,21 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 									particles_penalty -= np.nanmax(particles_penalty)
 									# particles_penalty[np.isnan(particles_penalty)] = -np.inf
 
-
 									likelihood_log_probs += particles_penalty
 									likelihood_log_probs -= np.max(likelihood_log_probs)
 									likelihood_log_probs -= np.log(np.sum(np.exp(likelihood_log_probs)))	# normalisation for logarithmic probabilities
 
 									del all_nHp_ne_values
 								del particles_penalty
+
+								# new addition to calculate CX properly accounting for entering cold neutrals and exiting hot ones
+								thermal_velocity_H = ( (T_H_values*boltzmann_constant_J)/ hydrogen_mass)**0.5
+								CX_term_1_1 = (eff_CX_RR + all_H_destruction_RR)/(thermal_velocity_H.reshape(np.shape(Te_values)))
+								thermal_velocity_Hp = ( (T_Hp_values*boltzmann_constant_J)/ hydrogen_mass)**0.5
+								CX_term_1_2 = (eff_CX_RR + all_H_destruction_RR)/(thermal_velocity_Hp.reshape(np.shape(Te_values)))
+								delta_t = (T_Hp_values - T_H_values)
+								delta_t[delta_t<0] = 0
+								CX_term_1_3 = 3/2* ((delta_t.reshape(np.shape(Te_values))) * boltzmann_constant_J)*(eff_CX_RR)/(thermal_velocity_H.reshape(np.shape(Te_values)))
 
 								index_best_fit = calculated_emission_log_probs_expanded.argmax()
 								del calculated_emission_log_probs_expanded	# I need as much memory as mpossible
@@ -10897,6 +10906,9 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 									intervals_H2_destruction_RR,prob_H2_destruction_RR,actual_values_H2_destruction_RR = build_log_PDF(all_H2_destruction_RR,PDF_intervals)
 									intervals_local_CX,prob_local_CX,actual_values_local_CX = build_log_PDF(local_CX,PDF_intervals)
 									intervals_eff_CX_RR,prob_eff_CX_RR,actual_values_eff_CX_RR = build_log_PDF(eff_CX_RR,PDF_intervals)
+									intervals_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_1 = build_log_PDF(CX_term_1_1,PDF_intervals)
+									intervals_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_2 = build_log_PDF(CX_term_1_2,PDF_intervals)
+									intervals_CX_term_1_3,prob_CX_term_1_3,actual_values_CX_term_1_3 = build_log_PDF(CX_term_1_3,PDF_intervals)
 									# power_balance_data = [intervals_power_rad_excit,prob_power_rad_excit,actual_values_power_rad_excit, intervals_power_rad_rec_bremm,prob_power_rad_rec_bremm,actual_values_power_rad_rec_bremm, intervals_power_rad_mol,prob_power_rad_mol,actual_values_power_rad_mol, intervals_power_via_ionisation,prob_power_via_ionisation,actual_values_power_via_ionisation, intervals_power_via_recombination,prob_power_via_recombination,actual_values_power_via_recombination, intervals_tot_rad_power,prob_tot_rad_power,actual_values_tot_rad_power,intervals_power_rad_Hm,prob_power_rad_Hm,actual_values_power_rad_Hm,intervals_power_rad_H2,prob_power_rad_H2,actual_values_power_rad_H2,intervals_power_rad_H2p,prob_power_rad_H2p,actual_values_power_rad_H2p,intervals_power_heating_rec,prob_power_heating_rec,actual_values_power_heating_rec,intervals_power_rec_neutral,prob_power_rec_neutral,actual_values_power_rec_neutral,intervals_power_via_brem,prob_power_via_brem,actual_values_power_via_brem,intervals_total_removed_power,prob_total_removed_power,actual_values_total_removed_power]
 									# real_prob_ne = np.sum(likelihood_probs_times_volume,axis=(0,1,2,3,5))	# H, Hm, H2, H2p, ne, Te
 									# real_prob_Te = np.sum(likelihood_probs_times_volume,axis=(0,1,2,3,4))	# H, Hm, H2, H2p, ne, Te
@@ -10931,7 +10943,10 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 									intervals_H2_destruction_RR,prob_H2_destruction_RR,actual_values_H2_destruction_RR = [[0],[0],[0]]
 									intervals_local_CX,prob_local_CX,actual_values_local_CX = [[0],[0],[0]]
 									intervals_eff_CX_RR,prob_eff_CX_RR,actual_values_eff_CX_RR = [[0],[0],[0]]
-								power_balance_data = [intervals_power_rad_excit,prob_power_rad_excit,actual_values_power_rad_excit, intervals_power_rad_rec_bremm,prob_power_rad_rec_bremm,actual_values_power_rad_rec_bremm, intervals_power_rad_mol,prob_power_rad_mol,actual_values_power_rad_mol, intervals_power_via_ionisation,prob_power_via_ionisation,actual_values_power_via_ionisation, intervals_power_via_recombination,prob_power_via_recombination,actual_values_power_via_recombination, intervals_tot_rad_power,prob_tot_rad_power,actual_values_tot_rad_power,intervals_power_rad_Hm,prob_power_rad_Hm,actual_values_power_rad_Hm,intervals_power_rad_H2,prob_power_rad_H2,actual_values_power_rad_H2,intervals_power_rad_H2p,prob_power_rad_H2p,actual_values_power_rad_H2p,intervals_power_heating_rec,prob_power_heating_rec,actual_values_power_heating_rec,intervals_power_rec_neutral,prob_power_rec_neutral,actual_values_power_rec_neutral,intervals_power_via_brem,prob_power_via_brem,actual_values_power_via_brem,intervals_total_removed_power,prob_total_removed_power,actual_values_total_removed_power,intervals_nH_ne_excited_states,prob_nH_ne_excited_states,actual_values_nH_ne_excited_states,intervals_ne_values,prob_ne_values,actual_values_ne_values,intervals_Te_values,prob_Te_values,actual_values_Te_values,intervals_nHm_ne_values,prob_nHm_ne_values,actual_values_nHm_ne_values,intervals_nH2p_ne_values,prob_nH2p_ne_values,actual_values_nH2p_ne_values,intervals_nH2_ne_values,prob_nH2_ne_values,actual_values_nH2_ne_values,intervals_nH_ne_values,prob_nH_ne_values,actual_values_nH_ne_values,intervals_net_e_destruction,prob_net_e_destruction,actual_values_net_e_destruction,intervals_net_Hp_destruction,prob_net_Hp_destruction,actual_values_net_Hp_destruction,intervals_net_Hm_destruction,prob_net_Hm_destruction,actual_values_net_Hm_destruction,intervals_net_H2p_destruction,prob_net_H2p_destruction,actual_values_net_H2p_destruction,intervals_local_CX,prob_local_CX,actual_values_local_CX,intervals_H_destruction_RR,prob_H_destruction_RR,actual_values_H_destruction_RR,intervals_eff_CX_RR,prob_eff_CX_RR,actual_values_eff_CX_RR,intervals_H2_destruction_RR,prob_H2_destruction_RR,actual_values_H2_destruction_RR]
+									intervals_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_1 = [[0],[0],[0]]
+									intervals_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_2 = [[0],[0],[0]]
+									intervals_CX_term_1_3,prob_CX_term_1_3,actual_values_CX_term_1_3 = [[0],[0],[0]]
+								power_balance_data = [intervals_power_rad_excit,prob_power_rad_excit,actual_values_power_rad_excit, intervals_power_rad_rec_bremm,prob_power_rad_rec_bremm,actual_values_power_rad_rec_bremm, intervals_power_rad_mol,prob_power_rad_mol,actual_values_power_rad_mol, intervals_power_via_ionisation,prob_power_via_ionisation,actual_values_power_via_ionisation, intervals_power_via_recombination,prob_power_via_recombination,actual_values_power_via_recombination, intervals_tot_rad_power,prob_tot_rad_power,actual_values_tot_rad_power,intervals_power_rad_Hm,prob_power_rad_Hm,actual_values_power_rad_Hm,intervals_power_rad_H2,prob_power_rad_H2,actual_values_power_rad_H2,intervals_power_rad_H2p,prob_power_rad_H2p,actual_values_power_rad_H2p,intervals_power_heating_rec,prob_power_heating_rec,actual_values_power_heating_rec,intervals_power_rec_neutral,prob_power_rec_neutral,actual_values_power_rec_neutral,intervals_power_via_brem,prob_power_via_brem,actual_values_power_via_brem,intervals_total_removed_power,prob_total_removed_power,actual_values_total_removed_power,intervals_nH_ne_excited_states,prob_nH_ne_excited_states,actual_values_nH_ne_excited_states,intervals_ne_values,prob_ne_values,actual_values_ne_values,intervals_Te_values,prob_Te_values,actual_values_Te_values,intervals_nHm_ne_values,prob_nHm_ne_values,actual_values_nHm_ne_values,intervals_nH2p_ne_values,prob_nH2p_ne_values,actual_values_nH2p_ne_values,intervals_nH2_ne_values,prob_nH2_ne_values,actual_values_nH2_ne_values,intervals_nH_ne_values,prob_nH_ne_values,actual_values_nH_ne_values,intervals_net_e_destruction,prob_net_e_destruction,actual_values_net_e_destruction,intervals_net_Hp_destruction,prob_net_Hp_destruction,actual_values_net_Hp_destruction,intervals_net_Hm_destruction,prob_net_Hm_destruction,actual_values_net_Hm_destruction,intervals_net_H2p_destruction,prob_net_H2p_destruction,actual_values_net_H2p_destruction,intervals_local_CX,prob_local_CX,actual_values_local_CX,intervals_H_destruction_RR,prob_H_destruction_RR,actual_values_H_destruction_RR,intervals_eff_CX_RR,prob_eff_CX_RR,actual_values_eff_CX_RR,intervals_H2_destruction_RR,prob_H2_destruction_RR,actual_values_H2_destruction_RR,intervals_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_1,intervals_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_2,intervals_CX_term_1_3,prob_CX_term_1_3,actual_values_CX_term_1_3]
 
 								if my_time_pos in sample_time_step:
 									if my_r_pos in sample_radious:
