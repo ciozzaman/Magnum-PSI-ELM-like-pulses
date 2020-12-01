@@ -394,6 +394,11 @@ for i_to_scan,to_scan in enumerate([[99,98,96,97],[95,89,87,86,85]]):
 	ax3.plot(target_chamber_pressure_all,np.max(average_static_pressure_all,axis=(1)),ls=line_style[i_to_scan],color='g',label='pressure B=%.3gT' %(np.mean(magnetic_field_all)))
 	# ax1.plot(target_chamber_pressure_SS_all,np.max(merge_Te_SS_all,axis=(1)),ls=line_style[i_to_scan],color='r',label='SS Te B=%.3gT' %(np.mean(magnetic_field_all)))
 	# ax2.plot(target_chamber_pressure_SS_all,np.max(merge_ne_SS_all,axis=(1)),ls=line_style[i_to_scan],color='c',label='SS ne B=%.3gT' %(np.mean(magnetic_field_all)))
+	plt.figure()
+	plt.plot(target_chamber_pressure_all,np.max(average_static_pressure_all,axis=(1)))
+	plt.xlabel('Pressure [Pa]')
+	plt.ylabel('max average static pressure [Pa]')
+
 ax1.tick_params(axis='y', labelcolor='tab:red')
 ax2.tick_params(axis='y', labelcolor='tab:blue')
 ax3.tick_params(axis='y', labelcolor='tab:green')

@@ -5327,12 +5327,13 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 
 	# merge_ID_target_multipulse = np.flip([851,86,87,89,92, 93, 94],axis=0)
 	# merge_ID_target_multipulse = np.flip([73,77,78,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
-	merge_ID_target_multipulse = np.flip([85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
+	# merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99]
+	# merge_ID_target_multipulse = np.flip([86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
 	# merge_ID_target_multipulse = np.flip([95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 88],axis=0)
 	# merge_ID_target_multipulse = np.flip([95, 94, 93, 92, 89, 87, 86, 85],axis=0)
 	# merge_ID_target_multipulse = [73,77,78,79]
 	# merge_ID_target_multipulse = np.flip([99,85,97,89,92, 93,95],axis=0)
-	# merge_ID_target_multipulse = [85]
+	merge_ID_target_multipulse = [89]
 
 	for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don't have a temperature profile
 		merge_time_window = [-1,2]
@@ -5342,9 +5343,10 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 		# 	merge_time_window = [-10,10]
 
 
-		recorded_data_override = [True,True,True]
-		# recorded_data_override = [False,False,False]
+		# recorded_data_override = [True,True,True]
+		recorded_data_override = [False,False,False]
 		# recorded_data_override = [True,True]
+		do_only_one_loop = True
 		include_particles_limitation = True
 
 		# merge_ID_target = 85
@@ -9495,6 +9497,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 										temp[np.isinf(temp)] = 0
 										# temp = temp.reshape((np.shape(merge_Te_prof_multipulse_interp_crop_limited)))
 										excitation_full.append(temp)
+									del temp
 									excitation_full = np.array(excitation_full)  # in # photons cm^-3 s^-1
 									excitation_full = (excitation_full.T * (10 ** -6) * (energy_difference_full / J_to_eV))  # in W m^-3 / (# / m^3)**2
 									excitation_full = (excitation_full /multiplicative_factor_full)  # in m^-3 / (# / m^3)**2
@@ -9519,6 +9522,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 										temp[np.isnan(temp)] = 0
 										# temp = temp.reshape((np.shape(merge_Te_prof_multipulse_interp_crop_limited)))
 										recombination_full.append(temp)
+									del temp
 									recombination_full = np.array(recombination_full)  # in # photons cm^-3 s^-1 / (# cm^-3)**2
 									recombination_full = (recombination_full.T * (10 ** -6) * (energy_difference_full / J_to_eV))  # in W m^-3 / (# / m^3)**2
 									recombination_full = (recombination_full /multiplicative_factor_full)  # in m^-3 / (# / m^3)**2
@@ -9641,6 +9645,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 												temp = np.float32(-0.5*np.sum(((calculated_emission - inverted_profiles_crop_restrict)/inverted_profiles_crop_sigma_restrict)**2,axis=-1))
 												nHp_ne_good = np.logical_not(nHp_ne_bad.reshape((TS_ne_steps,TS_Te_steps)))
 												calculated_emission_log_probs[:,i3,i4,i5,nHp_ne_good]= temp.reshape((H_steps,TS_ne_steps,TS_Te_steps))[:,nHp_ne_good]
+												del temp,calculated_emission
 											# if nHp_ne_value<0:
 											# 	nHp_ne_value=1e-8
 											# 	coeff_3_record.append(0)
@@ -9704,6 +9709,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 									temp = np.transpose(np.transpose(nH_ne_excited_states, (1,2,3,0,4)) > record_nH_ne_values, (3,0,1,2,4))
 									nH_ne_penalty = np.zeros_like(nH_ne_excited_states,dtype=np.float16)
 									nH_ne_penalty[temp==True] = -np.inf
+									del temp
 									nH_ne_penalty = nH_ne_penalty.reshape((H_steps,to_find_steps,H2_steps,to_find_steps,TS_ne_steps,TS_Te_steps))
 									del nH_ne_excited_states_atomic,nH_ne_excited_states_mol
 
@@ -9786,6 +9792,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 														temp1,temp1_sigma =	np.float32(RR_rate_creation_H2p(*arguments,temp_nH_excited_states,particle_molecular_precision,particle_atomic_precision))
 														all_net_H2p_destruction[:,:,:,:,i5,i6] = np.float32(temp - temp1)
 														all_net_H2p_destruction_sigma[:,:,:,:,i5,i6] = 0.5*(temp_sigma**2 + temp1_sigma**2)**0.5
+											del temp_coord,temp,temp_sigma,temp1,temp1_sigma
 											all_net_Hp_destruction *= area*length*dt/1000
 											all_net_e_destruction *= area*length*dt/1000
 											all_net_Hm_destruction *= area*length*dt/1000
@@ -9872,6 +9879,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 										hypervolume_of_each_combination = np.transpose(hypervolume_of_each_combination, (0,1,2,3,5,4))	# H, Hm, H2, H2p, ne, Te
 
 										marginalised_log_prob_ne_Te = np.sum(np.exp(likelihood_log_probs)*hypervolume_of_each_combination,axis=(0,1,2,3))	# ne, Te
+										del hypervolume_of_each_combination
 										# print(marginalised_log_prob_ne_Te)
 										index_most_likely = marginalised_log_prob_ne_Te.argmax()
 										# print(index_most_likely)
@@ -10176,18 +10184,6 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 
 
 								calculated_emission_log_probs_expanded = -np.ones((H_steps+how_much_expand_nH_ne_indexes,to_find_steps+how_much_expand_nHm_nH2_indexes,H2_steps,to_find_steps+how_much_expand_nH2p_nH2_indexes,TS_ne_steps,TS_Te_steps),dtype=np.float32)*np.inf	# H, Hm, H2, H2p, ne, Te
-								all_H_destruction_RR = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-								all_H2_destruction_RR = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-								if include_particles_limitation:
-									all_net_Hp_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_e_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_Hm_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_H2p_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_Hp_destruction_sigma = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_e_destruction_sigma = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_Hm_destruction_sigma = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_H2p_destruction_sigma = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									selected_part_balance = np.zeros_like(calculated_emission_log_probs_expanded,dtype=bool)
 								# calculated_emission_error = np.ones((to_find_steps,to_find_steps))	# Hm, H2p
 								# nHp_ne_value = 1
 								# total_nHp_ne_value = (((recombination_internal[n_list_all - 4] * nHp_ne_value*np.ones((TS_steps,TS_steps)) ).T/multiplicative_factor).T).astype('float').T.reshape((TS_steps*TS_steps,len(n_list_all)))
@@ -10257,8 +10253,8 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 								# total_nH_nH2_nH2p_ne_values = total_nH_nH2_ne_values + total_nH2p_ne_values
 								recombination_full_sum = np.sum(recombination_full,axis=-1)
 								for i4 in range(H2_steps):
-									if include_particles_limitation and False:
-										selected_part_balance[:,:,np.arange(H2_steps)!=i4]=False
+									# if include_particles_limitation and False:
+									# 	selected_part_balance[:,:,np.arange(H2_steps)!=i4]=False
 									for i5 in range(to_find_steps+how_much_expand_nH2p_nH2_indexes):
 										nH2p_ne_values = record_nH2p_ne_values[i4,i5]
 										total_nH2p_ne_values = np.float32(nH2p_ne_values *(ne_values.flatten() ** 2) * (coeff_1*multiplicative_factor).T).T
@@ -10277,8 +10273,8 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 									# total_nH_nH2_nH2p_ne_value = total_nH_nH2_ne_value + total_nH2p_ne_value
 									# coeff_4 = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te_values.flatten(),T_H2p_values,T_Hm_values,ne_values.flatten(),nH2p_ne_value*ne_values.flatten()]).T,n_list_all)
 										for i3 in range(to_find_steps+how_much_expand_nHm_nH2_indexes):
-											if include_particles_limitation and False:
-												selected_part_balance[:,np.arange(to_find_steps+how_much_expand_nHm_nH2_indexes)!=i3]=False
+											# if include_particles_limitation and False:
+											# 	selected_part_balance[:,np.arange(to_find_steps+how_much_expand_nHm_nH2_indexes)!=i3]=False
 											nHm_ne_values = record_nHm_ne_values[i4,i3]
 											nHp_ne_values = 1 - nH2p_ne_values + nHm_ne_values
 											nHp_ne_good = nHp_ne_values>0
@@ -10305,36 +10301,37 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 											nHp_ne_good = np.logical_not(nHp_ne_bad).reshape((TS_ne_steps,TS_Te_steps))
 											# nHp_ne_good = nHp_ne_good.reshape((TS_ne_steps,TS_Te_steps))
 											calculated_emission_log_probs_expanded[:,i3,i4,i5,nHp_ne_good]= temp.reshape((H_steps+how_much_expand_nH_ne_indexes,TS_ne_steps,TS_Te_steps))[:,nHp_ne_good]
-											if include_particles_limitation and False:
-												if additional_nH2p_nH2_point[i5] or additional_nHm_nH2_point[i3]:
-													x_partial =np.array([record_nH_ne_values[:,nHp_ne_good.flatten()].flatten(),np.array([record_nHm_nH2_values[i3,nHp_ne_good.flatten()].tolist()]*(H_steps+how_much_expand_nH_ne_indexes)).flatten(),np.array([record_nH2_ne_values[i4,nHp_ne_good.flatten()].tolist()]*(H_steps+how_much_expand_nH_ne_indexes)).flatten(),np.array([record_nH2p_nH2_values[i5,nHp_ne_good.flatten()].tolist()]*(H_steps+how_much_expand_nH_ne_indexes)).flatten(),np.array([1e-20*ne_values.flatten()[nHp_ne_good.flatten()]]*(H_steps+how_much_expand_nH_ne_indexes)).flatten(),np.array([Te_values.flatten()[nHp_ne_good.flatten()]]*(H_steps+how_much_expand_nH_ne_indexes)).flatten()]).T
-													all_net_e_destruction[:,i3,i4,i5,nHp_ne_good]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_e_destruction,np.log(x_partial), bounds_error=False,fill_value=None)).reshape((H_steps+how_much_expand_nH_ne_indexes,np.sum(nHp_ne_good)))
-													all_net_Hp_destruction[:,i3,i4,i5,nHp_ne_good]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_Hp_destruction,np.log(x_partial), bounds_error=False,fill_value=None)).reshape((H_steps+how_much_expand_nH_ne_indexes,np.sum(nHp_ne_good)))
-													all_net_Hm_destruction[:,i3,i4,i5,nHp_ne_good]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_Hm_destruction,np.log(x_partial), bounds_error=False,fill_value=None)).reshape((H_steps+how_much_expand_nH_ne_indexes,np.sum(nHp_ne_good)))
-													all_net_H2p_destruction[:,i3,i4,i5,nHp_ne_good]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_H2p_destruction,np.log(x_partial), bounds_error=False,fill_value=None)).reshape((H_steps+how_much_expand_nH_ne_indexes,np.sum(nHp_ne_good)))
-												else:
-													x_partial =np.array([record_nH_ne_values[additional_nH_ne_point][:,nHp_ne_good.flatten()].flatten(),np.array([record_nHm_nH2_values[i3,nHp_ne_good.flatten()].tolist()]*(how_much_expand_nH_ne_indexes)).flatten(),np.array([record_nH2_ne_values[i4,nHp_ne_good.flatten()].tolist()]*(how_much_expand_nH_ne_indexes)).flatten(),np.array([record_nH2p_nH2_values[i5,nHp_ne_good.flatten()].tolist()]*(how_much_expand_nH_ne_indexes)).flatten(),np.array([1e-20*ne_values.flatten()[nHp_ne_good.flatten()]]*(how_much_expand_nH_ne_indexes)).flatten(),np.array([Te_values.flatten()[nHp_ne_good.flatten()]]*(how_much_expand_nH_ne_indexes)).flatten()]).T
-													selected_part_balance[existing_nH_ne_point]=False
-													selected_part_balance[:,:,:,np.arange(to_find_steps+how_much_expand_nH2p_nH2_indexes)!=i5]=False
-													selected_part_balance[additional_nH_ne_point,i3,i4,i5]=nHp_ne_good
-													all_net_e_destruction[selected_part_balance]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_e_destruction,np.log(x_partial), bounds_error=False,fill_value=None))
-													all_net_Hp_destruction[selected_part_balance]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_Hp_destruction,np.log(x_partial), bounds_error=False,fill_value=None))
-													all_net_Hm_destruction[selected_part_balance]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_Hm_destruction,np.log(x_partial), bounds_error=False,fill_value=None))
-													all_net_H2p_destruction[selected_part_balance]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_H2p_destruction,np.log(x_partial), bounds_error=False,fill_value=None))
-													selected_part_balance[additional_nH_ne_point]=False
-													selected_part_balance[existing_nH_ne_point,i3,i4,i5]=nHp_ne_good
-													all_net_e_destruction[selected_part_balance]=record_all_net_e_destruction[:,i3_old,i4,i5_old,nHp_ne_good].flatten()
-													all_net_Hp_destruction[selected_part_balance]=record_all_net_Hp_destruction[:,i3_old,i4,i5_old,nHp_ne_good].flatten()
-													all_net_Hm_destruction[selected_part_balance]=record_all_net_Hm_destruction[:,i3_old,i4,i5_old,nHp_ne_good].flatten()
-													all_net_H2p_destruction[selected_part_balance]=record_all_net_H2p_destruction[:,i3_old,i4,i5_old,nHp_ne_good].flatten()
+											del temp,calculated_emission
+											# if include_particles_limitation and False:
+											# 	if additional_nH2p_nH2_point[i5] or additional_nHm_nH2_point[i3]:
+											# 		x_partial =np.array([record_nH_ne_values[:,nHp_ne_good.flatten()].flatten(),np.array([record_nHm_nH2_values[i3,nHp_ne_good.flatten()].tolist()]*(H_steps+how_much_expand_nH_ne_indexes)).flatten(),np.array([record_nH2_ne_values[i4,nHp_ne_good.flatten()].tolist()]*(H_steps+how_much_expand_nH_ne_indexes)).flatten(),np.array([record_nH2p_nH2_values[i5,nHp_ne_good.flatten()].tolist()]*(H_steps+how_much_expand_nH_ne_indexes)).flatten(),np.array([1e-20*ne_values.flatten()[nHp_ne_good.flatten()]]*(H_steps+how_much_expand_nH_ne_indexes)).flatten(),np.array([Te_values.flatten()[nHp_ne_good.flatten()]]*(H_steps+how_much_expand_nH_ne_indexes)).flatten()]).T
+											# 		all_net_e_destruction[:,i3,i4,i5,nHp_ne_good]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_e_destruction,np.log(x_partial), bounds_error=False,fill_value=None)).reshape((H_steps+how_much_expand_nH_ne_indexes,np.sum(nHp_ne_good)))
+											# 		all_net_Hp_destruction[:,i3,i4,i5,nHp_ne_good]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_Hp_destruction,np.log(x_partial), bounds_error=False,fill_value=None)).reshape((H_steps+how_much_expand_nH_ne_indexes,np.sum(nHp_ne_good)))
+											# 		all_net_Hm_destruction[:,i3,i4,i5,nHp_ne_good]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_Hm_destruction,np.log(x_partial), bounds_error=False,fill_value=None)).reshape((H_steps+how_much_expand_nH_ne_indexes,np.sum(nHp_ne_good)))
+											# 		all_net_H2p_destruction[:,i3,i4,i5,nHp_ne_good]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_H2p_destruction,np.log(x_partial), bounds_error=False,fill_value=None)).reshape((H_steps+how_much_expand_nH_ne_indexes,np.sum(nHp_ne_good)))
+											# 	else:
+											# 		x_partial =np.array([record_nH_ne_values[additional_nH_ne_point][:,nHp_ne_good.flatten()].flatten(),np.array([record_nHm_nH2_values[i3,nHp_ne_good.flatten()].tolist()]*(how_much_expand_nH_ne_indexes)).flatten(),np.array([record_nH2_ne_values[i4,nHp_ne_good.flatten()].tolist()]*(how_much_expand_nH_ne_indexes)).flatten(),np.array([record_nH2p_nH2_values[i5,nHp_ne_good.flatten()].tolist()]*(how_much_expand_nH_ne_indexes)).flatten(),np.array([1e-20*ne_values.flatten()[nHp_ne_good.flatten()]]*(how_much_expand_nH_ne_indexes)).flatten(),np.array([Te_values.flatten()[nHp_ne_good.flatten()]]*(how_much_expand_nH_ne_indexes)).flatten()]).T
+											# 		selected_part_balance[existing_nH_ne_point]=False
+											# 		selected_part_balance[:,:,:,np.arange(to_find_steps+how_much_expand_nH2p_nH2_indexes)!=i5]=False
+											# 		selected_part_balance[additional_nH_ne_point,i3,i4,i5]=nHp_ne_good
+											# 		all_net_e_destruction[selected_part_balance]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_e_destruction,np.log(x_partial), bounds_error=False,fill_value=None))
+											# 		all_net_Hp_destruction[selected_part_balance]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_Hp_destruction,np.log(x_partial), bounds_error=False,fill_value=None))
+											# 		all_net_Hm_destruction[selected_part_balance]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_Hm_destruction,np.log(x_partial), bounds_error=False,fill_value=None))
+											# 		all_net_H2p_destruction[selected_part_balance]=(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_H2p_destruction,np.log(x_partial), bounds_error=False,fill_value=None))
+											# 		selected_part_balance[additional_nH_ne_point]=False
+											# 		selected_part_balance[existing_nH_ne_point,i3,i4,i5]=nHp_ne_good
+											# 		all_net_e_destruction[selected_part_balance]=record_all_net_e_destruction[:,i3_old,i4,i5_old,nHp_ne_good].flatten()
+											# 		all_net_Hp_destruction[selected_part_balance]=record_all_net_Hp_destruction[:,i3_old,i4,i5_old,nHp_ne_good].flatten()
+											# 		all_net_Hm_destruction[selected_part_balance]=record_all_net_Hm_destruction[:,i3_old,i4,i5_old,nHp_ne_good].flatten()
+											# 		all_net_H2p_destruction[selected_part_balance]=record_all_net_H2p_destruction[:,i3_old,i4,i5_old,nHp_ne_good].flatten()
 
 								del coeff_3_record,coeff_4_record
-								if include_particles_limitation and False:
-									del record_all_net_e_destruction,record_all_net_Hp_destruction,record_all_net_Hm_destruction,record_all_net_H2p_destruction,selected_part_balance
-									all_net_e_destruction = all_net_e_destruction*area*length*dt/1000
-									all_net_Hp_destruction = all_net_Hp_destruction*area*length*dt/1000
-									all_net_Hm_destruction = all_net_Hm_destruction*area*length*dt/1000
-									all_net_H2p_destruction = all_net_H2p_destruction*area*length*dt/1000
+								# if include_particles_limitation and False:
+								# 	del record_all_net_e_destruction,record_all_net_Hp_destruction,record_all_net_Hm_destruction,record_all_net_H2p_destruction,selected_part_balance
+								# 	all_net_e_destruction = all_net_e_destruction*area*length*dt/1000
+								# 	all_net_Hp_destruction = all_net_Hp_destruction*area*length*dt/1000
+								# 	all_net_Hm_destruction = all_net_Hm_destruction*area*length*dt/1000
+								# 	all_net_H2p_destruction = all_net_H2p_destruction*area*length*dt/1000
 
 								calculated_emission_log_probs_expanded -= np.max(calculated_emission_log_probs_expanded)
 								calculated_emission_log_probs_expanded -= np.log(np.sum(np.exp(calculated_emission_log_probs_expanded)))	# normalisation for logarithmic probabilities
@@ -10359,20 +10356,22 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 								temp = read_adf11(ccdfile, 'ccd', 1, 1, 1, Te_values.flatten(),(ne_values * 10 ** (0 - 6)).flatten())
 								temp[np.isnan(temp)] = 0
 								eff_CX_RR = temp.reshape((np.shape(Te_values))) * (10 ** -6)  # in CX m^-3 s-1 / (# / m^3)**2
+								del temp
 								eff_CX_RR_int = (eff_CX_RR * (ne_values**2) ).astype('float') * (record_nH_ne_values.reshape((H_steps,TS_ne_steps,TS_Te_steps)))
 								eff_CX_RR_int = np.transpose([[[eff_CX_RR_int]*H2p_steps]*H2_steps]*Hm_steps, (3,0,1,2,4,5))
 								eff_CX_RR_int = eff_CX_RR_int * np.array([(record_nHp_ne_values.reshape((Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))]*H_steps)
 
-								# I separate the complere RR to the RR/nH I need for the CX length
-								eff_CX_RR = (eff_CX_RR * (ne_values) ).astype('float') * (np.ones_like(record_nH_ne_values.reshape((H_steps,TS_ne_steps,TS_Te_steps))))
+								# I separate the complete RR to the RR/nH I need for the CX length
+								eff_CX_RR = (eff_CX_RR * (ne_values) ).astype('float32') * (np.ones_like(record_nH_ne_values.reshape((H_steps,TS_ne_steps,TS_Te_steps))))
 								eff_CX_RR = np.transpose([[[eff_CX_RR]*H2p_steps]*H2_steps]*Hm_steps, (3,0,1,2,4,5))
-								eff_CX_RR = eff_CX_RR * np.array([(record_nHp_ne_values.reshape((Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))]*H_steps)
+								eff_CX_RR = eff_CX_RR * np.array([(record_nHp_ne_values.reshape((Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))]*H_steps)	# H, Hm, H2, H2p, ne, Te
 
 								# geometric_factor = (ionization_length_H_CX.T / np.abs(2*averaged_profile_sigma[my_time_pos]-r_crop[my_r_pos])).T	# I take diameter = 2 * FWHM
 								# geometric_factor[geometric_factor>1] = 1
 								delta_t = (T_Hp_values - T_H_values)
 								delta_t[delta_t<0] = 0
-								local_CX = 3/2* (delta_t.reshape((TS_ne_steps,TS_Te_steps)) * eV_to_K) * eff_CX_RR_int / J_to_eV	# W / m^3
+								local_CX = np.float32(3/2* (delta_t.reshape((TS_ne_steps,TS_Te_steps)) * eV_to_K) * eff_CX_RR_int / J_to_eV)	# W / m^3
+								del eff_CX_RR_int,delta_t
 
 								# local_CX = P_RR_Hp_H1s__H1s_Hp(T_Hp_values,T_H_values,ne_values.flatten()*1e-20).reshape(np.shape(ne_values)) * (record_nH_ne_values.reshape((H_steps,TS_ne_steps,TS_Te_steps)))
 								# local_CX = np.transpose([[[local_CX]*H2p_steps]*H2_steps]*Hm_steps , (3,0,1,2,4,5))	# H, Hm, H2, H2p, ne, Te
@@ -10414,6 +10413,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 								temp = np.transpose(np.transpose(nH_ne_excited_states, (1,2,3,0,4)) > record_nH_ne_values, (3,0,1,2,4))
 								nH_ne_penalty = np.zeros_like(nH_ne_excited_states,dtype=np.float16)
 								nH_ne_penalty[temp==True] = -np.inf
+								del temp
 								nH_ne_penalty = nH_ne_penalty.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps))
 								nH_ne_excited_states = nH_ne_excited_states.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps))
 								del nH_ne_excited_states_atomic,nH_ne_excited_states_mol
@@ -10435,8 +10435,20 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 								all_Te_values = np.array([[[[Te_values.tolist()]*H2p_steps]*H2_steps]*Hm_steps]*H_steps,dtype=np.float32)
 								all_nHp_ne_values = np.array([record_nHp_ne_values.reshape((Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)).tolist()]*H_steps,dtype=np.float32)
 
-								particles_penalty = np.zeros_like((likelihood_log_probs),dtype=np.float32)
 								if True:
+									all_H_destruction_RR = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									all_H_creation_RR = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									all_H2_destruction_RR = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									if include_particles_limitation:
+										all_net_Hp_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+										all_net_e_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+										all_net_Hm_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+										all_net_H2p_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+										all_net_Hp_destruction_sigma = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+										all_net_e_destruction_sigma = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+										all_net_Hm_destruction_sigma = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+										all_net_H2p_destruction_sigma = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+										# selected_part_balance = np.zeros_like(calculated_emission_log_probs_expanded,dtype=bool)
 									temp_coord = np.ones_like(nH_ne_excited_states[:,:,:,:,0,0])
 									for i6 in range(TS_Te_steps):
 										fractional_population_states_H2 = calc_H2_fractional_population_states(T_H2p_values[i6])
@@ -10444,8 +10456,9 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 											temp_nH_excited_states = nH_ne_excited_states[:,:,:,:,i5,i6]*ne_values_array[i5]*1e-20
 											arguments = (temp_coord*Te_values_array[i6],temp_coord*T_Hp_values[i6],temp_coord*T_H_values[i6],temp_coord*T_H2_values[i6],temp_coord*T_Hm_values[i6],temp_coord*T_H2p_values[i6],temp_coord*ne_values_array[i5]*1e-20,all_nHp_ne_values[:,:,:,:,i5,i6],all_nH_ne_values[:,:,:,:,i5,i6],all_nH2_ne_values[:,:,:,:,i5,i6],all_nHm_ne_values[:,:,:,:,i5,i6],all_nH2p_ne_values[:,:,:,:,i5,i6],fractional_population_states_H2,temp_nH_excited_states)
 											temp,temp_sigma = np.float32(RR_rate_destruction_H(*arguments,temp_nH_excited_states,particle_molecular_precision,particle_atomic_precision))
-											# temp1,temp1_sigma =	np.float32(RR_rate_creation_H(*arguments,temp_nH_excited_states,particle_molecular_precision,particle_atomic_precision))
+											temp1,temp1_sigma =	np.float32(RR_rate_creation_H(*arguments,temp_nH_excited_states,particle_molecular_precision,particle_atomic_precision))
 											all_H_destruction_RR[:,:,:,:,i5,i6] = np.float32(temp)/(all_nH_ne_values[:,:,:,:,i5,i6]*ne_values_array[i5]*1e-20)
+											all_H_creation_RR[:,:,:,:,i5,i6] = np.float32(temp1)	# attention, this will need to be multiplied for 1e20
 											# all_net_H2p_destruction_sigma[:,:,:,:,i5,i6] = 0.5*(temp_sigma**2 + temp1_sigma**2)**0.5
 											temp,temp_sigma = np.float32(RR_rate_destruction_H2(*arguments,temp_nH_excited_states,particle_molecular_precision,particle_atomic_precision))
 											# temp1,temp1_sigma =	np.float32(RR_rate_creation_H(*arguments,temp_nH_excited_states,particle_molecular_precision,particle_atomic_precision))
@@ -10468,7 +10481,9 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 												temp1,temp1_sigma =	np.float32(RR_rate_creation_H2p(*arguments,temp_nH_excited_states,particle_molecular_precision,particle_atomic_precision))
 												all_net_H2p_destruction[:,:,:,:,i5,i6] = np.float32(temp - temp1)
 												all_net_H2p_destruction_sigma[:,:,:,:,i5,i6] = 0.5*(temp_sigma**2 + temp1_sigma**2)**0.5
+									del temp_coord,temp,temp_sigma,temp1,temp1_sigma
 								if include_particles_limitation:
+									particles_penalty = np.zeros_like((likelihood_log_probs),dtype=np.float32)
 									all_net_Hp_destruction *= area*length*dt/1000
 									all_net_e_destruction *= area*length*dt/1000
 									all_net_Hm_destruction *= area*length*dt/1000
@@ -10512,16 +10527,21 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 									likelihood_log_probs -= np.log(np.sum(np.exp(likelihood_log_probs)))	# normalisation for logarithmic probabilities
 
 									del all_nHp_ne_values
-								del particles_penalty
+									del particles_penalty
 
 								# new addition to calculate CX properly accounting for entering cold neutrals and exiting hot ones
 								thermal_velocity_H = ( (T_H_values*boltzmann_constant_J)/ hydrogen_mass)**0.5
-								CX_term_1_1 = (eff_CX_RR + all_H_destruction_RR)/(thermal_velocity_H.reshape(np.shape(Te_values)))
-								thermal_velocity_Hp = ( (T_Hp_values*boltzmann_constant_J)/ hydrogen_mass)**0.5
-								CX_term_1_2 = (eff_CX_RR + all_H_destruction_RR)/(thermal_velocity_Hp.reshape(np.shape(Te_values)))
+								CX_term_1_1 = np.float32(dr*(eff_CX_RR + all_H_destruction_RR)/(thermal_velocity_H.reshape(np.shape(Te_values))))
+								CX_term_1_2 = np.float32(dr*(eff_CX_RR + all_H_destruction_RR))
 								delta_t = (T_Hp_values - T_H_values)
 								delta_t[delta_t<0] = 0
-								CX_term_1_3 = 3/2* ((delta_t.reshape(np.shape(Te_values))) * boltzmann_constant_J)*(eff_CX_RR)/(thermal_velocity_H.reshape(np.shape(Te_values)))
+								CX_term_1_3 = np.float32(3/2* ((delta_t.reshape(np.shape(Te_values))) * boltzmann_constant_J)*(eff_CX_RR)/(thermal_velocity_H.reshape(np.shape(Te_values))))
+								CX_term_1_4 = np.float32(np.ones_like(eff_CX_RR)/(thermal_velocity_H.reshape(np.shape(Te_values))))
+								thermal_velocity_H2 = ( (T_H2_values*boltzmann_constant_J)/ (2*hydrogen_mass))**0.5
+								CX_term_1_5 = np.float32(dr*(all_H2_destruction_RR)/(thermal_velocity_H2.reshape(np.shape(Te_values))))
+								CX_term_1_6 = np.float32(np.ones_like(eff_CX_RR)/(thermal_velocity_H2.reshape(np.shape(Te_values))))
+								CX_term_1_7 = np.float32(3/2* ((T_Hp_values.reshape(np.shape(Te_values))) * boltzmann_constant_J *1e20)*(all_H_creation_RR))
+								del thermal_velocity_H,thermal_velocity_H2
 
 								index_best_fit = calculated_emission_log_probs_expanded.argmax()
 								del calculated_emission_log_probs_expanded	# I need as much memory as mpossible
@@ -10666,6 +10686,7 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 									likelihood_probs_times_volume = likelihood_probs_times_volume/np.sum(likelihood_probs_times_volume)
 									temp = np.flip(np.sort(likelihood_probs_times_volume.flatten()),axis=0)
 									likelihood_probs_times_volume_short_lim = temp[np.abs(np.cumsum(temp)-(1-1e-6)).argmin()]
+									del temp
 									likelihood_probs_times_volume_short_lim_select = likelihood_probs_times_volume>likelihood_probs_times_volume_short_lim
 									likelihood_probs_times_volume_short = (likelihood_probs_times_volume[likelihood_probs_times_volume_short_lim_select].flatten()).astype(np.float32)
 									likelihood_probs_times_volume_short = (likelihood_probs_times_volume_short/np.sum(likelihood_probs_times_volume_short)).astype(np.float32)
@@ -10888,9 +10909,11 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 									intervals_ne_values,prob_ne_values,actual_values_ne_values = build_log_PDF(all_ne_values,PDF_intervals,treshold_ratio=1.05)
 									intervals_Te_values,prob_Te_values,actual_values_Te_values = build_log_PDF(all_Te_values,PDF_intervals,treshold_ratio=1.05)
 									all_nHm_ne_values = np.array([np.transpose(np.array([record_nHm_ne_values.reshape((H2_steps,Hm_steps,TS_ne_steps,TS_Te_steps)).tolist()]*H2p_steps), (2,1,0,3,4)).tolist()]*H_steps,dtype=np.float32)
-									all_nH2p_ne_values = np.array([[record_nH2p_ne_values.reshape((H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)).tolist()]*Hm_steps]*H_steps,dtype=np.float32)
 									intervals_nHm_ne_values,prob_nHm_ne_values,actual_values_nHm_ne_values = build_log_PDF(all_nHm_ne_values,PDF_intervals)
+									del all_nHm_ne_values
+									all_nH2p_ne_values = np.array([[record_nH2p_ne_values.reshape((H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)).tolist()]*Hm_steps]*H_steps,dtype=np.float32)
 									intervals_nH2p_ne_values,prob_nH2p_ne_values,actual_values_nH2p_ne_values = build_log_PDF(all_nH2p_ne_values,PDF_intervals)
+									del all_nH2p_ne_values
 									intervals_nH2_ne_values,prob_nH2_ne_values,actual_values_nH2_ne_values = build_log_PDF(all_nH2_ne_values,PDF_intervals)
 									intervals_nH_ne_values,prob_nH_ne_values,actual_values_nH_ne_values = build_log_PDF(all_nH_ne_values,PDF_intervals)
 									if include_particles_limitation:
@@ -10904,12 +10927,28 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 										intervals_net_Hm_destruction,prob_net_Hm_destruction,actual_values_net_Hm_destruction = [[0],[0],[0]]
 										intervals_net_H2p_destruction,prob_net_H2p_destruction,actual_values_net_H2p_destruction = [[0],[0],[0]]
 									intervals_H_destruction_RR,prob_H_destruction_RR,actual_values_H_destruction_RR = build_log_PDF(all_H_destruction_RR,PDF_intervals)
+									del all_H_destruction_RR
 									intervals_H2_destruction_RR,prob_H2_destruction_RR,actual_values_H2_destruction_RR = build_log_PDF(all_H2_destruction_RR,PDF_intervals)
+									del all_H2_destruction_RR
 									intervals_local_CX,prob_local_CX,actual_values_local_CX = build_log_PDF(local_CX,PDF_intervals)
 									intervals_eff_CX_RR,prob_eff_CX_RR,actual_values_eff_CX_RR = build_log_PDF(eff_CX_RR,PDF_intervals)
+									del eff_CX_RR
 									intervals_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_1 = build_log_PDF(CX_term_1_1,PDF_intervals)
+									del CX_term_1_1
 									intervals_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_2 = build_log_PDF(CX_term_1_2,PDF_intervals)
+									del CX_term_1_2
 									intervals_CX_term_1_3,prob_CX_term_1_3,actual_values_CX_term_1_3 = build_log_PDF(CX_term_1_3,PDF_intervals)
+									del CX_term_1_3
+									intervals_CX_term_1_4,prob_CX_term_1_4,actual_values_CX_term_1_4 = build_log_PDF(CX_term_1_4,PDF_intervals)
+									del CX_term_1_4
+									intervals_CX_term_1_5,prob_CX_term_1_5,actual_values_CX_term_1_5 = build_log_PDF(CX_term_1_5,PDF_intervals)
+									del CX_term_1_5
+									intervals_CX_term_1_6,prob_CX_term_1_6,actual_values_CX_term_1_6 = build_log_PDF(CX_term_1_6,PDF_intervals)
+									del CX_term_1_6
+									intervals_CX_term_1_7,prob_CX_term_1_7,actual_values_CX_term_1_7 = build_log_PDF(CX_term_1_7,PDF_intervals)
+									del CX_term_1_7
+									intervals_H_creation_RR,prob_H_creation_RR,actual_values_H_creation_RR = build_log_PDF(np.float64(all_H_creation_RR)*1e20,PDF_intervals)
+									del all_H_creation_RR
 									# power_balance_data = [intervals_power_rad_excit,prob_power_rad_excit,actual_values_power_rad_excit, intervals_power_rad_rec_bremm,prob_power_rad_rec_bremm,actual_values_power_rad_rec_bremm, intervals_power_rad_mol,prob_power_rad_mol,actual_values_power_rad_mol, intervals_power_via_ionisation,prob_power_via_ionisation,actual_values_power_via_ionisation, intervals_power_via_recombination,prob_power_via_recombination,actual_values_power_via_recombination, intervals_tot_rad_power,prob_tot_rad_power,actual_values_tot_rad_power,intervals_power_rad_Hm,prob_power_rad_Hm,actual_values_power_rad_Hm,intervals_power_rad_H2,prob_power_rad_H2,actual_values_power_rad_H2,intervals_power_rad_H2p,prob_power_rad_H2p,actual_values_power_rad_H2p,intervals_power_heating_rec,prob_power_heating_rec,actual_values_power_heating_rec,intervals_power_rec_neutral,prob_power_rec_neutral,actual_values_power_rec_neutral,intervals_power_via_brem,prob_power_via_brem,actual_values_power_via_brem,intervals_total_removed_power,prob_total_removed_power,actual_values_total_removed_power]
 									# real_prob_ne = np.sum(likelihood_probs_times_volume,axis=(0,1,2,3,5))	# H, Hm, H2, H2p, ne, Te
 									# real_prob_Te = np.sum(likelihood_probs_times_volume,axis=(0,1,2,3,4))	# H, Hm, H2, H2p, ne, Te
@@ -10947,7 +10986,12 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 									intervals_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_1 = [[0],[0],[0]]
 									intervals_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_2 = [[0],[0],[0]]
 									intervals_CX_term_1_3,prob_CX_term_1_3,actual_values_CX_term_1_3 = [[0],[0],[0]]
-								power_balance_data = [intervals_power_rad_excit,prob_power_rad_excit,actual_values_power_rad_excit, intervals_power_rad_rec_bremm,prob_power_rad_rec_bremm,actual_values_power_rad_rec_bremm, intervals_power_rad_mol,prob_power_rad_mol,actual_values_power_rad_mol, intervals_power_via_ionisation,prob_power_via_ionisation,actual_values_power_via_ionisation, intervals_power_via_recombination,prob_power_via_recombination,actual_values_power_via_recombination, intervals_tot_rad_power,prob_tot_rad_power,actual_values_tot_rad_power,intervals_power_rad_Hm,prob_power_rad_Hm,actual_values_power_rad_Hm,intervals_power_rad_H2,prob_power_rad_H2,actual_values_power_rad_H2,intervals_power_rad_H2p,prob_power_rad_H2p,actual_values_power_rad_H2p,intervals_power_heating_rec,prob_power_heating_rec,actual_values_power_heating_rec,intervals_power_rec_neutral,prob_power_rec_neutral,actual_values_power_rec_neutral,intervals_power_via_brem,prob_power_via_brem,actual_values_power_via_brem,intervals_total_removed_power,prob_total_removed_power,actual_values_total_removed_power,intervals_nH_ne_excited_states,prob_nH_ne_excited_states,actual_values_nH_ne_excited_states,intervals_ne_values,prob_ne_values,actual_values_ne_values,intervals_Te_values,prob_Te_values,actual_values_Te_values,intervals_nHm_ne_values,prob_nHm_ne_values,actual_values_nHm_ne_values,intervals_nH2p_ne_values,prob_nH2p_ne_values,actual_values_nH2p_ne_values,intervals_nH2_ne_values,prob_nH2_ne_values,actual_values_nH2_ne_values,intervals_nH_ne_values,prob_nH_ne_values,actual_values_nH_ne_values,intervals_net_e_destruction,prob_net_e_destruction,actual_values_net_e_destruction,intervals_net_Hp_destruction,prob_net_Hp_destruction,actual_values_net_Hp_destruction,intervals_net_Hm_destruction,prob_net_Hm_destruction,actual_values_net_Hm_destruction,intervals_net_H2p_destruction,prob_net_H2p_destruction,actual_values_net_H2p_destruction,intervals_local_CX,prob_local_CX,actual_values_local_CX,intervals_H_destruction_RR,prob_H_destruction_RR,actual_values_H_destruction_RR,intervals_eff_CX_RR,prob_eff_CX_RR,actual_values_eff_CX_RR,intervals_H2_destruction_RR,prob_H2_destruction_RR,actual_values_H2_destruction_RR,intervals_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_1,intervals_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_2,intervals_CX_term_1_3,prob_CX_term_1_3,actual_values_CX_term_1_3]
+									intervals_CX_term_1_4,prob_CX_term_1_4,actual_values_CX_term_1_4 = [[0],[0],[0]]
+									intervals_CX_term_1_5,prob_CX_term_1_5,actual_values_CX_term_1_5 = [[0],[0],[0]]
+									intervals_CX_term_1_6,prob_CX_term_1_6,actual_values_CX_term_1_6 = [[0],[0],[0]]
+									intervals_CX_term_1_7,prob_CX_term_1_7,actual_values_CX_term_1_7 = [[0],[0],[0]]
+									intervals_H_creation_RR,prob_H_creation_RR,actual_values_H_creation_RR = [[0],[0],[0]]
+								power_balance_data = [intervals_power_rad_excit,prob_power_rad_excit,actual_values_power_rad_excit, intervals_power_rad_rec_bremm,prob_power_rad_rec_bremm,actual_values_power_rad_rec_bremm, intervals_power_rad_mol,prob_power_rad_mol,actual_values_power_rad_mol, intervals_power_via_ionisation,prob_power_via_ionisation,actual_values_power_via_ionisation, intervals_power_via_recombination,prob_power_via_recombination,actual_values_power_via_recombination, intervals_tot_rad_power,prob_tot_rad_power,actual_values_tot_rad_power,intervals_power_rad_Hm,prob_power_rad_Hm,actual_values_power_rad_Hm,intervals_power_rad_H2,prob_power_rad_H2,actual_values_power_rad_H2,intervals_power_rad_H2p,prob_power_rad_H2p,actual_values_power_rad_H2p,intervals_power_heating_rec,prob_power_heating_rec,actual_values_power_heating_rec,intervals_power_rec_neutral,prob_power_rec_neutral,actual_values_power_rec_neutral,intervals_power_via_brem,prob_power_via_brem,actual_values_power_via_brem,intervals_total_removed_power,prob_total_removed_power,actual_values_total_removed_power,intervals_nH_ne_excited_states,prob_nH_ne_excited_states,actual_values_nH_ne_excited_states,intervals_ne_values,prob_ne_values,actual_values_ne_values,intervals_Te_values,prob_Te_values,actual_values_Te_values,intervals_nHm_ne_values,prob_nHm_ne_values,actual_values_nHm_ne_values,intervals_nH2p_ne_values,prob_nH2p_ne_values,actual_values_nH2p_ne_values,intervals_nH2_ne_values,prob_nH2_ne_values,actual_values_nH2_ne_values,intervals_nH_ne_values,prob_nH_ne_values,actual_values_nH_ne_values,intervals_net_e_destruction,prob_net_e_destruction,actual_values_net_e_destruction,intervals_net_Hp_destruction,prob_net_Hp_destruction,actual_values_net_Hp_destruction,intervals_net_Hm_destruction,prob_net_Hm_destruction,actual_values_net_Hm_destruction,intervals_net_H2p_destruction,prob_net_H2p_destruction,actual_values_net_H2p_destruction,intervals_local_CX,prob_local_CX,actual_values_local_CX,intervals_H_destruction_RR,prob_H_destruction_RR,actual_values_H_destruction_RR,intervals_eff_CX_RR,prob_eff_CX_RR,actual_values_eff_CX_RR,intervals_H2_destruction_RR,prob_H2_destruction_RR,actual_values_H2_destruction_RR,intervals_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_1,intervals_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_2,intervals_CX_term_1_3,prob_CX_term_1_3,actual_values_CX_term_1_3,intervals_CX_term_1_4,prob_CX_term_1_4,actual_values_CX_term_1_4,intervals_CX_term_1_5,prob_CX_term_1_5,actual_values_CX_term_1_5,intervals_CX_term_1_6,prob_CX_term_1_6,actual_values_CX_term_1_6,intervals_CX_term_1_7,prob_CX_term_1_7,actual_values_CX_term_1_7,intervals_H_creation_RR,prob_H_creation_RR,actual_values_H_creation_RR]
 
 								if my_time_pos in sample_time_step:
 									if my_r_pos in sample_radious:
@@ -12205,149 +12249,149 @@ elif True:  # absolute intensity fit with Yacora coefficients, Bayesian aproach 
 								output = calc_stuff_output(my_time_pos,my_r_pos, results)
 								return output
 
-						if ( (not os.path.exists(path_where_to_save_everything + mod4 +'/results.npz') ) or recorded_data_override[0] ):
+						if do_only_one_loop==False:
+							if ( (not os.path.exists(path_where_to_save_everything + mod4 +'/results.npz') ) or recorded_data_override[0] ):
 
-							all_indexes = []
-							global_index = 0
-							to_print=collect_power_PDF
-							for my_time_pos in range(len(time_crop)):
-							# for my_time_pos in sample_time_step:
-								for my_r_pos in range(len(r_crop)):
-								# for my_r_pos in sample_radious:
-									if (merge_Te_prof_multipulse_interp_crop_limited[my_time_pos,my_r_pos]> 0.1 and merge_ne_prof_multipulse_interp_crop_limited[my_time_pos,my_r_pos]> 5e-07):
-										all_indexes.append([global_index,my_time_pos,my_r_pos,1,guess,ionization_length_H[my_time_pos, my_r_pos],ionization_length_H2[my_time_pos, my_r_pos],to_print])
-										# calc_stuff([global_index,my_time_pos,my_r_pos,1,guess,ionization_length_H,ionization_length_Hm,ionization_length_H2,ionization_length_H2p,to_print])
-									global_index+=1
+								all_indexes = []
+								global_index = 0
+								to_print=collect_power_PDF
+								for my_time_pos in range(len(time_crop)):
+								# for my_time_pos in sample_time_step:
+									for my_r_pos in range(len(r_crop)):
+									# for my_r_pos in sample_radious:
+										if (merge_Te_prof_multipulse_interp_crop_limited[my_time_pos,my_r_pos]> 0.1 and merge_ne_prof_multipulse_interp_crop_limited[my_time_pos,my_r_pos]> 5e-07):
+											all_indexes.append([global_index,my_time_pos,my_r_pos,1,guess,ionization_length_H[my_time_pos, my_r_pos],ionization_length_H2[my_time_pos, my_r_pos],to_print])
+											# calc_stuff([global_index,my_time_pos,my_r_pos,1,guess,ionization_length_H,ionization_length_Hm,ionization_length_H2,ionization_length_H2p,to_print])
+										global_index+=1
 
-							# if __name__ == '__main__':
-							if False:	# old loop that doesn't have a timeout
-								try:
-									# with Pool(number_cpu_available,maxtasksperchild=1) as pool:
-										# pool = Pool(number_cpu_available)
-									all_results = []
-									for fraction in range(int(np.ceil(len(all_indexes)/(number_cpu_available*4)))):
-										with Pool(number_cpu_available,maxtasksperchild=1) as pool:
-											print('starting set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1)) + ', index ' + str(all_indexes[fraction*(number_cpu_available*4)][0]) + ' to ' + str(all_indexes[(fraction+1)*(number_cpu_available*4)-1][0]))
-											temp = pool.map(calc_stuff_2, all_indexes[fraction*(number_cpu_available*4):(fraction+1)*(number_cpu_available*4)])
-											pool.close()
-											pool.join()
-											pool.terminate()
-											del pool
-											all_results.extend(temp)
-											print('set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1))+' done')
-										#all_results = [*pool.map(calc_stuff, all_indexes)]
-								except Exception as e:
-									print('parent multiprocessor terminated with error '+str(e))
-									pool.close()
-								# pool.close()
-									pool.join()
-									pool.terminate()
-									del pool
-							elif True:	# new loop with timeout
-								try:
-									# with Pool(number_cpu_available,maxtasksperchild=1) as pool:
-										# pool = Pool(number_cpu_available)
-									all_results = []
-									for fraction in range(int(np.ceil(len(all_indexes)/(number_cpu_available*4)))):
-										with Pool(number_cpu_available,maxtasksperchild=1) as pool:
-											print('starting set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1)) + ', index ' + str(all_indexes[fraction*(number_cpu_available*4)][0]) + ' to ' + str(all_indexes[(fraction+1)*(number_cpu_available*4)-1][0]))
-											temp1 = []
-											for f in all_indexes[fraction*(number_cpu_available*4):(fraction+1)*(number_cpu_available*4)]:
-												abortable_func = partial(abortable_worker, calc_stuff_2)
-												temp1.append(pool.apply_async(abortable_func, args=f))
-											pool.close()
-											pool.join()
-											pool.terminate()
-											temp = []
-											for value in temp1:
-												temp.append(value.get())
-											del pool
-											all_results.extend(temp)
-											print('set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1))+' done')
-										#all_results = [*pool.map(calc_stuff, all_indexes)]
-								except Exception as e:
-									print('parent multiprocessor terminated with error '+str(e))
-									pool.close()
-								# pool.close()
-									pool.join()
-									pool.terminate()
-									del pool
+								# if __name__ == '__main__':
+								if False:	# old loop that doesn't have a timeout
+									try:
+										# with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+											# pool = Pool(number_cpu_available)
+										all_results = []
+										for fraction in range(int(np.ceil(len(all_indexes)/(number_cpu_available*4)))):
+											with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+												print('starting set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1)) + ', index ' + str(all_indexes[fraction*(number_cpu_available*4)][0]) + ' to ' + str(all_indexes[(fraction+1)*(number_cpu_available*4)-1][0]))
+												temp = pool.map(calc_stuff_2, all_indexes[fraction*(number_cpu_available*4):(fraction+1)*(number_cpu_available*4)])
+												pool.close()
+												pool.join()
+												pool.terminate()
+												del pool
+												all_results.extend(temp)
+												print('set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1))+' done')
+											#all_results = [*pool.map(calc_stuff, all_indexes)]
+									except Exception as e:
+										print('parent multiprocessor terminated with error '+str(e))
+										pool.close()
+									# pool.close()
+										pool.join()
+										pool.terminate()
+										del pool
+								elif True:	# new loop with timeout
+									try:
+										# with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+											# pool = Pool(number_cpu_available)
+										all_results = []
+										for fraction in range(int(np.ceil(len(all_indexes)/(number_cpu_available*4)))):
+											with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+												print('starting set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1)) + ', index ' + str(all_indexes[fraction*(number_cpu_available*4)][0]) + ' to ' + str(all_indexes[(fraction+1)*(number_cpu_available*4)-1][0]))
+												temp1 = []
+												for f in all_indexes[fraction*(number_cpu_available*4):(fraction+1)*(number_cpu_available*4)]:
+													abortable_func = partial(abortable_worker, calc_stuff_2)
+													temp1.append(pool.apply_async(abortable_func, args=f))
+												pool.close()
+												pool.join()
+												pool.terminate()
+												temp = []
+												for value in temp1:
+													temp.append(value.get())
+												del pool
+												all_results.extend(temp)
+												print('set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1))+' done')
+											#all_results = [*pool.map(calc_stuff, all_indexes)]
+									except Exception as e:
+										print('parent multiprocessor terminated with error '+str(e))
+										pool.close()
+									# pool.close()
+										pool.join()
+										pool.terminate()
+										del pool
 
-							for i in range(len(all_results)):
-								if (all_results[i].results)[17]==False:
-									nH_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[0]
-									nHp_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[1]
-									nHm_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[2]
-									nH2_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[3]
-									nH2p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[4]
-									nH3p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[5]
-									residuals_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[6]
-									Te_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[7]
-									ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[8]
-									sigma_Te_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[9]
-									sigma_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[10]
-									sigma_nH_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[11]
-									sigma_nHp_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[12]
-									sigma_nHm_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[13]
-									sigma_nH2_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[14]
-									sigma_nH2p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[15]
-									sigma_nH3p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[16]
-									power_balance_data[int(all_results[i].my_time_pos)*np.shape(nH_ne_all)[1] + int(all_results[i].my_r_pos)] = (all_results[i].results)[18]
-
-
-							# all_indexes = []
-							# global_index = 0
-							# to_print=True
-							# for my_time_pos in range(len(time_crop)):
-							# 	if my_time_pos in sample_time_step:
-							# 		for my_r_pos in range(len(r_crop)):
-							# 			if my_r_pos in sample_radious:
-							# 				calc_stuff([global_index,my_time_pos,my_r_pos,1,guess,ionization_length_H,ionization_length_Hm,ionization_length_H2,ionization_length_H2p,to_print])
+								for i in range(len(all_results)):
+									if (all_results[i].results)[17]==False:
+										nH_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[0]
+										nHp_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[1]
+										nHm_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[2]
+										nH2_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[3]
+										nH2p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[4]
+										nH3p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[5]
+										residuals_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[6]
+										Te_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[7]
+										ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[8]
+										sigma_Te_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[9]
+										sigma_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[10]
+										sigma_nH_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[11]
+										sigma_nHp_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[12]
+										sigma_nHm_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[13]
+										sigma_nH2_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[14]
+										sigma_nH2p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[15]
+										sigma_nH3p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[16]
+										power_balance_data[int(all_results[i].my_time_pos)*np.shape(nH_ne_all)[1] + int(all_results[i].my_r_pos)] = (all_results[i].results)[18]
 
 
-							np.savez_compressed(path_where_to_save_everything + mod4 +'/results',nH_ne_all=nH_ne_all,nHp_ne_all=nHp_ne_all,nHm_ne_all=nHm_ne_all,nH2_ne_all=nH2_ne_all,nH2p_ne_all=nH2p_ne_all,nH3p_ne_all=nH3p_ne_all,residuals_all=residuals_all,Te_all=Te_all,ne_all=ne_all,sigma_Te_all=sigma_Te_all,sigma_ne_all=sigma_ne_all,sigma_nH_ne_all=sigma_nH_ne_all,sigma_nHp_ne_all=sigma_nHp_ne_all,sigma_nHm_ne_all=sigma_nHm_ne_all,sigma_nH2_ne_all=sigma_nH2_ne_all,sigma_nH2p_ne_all=sigma_nH2p_ne_all,sigma_nH3p_ne_all=sigma_nH3p_ne_all)
-							if collect_power_PDF:
-								with open(path_where_to_save_everything + mod4 +'/power_balance.data', 'wb') as filehandle:
-								    pickle.dump(power_balance_data, filehandle)
+								# all_indexes = []
+								# global_index = 0
+								# to_print=True
+								# for my_time_pos in range(len(time_crop)):
+								# 	if my_time_pos in sample_time_step:
+								# 		for my_r_pos in range(len(r_crop)):
+								# 			if my_r_pos in sample_radious:
+								# 				calc_stuff([global_index,my_time_pos,my_r_pos,1,guess,ionization_length_H,ionization_length_Hm,ionization_length_H2,ionization_length_H2p,to_print])
+
+
+								np.savez_compressed(path_where_to_save_everything + mod4 +'/results',nH_ne_all=nH_ne_all,nHp_ne_all=nHp_ne_all,nHm_ne_all=nHm_ne_all,nH2_ne_all=nH2_ne_all,nH2p_ne_all=nH2p_ne_all,nH3p_ne_all=nH3p_ne_all,residuals_all=residuals_all,Te_all=Te_all,ne_all=ne_all,sigma_Te_all=sigma_Te_all,sigma_ne_all=sigma_ne_all,sigma_nH_ne_all=sigma_nH_ne_all,sigma_nHp_ne_all=sigma_nHp_ne_all,sigma_nHm_ne_all=sigma_nHm_ne_all,sigma_nH2_ne_all=sigma_nH2_ne_all,sigma_nH2p_ne_all=sigma_nH2p_ne_all,sigma_nH3p_ne_all=sigma_nH3p_ne_all)
+								if collect_power_PDF:
+									with open(path_where_to_save_everything + mod4 +'/power_balance.data', 'wb') as filehandle:
+									    pickle.dump(power_balance_data, filehandle)
+								else:
+									with open(path_where_to_save_everything + mod4 +'/power_balance_no_PDF.data', 'wb') as filehandle:
+									    pickle.dump(power_balance_data, filehandle)
+
 							else:
-								with open(path_where_to_save_everything + mod4 +'/power_balance_no_PDF.data', 'wb') as filehandle:
-								    pickle.dump(power_balance_data, filehandle)
+								nH_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nH_ne_all']
+								nHp_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nHp_ne_all']
+								nHm_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nHm_ne_all']
+								nH2_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nH2_ne_all']
+								nH2p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nH2p_ne_all']
+								nH3p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nH3p_ne_all']
+								residuals_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['residuals_all']
+								try:
+									Te_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['Te_all']
+									ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['ne_all']
+								except:
+									print('Bayesian Te, ne not present')
+									Te_all = cp.deepcopy(merge_Te_prof_multipulse_interp_crop_limited)
+									ne_all = cp.deepcopy(merge_ne_prof_multipulse_interp_crop_limited)
+								try:
+									sigma_Te_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_Te_all']
+									sigma_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_ne_all']
+									sigma_nH_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nH_ne_all']
+									sigma_nHp_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nHp_ne_all']
+									sigma_nHm_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nHm_ne_all']
+									sigma_nH2_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nH2_ne_all']
+									sigma_nH2p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nH2p_ne_all']
+									sigma_nH3p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nH3p_ne_all']
+								except:
+									print('sigma not present')
+								try:
+									with open(path_where_to_save_everything + mod4 +'/power_balance.data', 'rb') as filehandle:
+									    power_balance_data = pickle.load(filehandle)
+								except:
+									print('power_balance_data not present')
 
-						else:
-							nH_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nH_ne_all']
-							nHp_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nHp_ne_all']
-							nHm_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nHm_ne_all']
-							nH2_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nH2_ne_all']
-							nH2p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nH2p_ne_all']
-							nH3p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['nH3p_ne_all']
-							residuals_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['residuals_all']
-							try:
-								Te_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['Te_all']
-								ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['ne_all']
-							except:
-								print('Bayesian Te, ne not present')
-								Te_all = cp.deepcopy(merge_Te_prof_multipulse_interp_crop_limited)
-								ne_all = cp.deepcopy(merge_ne_prof_multipulse_interp_crop_limited)
-							try:
-								sigma_Te_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_Te_all']
-								sigma_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_ne_all']
-								sigma_nH_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nH_ne_all']
-								sigma_nHp_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nHp_ne_all']
-								sigma_nHm_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nHm_ne_all']
-								sigma_nH2_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nH2_ne_all']
-								sigma_nH2p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nH2p_ne_all']
-								sigma_nH3p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results.npz')['sigma_nH3p_ne_all']
-							except:
-								print('sigma not present')
-							try:
-								with open(path_where_to_save_everything + mod4 +'/power_balance.data', 'rb') as filehandle:
-								    power_balance_data = pickle.load(filehandle)
-							except:
-								print('power_balance_data not present')
-
-
-						global_pass = 2
-						exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/post_process_PSI_parameter_search_1_Yacora_plots.py").read())
+							global_pass = 2
+							exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/post_process_PSI_parameter_search_1_Yacora_plots.py").read())
 
 						# if True: # I don't think now, given the indetermination in how emission profiles fit the measurements, that second passes are useful. 04/06/2020 I do it for the locations with low Te, ne
 

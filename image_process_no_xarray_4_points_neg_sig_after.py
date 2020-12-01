@@ -1106,6 +1106,12 @@ else:
 		ani.save(path_where_to_save_everything + '/merge'+str(merge_ID_target)+'_scan_n'+str(j)+'_original_data' + '.mp4', fps=5, writer='ffmpeg',codec='mpeg4')
 		plt.close()
 
+		ani = coleval.movie_from_data(np.array([np.array(data_all)[::5]]), 1000/incremental_step*5, row_shift, 'Wavelength axis [pixles]', 'Row axis [pixles]','Intersity [au]',extvmin=90,extvmax=np.min([np.max(np.array(data_all)[:30]),np.max(np.array(data_all)[-70:])]))
+		# plt.show()
+		# ani.save(path_where_to_save_everything + '/merge'+str(merge_ID_target)+'_scan_n'+str(j)+'_original_data' + '.mp4', fps=5, extra_args=['-vcodec', 'libx264'])
+		ani.save(path_where_to_save_everything + '/merge'+str(merge_ID_target)+'_scan_n'+str(j)+'_original_data' + '_2.mp4', fps=5, writer='ffmpeg',codec='mpeg4')
+		plt.close()
+
 	dataDark = np.mean(dataDark_all,axis=0)
 	path_filename = path_where_to_save_everything+'/merge' + str(merge_ID_target) + '_stats.csv'
 	# if not os.path.exists(path_filename):

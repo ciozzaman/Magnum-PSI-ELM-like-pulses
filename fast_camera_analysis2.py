@@ -70,6 +70,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 			raw_images, setup, bpp = read_frames(full_folder+filename)#,start_frame=1,count=1)
 			# header = read_header('/home/ffederic/work/Collaboratory/test/experimental_data/2019-05-03/01/fast_camera/02_1.cine')
 			framerate = setup.FrameRate
+			integration_time = setup.ShutterNs/1000	# ms
 			raw_data = []
 			for image in raw_images:
 				raw_data.append(image)
@@ -210,8 +211,15 @@ for merge_ID_target in merge_ID_target_multipulse:
 			plt.savefig(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_item_'+str(j)+'_' + filename +'2.eps', bbox_inches='tight')
 			plt.close('all')
 
-			ani = coleval.movie_from_data(np.array([raw_data]), framerate, 1,'horizontal coord [pixels]','vertical coord [pixels]','Intersity [au]')
+			ani = coleval.movie_from_data(np.array([raw_data]), framerate, integration_time,'horizontal coord [pixels]','vertical coord [pixels]','Intersity [au]')
 			ani.save(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_item_'+str(j)+'_' + filename + '.mp4', fps=5, writer='ffmpeg',codec='mpeg4')
+			# ani.save(path_where_to_save_everything+'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_original.mp4', fps=5, extra_args=['-vcodec', 'libx264'])
+			plt.close()
+
+			video_length = len(raw_data)
+			downsample = int(np.ceil(video_length/15))
+			ani = coleval.movie_from_data(np.array([raw_data[::downsample][:15]]), framerate/downsample, integration_time,'horizontal coord [pixels]','vertical coord [pixels]','Intersity [au]')
+			ani.save(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_item_'+str(j)+'_' + filename + '_2.mp4', fps=5, writer='ffmpeg',codec='mpeg4')
 			# ani.save(path_where_to_save_everything+'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_original.mp4', fps=5, extra_args=['-vcodec', 'libx264'])
 			plt.close()
 
