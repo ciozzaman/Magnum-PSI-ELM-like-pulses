@@ -44,6 +44,7 @@ magnetic_field = []
 area_equiv_max_static_pressure = []
 T_pre_pulse = []
 DT_pulse = []
+DT_pulse_late = []
 DT_pulse_time_scaled2 = []
 pulse_en_semi_inf = []
 pulse_en_semi_inf_sigma = []
@@ -75,6 +76,7 @@ j_specific_delivered_pulse_energy = []
 j_specific_magnetic_field = []
 j_specific_T_pre_pulse = []
 j_specific_DT_pulse = []
+j_specific_DT_pulse_late = []
 j_specific_DT_pulse_time_scaled = []
 j_specific_pulse_en_semi_inf = []
 j_specific_pulse_en_semi_inf_sigma = []
@@ -113,6 +115,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 	temp5=[]
 	temp6=[]
 	temp7=[]
+	temp8=[]
 	all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
 	for j in all_j:
 		j_specific_target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
@@ -126,6 +129,8 @@ for merge_ID_target in merge_ID_target_multipulse:
 		temp1.append(df_log.loc[j,['T_pre_pulse']])
 		j_specific_DT_pulse.append(df_log.loc[j,['DT_pulse']])
 		temp2.append(df_log.loc[j,['DT_pulse']])
+		j_specific_DT_pulse_late.append(df_log.loc[j,['DT_pulse_late']])
+		temp8.append(df_log.loc[j,['DT_pulse_late']])
 		j_specific_pulse_en_semi_inf.append(df_log.loc[j,['pulse_en_semi_inf [J]']])
 		temp3.append(df_log.loc[j,['pulse_en_semi_inf [J]']])
 		j_specific_pulse_en_semi_inf_sigma.append(df_log.loc[j,['pulse_en_semi_inf_sigma [J]']])
@@ -139,6 +144,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 
 	T_pre_pulse.append(np.nanmean(temp1))
 	DT_pulse.append(np.nanmean(temp2))
+	DT_pulse_late.append(np.nanmean(temp8))
 	pulse_en_semi_inf2.append(np.nansum(np.divide(temp3,temp5))/np.nansum(np.divide(1,temp5)))
 	pulse_en_semi_inf_sigma2.append((np.nansum(np.isfinite(np.array(temp5,dtype=float)))/(np.nansum(np.divide(1,temp5))**2))**0.5)
 	pulse_t0_semi_inf2.append(np.nanmean(temp6))
@@ -156,57 +162,65 @@ for merge_ID_target in merge_ID_target_multipulse:
 # plt.grid()
 # plt.pause(0.001)
 
-fig, ax1 = plt.subplots(figsize=(10, 5))
+fig, ax1 = plt.subplots(figsize=(12, 5))
+fig.subplots_adjust(right=0.8)
 ax1.set_title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field[0],target_OES_distance[0],(2*CB_pulse_energy[0]/150e-6)**0.5)+'\nIR data analysis')
 ax1.set_xlabel('Pressure [Pa]')
-ax1.set_ylabel('Temp before ELM-like pulse [°C]', color='tab:blue')
 ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 ax3 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-ax4 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-ax2.set_ylabel(r'$\Delta T$'+' 4ms after peak temperature [°C]', color='tab:red')  # we already handled the x-label with ax1
-ax3.set_ylabel('semi-inf pulse start compared to IR peak [ms]', color='tab:green')  # we already handled the x-label with ax1
-ax3.spines["right"].set_position(("axes", 1.5))
-ax4.set_ylabel(r'$\Delta T$'+' 4ms after beginning of ELM-like pulse [°C]', color='tab:pink')  # we already handled the x-label with ax1
-ax4.spines["left"].set_position(("axes", 3))
+# ax4 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+ax3.spines["right"].set_position(("axes", 1.1))
+ax3.spines["right"].set_visible(True)
+# ax4.spines["right"].set_position(("axes", 1.35))
+# ax4.spines["right"].set_visible(True)
 ax1.plot(j_specific_target_chamber_pressure,j_specific_T_pre_pulse,'+b')
-ax1.plot(target_chamber_pressure_2,T_pre_pulse,'b')
+a1, = ax1.plot(target_chamber_pressure_2,T_pre_pulse,'b')
 ax2.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse),'+r')
-ax2.plot(target_chamber_pressure_2,np.array(DT_pulse),'r')
+a2, = ax2.plot(target_chamber_pressure_2,np.array(DT_pulse),'--r',label='mean temperature peak + 2/3ms')
+a2, = ax2.plot(target_chamber_pressure_2,np.array(DT_pulse_late),':r',label='mean temperature peak + 10/11ms')
 ax3.plot(j_specific_target_chamber_pressure,np.array(j_specific_pulse_t0_semi_inf),'+g')
-ax3.plot(target_chamber_pressure_2,np.array(pulse_t0_semi_inf2),'g')
-ax4.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse_time_scaled),'+m')
-ax4.plot(target_chamber_pressure_2,np.array(DT_pulse_time_scaled2),'m')
-ax1.tick_params(axis='y', labelcolor='tab:blue')
-ax2.tick_params(axis='y', labelcolor='tab:red')
-ax3.tick_params(axis='y', labelcolor='tab:green')
-ax4.tick_params(axis='y', labelcolor='tab:pink')
-# ax1.legend(loc='best', fontsize='x-small')
-# ax2.legend(loc='best', fontsize='x-small')
+a3, = ax3.plot(target_chamber_pressure_2,np.array(pulse_t0_semi_inf2),'g')
+# ax4.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse_time_scaled),'+m')
+# a4, = ax4.plot(target_chamber_pressure_2,np.array(DT_pulse_time_scaled2),'m')
+ax2.plot(target_chamber_pressure_2,np.array(DT_pulse_time_scaled2),'r',label='mean temperature peak + t0 + 2/3ms')
+# ax2.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse_time_scaled),'or')
+ax1.set_ylabel('Temp before ELM-like pulse (T(t=0)) [°C]', color=a1.get_color())
+ax2.set_ylabel(r'$\Delta T$'+' before - mean 2/3 ms after ELM [°C]', color=a2.get_color())  # we already handled the x-label with ax1
+ax3.set_ylabel('ELM-like pulse start to IR peak (t0) [ms]', color=a3.get_color())  # we already handled the x-label with ax1
+# ax4.set_ylabel(r'$\Delta T$'+' 2.5ms after ELM-like pulse start [°C]', color=a4.get_color())  # we already handled the x-label with ax1
+ax1.tick_params(axis='y', labelcolor=a1.get_color())
+ax2.tick_params(axis='y', labelcolor=a2.get_color())
+ax3.tick_params(axis='y', labelcolor=a3.get_color())
+# ax4.tick_params(axis='y', labelcolor=a4.get_color())
+ax2.legend(loc='center left', fontsize='x-small')
 ax1.set_ylim(bottom=0)
 ax2.set_ylim(bottom=0)
-ax4.set_ylim(bottom=0)
+# ax2.set_ylim(bottom=0,top=max(np.nanmax(j_specific_DT_pulse),np.max(DT_pulse_time_scaled2))*1.1)
+# ax4.set_ylim(bottom=0,top=np.max([j_specific_DT_pulse,j_specific_DT_pulse_time_scaled])*1.1)
 ax1.grid()
 # ax2.grid()
 plt.pause(0.01)
 
-fig, ax1 = plt.subplots(figsize=(10, 5))
+fig, ax1 = plt.subplots(figsize=(12, 5))
+fig.subplots_adjust(right=0.8)
 ax1.set_title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field[0],target_OES_distance[0],(2*CB_pulse_energy[0]/150e-6)**0.5)+'\nIR data analysis')
 ax1.set_xlabel('Pressure [Pa]')
-ax1.set_ylabel('Temp before ELM-like pulse [°C]', color='tab:blue')
 ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 ax3 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-ax2.set_ylabel('Energy reaching the target [J]', color='tab:red')  # we already handled the x-label with ax1
-ax3.set_ylabel('semi-inf pulse start compared to IR peak [ms]', color='tab:green')  # we already handled the x-label with ax1
 ax3.spines["right"].set_position(("axes", 1.1))
+ax3.spines["right"].set_visible(True)
 ax1.plot(j_specific_target_chamber_pressure,j_specific_T_pre_pulse,'+b')
-ax1.plot(target_chamber_pressure_2,T_pre_pulse,'b')
+a1, = ax1.plot(target_chamber_pressure_2,T_pre_pulse,'b')
 ax2.plot(j_specific_target_chamber_pressure,np.array(j_specific_pulse_en_semi_inf),'+r')
-ax2.plot(target_chamber_pressure_2,np.array(pulse_en_semi_inf2),'r')
+a2, = ax2.plot(target_chamber_pressure_2,np.array(pulse_en_semi_inf2),'r')
 ax3.plot(j_specific_target_chamber_pressure,np.array(j_specific_pulse_t0_semi_inf),'+g')
-ax3.plot(target_chamber_pressure_2,np.array(pulse_t0_semi_inf2),'g')
-ax1.tick_params(axis='y', labelcolor='tab:blue')
-ax2.tick_params(axis='y', labelcolor='tab:red')
-ax3.tick_params(axis='y', labelcolor='tab:green')
+a3, = ax3.plot(target_chamber_pressure_2,np.array(pulse_t0_semi_inf2),'g')
+ax1.set_ylabel('Temp before ELM-like pulse (T(t=0)) [°C]', color=a1.get_color())
+ax2.set_ylabel('Energy reaching the target [J]', color=a2.get_color())  # we already handled the x-label with ax1
+ax3.set_ylabel('ELM-like pulse start to IR peak (t0) [ms]', color=a3.get_color())  # we already handled the x-label with ax1
+ax1.tick_params(axis='y', labelcolor=a1.get_color())
+ax2.tick_params(axis='y', labelcolor=a2.get_color())
+ax3.tick_params(axis='y', labelcolor=a3.get_color())
 # ax1.legend(loc='best', fontsize='x-small')
 # ax2.legend(loc='best', fontsize='x-small')
 ax1.set_ylim(bottom=0)

@@ -241,8 +241,10 @@ def find_index_of_file(merge_ID_target,df_settings,df_log,type='Hb',only_OES=Fal
 
 ####################################################################################################
 
-def get_metadata(fdir,folder,sequence,untitled,filename_metadata):
+def get_metadata(fdir,folder,sequence,untitled,filename_metadata,pulse_frequency_Hz=10):
 	import numpy as np
+
+	# incremental_step*=1000	# ms
 
 	# List of camera characteristics
 	# Photometrics Prime95B 25MM
@@ -266,7 +268,10 @@ def get_metadata(fdir,folder,sequence,untitled,filename_metadata):
 	PixelType=[]
 	Gain=[]
 	Noise=[]
+	TimeStampMsec=[]
 	real_exposure_time=[]
+	PVCAM_TimeStampBOF = []
+	PVCAM_TimeStamp = []
 	for irow,row in enumerate(metadata):
 		#print(row)
 		#print('gna')
@@ -323,6 +328,54 @@ def get_metadata(fdir,folder,sequence,untitled,filename_metadata):
 					end=int(len(row)-index-2)
 			#print(row[start:end])
 			elapsed_time.append(float(row[start:end].replace(',','.')))
+		if row.find('TimeStampMsec') !=-1:
+			#print('found eof')
+			start=0
+			end=len(row)
+			for index,value in enumerate(row):
+				if (value.isdigit() and start==0):
+					start=int(index)
+			for index, value in enumerate(np.flip(list(row),axis=0)):
+				if (not value.isdigit() and start!=0 and end==len(row)):
+					end=int(len(row)-index-3)
+			#print(row[start:end])
+			TimeStampMsec.append(float(row[start:end].replace(',','.')))
+		if row.find('PVCAM-TimeStampBOF') !=-1:
+			#print('found eof')
+			start=0
+			end=len(row)
+			for index,value in enumerate(row):
+				if (value.isdigit() and start==0):
+					start=int(index)
+			for index, value in enumerate(np.flip(list(row),axis=0)):
+				if (not value.isdigit() and start!=0 and end==len(row)):
+					end=int(len(row)-index-3)
+			#print(row[start:end])
+			PVCAM_TimeStampBOF.append(float(row[start:end].replace(',','.')))
+		if row.find('PVCAM-TimeStamp') !=-1:
+			#print('found eof')
+			start=0
+			end=len(row)
+			for index,value in enumerate(row):
+				if (value.isdigit() and start==0):
+					start=int(index)
+			for index, value in enumerate(np.flip(list(row),axis=0)):
+				if (not value.isdigit() and start!=0 and end==len(row)):
+					end=int(len(row)-index-3)
+			#print(row[start:end])
+			PVCAM_TimeStamp.append(float(row[start:end].replace(',','.')))
+		if row.find('PM Cam-StartTime-ms') !=-1:
+			#print('found eof')
+			start=0
+			end=len(row)
+			for index,value in enumerate(row):
+				if (value.isdigit() and start==0):
+					start=int(index)
+			for index, value in enumerate(np.flip(list(row),axis=0)):
+				if (not value.isdigit() and start!=0 and end==len(row)):
+					end=int(len(row)-index-3)
+			#print(row[start:end])
+			PM_Cam_StartTime_ms = float(row[start:end].replace(',','.'))
 		if row.find('PM Cam-PixelType') !=-1:
 			#print('found eof')
 			start=0
@@ -408,10 +461,18 @@ def get_metadata(fdir,folder,sequence,untitled,filename_metadata):
 	bof=np.array(bof)
 	eof=np.array(eof)
 	elapsed_time=np.array(elapsed_time)
+	TimeStampMsec=np.array(TimeStampMsec)
+	PVCAM_TimeStamp_ms=np.array(PVCAM_TimeStamp)/10
+	PVCAM_TimeStampBOF_ms=np.array(PVCAM_TimeStampBOF)/10
+	timestamp_regularised_shift = np.mean(TimeStampMsec[1:]-PM_Cam_StartTime_ms-np.arange(len(TimeStampMsec)-1)*(1/pulse_frequency_Hz))
+	TimeStampMsec_corrected = PM_Cam_StartTime_ms + (np.arange(len(TimeStampMsec))-1)*(1/pulse_frequency_Hz) + timestamp_regularised_shift
+	TimeStampMsec_corrected[0] = TimeStampMsec_corrected[1]-np.diff(bof[:2])[0]*1e-6
+	bof_regularised_shift = np.mean(TimeStampMsec-bof*1e-6)
+	bof_corrected_ms = bof*1e-6+bof_regularised_shift
 	metadata.close()
 
-
-	return bof,eof,roi_lb,roi_tr,elapsed_time,real_exposure_time,PixelType,Gain,Noise
+	time_info = dict([('elapsed_time',elapsed_time),('TimeStampMsec',TimeStampMsec),('PM_Cam_StartTime_ms',PM_Cam_StartTime_ms),('TimeStampMsec_corrected',TimeStampMsec_corrected),('bof_corrected_ms',bof_corrected_ms),('PVCAM_TimeStamp_ms',PVCAM_TimeStamp_ms),('PVCAM_TimeStampBOF_ms',PVCAM_TimeStampBOF_ms)])
+	return bof,eof,roi_lb,roi_tr,time_info,real_exposure_time,PixelType,Gain,Noise
 
 
 
@@ -433,6 +494,7 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 	current_traces_time = current_traces['Time [s]']
 	current_traces_total = current_traces['I_Src_AC [A]']
 	voltage_traces_total = current_traces['U_Src_DC [V]']
+	power_traces_total = np.abs( current_traces_total * voltage_traces_total )
 	# plt.figure()
 	# plt.plot(current_traces_time,current_traces_total)
 	# plt.pause(0.001)
@@ -532,6 +594,7 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 
 
 	peak_of_the_peak = []
+	start_of_the_peak = []
 	for peak in np.sort(peaks_good):
 		xx = current_traces_time[peak-int(0.05//time_resolution) : peak]#+int(0.05//time_resolution)]
 		yy = current_traces_total[peak-int(0.05//time_resolution) : peak]#+int(0.05//time_resolution)]
@@ -544,21 +607,27 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 		xx_2 = np.array(xx[[*(yy > threshold)[1:],False]])[0:2]
 		yy_2 = np.array(yy[[*(yy > threshold)[1:],False]])[0:2]
 		fit = np.polyfit(xx_2, yy_2, 1)
-		# peak_of_the_peak.append(np.array(xx[yy > threshold])[0])	#	this use the beginning of the pulse profile
-		peak_of_the_peak.append((threshold-fit[1])/fit[0])	#	this use the beginning of the pulse profile but interpolated
+		# start_of_the_peak.append(np.array(xx[yy > threshold])[0])	#	this use the beginning of the pulse profile
+		start_of_the_peak.append((threshold-fit[1])/fit[0])	#	this use the beginning of the pulse profile but interpolated
 		# plt.figure()
 		# plt.plot(xx,yy)
 		# plt.plot(xx, gauss(xx, *fit_1[0]))
 		# plt.plot([np.array(xx[yy > threshold])[0],np.array(xx[yy > threshold])[0]],[np.min(yy),np.max(yy)],'k')
 		# plt.plot([(threshold-fit[1])/fit[0],(threshold-fit[1])/fit[0]],[np.min(yy),np.max(yy)],'r')
 		# plt.pause(0.001)
-		# peak_of_the_peak.append(fit[0][2])	# this use to the peak of the gaussian
-		# peak_of_the_peak.append(np.array(xx[gauss(xx, *fit[0])>fit[0][-1]*1.5])[0]) 	#	this use the beginning of the gaussian, in an imprecisse way
-		# peak_of_the_peak.append(fit_1[0][2]-(-(fit_1[0][1]**4)*np.log(0.5*fit_1[0][-1]/fit_1[0][0]))**0.25)	#	this use the beginning of the gaussian
+		# start_of_the_peak.append(fit[0][2])	# this use to the peak of the gaussian
+		# start_of_the_peak.append(np.array(xx[gauss(xx, *fit[0])>fit[0][-1]*1.5])[0]) 	#	this use the beginning of the gaussian, in an imprecisse way
+		# start_of_the_peak.append(fit_1[0][2]-(-(fit_1[0][1]**4)*np.log(0.5*fit_1[0][-1]/fit_1[0][0]))**0.25)	#	this use the beginning of the gaussian
+		xx = current_traces_time[peak-3 : peak+4]#+int(0.05//time_resolution)]
+		yy = power_traces_total[peak-3 : peak+4]#+int(0.05//time_resolution)]
+		fit = np.polyfit(xx,yy,2)
+		peak_of_the_peak.append(-fit[1]/(2*fit[0]))
+	start_of_the_peak.extend(current_traces_time[peaks_missing])
+	start_of_the_peak.extend(current_traces_time[peaks_double])
 	peak_of_the_peak.extend(current_traces_time[peaks_missing])
 	peak_of_the_peak.extend(current_traces_time[peaks_double])
-	time_of_pulses = np.sort(peak_of_the_peak)-np.sort(peak_of_the_peak)[0]
-	# counter = collections.Counter(np.diff(peak_of_the_peak)//0.0001)
+	time_of_pulses = dict([('start_of_the_peak',np.sort(start_of_the_peak)),('peak_of_the_peak',np.sort(peak_of_the_peak))])
+	# counter = collections.Counter(np.diff(start_of_the_peak)//0.0001)
 	# x=list(counter.keys())
 	# y=np.array(list(counter.values()))
 	# y = np.array([y for _, y in sorted(zip(x, y))])
@@ -602,7 +671,7 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 	if want_the_prominences==True:
 		return bad, good[0], any[0], any[-1], miss,double, good, time_of_pulses, prominences
 	elif want_the_power_per_pulse==True:
-		power_traces = np.abs(	current_traces_total * voltage_traces_total )
+		# power_traces = np.abs(	current_traces_total * voltage_traces_total )
 		# steady_state_power = np.median(power_traces)
 		# spectra = np.fft.fft(power_traces[:min(np.abs(current_traces_time-2).argmin(),all_peaks[0]-int(np.median(np.diff(all_peaks))/2))])
 		# spectra = np.fft.fft(power_traces)
@@ -641,21 +710,21 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 				duration_per_pulse.append(0)
 			else:
 				if False:	# upon inspection this method performs very poorly to identify reliably start and end of the pulse
-					left = np.logical_and(np.logical_and(np.array((power_traces<steady_state_power)), np.arange(len(power_traces))>(peak_pos-calculated_interval*0.9)), np.arange(len(power_traces))<(peak_pos+calculated_interval*0.9)) * np.arange(len(power_traces))
-					left = np.abs(np.array((power_traces<steady_state_power)) * np.arange(len(power_traces)) - peak_pos)
-					right = left * (np.arange(len(power_traces))>=peak_pos)
+					left = np.logical_and(np.logical_and(np.array((power_traces_total<steady_state_power)), np.arange(len(power_traces_total))>(peak_pos-calculated_interval*0.9)), np.arange(len(power_traces_total))<(peak_pos+calculated_interval*0.9)) * np.arange(len(power_traces_total))
+					left = np.abs(np.array((power_traces_total<steady_state_power)) * np.arange(len(power_traces_total)) - peak_pos)
+					right = left * (np.arange(len(power_traces_total))>=peak_pos)
 					right[right==0] = np.max(right)
 					right = right.argmin()+1
-					left = left * (np.arange(len(power_traces))<=peak_pos)
+					left = left * (np.arange(len(power_traces_total))<=peak_pos)
 					left[left==0] = np.max(left)
 					left = left.argmin()
 					# energy_per_pulse.append(np.sum(power_traces[left:right]*np.diff(current_traces_time[left:right+1])))
-					energy_per_pulse.append(np.trapz(power_traces[left:right]-steady_state_power, current_traces_time[left:right]))
+					energy_per_pulse.append(np.trapz(power_traces_total[left:right]-steady_state_power, current_traces_time[left:right]))
 					# plt.plot(current_traces_time[left:right+100]-current_traces_time[left],power_traces[left:right+100])#,plt.plot(power_traces[left:right],'+');plt.pause(0.01)
 				else:
 					left = peak_pos-int(interval_between_pulses*2/3)
 					right = peak_pos+int(interval_between_pulses*2/3)
-					power_traces_corrected = np.array(power_traces[left:right])
+					power_traces_corrected = np.array(power_traces_total[left:right])
 					current_traces_time_corrected = np.array(current_traces_time[left:right])
 					# spectra = np.fft.fft(power_traces_corrected)
 					# phase = np.angle(spectra)
@@ -671,7 +740,7 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 					# interpolated = interpolate.splev(current_traces_time[left:right], tck)
 					interpolated = np.convolve(power_traces_corrected, np.ones((interval_to_find_peak))/interval_to_find_peak , mode='same')
 					real_peak_loc = np.arange(left,right)[interpolated.argmax()]
-					steady_state_power = np.mean([*power_traces[real_peak_loc-int(5e-3/time_resolution):real_peak_loc-int(1e-3/time_resolution)]])#,*power_traces_corrected[real_peak_loc+int(10e-3/time_resolution):real_peak_loc+int(13e-3/time_resolution)]])
+					steady_state_power = np.mean([*power_traces_total[real_peak_loc-int(5e-3/time_resolution):real_peak_loc-int(1e-3/time_resolution)]])#,*power_traces_corrected[real_peak_loc+int(10e-3/time_resolution):real_peak_loc+int(13e-3/time_resolution)]])
 					# plt.figure();plt.plot(current_traces_time[left:right]-current_traces_time[real_peak_loc],power_traces_corrected-steady_state_power);plt.plot(current_traces_time[left:right]-current_traces_time[real_peak_loc],interpolated-steady_state_power,'--');plt.grid();plt.pause(0.01)
 					real_peak_loc = interpolated.argmax()
 					if False:	# I want the real start and end of the pulse, this approximation is not enough
@@ -2152,3 +2221,12 @@ def shift_between_TS_and_power_source(merge_ID_target,plot_report=False):
 	return offset_current_trace
 
 ##############################################################################################################################################################################
+
+
+def DOM52sec(value):
+	# conversion of time format necessary for magnum timestamp
+	if np.isfinite(value)==True:
+		out = int("{0:b}".format(int(value))[:-32],2)+int("{0:b}".format(int(value))[-32:],2)/(2**32)
+		return out
+	else:
+		return np.nan

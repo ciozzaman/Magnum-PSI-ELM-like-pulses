@@ -68,20 +68,20 @@ def DOM52sec(value):
 	else:
 		return np.nan
 
-
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-03/20190703_1.csv',index_col=False,sep='|')
+file_full_path = '/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-02/20190702_3.csv'
+multi_1 = pd.read_csv(file_full_path,index_col=False,sep='|')
 index1 = list(multi_1.head(0))
 for index in range(len(index1)//3):
 	index1[index*3]=index1[index*3+1]
 	index1[index*3+2]=index1[index*3+1]
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-03/20190703_1.csv',index_col=False,header=1,sep='|')
+multi_1 = pd.read_csv(file_full_path,index_col=False,header=1,sep='|')
 index2 = list(multi_1.head(0))
 index = [_+' '+__ for _,__ in zip(index1,index2)]
 for i_text,text in enumerate(index):
 	if (text.find('.'))!=-1:
 		index[i_text] = text[:text.find('.')]
-multi_1 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-03/20190703_1.csv',index_col=False,header=2,sep='|')
-multi_1_array = np.array(multi_1)
+multi_1 = pd.read_csv(file_full_path,index_col=False,header=2,sep='|')
+multi_1_array = np.array(multi_1).T
 
 date_time_stamp = multi_1[multi_1.keys()[6]]
 # date_time_stamp_separated = []
@@ -162,12 +162,13 @@ plt.pause(0.1)
 plt.close('all')
 plt.figure()
 # plt.title(index[i_index*3+2])
-# for i_index in range(0,13):
-for i_index in [4,11]:
-	date_time_stamp = multi_1[multi_1.keys()[i_index*3]]
-	date_time_stamp2time = DOM52sec_for_list(date_time_stamp)
+for i_index in range(0,7):
+# for i_index in [4,11,0,1,2]:
+	date_time_stamp = multi_1_array[i_index*3].astype(np.float32)
+	temp = multi_1_array[i_index*3+2][np.isfinite(date_time_stamp)].astype(np.int)
+	date_time_stamp2time = DOM52sec_for_list(multi_1_array[i_index*3][np.isfinite(date_time_stamp)].astype(np.int))
 	# date_time_stamp2time = [dt.datetime.fromtimestamp(int(_)) for _ in date_time_stamp2sec//1 ]
-	plt.plot(date_time_stamp2time,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]/np.max(multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]),label=index[i_index*3+2])
+	plt.plot(date_time_stamp2time,temp/np.max(temp),label=index[i_index*3+2])
 	plt.legend(loc='best')
 	plt.grid()
 plt.pause(0.1)

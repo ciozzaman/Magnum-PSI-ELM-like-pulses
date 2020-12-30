@@ -24,7 +24,7 @@ from scipy.signal import find_peaks, peak_prominences as get_proms
 from multiprocessing import Pool,cpu_count
 number_cpu_available = cpu_count()
 print('Number of cores available: '+str(number_cpu_available))
-
+import datetime
 
 os.chdir('/home/ffederic/work/Collaboratory/test/experimental_data/functions')
 print(os.path.abspath(os.getcwd()))
@@ -39,9 +39,9 @@ exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/IR_records_p
 
 
 temp=[]
-merge_id_all = [66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 92, 93, 94, 96, 97, 98, 88, 99]
-# merge_id_all = [85, 95, 86, 87, 89, 92, 93, 94, 96, 97, 98, 88, 99]
-# merge_id_all = [97]
+# merge_id_all = [66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 92, 93, 94, 96, 97, 98, 88, 99]
+merge_id_all = [85, 95, 86, 87, 89, 92, 93, 94, 96, 97, 98, 88, 99]
+# merge_id_all = [95]
 for merge_id in merge_id_all:
 	temp.extend(find_index_of_file(merge_id,df_settings,df_log,only_OES=False))
 all_j=[]
@@ -83,7 +83,7 @@ for j in np.flip(all_j,axis=0):
 			print('Equivalent to merge '+str(merge_ID))
 			break
 
-	pre_title = 'merge %.3g, B=%.3gT, pos=%.3gmm, P=%.3gPa, ELMen=%.3gJ \n' %(merge_ID,magnetic_field,target_OES_distance,target_chamber_pressure,0.5*(capacitor_voltage**2)*150e-6)
+	pre_title = 'merge %.3g, B=%.3gT, pos=%.3gmm, P=%.3gPa, ELMen=%.3gJ, target: %.100s\n' %(merge_ID,magnetic_field,target_OES_distance,target_chamber_pressure,0.5*(capacitor_voltage**2)*150e-6,target_material)
 
 	if isinstance(fname_current_trace,str):
 		if os.path.exists(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/'+fname_current_trace+'.tsf'):
@@ -185,9 +185,39 @@ for j in np.flip(all_j,axis=0):
 	header = ryptw.readPTWHeader('/home/ffederic/work/Collaboratory/test/experimental_data/'+folder+'/'+"{0:0=2g}".format(sequence)+'/IR_camera/'+IR_trace+'.ptw')
 
 	frames = []
+	yyyy = []
+	mm = []
+	dd = []
+	hh = []
+	minutes = []
+	ss_sss = []
+	yyyy_mm_dd_in_ss = []
 	for i in range(header.h_firstframe,header.h_lastframe):
 		frame = ryptw.getPTWFrames(header, [i])[0][0]
 		frames.append(frame.flatten().reshape(np.shape(frame.T)).T)
+		temp = ryptw.getPTWFrames(header, [i])[1][0]
+		yyyy.append(temp.h_FileSaveYear)
+		mm.append(temp.h_FileSaveMonth)
+		dd.append(temp.h_FileSaveDay)
+		hh.append(temp.h_frameHour)
+		minutes.append(temp.h_frameMinute)
+		ss_sss.append(temp.h_frameSecond)
+		yyyy_mm_dd_in_ss.append(datetime.datetime(temp.h_FileSaveYear-30,temp.h_FileSaveMonth,temp.h_FileSaveDay).timestamp())	# I follow the same convention as the OES camera. t=0 is at the start of year 2000
+	yyyy = np.array(yyyy)
+	mm = np.array(mm)
+	dd = np.array(dd)
+	hh = np.array(hh)
+	minutes = np.array(minutes)
+	ss_sss = np.array(ss_sss)
+	yyyy_mm_dd_in_ss = np.array(yyyy_mm_dd_in_ss)
+	day_ss = (hh*60+minutes)*60+ss_sss
+	original_timestamp_ms = (yyyy_mm_dd_in_ss+day_ss)*1000
+	# effective_dt = np.mean(np.diff(day_ss))
+	effective_dt = header.h_CEDIPAquisitionPeriod
+	temp = np.mean(day_ss-np.arange(len(day_ss))*effective_dt)
+	day_ss = np.arange(len(day_ss))*effective_dt + temp
+	corrected_timestamp_ms = (yyyy_mm_dd_in_ss + day_ss)*1000
+
 	print('mark3')
 
 	spectra = np.fft.fft(np.array(frames).reshape((np.shape(frames)[0],np.shape(frames)[1]*np.shape(frames)[2]))[:,2000:5000],axis=0)
@@ -312,12 +342,38 @@ for j in np.flip(all_j,axis=0):
 	plt.close()
 
 	de=0
-	if True:	# counts temperature conversion from Yu Li
+	if True:	# temperature dependent material properties. I leave the density unchanged to avoid losses of mass and because the variation is negligible
 		tau = 0.145
-		if target_material in ['TZM thin','TZM thick','molibdenum']:
+		if target_material in ['molibdenum']:
+			thermal_conductivity = Moly_thermal_conductivity_interp	# W/mK
+			heat_capacity = Moly_heat_capacity_interp	# J/kg k
+			density = Moly_density_interp(20)	# kg/m3
+			de=0.05
+		elif target_material in ['TZM thin','TZM thick']:
+			thermal_conductivity = TZM_thermal_conductivity_interp	# W/mK
+			heat_capacity = TZM_heat_capacity_interp	# J/kg k
+			density = TZM_density_interp(20)	# kg/m3
+			de=0.05
+		elif target_material in ['tungsten dummy','tungsten']:
+			thermal_conductivity = W_thermal_conductivity_interp	# W/mK
+			heat_capacity = W_heat_capacity_interp	# J/kg k
+			density = W_density_interp(20)	# kg/m3
+			de=0.2
+		else:
+			print('Error, target material not specified. add it to the shot characteristics')
+			exit()
+		counts_to_temperature,counts_to_emissivity = dl2temp_generator(de,0,tau,int_time*1e6,target_material,out_emissivity=True)
+	elif False:	# counts temperature conversion from Yu Li
+		tau = 0.145
+		if target_material in ['molibdenum']:
 			thermal_conductivity = 126	# W/mK
 			heat_capacity = 305	# J/kg k
-			density = 370	# kg/m3
+			density = 10220	# kg/m3
+			de=0.05
+		elif target_material in ['TZM thin','TZM thick']:
+			thermal_conductivity = 126	# W/mK
+			heat_capacity = 305	# J/kg k
+			density = 10220	# kg/m3
 			de=0.05
 		elif target_material in ['tungsten dummy','tungsten']:
 			thermal_conductivity = 175	# W/mK
@@ -328,7 +384,7 @@ for j in np.flip(all_j,axis=0):
 			print('Error, target material not specified. add it to the shot characteristics')
 			exit()
 		counts_to_temperature,counts_to_emissivity = dl2temp_generator(de,0,tau,int_time*1e6,target_material,out_emissivity=True)
-	else:
+	elif False:	# deprecated
 		if int_time == 1e-4:
 			if target_material in ['TZM thin','TZM thick','molibdenum']:
 				counts_to_emissivity = emissivity_interpolator_100mus_inttime_molibdenum
@@ -417,7 +473,7 @@ for j in np.flip(all_j,axis=0):
 		print('mark1')
 		for i in range(len(corrected_frames)):
 			# emissivity[i] = np.exp(counts_to_emissivity(corrected_frames[i]))
-			corrected_frames_temp[i] = np.exp(counts_to_temperature(corrected_frames[i]))+20
+			corrected_frames_temp[i] = np.exp(counts_to_temperature(corrected_frames[i]))
 		print('mark2')
 
 		selected_1_mean = np.mean(corrected_frames_temp[:,selected_1],axis=-1)
@@ -464,6 +520,10 @@ for j in np.flip(all_j,axis=0):
 
 	# plt.figure(figsize=(20, 10));plt.plot(selected_1_mean);plt.plot(selected_1_max);plt.plot(selected_2_mean);plt.plot(selected_2_max);plt.pause(0.01)
 
+	full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
+	full_saved_file_dict['original_timestamp_ms'] = original_timestamp_ms
+	full_saved_file_dict['corrected_timestamp_ms'] = corrected_timestamp_ms
+	np.savez_compressed(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace,**full_saved_file_dict)
 
 	if np.max(proms[:-int(number_of_pulses/3)])<20:
 		if np.sum((proms[1:]/proms[:-1])>50)==0:
@@ -540,6 +600,10 @@ for j in np.flip(all_j,axis=0):
 		else:
 			plt.title(pre_title+'Pulse comparison for '+str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
 
+		full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
+		full_saved_file_dict['index_good_pulses'] = peaks
+		np.savez_compressed(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace,**full_saved_file_dict)
+
 		very_good_pulses = []
 		interval_between_pulses = np.min(np.diff(peaks))
 		for i_peak_pos,peak_pos in enumerate(peaks):
@@ -586,6 +650,10 @@ for j in np.flip(all_j,axis=0):
 
 		peaks = peaks[np.logical_and(proms>limit_down,proms<limit_up)]
 		proms = proms[np.logical_and(proms>limit_down,proms<limit_up)]
+
+		full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
+		full_saved_file_dict['index_good_pulses'] = peaks
+		np.savez_compressed(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace,**full_saved_file_dict)
 
 		very_good_pulses = []
 		interval_between_pulses = np.min(np.diff(peaks))
@@ -706,7 +774,7 @@ for j in np.flip(all_j,axis=0):
 	bds=[[0,0,fit1[0][2]-1,fit1[0][3]-1,min(IR_shape[2],10)],[temp,np.inf,fit1[0][2]+1,fit1[0][3]+1,np.max(peak_after_image.shape)/2]]
 	spatial_coord=np.meshgrid(np.arange(np.shape(peak_after_image)[1]),np.arange(np.shape(peak_after_image)[0]))
 	fit2 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(peak_delta_image.flatten()), guess,bounds=bds,maxfev=int(1e4))
-	area_of_interest_sigma = 1/1.14*np.pi*(2**0.5 * (correlated_values(fit2[0],fit2[1])[4])*p2d_v/1000)**2	# Area equivalent to all the overtemperature profile collapsed in a homogeneous circular spot
+	area_of_interest_sigma = 1/1.125*np.pi*(2**0.5 * (correlated_values(fit2[0],fit2[1])[4])*p2d_v/1000)**2	# Area equivalent to all the overtemperature profile collapsed in a homogeneous circular spot
 	area_of_interest_sigma = area_of_interest_sigma + ufloat(0,0.1*area_of_interest_sigma.nominal_value)	# this to add the uncertainly coming from the method itself
 	area_of_interest_radius = 2**0.5 *fit2[0][4]
 
@@ -800,7 +868,7 @@ for j in np.flip(all_j,axis=0):
 	plt.plot(fit1[0][3] + np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/p2d_h/2,fit1[0][2] + (np.abs((max_diameter_to_fit/2)**2-(np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/2)**2)**0.5)/p2d_v,'g--',label='target diameter')
 	plt.plot(fit1[0][3] + np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/p2d_h/2,fit1[0][2] - (np.abs((max_diameter_to_fit/2)**2-(np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/2)**2)**0.5)/p2d_v,'g--')
 	plt.errorbar(fit2[0][3],fit2[0][2],xerr=fit2[1][3,3]**0.5,yerr=fit2[1][2,2]**0.5,color='b')
-	plt.plot(fit2[0][3] + np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)*p2d_v/p2d_h,fit2[0][2] + np.abs(area_of_interest_radius**2-np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)**2)**0.5,'b--',label='fitted\nTmin=%.3g°C, dt=%.3g°C\narea(*1/1.14)=%.3g+/-%.3gm2' %(fit2[0][0],fit2[0][1],area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
+	plt.plot(fit2[0][3] + np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)*p2d_v/p2d_h,fit2[0][2] + np.abs(area_of_interest_radius**2-np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)**2)**0.5,'b--',label='fitted\nTmin=%.3g°C, dt=%.3g°C\narea(*1/1.125)=%.3g+/-%.3gm2' %(fit2[0][0],fit2[0][1],area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
 	plt.plot(fit2[0][3] + np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)*p2d_v/p2d_h,fit2[0][2] - np.abs(area_of_interest_radius**2-np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)**2)**0.5,'b--')
 	# plt.plot(fit2[0][2] + np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/p2d_h/2,fit2[0][3] + (np.abs((max_diameter_to_fit/2)**2-(np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/2)**2)**0.5)/p2d_v,'g--',label='target diameter')
 	# plt.plot(fit2[0][2] + np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/p2d_h/2,fit2[0][3] - (np.abs((max_diameter_to_fit/2)**2-(np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/2)**2)**0.5)/p2d_v,'g--')
@@ -842,6 +910,37 @@ for j in np.flip(all_j,axis=0):
 	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
 	plt.close()
 
+	index_good_pulses_refined = []
+	index_good_pulses_refined_plus = []
+	interval_to_find_peak = int(0.3e-3*frequency*10)
+	for i_peak_pos,peak_pos in enumerate(peaks):
+		left = peak_pos-int(3*frequency/1000)
+		right = peak_pos+int(interval_between_pulses*1/3)
+		# if right>=len(selected_1_max_counts):
+		# 	continue
+		traces_corrected = selected_2_max_counts[left:right]
+		traces_corrected_mean = selected_2_mean_counts[left:right]
+		# plt.figure(),plt.plot(np.arange(len(traces_corrected)),traces_corrected-traces_corrected[0]),plt.plot(np.arange(len(traces_corrected_mean)),traces_corrected_mean-traces_corrected_mean[0]),plt.pause(0.01)
+		# tck = interpolate.splrep(np.arange(right-left)/frequency, traces_corrected,s=20,k=2)
+		# interpolated = interpolate.splev(np.arange((right-left)*10)/10/frequency, tck)
+		tck = interpolate.interp1d(np.arange(right-left)/frequency, traces_corrected,bounds_error=False,fill_value='extrapolate')
+		interpolated = tck(np.arange((right-left)*10)/10/frequency)
+		# plt.plot(np.arange((right-left)*10)/10,interpolated-interpolated[0],'+'),plt.pause(0.01)
+		interpolated = np.convolve(interpolated, np.ones((interval_to_find_peak))/interval_to_find_peak , mode='same')
+		# plt.plot(np.arange((right-left)*10)/10,interpolated-interpolated[0],'+'),plt.plot((np.arange((right-left)*10)/10)[interpolated.argmax()],interpolated.max()-interpolated[0],'o'),plt.pause(0.01)
+		# real_peak_loc = (np.arange((right-left)*10)/10)[traces_corrected.argmax()*10-20+(interpolated[traces_corrected.argmax()*10-20:traces_corrected.argmax()*10+20].argmax())]
+		real_peak_loc = interpolated.argmax()/10
+		index_good_pulses_refined.append(left+real_peak_loc)
+		fit = np.polyfit((np.arange((right-left)*10)/10)[interpolated.argmax()-int(0.5*interval_to_find_peak)+1:interpolated.argmax()+int(0.5*interval_to_find_peak)],interpolated[interpolated.argmax()-int(0.5*interval_to_find_peak)+1:interpolated.argmax()+int(0.5*interval_to_find_peak)],2)
+		# plt.plot((np.arange((right-left)*10)/10)[interpolated.argmax()-int(0.5*interval_to_find_peak)+1:interpolated.argmax()+int(0.5*interval_to_find_peak)],-interpolated[0]+np.polyval(fit,(np.arange((right-left)*10)/10)[interpolated.argmax()-int(0.5*interval_to_find_peak)+1:interpolated.argmax()+int(0.5*interval_to_find_peak)]))
+		# plt.plot(-fit[1]/(2*fit[0]),interpolated.max()-interpolated[0],'o'),plt.pause(0.001)
+		index_good_pulses_refined_plus.append(left-fit[1]/(2*fit[0]))
+	index_good_pulses_refined = np.array(index_good_pulses_refined)
+	index_good_pulses_refined_plus = np.array(index_good_pulses_refined_plus)
+	full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
+	full_saved_file_dict['index_good_pulses_refined'] = index_good_pulses_refined
+	full_saved_file_dict['index_good_pulses_refined_plus'] = index_good_pulses_refined_plus
+	np.savez_compressed(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace,**full_saved_file_dict)
 
 	# plt.figure()
 	peak_shape = []
@@ -1069,30 +1168,34 @@ for j in np.flip(all_j,axis=0):
 			ax[0,2].plot([1000*temp_time[np.abs(temp_time-1e-3).argmin()]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--',label='dT=%.3g°C' %(ensamble_peak_shape[np.abs(temp_time-1e-3).argmin()]-SS_ensamble))
 			ax[0,2].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble))
 			ax[0,3].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble))
-			ax[0,3].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b',label='dT(mean 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble))
+			ax[0,3].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b',label='dT(mean peak + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble))
 			ax[0,3].plot([1000*temp_time[np.abs(temp_time-3e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b')
 			ax[0,3].plot(1000*peak_shape_time,ensamble_peak_shape_full,'k',linewidth=2)
+			ax[0,3].set_ylim(top=min(ensamble_peak_shape_full.max()+40,ensamble_peak_shape_full.max()*1.07))
 
 			# ax2[0,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble))
 			ax2[0,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--g')
-			ax2[0,1].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b',label='dT(mean 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time-5e-3).argmin():np.abs(temp_time-5e-3).argmin()])-SS_ensamble))
+			ax2[0,1].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b',label='dT(mean peak + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time-5e-3).argmin():np.abs(temp_time-5e-3).argmin()])-SS_ensamble))
 			ax2[0,1].plot([1000*temp_time[np.abs(temp_time-3e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b')
 			ax2[0,1].plot(1000*peak_shape_time,ensamble_peak_shape_full,'k',linewidth=2)
+			ax2[0,1].set_ylim(top=min(ensamble_peak_shape_full.max()+40,ensamble_peak_shape_full.max()*1.07))
 
 			ax[1,2].plot(1000*temp_time,ensamble_peak_mean_shape,'-k',linewidth=2)
 			ax[1,2].plot([1000*temp_time[ensamble_peak_mean_shape.argmax()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--',label='dT=%.3g°C' %(ensamble_peak_mean_shape[ensamble_peak_mean_shape.argmax()]-SS_ensamble_mean))
 			ax[1,2].plot([1000*temp_time[np.abs(temp_time-1e-3).argmin()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--',label='dT=%.3g°C' %(ensamble_peak_mean_shape[np.abs(temp_time-1e-3).argmin()]-SS_ensamble_mean))
 			ax[1,2].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_mean_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble_mean))
 			ax[1,3].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_mean_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble_mean))
-			ax[1,3].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b',label='dT(mean 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble_mean))
+			ax[1,3].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b',label='dT(mean peak + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble_mean))
 			ax[1,3].plot([1000*temp_time[np.abs(temp_time-3e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b')
 			ax[1,3].plot(1000*peak_shape_time,ensamble_peak_mean_shape_full,'k',linewidth=2)
+			ax[1,3].set_ylim(top=min(ensamble_peak_mean_shape_full.max()+40,ensamble_peak_mean_shape_full.max()*1.07))
 
 			# ax2[1,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_mean_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble_mean))
 			ax2[1,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--g')
-			ax2[1,1].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b',label='dT(mean 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble_mean))
+			ax2[1,1].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b',label='dT(mean peak + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble_mean))
 			ax2[1,1].plot([1000*temp_time[np.abs(temp_time-3e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b')
 			ax2[1,1].plot(1000*peak_shape_time,ensamble_peak_mean_shape_full,'k',linewidth=2)
+			ax2[1,1].set_ylim(top=min(ensamble_peak_mean_shape_full.max()+40,ensamble_peak_mean_shape_full.max()*1.07))
 
 			end_end_pulse = np.abs(temp_time*1000-1.5).argmin()
 			post_pulse = np.abs(temp_time*1000-30).argmin()
@@ -1131,34 +1234,34 @@ for j in np.flip(all_j,axis=0):
 
 			# this aproach comes from a reference given me by Bruce: EVAPORATION FOR HEAT PULSES ON Ni, MO, W AND ATJ GRAPHITE AS FIRST WALL MATERIALS
 			def semi_infinite_sink_decrease(time,*args):
-				out = args[1]/args[2]*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *(time**0.5 - (time-args[2])**0.5) + args[0]
+				out = args[1]/args[2]*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *(time**0.5 - (time-args[2])**0.5) + args[0]
 				# print(out)
 				return out
 
 			def semi_infinite_sink_increase(time,*args):
-				out = args[1]/args[2]*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *(time**0.5) + args[0]
+				out = args[1]/args[2]*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *(time**0.5) + args[0]
 				# print(out)
 				return out
 
 			# def semi_infinite_sink_full_decrease(time,*args):
-			# 	out = args[1]/args[2]*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *((time-args[3])**0.5 - (time-args[3]-args[2])**0.5) + args[0]
+			# 	out = args[1]/args[2]*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *((time-args[3])**0.5 - (time-args[3]-args[2])**0.5) + args[0]
 			# 	# print(out)
 			# 	return out
 			def semi_infinite_sink_full_decrease(max_total_time):
 				def function(time,*args):
-					out = (args[1]/((max_total_time-args[3])*args[2]))*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *((time-args[3])**0.5 - (time-args[3]-(max_total_time-args[3])*args[2])**0.5) + args[0]
+					out = (args[1]/((max_total_time-args[3])*args[2]))*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *((time-args[3])**0.5 - (time-args[3]-(max_total_time-args[3])*args[2])**0.5) + args[0]
 					# print(out)
 					return np.nanmax([np.ones_like(out)*args[0],out],axis=0)
 				return function
 
 
 			# def semi_infinite_sink_full_increase(time,*args):
-			# 	out = args[1]/args[2]*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *((time-args[3])**0.5) + args[0]
+			# 	out = args[1]/args[2]*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *((time-args[3])**0.5) + args[0]
 			# 	# print(out)
 			# 	return out
 			def semi_infinite_sink_full_increase(max_total_time):
 				def function(time,*args):
-					out = (args[1]/((max_total_time-args[3])*args[2]))*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *((time-args[3])**0.5) + args[0]
+					out = (args[1]/((max_total_time-args[3])*args[2]))*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *((time-args[3])**0.5) + args[0]
 					# print(out)
 					return np.nanmax([np.ones_like(out)*args[0],out],axis=0)
 				return function
@@ -1173,8 +1276,8 @@ for j in np.flip(all_j,axis=0):
 			pulse_energy = pulse_energy_density*area_of_interest_sigma
 			# ax[0,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=2,label='semi-infinite solid\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
 			# ax[0,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=2,label='semi-infinite solid\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
-			ax[0,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
-			ax[0,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[0,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid t0=peak fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[0,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid t0=peak fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax[0,2].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=1)
 			ax[0,3].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=1)
 			ax[0,2].set_ylim(bottom=fit[0][0]-2,top=np.nanmax(10+semi_infinite_sink_decrease(np.array([1.5,1.7,2])*1e-3,*fit[0])))
@@ -1193,8 +1296,8 @@ for j in np.flip(all_j,axis=0):
 			pulse_energy_density = (fit_wit_errors[1]+ufloat(0,0.1*fit_wit_errors[1].nominal_value))	# this to add the uncertainly coming from the method itself
 			pulse_energy = pulse_energy_density*area_of_interest_sigma
 			pulse_duration_ms = 1e3*(temp_time[end_end_pulse]-fit_wit_errors[3])*fit_wit_errors[2]
-			ax[0,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
-			ax[0,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[0,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[0,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax[0,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax[0,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax[0,3].plot([1000*fit[0][3]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--c')
@@ -1202,7 +1305,7 @@ for j in np.flip(all_j,axis=0):
 			ax[0,2].plot([-5,20],[fit[0][0]]*2,'--r')
 			ax[0,3].plot([-5,20],[fit[0][0]]*2,'--r')
 
-			ax2[0,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax2[0,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax2[0,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax2[0,1].plot([1000*fit[0][3]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--c')
 			ax2[0,0].plot([1000*fit[0][3]]*2,[0,1e6],'--c')
@@ -1239,9 +1342,9 @@ for j in np.flip(all_j,axis=0):
 			R2 = 1-np.sum(((ensamble_peak_mean_shape[end_end_pulse:post_pulse]-semi_infinite_sink_decrease(temp_time[end_end_pulse:post_pulse],*fit[0]))**2)[valid])/np.sum(((ensamble_peak_mean_shape[end_end_pulse:post_pulse]-np.mean(ensamble_peak_mean_shape[end_end_pulse:post_pulse]))**2)[valid])
 			fit_wit_errors = correlated_values(fit[0],fit[1])
 			pulse_energy_density = (fit_wit_errors[1]+ufloat(0,0.1*fit_wit_errors[1].nominal_value))	# this to add the uncertainly coming from the method itself
-			pulse_energy = pulse_energy_density*area_of_interest_sigma
-			ax[1,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
-			ax[1,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			pulse_energy = pulse_energy_density*area_of_interest_sigma*1/1.08	# 1/1.08 correction from the forward modeling check
+			ax[1,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid t0=peak fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[1,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid t0=peak fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax[1,2].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=1)
 			ax[1,3].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=1)
 			ax[1,2].set_ylim(bottom=fit[0][0]-2,top=np.nanmax(10+semi_infinite_sink_decrease(np.array([1.5,1.7,2])*1e-3,*fit[0])))
@@ -1254,10 +1357,10 @@ for j in np.flip(all_j,axis=0):
 			R2 = 1-np.sum(((ensamble_peak_mean_shape[end_end_pulse:post_pulse]-semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(temp_time[end_end_pulse:post_pulse],*fit[0]))**2)[valid])/np.sum(((ensamble_peak_mean_shape[end_end_pulse:post_pulse]-np.mean(ensamble_peak_mean_shape[end_end_pulse:post_pulse]))**2)[valid])
 			fit_wit_errors = correlated_values(fit[0],fit[1])
 			pulse_energy_density = (fit_wit_errors[1]+ufloat(0,0.1*fit_wit_errors[1].nominal_value))	# this to add the uncertainly coming from the method itself
-			pulse_energy = pulse_energy_density*area_of_interest_sigma
+			pulse_energy = pulse_energy_density*area_of_interest_sigma*1/1.08	# 1/1.08 correction from the forward modeling check
 			pulse_duration_ms = 1e3*(temp_time[end_end_pulse]-fit_wit_errors[3])*fit_wit_errors[2]
-			ax[1,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
-			ax[1,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[1,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[1,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax[1,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax[1,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax[1,3].plot([1000*fit[0][3]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--c')
@@ -1265,7 +1368,7 @@ for j in np.flip(all_j,axis=0):
 			ax[1,2].plot([-5,20],[fit[0][0]]*2,'--r')
 			ax[1,3].plot([-5,20],[fit[0][0]]*2,'--r')
 
-			ax2[1,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax2[1,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax2[1,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax2[1,1].plot([1000*fit[0][3]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--c')
 			ax2[1,0].plot([1000*fit[0][3]]*2,[0,1e6],'--c')
@@ -1289,7 +1392,7 @@ for j in np.flip(all_j,axis=0):
 	ax[0,2].grid()
 	ax[0,2].set_xlabel('time [ms]')
 	ax[0,2].set_ylabel('temperature [°C]')
-	ax[0,2].set_title('large area max temp\narea(*1/1.14)=%.3g+/-%.3gm2' %(area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
+	ax[0,2].set_title('large area max full temp')
 	ax[1,2].set_xlim(left=0,right=15)
 	# ax[plot_index,0].set_ylim(bottom=ensamble_peak_shape.min(),top=1.5*ensamble_peak_shape.max())
 	ax[1,2].legend(loc='best', fontsize='x-small')
@@ -1305,7 +1408,7 @@ for j in np.flip(all_j,axis=0):
 	ax[0,3].grid()
 	ax[0,3].set_xlabel('time [ms]')
 	ax[0,3].set_ylabel('temperature [°C]')
-	ax[0,3].set_title('large area max full temp')
+	ax[0,3].set_title('large area max temp\narea(*1/1.125)=%.3g+/-%.3gm2' %(area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
 	ax[1,3].set_xlim(left=-2,right=15)
 	ax[1,3].legend(loc='best', fontsize='x-small')
 	ax[1,3].grid()
@@ -1320,7 +1423,7 @@ for j in np.flip(all_j,axis=0):
 	ax2[0,1].grid()
 	ax2[0,1].set_xlabel('time [ms]')
 	ax2[0,1].set_ylabel('temperature [°C]')
-	ax2[0,1].set_title('large area max full temp\narea(*1/1.14)=%.3g+/-%.3gm2' %(area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
+	ax2[0,1].set_title('large area max full temp\narea(*1/1.125)=%.3g+/-%.3gm2' %(area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
 	ax2[1,1].set_xlim(left=-2,right=15)
 	ax2[1,1].legend(loc='best', fontsize='small')
 	ax2[1,1].grid()
@@ -1471,7 +1574,7 @@ for j in np.flip(all_j,axis=0):
 	spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_1_5ms)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_1_5ms)[0]))
 	print(guess);print(bds)
 	fit2 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_delta_1_5ms.flatten()), guess,bounds=bds,maxfev=int(1e4))
-	area_of_interest_sigma = 1/1.14*np.pi*( 2**0.5 *(correlated_values(fit2[0],fit2[1])[4])*p2d_v/1000)**2	# Area equivalent to all the overtemperature profile collapsed in a homogeneous circular spot
+	area_of_interest_sigma = 1/1.125*np.pi*( 2**0.5 *(correlated_values(fit2[0],fit2[1])[4])*p2d_v/1000)**2	# Area equivalent to all the overtemperature profile collapsed in a homogeneous circular spot
 	area_of_interest_sigma = area_of_interest_sigma + ufloat(0,0.1*area_of_interest_sigma.nominal_value)	# this to add the uncertainly coming from the method itself
 	area_of_interest_radius = 2**0.5 *fit2[0][4]	# pixels
 
@@ -1544,7 +1647,7 @@ for j in np.flip(all_j,axis=0):
 	plt.plot(fit1[0][3] + np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/p2d_h/2,fit1[0][2] + (np.abs((max_diameter_to_fit/2)**2-(np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/2)**2)**0.5)/p2d_v,'g--',label='target diameter')
 	plt.plot(fit1[0][3] + np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/p2d_h/2,fit1[0][2] - (np.abs((max_diameter_to_fit/2)**2-(np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/2)**2)**0.5)/p2d_v,'g--')
 	plt.errorbar(fit2[0][3],fit2[0][2],xerr=fit2[1][3,3]**0.5,yerr=fit2[1][2,2]**0.5,color='b')
-	plt.plot(fit2[0][3] + np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)*p2d_v/p2d_h,fit2[0][2] + np.abs(area_of_interest_radius**2-np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)**2)**0.5,'b--',label='fitted\nTmin=%.3g°C, dt=%.3g°C\narea(*1/1.14)=%.3g+/-%.3gm2' %(fit2[0][0],fit2[0][1],area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
+	plt.plot(fit2[0][3] + np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)*p2d_v/p2d_h,fit2[0][2] + np.abs(area_of_interest_radius**2-np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)**2)**0.5,'b--',label='fitted\nTmin=%.3g°C, dt=%.3g°C\narea(*1/1.125)=%.3g+/-%.3gm2' %(fit2[0][0],fit2[0][1],area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
 	plt.plot(fit2[0][3] + np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)*p2d_v/p2d_h,fit2[0][2] - np.abs(area_of_interest_radius**2-np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)**2)**0.5,'b--')
 	# plt.plot(fit2[0][2] + np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/p2d_h/2,fit2[0][3] + (np.abs((max_diameter_to_fit/2)**2-(np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/2)**2)**0.5)/p2d_v,'g--',label='target diameter')
 	# plt.plot(fit2[0][2] + np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/p2d_h/2,fit2[0][3] - (np.abs((max_diameter_to_fit/2)**2-(np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/2)**2)**0.5)/p2d_v,'g--')
@@ -1740,30 +1843,34 @@ for j in np.flip(all_j,axis=0):
 			ax[0,2].plot([1000*temp_time[np.abs(temp_time-1e-3).argmin()]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--',label='dT=%.3g°C' %(ensamble_peak_shape[np.abs(temp_time-1e-3).argmin()]-SS_ensamble))
 			ax[0,2].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape.min(),ensamble_peak_shape.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble))
 			ax[0,3].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble))
-			ax[0,3].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b',label='dT(mean 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble))
+			ax[0,3].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b',label='dT(mean peak + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble))
 			ax[0,3].plot([1000*temp_time[np.abs(temp_time-3e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b')
 			ax[0,3].plot(1000*peak_shape_time,ensamble_peak_shape_full,'k',linewidth=2)
+			ax[0,3].set_ylim(top=min(ensamble_peak_shape_full.max()+40,ensamble_peak_shape_full.max()*1.07))
 
 			# ax2[0,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble))
 			ax2[0,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--g')
-			ax2[0,1].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b',label='dT(mean 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble))
+			ax2[0,1].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b',label='dT(mean peak + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble))
 			ax2[0,1].plot([1000*temp_time[np.abs(temp_time-3e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b')
 			ax2[0,1].plot(1000*peak_shape_time,ensamble_peak_shape_full,'k',linewidth=2)
+			ax2[0,1].set_ylim(top=min(ensamble_peak_shape_full.max()+40,ensamble_peak_shape_full.max()*1.07))
 
 			ax[1,2].plot(1000*temp_time,ensamble_peak_mean_shape,'-k',linewidth=2)
 			ax[1,2].plot([1000*temp_time[ensamble_peak_mean_shape.argmax()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--',label='dT=%.3g°C' %(ensamble_peak_mean_shape[ensamble_peak_mean_shape.argmax()]-SS_ensamble_mean))
 			ax[1,2].plot([1000*temp_time[np.abs(temp_time-1e-3).argmin()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--',label='dT=%.3g°C' %(ensamble_peak_mean_shape[np.abs(temp_time-1e-3).argmin()]-SS_ensamble_mean))
 			ax[1,2].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape.min(),ensamble_peak_mean_shape.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_mean_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble_mean))
 			ax[1,3].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_mean_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble_mean))
-			ax[1,3].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b',label='dT(mean 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble_mean))
+			ax[1,3].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b',label='dT(mean peak + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble_mean))
 			ax[1,3].plot([1000*temp_time[np.abs(temp_time-3e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b')
 			ax[1,3].plot(1000*peak_shape_time,ensamble_peak_mean_shape_full,'k',linewidth=2)
+			ax[1,3].set_ylim(top=min(ensamble_peak_mean_shape_full.max()+40,ensamble_peak_mean_shape_full.max()*1.07))
 
 			# ax2[1,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_mean_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble_mean))
 			ax2[1,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--g')
-			ax2[1,1].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b',label='dT(mean 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble_mean))
+			ax2[1,1].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b',label='dT(mean peak + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble_mean))
 			ax2[1,1].plot([1000*temp_time[np.abs(temp_time-3e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b')
 			ax2[1,1].plot(1000*peak_shape_time,ensamble_peak_mean_shape_full,'k',linewidth=2)
+			ax2[1,1].set_ylim(top=min(ensamble_peak_mean_shape_full.max()+40,ensamble_peak_mean_shape_full.max()*1.07))
 
 			end_end_pulse = np.abs(temp_time*1000-1.5).argmin()
 			post_pulse = np.abs(temp_time*1000-30).argmin()
@@ -1802,34 +1909,34 @@ for j in np.flip(all_j,axis=0):
 
 			# this aproach comes from a reference given me by Bruce: EVAPORATION FOR HEAT PULSES ON Ni, MO, W AND ATJ GRAPHITE AS FIRST WALL MATERIALS
 			def semi_infinite_sink_decrease(time,*args):
-				out = args[1]/args[2]*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *(time**0.5 - (time-args[2])**0.5) + args[0]
+				out = args[1]/args[2]*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *(time**0.5 - (time-args[2])**0.5) + args[0]
 				# print(out)
 				return out
 
 			def semi_infinite_sink_increase(time,*args):
-				out = args[1]/args[2]*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *(time**0.5) + args[0]
+				out = args[1]/args[2]*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *(time**0.5) + args[0]
 				# print(out)
 				return out
 
 			# def semi_infinite_sink_full_decrease(time,*args):
-			# 	out = args[1]/args[2]*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *((time-args[3])**0.5 - (time-args[3]-args[2])**0.5) + args[0]
+			# 	out = args[1]/args[2]*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *((time-args[3])**0.5 - (time-args[3]-args[2])**0.5) + args[0]
 			# 	# print(out)
 			# 	return out
 			def semi_infinite_sink_full_decrease(max_total_time):
 				def function(time,*args):
-					out = (args[1]/((max_total_time-args[3])*args[2]))*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *((time-args[3])**0.5 - (time-args[3]-(max_total_time-args[3])*args[2])**0.5) + args[0]
+					out = (args[1]/((max_total_time-args[3])*args[2]))*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *((time-args[3])**0.5 - (time-args[3]-(max_total_time-args[3])*args[2])**0.5) + args[0]
 					# print(out)
 					return np.nanmax([np.ones_like(out)*args[0],out],axis=0)
 				return function
 
 
 			# def semi_infinite_sink_full_increase(time,*args):
-			# 	out = args[1]/args[2]*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *((time-args[3])**0.5) + args[0]
+			# 	out = args[1]/args[2]*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *((time-args[3])**0.5) + args[0]
 			# 	# print(out)
 			# 	return out
 			def semi_infinite_sink_full_increase(max_total_time):
 				def function(time,*args):
-					out = (args[1]/((max_total_time-args[3])*args[2]))*2/((np.pi*thermal_conductivity*heat_capacity*density)**0.5) *((time-args[3])**0.5) + args[0]
+					out = (args[1]/((max_total_time-args[3])*args[2]))*2/((np.pi*thermal_conductivity(args[0])*heat_capacity(args[0])*density)**0.5) *((time-args[3])**0.5) + args[0]
 					# print(out)
 					return np.nanmax([np.ones_like(out)*args[0],out],axis=0)
 				return function
@@ -1843,11 +1950,11 @@ for j in np.flip(all_j,axis=0):
 			R2 = 1-np.sum(((ensamble_peak_shape[end_end_pulse:post_pulse]-semi_infinite_sink_decrease(temp_time[end_end_pulse:post_pulse],*fit[0]))**2)[valid])/np.sum(((ensamble_peak_shape[end_end_pulse:post_pulse]-np.mean(ensamble_peak_shape[end_end_pulse:post_pulse]))**2)[valid])
 			fit_wit_errors = correlated_values(fit[0],fit[1])
 			pulse_energy_density = (fit_wit_errors[1]+ufloat(0,0.1*fit_wit_errors[1].nominal_value))	# this to add the uncertainly coming from the method itself
-			pulse_energy = pulse_energy_density*area_of_interest_sigma
+			pulse_energy = pulse_energy_density*area_of_interest_sigma*1/1.08	# 1/1.08 correction from the forward modeling check
 			# ax[0,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=2,label='semi-infinite solid\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
 			# ax[0,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=2,label='semi-infinite solid\nT SS=%.3g°C\nEdens=%.3gJ/m2\ntau=%.3gms\nEnergy=%.3gJ' %(fit[0][0],fit[0][1]*fit[0][2],fit[0][2]*1000,fit[0][1]*fit[0][2]*area_of_interest))
-			ax[0,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
-			ax[0,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[0,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid t0=peak fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[0,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid t0=peak fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax[0,2].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=1)
 			ax[0,3].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=1)
 			ax[0,2].set_ylim(bottom=fit[0][0]-2,top=np.nanmax(10+semi_infinite_sink_decrease(np.array([1.5,1.7,2])*1e-3,*fit[0])))
@@ -1872,10 +1979,10 @@ for j in np.flip(all_j,axis=0):
 			# fit_wit_errors[2] += -peak_shape_time[start_pulse]
 			fit_wit_errors = correlated_values(fit[0],fit[1])
 			pulse_energy_density = (fit_wit_errors[1]+ufloat(0,0.1*fit_wit_errors[1].nominal_value))	# this to add the uncertainly coming from the method itself
-			pulse_energy = pulse_energy_density*area_of_interest_sigma
+			pulse_energy = pulse_energy_density*area_of_interest_sigma*1/1.08	# 1/1.08 correction from the forward modeling check
 			pulse_duration_ms = 1e3*(temp_time[end_end_pulse]-fit_wit_errors[3])*fit_wit_errors[2]
-			ax[0,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
-			ax[0,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[0,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[0,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax[0,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax[0,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax[0,3].plot([1000*fit[0][3]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--c')
@@ -1883,7 +1990,7 @@ for j in np.flip(all_j,axis=0):
 			ax[0,2].plot([-5,20],[fit[0][0]]*2,'--r')
 			ax[0,3].plot([-5,20],[fit[0][0]]*2,'--r')
 
-			ax2[0,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax2[0,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax2[0,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax2[0,1].plot([1000*fit[0][3]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--c')
 			ax2[0,0].plot([1000*fit[0][3]]*2,[0,1e6],'--c')
@@ -1895,6 +2002,7 @@ for j in np.flip(all_j,axis=0):
 			df_log.loc[j,['area_of_interest [m2]']] = area_of_interest_sigma.nominal_value
 			# df_log.loc[j,['DT_pulse']] = (ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble)
 			df_log.loc[j,['DT_pulse']] = (np.mean(ensamble_peak_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble)
+			df_log.loc[j,['DT_pulse_late']] = (np.mean(ensamble_peak_shape[np.abs(temp_time-10e-3).argmin():np.abs(temp_time-11e-3).argmin()])-SS_ensamble)
 			df_log.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/shots_3.csv')
 
 			guess = [fit[0][0],fit[0][1],0.5,peak_shape_time[start_pulse]]
@@ -1904,15 +2012,15 @@ for j in np.flip(all_j,axis=0):
 			R2 = 1-np.sum(((ensamble_peak_shape[end_end_pulse:post_pulse]-semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(temp_time[end_end_pulse:post_pulse],*fit[0]))**2)[valid])/np.sum(((ensamble_peak_shape[end_end_pulse:post_pulse]-np.mean(ensamble_peak_shape[end_end_pulse:post_pulse]))**2)[valid])
 			fit_wit_errors = correlated_values(fit[0],fit[1])
 			pulse_energy_density = (fit_wit_errors[1]+ufloat(0,0.1*fit_wit_errors[1].nominal_value))	# this to add the uncertainly coming from the method itself
-			pulse_energy = pulse_energy_density*area_of_interest_sigma
+			pulse_energy = pulse_energy_density*area_of_interest_sigma*1/1.08	# 1/1.08 correction from the forward modeling check
 			pulse_duration_ms = 1e3*(temp_time[end_end_pulse]-fit_wit_errors[3])*fit_wit_errors[2]
-			ax[0,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y',label='forced semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
-			ax[0,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y',label='forced semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[0,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y',label='forced semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[0,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y',label='forced semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax[0,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y')
 			ax[0,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y')
 			# ax[0,3].plot([1000*fit[0][3]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--y')
 			# ax[0,0].plot([1000*fit[0][3]]*2,[0,1e6],'--y')
-			ax[0,3].plot([1000*temp_time[np.abs(temp_time - fit[0][3] - 2e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--m',label='dT(mean corr 2-4ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time - fit[0][3] - 2e-3).argmin():np.abs(temp_time - fit[0][3] - 3e-3).argmin()])-SS_ensamble))
+			ax[0,3].plot([1000*temp_time[np.abs(temp_time - fit[0][3] - 2e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--m',label='dT(mean peak + t0 + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time - fit[0][3] - 2e-3).argmin():np.abs(temp_time - fit[0][3] - 3e-3).argmin()])-SS_ensamble))
 			ax[0,3].plot([1000*temp_time[np.abs(temp_time - fit[0][3] - 3e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--m')
 
 			df_log = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/shots_3.csv',index_col=0)
@@ -1949,8 +2057,8 @@ for j in np.flip(all_j,axis=0):
 			fit_wit_errors = correlated_values(fit[0],fit[1])
 			pulse_energy_density = (fit_wit_errors[1]+ufloat(0,0.1*fit_wit_errors[1].nominal_value))	# this to add the uncertainly coming from the method itself
 			pulse_energy = pulse_energy_density*area_of_interest_sigma
-			ax[1,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
-			ax[1,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[1,2].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid t0=peak fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[1,3].plot(1000*peak_shape_time,semi_infinite_sink_decrease(peak_shape_time,*fit[0]),'--m',linewidth=1,label='semi-infinite solid t0=peak fixed\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,fit_wit_errors[2].nominal_value*1e3,fit_wit_errors[2].std_dev*1000,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax[1,2].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=1)
 			ax[1,3].plot(1000*peak_shape_time[peak_shape_time<fit[0][2]],semi_infinite_sink_increase(peak_shape_time[peak_shape_time<fit[0][2]],*fit[0]),'--m',linewidth=1)
 			ax[1,2].set_ylim(bottom=fit[0][0]-2,top=np.nanmax(10+semi_infinite_sink_decrease(np.array([1.5,1.7,2])*1e-3,*fit[0])))
@@ -1966,10 +2074,10 @@ for j in np.flip(all_j,axis=0):
 			R2 = 1-np.sum(((ensamble_peak_mean_shape[end_end_pulse:post_pulse]-semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(temp_time[end_end_pulse:post_pulse],*fit[0]))**2)[valid])/np.sum(((ensamble_peak_mean_shape[end_end_pulse:post_pulse]-np.mean(ensamble_peak_mean_shape[end_end_pulse:post_pulse]))**2)[valid])
 			fit_wit_errors = correlated_values(fit[0],fit[1])
 			pulse_energy_density = (fit_wit_errors[1]+ufloat(0,0.1*fit_wit_errors[1].nominal_value))	# this to add the uncertainly coming from the method itself
-			pulse_energy = pulse_energy_density*area_of_interest_sigma
+			pulse_energy = pulse_energy_density*area_of_interest_sigma*1/1.08	# 1/1.08 correction from the forward modeling check
 			pulse_duration_ms = 1e3*(temp_time[end_end_pulse]-fit_wit_errors[3])*fit_wit_errors[2]
-			ax[1,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
-			ax[1,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[1,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[1,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax[1,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax[1,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax[1,3].plot([1000*fit[0][3]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--c')
@@ -1977,7 +2085,7 @@ for j in np.flip(all_j,axis=0):
 			ax[1,2].plot([-5,20],[fit[0][0]]*2,'--r')
 			ax[1,3].plot([-5,20],[fit[0][0]]*2,'--r')
 
-			ax2[1,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax2[1,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax2[1,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 			ax2[1,1].plot([1000*fit[0][3]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--c')
 			ax2[1,0].plot([1000*fit[0][3]]*2,[0,1e6],'--c')
@@ -1989,15 +2097,15 @@ for j in np.flip(all_j,axis=0):
 			R2 = 1-np.sum(((ensamble_peak_mean_shape[end_end_pulse:post_pulse]-semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(temp_time[end_end_pulse:post_pulse],*fit[0]))**2)[valid])/np.sum(((ensamble_peak_mean_shape[end_end_pulse:post_pulse]-np.mean(ensamble_peak_mean_shape[end_end_pulse:post_pulse]))**2)[valid])
 			fit_wit_errors = correlated_values(fit[0],fit[1])
 			pulse_energy_density = (fit_wit_errors[1]+ufloat(0,0.1*fit_wit_errors[1].nominal_value))	# this to add the uncertainly coming from the method itself
-			pulse_energy = pulse_energy_density*area_of_interest_sigma
+			pulse_energy = pulse_energy_density*area_of_interest_sigma*1/1.08	# 1/1.08 correction from the forward modeling check
 			pulse_duration_ms = 1e3*(temp_time[end_end_pulse]-fit_wit_errors[3])*fit_wit_errors[2]
-			ax[1,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y',label='constrained semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
-			ax[1,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y',label='constrained semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[1,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y',label='constrained semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+			ax[1,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y',label='constrained semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy(*1/1.08)=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
 			ax[1,2].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y')
 			ax[1,3].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--y')
 			# ax[1,3].plot([1000*fit[0][3]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--c')
 			# ax[1,0].plot([1000*fit[0][3]]*2,[0,1e6],'--c')
-			ax[1,3].plot([1000*temp_time[np.abs(temp_time - fit[0][3] - 2e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--m',label='dT(mean corr 2-4ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time - fit[0][3] - 2e-3).argmin():np.abs(temp_time - fit[0][3] - 3e-3).argmin()])-SS_ensamble_mean))
+			ax[1,3].plot([1000*temp_time[np.abs(temp_time - fit[0][3] - 2e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--m',label='dT(mean peak + t0 + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time - fit[0][3] - 2e-3).argmin():np.abs(temp_time - fit[0][3] - 3e-3).argmin()])-SS_ensamble_mean))
 			ax[1,3].plot([1000*temp_time[np.abs(temp_time - fit[0][3] - 3e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--m')
 
 
@@ -2020,7 +2128,7 @@ for j in np.flip(all_j,axis=0):
 	ax[0,2].grid()
 	ax[0,2].set_xlabel('time [ms]')
 	ax[0,2].set_ylabel('temperature [°C]')
-	ax[0,2].set_title('large area max temp\narea(*1/1.14)=%.3g+/-%.3gm2' %(area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
+	ax[0,2].set_title('large area max full temp')
 	ax[1,2].set_xlim(left=0,right=15)
 	# ax[plot_index,0].set_ylim(bottom=ensamble_peak_shape.min(),top=1.5*ensamble_peak_shape.max())
 	ax[1,2].legend(loc='best', fontsize='x-small')
@@ -2036,7 +2144,7 @@ for j in np.flip(all_j,axis=0):
 	ax[0,3].grid()
 	ax[0,3].set_xlabel('time [ms]')
 	ax[0,3].set_ylabel('temperature [°C]')
-	ax[0,3].set_title('large area max full temp')
+	ax[0,3].set_title('large area max temp\narea(*1/1.125)=%.3g+/-%.3gm2' %(area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
 	ax[1,3].set_xlim(left=-2,right=15)
 	ax[1,3].legend(loc='best', fontsize='x-small')
 	ax[1,3].grid()
@@ -2051,7 +2159,7 @@ for j in np.flip(all_j,axis=0):
 	ax2[0,1].grid()
 	ax2[0,1].set_xlabel('time [ms]')
 	ax2[0,1].set_ylabel('temperature [°C]')
-	ax2[0,1].set_title('large area max full temp\narea(*1/1.14)=%.3g+/-%.3gm2' %(area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
+	ax2[0,1].set_title('large area max full temp\narea(*1/1.125)=%.3g+/-%.3gm2' %(area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
 	ax2[1,1].set_xlim(left=-2,right=15)
 	ax2[1,1].legend(loc='best', fontsize='small')
 	ax2[1,1].grid()
