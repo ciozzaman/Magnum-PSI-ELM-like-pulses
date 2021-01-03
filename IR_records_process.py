@@ -1659,6 +1659,35 @@ for j in np.flip(all_j,axis=0):
 	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
 	plt.close()
 
+	plt.figure(figsize=(20, 10))
+	temp = np.sum(twoD_peak_evolution_temp_averaged_delta.T>twoD_peak_evolution_temp_averaged_delta.max(axis=(1,2))*0.2,axis=(0,1))
+	plt.plot([0]*2,[0,temp.max()/(twoD_peak_evolution_temp_averaged_delta.shape[1]*twoD_peak_evolution_temp_averaged_delta.shape[2])],'--k')
+	plt.plot(twoD_peak_evolution_time_averaged,temp/(twoD_peak_evolution_temp_averaged_delta.shape[1]*twoD_peak_evolution_temp_averaged_delta.shape[2]),':r',label='dt, max x0.2')
+	temp = np.sum(twoD_peak_evolution_temp_averaged_delta.T>twoD_peak_evolution_temp_averaged_delta.max(axis=(1,2))*0.5,axis=(0,1))
+	plt.plot(twoD_peak_evolution_time_averaged,temp/(twoD_peak_evolution_temp_averaged_delta.shape[1]*twoD_peak_evolution_temp_averaged_delta.shape[2]),'-r',label='dt, max x0.5')
+	temp = np.sum(twoD_peak_evolution_temp_averaged_delta.T>twoD_peak_evolution_temp_averaged_delta.max(axis=(1,2))*0.8,axis=(0,1))
+	plt.plot(twoD_peak_evolution_time_averaged,temp/(twoD_peak_evolution_temp_averaged_delta.shape[1]*twoD_peak_evolution_temp_averaged_delta.shape[2]),'--r',label='dt, max x0.8')
+	temp = np.sum(twoD_peak_evolution_temp_averaged.T>twoD_peak_evolution_temp_averaged.max(axis=(1,2))*0.2,axis=(0,1))
+	plt.plot([0]*2,[0,temp.max()/(twoD_peak_evolution_temp_averaged.shape[1]*twoD_peak_evolution_temp_averaged.shape[2])],'--k')
+	plt.plot(twoD_peak_evolution_time_averaged,temp/(twoD_peak_evolution_temp_averaged.shape[1]*twoD_peak_evolution_temp_averaged.shape[2]),':b',label='full T, max x0.2')
+	temp = np.sum(twoD_peak_evolution_temp_averaged.T>twoD_peak_evolution_temp_averaged.max(axis=(1,2))*0.5,axis=(0,1))
+	plt.plot(twoD_peak_evolution_time_averaged,temp/(twoD_peak_evolution_temp_averaged.shape[1]*twoD_peak_evolution_temp_averaged.shape[2]),'-b',label='full T, max x0.5')
+	temp = np.sum(twoD_peak_evolution_temp_averaged.T>twoD_peak_evolution_temp_averaged.max(axis=(1,2))*0.8,axis=(0,1))
+	plt.plot(twoD_peak_evolution_time_averaged,temp/(twoD_peak_evolution_temp_averaged.shape[1]*twoD_peak_evolution_temp_averaged.shape[2]),'--b',label='full T, max x0.8')
+	plt.legend(loc='best', fontsize='x-small')
+	plt.xlabel('time after the peak [s]')
+	plt.ylabel('fraction of pixels [au]')
+	plt.title(pre_title+'Temperature increase, fraction high temperature area '+str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
+	figure_index+=1
+	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
+	plt.close()
+
+	full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
+	full_saved_file_dict['twoD_peak_evolution_temp_averaged_delta'] = twoD_peak_evolution_temp_averaged_delta
+	full_saved_file_dict['twoD_peak_evolution_temp_averaged'] = twoD_peak_evolution_temp_averaged
+	full_saved_file_dict['twoD_peak_evolution_time_averaged'] = twoD_peak_evolution_time_averaged
+	np.savez_compressed(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace,**full_saved_file_dict)
+
 	fig, ax = plt.subplots( 2,4,figsize=(34, 18), squeeze=False)
 	fig2, ax2 = plt.subplots( 2,2,figsize=(18, 18), squeeze=False)
 	fig.suptitle(pre_title+'Shape of the max temperature increase for '+str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms, de=%.3g' %(frequency,int_time*1000,de))

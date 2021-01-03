@@ -357,6 +357,9 @@ if print_2:
 	plt.plot(global_dictionary['pressure'],(np.array(global_dictionary['time_of_pulses_DCsource_0'])*1e3-np.array(global_dictionary['time_of_pulses_IR_0'])) - (np.array(global_dictionary['time_of_pulses_DCsource_0'])*1e3-np.array(global_dictionary['time_of_pulses_IR_0']))[0],'+',label='time_of_pulses_DCsource_0-time_of_pulses_IR_0')
 	plt.plot(global_dictionary['pressure'],np.array(global_dictionary['fit_SOURCE_IR'][1])-global_dictionary['fit_SOURCE_IR'][1,0],label='fit_SOURCE_IR')
 	plt.legend(loc='best')
+	plt.xlabel('pressure [Pa]')
+	plt.ylabel('time difference [ms]')
+	plt.title('Relative time difference between first plasma source peak and IR peak')
 	plt.pause(0.01)
 
 
