@@ -92,6 +92,7 @@ def specemi(Lambda,T,de):
 	return e
 
 def dl2temp_generator(de,beta_sample,tau,t_exp,target_material,out_emissivity=False):
+	# generator of interpolator DL to K
 
 	beta_cam = np.arccos(77/92)*360/(2*np.pi) + beta_sample;                     # camera view angle in Magnum-PSI
 
@@ -139,7 +140,7 @@ def dl2temp_generator(de,beta_sample,tau,t_exp,target_material,out_emissivity=Fa
 	if out_emissivity:
 		return dl2temp,T_ref,e_cal
 	else:
-		return dl2temp
+		return dl2temp	# interpolator DL to K
 
 
 all_j = [231,232,233,234,244,245,275,393,394,305,306,416]
@@ -246,9 +247,9 @@ for i_j,j in enumerate(all_j):
 	dl_sub_center = dl_sub[:,AOI_center[1],AOI_center[0]]                     # DL at a the center
 	# dl_sub_edge = dl_sub[:,AOI_edge[1],AOI_edge[0]]
 
-	temp_sub_center = dl2temp(dl_sub_center+1);                                                                   # central temp.
+	temp_sub_center = dl2temp(dl_sub_center)#+1);                                                                   # central temp.
 	# temp field
-	temp_sub_full = dl2temp(dl_sub+1)
+	temp_sub_full = dl2temp(dl_sub)#+1)
 
 	selected_x = np.zeros_like(dl_tot[0])+np.arange(np.shape(dl_tot)[-1])
 	selected_y = (np.zeros_like(dl_tot[0]).T+np.arange(np.shape(dl_tot)[-2])).T

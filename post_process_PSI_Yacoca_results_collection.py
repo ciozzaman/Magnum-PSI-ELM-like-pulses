@@ -87,8 +87,10 @@ j_specific_merge_ID_target = []
 j_twoD_peak_evolution_time_averaged = []
 j_twoD_peak_evolution_temp_averaged_delta = []
 j_twoD_peak_evolution_temp_averaged = []
+j_collect_shape_information = []
 
 for merge_ID_target in merge_ID_target_multipulse:
+	print('Looking at '+str(merge_ID_target))
 	target_chamber_pressure_2.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
 	if merge_ID_target != 88:
 		target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
@@ -152,14 +154,16 @@ for merge_ID_target in merge_ID_target_multipulse:
 		IR_trace, = df_log.loc[j,['IR_trace']]
 		if np.logical_not(isinstance(IR_trace,str)):
 			j_twoD_peak_evolution_time_averaged.append(np.ones_like(j_twoD_peak_evolution_time_averaged[-1])*np.nan)
-			j_twoD_peak_evolution_temp_averaged_delta.append(np.ones_like(j_twoD_peak_evolution_temp_averaged_delta[-1])*np.nan)
-			j_twoD_peak_evolution_temp_averaged.append(np.ones_like(j_twoD_peak_evolution_temp_averaged[-1])*np.nan)
+			# j_twoD_peak_evolution_temp_averaged_delta.append(np.ones_like(j_twoD_peak_evolution_temp_averaged_delta[-1])*np.nan)
+			# j_twoD_peak_evolution_temp_averaged.append(np.ones_like(j_twoD_peak_evolution_temp_averaged[-1])*np.nan)
+			j_collect_shape_information.append(np.ones_like(j_collect_shape_information[-1])*np.nan)
 		else:
 			path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 			full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
 			j_twoD_peak_evolution_time_averaged.append(full_saved_file_dict['twoD_peak_evolution_time_averaged'])
-			j_twoD_peak_evolution_temp_averaged_delta.append(full_saved_file_dict['twoD_peak_evolution_temp_averaged_delta'])
-			j_twoD_peak_evolution_temp_averaged.append(full_saved_file_dict['twoD_peak_evolution_temp_averaged'])
+			# j_twoD_peak_evolution_temp_averaged_delta.append(full_saved_file_dict['twoD_peak_evolution_temp_averaged_delta'])
+			# j_twoD_peak_evolution_temp_averaged.append(full_saved_file_dict['twoD_peak_evolution_temp_averaged'])
+			j_collect_shape_information.append(full_saved_file_dict['collect_shape_information'])
 
 	T_pre_pulse.append(np.nanmean(temp1))
 	DT_pulse.append(np.nanmean(temp2))
@@ -291,54 +295,102 @@ plt.pause(0.001)
 
 start = np.nanmax([list[0] for list in j_twoD_peak_evolution_time_averaged])
 stop = np.nanmin([list[-1] for list in j_twoD_peak_evolution_time_averaged])
-j_twoD_peak_evolution_temp_averaged_delta = [list2[np.abs(np.array(list1)-start).argmin():np.abs(np.array(list1)-stop).argmin()] for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged_delta]).T]
-j_twoD_peak_evolution_temp_averaged = [list2[np.abs(np.array(list1)-start).argmin():np.abs(np.array(list1)-stop).argmin()] for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged]).T]
-j_twoD_peak_evolution_time_averaged = [list1[np.abs(np.array(list1)-start).argmin():np.abs(np.array(list1)-stop).argmin()] for list1 in j_twoD_peak_evolution_time_averaged]
-j_twoD_peak_evolution_temp_averaged_delta = np.array([(list2 if len(list1)>0 else np.ones_like(j_twoD_peak_evolution_temp_averaged_delta[0])*np.nan) for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged_delta]).T])
-j_twoD_peak_evolution_temp_averaged = np.array([(list2 if len(list1)>0 else np.ones_like(j_twoD_peak_evolution_temp_averaged[0])*np.nan) for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged]).T])
-j_twoD_peak_evolution_time_averaged = np.array([(list1 if len(list1)>0 else np.ones_like(j_twoD_peak_evolution_time_averaged[0])*np.nan) for list1 in j_twoD_peak_evolution_time_averaged])
+if False:
+	j_twoD_peak_evolution_temp_averaged_delta = [list2[np.abs(np.array(list1)-start).argmin():np.abs(np.array(list1)-stop).argmin()] for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged_delta]).T]
+	j_twoD_peak_evolution_temp_averaged = [list2[np.abs(np.array(list1)-start).argmin():np.abs(np.array(list1)-stop).argmin()] for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged]).T]
+	j_twoD_peak_evolution_time_averaged = [list1[np.abs(np.array(list1)-start).argmin():np.abs(np.array(list1)-stop).argmin()] for list1 in j_twoD_peak_evolution_time_averaged]
+	j_twoD_peak_evolution_temp_averaged_delta = np.array([(list2 if len(list1)>0 else np.ones_like(j_twoD_peak_evolution_temp_averaged_delta[0])*np.nan) for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged_delta]).T])
+	j_twoD_peak_evolution_temp_averaged = np.array([(list2 if len(list1)>0 else np.ones_like(j_twoD_peak_evolution_temp_averaged[0])*np.nan) for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged]).T])
+	j_twoD_peak_evolution_time_averaged = np.array([(list1 if len(list1)>0 else np.ones_like(j_twoD_peak_evolution_time_averaged[0])*np.nan) for list1 in j_twoD_peak_evolution_time_averaged])
 
-plt.figure(figsize=(10, 5));
-for index,merge_ID_target in enumerate(merge_ID_target_multipulse):
-	check = np.array(j_specific_merge_ID_target) == merge_ID_target
-	temp_dt = np.nanmean(j_twoD_peak_evolution_temp_averaged_delta[check],axis=0)
-	# temp_full = np.nanmean(j_twoD_peak_evolution_temp_averaged_delta[check],axis=0)
-	temp_time = np.nanmean(j_twoD_peak_evolution_time_averaged[check],axis=0)
-	total_number_pixels = temp_dt.shape[1]*temp_dt.shape[2]
-	temp = np.sum(temp_dt.T>temp_dt.max(axis=(1,2))*0.2,axis=(0,1))
-	plt.plot(temp_time,temp/total_number_pixels,':',color=color[index])
-	temp = np.sum(temp_dt.T>temp_dt.max(axis=(1,2))*0.5,axis=(0,1))
-	plt.plot(temp_time,temp/total_number_pixels,'-',color=color[index],label='pressure %.3gPa' %(target_chamber_pressure_2[index]))
-	temp = np.sum(temp_dt.T>temp_dt.max(axis=(1,2))*0.8,axis=(0,1))
-	plt.plot(temp_time,temp/total_number_pixels,'--',color=color[index])
-	# plt.pause(1)
-plt.legend(loc='best', fontsize='small')
-plt.xlabel('time after the peak [s]')
-plt.ylabel('fraction of pixels (dt) [au]')
-plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
-plt.grid(axis='y')
-plt.pause(0.001)
+	plt.figure(figsize=(10, 5));
+	for index,merge_ID_target in enumerate(merge_ID_target_multipulse):
+		check = np.array(j_specific_merge_ID_target) == merge_ID_target
+		temp_dt = np.nanmean(j_twoD_peak_evolution_temp_averaged_delta[check],axis=0)
+		# temp_full = np.nanmean(j_twoD_peak_evolution_temp_averaged_delta[check],axis=0)
+		temp_time = np.nanmean(j_twoD_peak_evolution_time_averaged[check],axis=0)
+		total_number_pixels = temp_dt.shape[1]*temp_dt.shape[2]
+		temp = np.sum(temp_dt.T>temp_dt.max(axis=(1,2))*0.2,axis=(0,1))
+		# plt.plot(temp_time,temp/total_number_pixels,':',color=color[index])
+		temp = np.sum(temp_dt.T>temp_dt.max(axis=(1,2))*0.5,axis=(0,1))
+		plt.plot(temp_time,temp/total_number_pixels,'-',color=color[index],label='pressure %.3gPa' %(target_chamber_pressure_2[index]))
+		temp = np.sum(temp_dt.T>temp_dt.max(axis=(1,2))*0.8,axis=(0,1))
+		# plt.plot(temp_time,temp/total_number_pixels,'--',color=color[index])
+		# plt.pause(1)
+	plt.legend(loc='best', fontsize='small')
+	plt.xlabel('time after the peak [s]')
+	plt.ylabel('fraction of pixels (dt) [au]')
+	plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
+	plt.grid()
+	plt.pause(0.001)
 
-plt.figure(figsize=(10, 5));
-for index,merge_ID_target in enumerate(merge_ID_target_multipulse):
-	check = np.array(j_specific_merge_ID_target) == merge_ID_target
-	# temp_dt = np.nanmean(j_twoD_peak_evolution_temp_averaged_delta[check],axis=0)
-	temp_full = np.nanmean(j_twoD_peak_evolution_temp_averaged[check],axis=0)
-	temp_time = np.nanmean(j_twoD_peak_evolution_time_averaged[check],axis=0)
-	total_number_pixels = temp_full.shape[1]*temp_full.shape[2]
-	temp = np.sum(temp_full.T>temp_full.max(axis=(1,2))*0.2,axis=(0,1))
-	plt.plot(temp_time,temp/total_number_pixels,':',color=color[index])
-	temp = np.sum(temp_full.T>temp_full.max(axis=(1,2))*0.5,axis=(0,1))
-	plt.plot(temp_time,temp/total_number_pixels,'-',color=color[index],label='pressure %.3gPa' %(target_chamber_pressure_2[index]))
-	temp = np.sum(temp_full.T>temp_full.max(axis=(1,2))*0.8,axis=(0,1))
-	plt.plot(temp_time,temp/total_number_pixels,'--',color=color[index])
-	# plt.pause(1)
-plt.legend(loc='best', fontsize='small')
-plt.xlabel('time after the peak [s]')
-plt.ylabel('fraction of pixels (full) [au]')
-plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
-plt.grid(axis='y')
-plt.pause(0.001)
+	plt.figure(figsize=(10, 5));
+	for index,merge_ID_target in enumerate(merge_ID_target_multipulse):
+		check = np.array(j_specific_merge_ID_target) == merge_ID_target
+		# temp_dt = np.nanmean(j_twoD_peak_evolution_temp_averaged_delta[check],axis=0)
+		temp_full = np.nanmean(j_twoD_peak_evolution_temp_averaged[check],axis=0)
+		temp_time = np.nanmean(j_twoD_peak_evolution_time_averaged[check],axis=0)
+		total_number_pixels = temp_full.shape[1]*temp_full.shape[2]
+		temp = np.sum(temp_full.T>temp_full.max(axis=(1,2))*0.2,axis=(0,1))
+		# plt.plot(temp_time,temp/total_number_pixels,':',color=color[index])
+		temp = np.sum(temp_full.T>temp_full.max(axis=(1,2))*0.5,axis=(0,1))
+		# plt.plot(temp_time,temp/total_number_pixels,'-',color=color[index],label='pressure %.3gPa' %(target_chamber_pressure_2[index]))
+		temp = np.sum(temp_full.T>temp_full.max(axis=(1,2))*0.8,axis=(0,1))
+		plt.plot(temp_time,temp/total_number_pixels,'--',color=color[index])
+		# plt.pause(1)
+	plt.legend(loc='best', fontsize='small')
+	plt.xlabel('time after the peak [s]')
+	plt.ylabel('fraction of pixels (full) [au]')
+	plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
+	plt.grid()
+	plt.pause(0.001)
+
+else:
+	j_twoD_peak_evolution_temp_averaged_delta = [x[7] for x in j_collect_shape_information]
+	j_twoD_peak_evolution_temp_averaged = [x[11] for x in j_collect_shape_information]
+	j_twoD_peak_evolution_temp_averaged_delta = [list2[np.abs(np.array(list1)-start).argmin():np.abs(np.array(list1)-stop).argmin()] for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged_delta]).T]
+	j_twoD_peak_evolution_temp_averaged = [list2[np.abs(np.array(list1)-start).argmin():np.abs(np.array(list1)-stop).argmin()] for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged]).T]
+	j_twoD_peak_evolution_time_averaged = [list1[np.abs(np.array(list1)-start).argmin():np.abs(np.array(list1)-stop).argmin()] for list1 in j_twoD_peak_evolution_time_averaged]
+	j_twoD_peak_evolution_temp_averaged_delta = np.array([(list2 if len(list1)>0 else np.ones_like(j_twoD_peak_evolution_temp_averaged_delta[0])*np.nan) for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged_delta]).T])
+	j_twoD_peak_evolution_temp_averaged = np.array([(list2 if len(list1)>0 else np.ones_like(j_twoD_peak_evolution_temp_averaged[0])*np.nan) for (list1,list2) in np.array([j_twoD_peak_evolution_time_averaged,j_twoD_peak_evolution_temp_averaged]).T])
+	j_twoD_peak_evolution_time_averaged = np.array([(list1 if len(list1)>0 else np.ones_like(j_twoD_peak_evolution_time_averaged[0])*np.nan) for list1 in j_twoD_peak_evolution_time_averaged])
+
+	plt.figure(figsize=(10, 5));
+	for index,merge_ID_target in enumerate(merge_ID_target_multipulse):
+		check = np.arange(len(j_specific_merge_ID_target))[np.array(j_specific_merge_ID_target) == merge_ID_target]
+		for index_3,index_2 in enumerate(check):
+			plt.plot(j_twoD_peak_evolution_time_averaged[index_2],-j_twoD_peak_evolution_temp_averaged_delta[index_2],'--',color=color[index])
+			if index_3==0:
+				plt.plot(j_twoD_peak_evolution_time_averaged[index_2],j_twoD_peak_evolution_temp_averaged[index_2],'-',color=color[index],label='pressure %.3gPa' %(target_chamber_pressure_2[index]))
+			else:
+				plt.plot(j_twoD_peak_evolution_time_averaged[index_2],j_twoD_peak_evolution_temp_averaged[index_2],'-',color=color[index])
+	plt.legend(loc='best', fontsize='small')
+	plt.xlabel('time after the peak [s]')
+	plt.ylabel('fraction of pixels [au]')
+	plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]) + '\nArea with '+r'$(T-T_{amb})>(T-T_{amb})_{max} * 0.8$'+' (-) and '+r'$T-T_{ss}>(T-T_{ss})_{max} * 0.5$'+' (--)')
+	plt.grid()
+	plt.pause(0.001)
+
+	fig, ax = plt.subplots( 2,1,figsize=(20, 20), squeeze=False)
+	# plt.figure(figsize=(10, 5));
+	for index,merge_ID_target in enumerate(merge_ID_target_multipulse):
+		check = np.array(j_specific_merge_ID_target) == merge_ID_target
+		temp_dt = np.nanmean(j_twoD_peak_evolution_temp_averaged_delta[check],axis=0)
+		temp_full = np.nanmean(j_twoD_peak_evolution_temp_averaged[check],axis=0)
+		temp_time = np.nanmean(j_twoD_peak_evolution_time_averaged[check],axis=0)
+		ax[0,0].plot(temp_time,temp_dt,'-',color=color[index])
+		ax[1,0].plot(temp_time,temp_full,'-',color=color[index],label='pressure %.3gPa' %(target_chamber_pressure_2[index]))
+	plt.legend(loc='best', fontsize='small')
+	ax[1,0].set_xlabel('time after the peak [s]')
+	ax[0,0].set_ylabel('fraction of pixels (dt) [au]')
+	ax[1,0].set_ylabel('fraction of pixels (full) [au]')
+	fig.suptitle('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]) + '\nArea with '+r'$(T-T_{amb})>(T-T_{amb})_{max} * 0.8$'+' (-) and '+r'$T-T_{ss}>(T-T_{ss})_{max} * 0.5$'+' (--)')
+	ax[0,0].grid()
+	ax[1,0].grid()
+	# ax[0,0].set_yscale('log')
+	ax[1,0].set_yscale('log')
+	plt.pause(0.001)
+
 
 # plt.figure()
 # plt.plot(target_chamber_pressure,max_average_static_pressure)
