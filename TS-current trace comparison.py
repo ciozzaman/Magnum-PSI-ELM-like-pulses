@@ -37,7 +37,7 @@ try:
 except:
 	figure_index=0
 	plt.close('all')
-merge_ID_target = 101
+merge_ID_target = 87
 all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
 path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) #+ '_back'
 
@@ -48,7 +48,7 @@ steady_state_power = []
 steady_state_power_std = []
 for j in all_j:
 	(merge_folder,sequence,fname_current_trace) = df_log.loc[j,['folder','sequence','current_trace_file']]
-	bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
+	bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
 	current_traces = pd.read_csv(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/'+ fname_current_trace+'.tsf',index_col=False, delimiter='\t')
 	current_traces_time = current_traces['Time [s]']
 	current_traces_total = current_traces['I_Src_AC [A]']
@@ -239,7 +239,7 @@ for i_merge_ID_target,merge_ID_target in enumerate(merge_ID_target_all):
 		feed_rate_SLM.append(df_log.loc[j,['Seed']])
 		magnetic_field.append(df_log.loc[j,['B']])
 		(merge_folder,sequence,fname_current_trace) = df_log.loc[j,['folder','sequence','current_trace_file']]
-		bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
+		bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
 		power_pulse_shape_time_dependent.append(mean_peak_shape)
 		power_pulse_shape_time_dependent_std.append(mean_peak_std)
 		steady_state_power.append(mean_steady_state_power)

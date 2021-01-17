@@ -225,6 +225,46 @@ ax1.grid()
 plt.pause(0.01)
 
 fig, ax1 = plt.subplots(figsize=(12, 5))
+fig.subplots_adjust(right=0.77)
+ax1.set_title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field[0],target_OES_distance[0],(2*CB_pulse_energy[0]/150e-6)**0.5)+'\nIR data analysis')
+ax1.set_xlabel('Pressure [Pa]')
+ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+ax3 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+ax4 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+ax3.spines["right"].set_position(("axes", 1.1))
+ax3.spines["right"].set_visible(True)
+ax4.spines["right"].set_position(("axes", 1.25))
+ax4.spines["right"].set_visible(True)
+ax1.plot(j_specific_target_chamber_pressure,j_specific_T_pre_pulse,'+b')
+a1, = ax1.plot(target_chamber_pressure_2,T_pre_pulse,'b')
+ax2.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse),'+r')
+a2, = ax2.plot(target_chamber_pressure_2,np.array(DT_pulse),'--r',label='mean temperature peak + 2/3ms')
+ax2.plot(target_chamber_pressure_2,np.array(DT_pulse_time_scaled2),'r',label='mean temperature t0 + 2/3ms')
+a2, = ax2.plot(target_chamber_pressure_2,np.array(DT_pulse_late),':r',label='mean temperature peak + 10/11ms')
+ax3.plot(j_specific_target_chamber_pressure,np.array(j_specific_pulse_t0_semi_inf),'+g')
+a3, = ax3.plot(target_chamber_pressure_2,np.array(pulse_t0_semi_inf2),'g')
+ax4.plot(j_specific_target_chamber_pressure,np.array(j_specific_pulse_en_semi_inf),'+y')
+a4, = ax4.plot(target_chamber_pressure_2,np.array(pulse_en_semi_inf2),'y')
+# ax2.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse_time_scaled),'or')
+ax1.set_ylabel('Temp before ELM-like pulse (T(t=0)) [°C]', color=a1.get_color())
+ax2.set_ylabel(r'$\Delta T$'+' after ELM [°C]', color=a2.get_color())  # we already handled the x-label with ax1
+ax3.set_ylabel('ELM-like pulse start to IR peak (t0) [ms]', color=a3.get_color())  # we already handled the x-label with ax1
+ax4.set_ylabel('Energy reaching the target [J]', color=a4.get_color())  # we already handled the x-label with ax1
+ax1.tick_params(axis='y', labelcolor=a1.get_color())
+ax2.tick_params(axis='y', labelcolor=a2.get_color())
+ax3.tick_params(axis='y', labelcolor=a3.get_color())
+ax4.tick_params(axis='y', labelcolor=a4.get_color())
+ax2.legend(loc='center left', fontsize='x-small')
+ax1.set_ylim(bottom=0)
+ax2.set_ylim(bottom=0)
+ax4.set_ylim(bottom=0)
+# ax2.set_ylim(bottom=0,top=max(np.nanmax(j_specific_DT_pulse),np.max(DT_pulse_time_scaled2))*1.1)
+# ax4.set_ylim(bottom=0,top=np.max([j_specific_DT_pulse,j_specific_DT_pulse_time_scaled])*1.1)
+ax1.grid()
+# ax2.grid()
+plt.pause(0.01)
+
+fig, ax1 = plt.subplots(figsize=(12, 5))
 fig.subplots_adjust(right=0.8)
 ax1.set_title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field[0],target_OES_distance[0],(2*CB_pulse_energy[0]/150e-6)**0.5)+'\nIR data analysis')
 ax1.set_xlabel('Pressure [Pa]')
@@ -275,6 +315,8 @@ plt.grid()
 plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
 plt.xlabel('Target chamber pressure [Pa]')
 plt.ylabel('Energy [J]')
+if merge_ID_target==85:
+	plt.xlim(right=target_chamber_pressure[-2])
 plt.pause(0.001)
 
 
@@ -291,6 +333,8 @@ plt.xlabel('Target chamber pressure [Pa]')
 plt.ylabel('Fraction of the radiated power [%]')
 plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
 plt.grid(axis='y')
+if merge_ID_target==85:
+	plt.xlim(right=target_chamber_pressure[-2])
 plt.pause(0.001)
 
 start = np.nanmax([list[0] for list in j_twoD_peak_evolution_time_averaged])
