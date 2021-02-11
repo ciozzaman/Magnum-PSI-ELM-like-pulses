@@ -50,6 +50,8 @@ pulse_en_semi_inf = []
 pulse_en_semi_inf_sigma = []
 pulse_en_semi_inf2 = []
 pulse_en_semi_inf_sigma2 = []
+pulse_en_SS = []
+pulse_en_SS2 = []
 area_of_interest_IR = []
 
 net_power_removed_plasma_column = []
@@ -65,7 +67,9 @@ power_rad_excit_sigma = []
 power_rad_rec_bremm = []
 power_rad_rec_bremm_sigma = []
 max_CX_energy = []
-max_average_static_pressure = []
+average_static_pressure = []
+average_Te = []
+average_ne = []
 pulse_t0_semi_inf2 = []
 
 j_specific_target_chamber_pressure = []
@@ -80,6 +84,7 @@ j_specific_DT_pulse_late = []
 j_specific_DT_pulse_time_scaled = []
 j_specific_pulse_en_semi_inf = []
 j_specific_pulse_en_semi_inf_sigma = []
+j_specific_pulse_en_SS = []
 j_specific_pulse_t0_semi_inf = []
 j_specific_area_of_interest_IR = []
 j_specific_merge_ID_target = []
@@ -88,6 +93,7 @@ j_twoD_peak_evolution_time_averaged = []
 j_twoD_peak_evolution_temp_averaged_delta = []
 j_twoD_peak_evolution_temp_averaged = []
 j_collect_shape_information = []
+radial_average_brightness_1ms_int_time = []
 
 for merge_ID_target in merge_ID_target_multipulse:
 	print('Looking at '+str(merge_ID_target))
@@ -114,7 +120,13 @@ for merge_ID_target in merge_ID_target_multipulse:
 		power_rad_rec_bremm.append(np.float(results_summary.loc[merge_ID_target,['power_rad_rec_bremm']]))
 		power_rad_rec_bremm_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_rec_bremm_sigma']]))
 		max_CX_energy.append(np.float(results_summary.loc[merge_ID_target,['max_CX_energy']]))
-		max_average_static_pressure.append(np.float(results_summary.loc[merge_ID_target,['max_average_static_pressure']]))
+		average_static_pressure.append(np.float(results_summary.loc[merge_ID_target,['average_static_pressure']]))
+		average_Te.append(np.float(results_summary.loc[merge_ID_target,['average_Te']]))
+		average_ne.append(np.float(results_summary.loc[merge_ID_target,['average_ne']]))
+
+	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
+	full_saved_file_dict = np.load(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'.npz')
+	radial_average_brightness_1ms_int_time.append(full_saved_file_dict['radial_average_brightness_1ms_int_time'])
 
 	temp1=[]
 	temp2=[]
@@ -124,6 +136,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 	temp6=[]
 	temp7=[]
 	temp8=[]
+	temp9=[]
 	all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
 	for j in all_j:
 		j_specific_merge_ID_target.append(merge_ID_target)
@@ -150,6 +163,8 @@ for merge_ID_target in merge_ID_target_multipulse:
 		temp6.append(df_log.loc[j,['pulse_t0_semi_inf [ms]']])
 		j_specific_DT_pulse_time_scaled.append(df_log.loc[j,['DT_pulse_time_scaled']])
 		temp7.append(df_log.loc[j,['DT_pulse_time_scaled']])
+		j_specific_pulse_en_SS.append(df_log.loc[j,['SS_Energy [J]']])
+		temp9.append(df_log.loc[j,['SS_Energy [J]']])
 
 		IR_trace, = df_log.loc[j,['IR_trace']]
 		if np.logical_not(isinstance(IR_trace,str)):
@@ -170,11 +185,13 @@ for merge_ID_target in merge_ID_target_multipulse:
 	DT_pulse_late.append(np.nanmean(temp8))
 	pulse_en_semi_inf2.append(np.nansum(np.divide(temp3,temp5))/np.nansum(np.divide(1,temp5)))
 	pulse_en_semi_inf_sigma2.append((np.nansum(np.isfinite(np.array(temp5,dtype=float)))/(np.nansum(np.divide(1,temp5))**2))**0.5)
+	pulse_en_SS2.append(np.nanmean(temp9))
 	pulse_t0_semi_inf2.append(np.nanmean(temp6))
 	DT_pulse_time_scaled2.append(np.nanmean(temp7))
 	if merge_ID_target != 88:
 		pulse_en_semi_inf.append(np.nansum(np.divide(temp3,temp5))/np.nansum(np.divide(1,temp5)))
 		pulse_en_semi_inf_sigma.append((np.nansum(np.isfinite(np.array(temp5,dtype=float)))/(np.nansum(np.divide(1,temp5))**2))**0.5)
+		pulse_en_SS.append(np.nanmean(temp9))
 		area_of_interest_IR.append(np.nanmean(temp4))
 
 # plt.figure(figsize=(10, 5))
@@ -243,8 +260,10 @@ ax2.plot(target_chamber_pressure_2,np.array(DT_pulse_time_scaled2),'r',label='me
 a2, = ax2.plot(target_chamber_pressure_2,np.array(DT_pulse_late),':r',label='mean temperature peak + 10/11ms')
 ax3.plot(j_specific_target_chamber_pressure,np.array(j_specific_pulse_t0_semi_inf),'+g')
 a3, = ax3.plot(target_chamber_pressure_2,np.array(pulse_t0_semi_inf2),'g')
-ax4.plot(j_specific_target_chamber_pressure,np.array(j_specific_pulse_en_semi_inf),'+y')
-a4, = ax4.plot(target_chamber_pressure_2,np.array(pulse_en_semi_inf2),'y')
+ax4.plot(j_specific_target_chamber_pressure,np.array(j_specific_pulse_en_semi_inf)+np.array(j_specific_pulse_en_SS),'+y')
+ax4.plot(j_specific_target_chamber_pressure,np.array(j_specific_pulse_en_SS),'xy')
+a4a, = ax4.plot(target_chamber_pressure_2,np.array(pulse_en_SS2),'--y',label='only steady state')
+a4, = ax4.plot(target_chamber_pressure_2,np.array(pulse_en_semi_inf2)+np.array(pulse_en_SS2),'y')
 # ax2.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse_time_scaled),'or')
 ax1.set_ylabel('Temp before ELM-like pulse (T(t=0)) [°C]', color=a1.get_color())
 ax2.set_ylabel(r'$\Delta T$'+' after ELM [°C]', color=a2.get_color())  # we already handled the x-label with ax1
@@ -254,7 +273,11 @@ ax1.tick_params(axis='y', labelcolor=a1.get_color())
 ax2.tick_params(axis='y', labelcolor=a2.get_color())
 ax3.tick_params(axis='y', labelcolor=a3.get_color())
 ax4.tick_params(axis='y', labelcolor=a4.get_color())
-ax2.legend(loc='center left', fontsize='x-small')
+ax2.legend()
+handles, labels = ax2.get_legend_handles_labels()
+handles.append(a4a)
+labels.append(a4a.get_label())
+ax2.legend(handles=handles, labels=labels, loc='upper center', fontsize='x-small')
 ax1.set_ylim(bottom=0)
 ax2.set_ylim(bottom=0)
 ax4.set_ylim(bottom=0)
@@ -304,7 +327,8 @@ plt.errorbar(target_chamber_pressure,power_rec_neutral,yerr=np.array(power_rec_n
 # plt.errorbar(target_chamber_pressure,power_rad_rec_bremm,yerr=np.array(power_rad_rec_bremm_sigma),linestyle='--',capsize=5,color=color[6],label=r'$E_{radiated \: recombination + bremsstrahlung}$')
 # plt.plot(target_chamber_pressure,max_CX_energy,linewidth=3,color=color[7],label=r'$E_{CX \: max}$')
 # plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6,linewidth=3,color=color[8],label=r'$E_{target}$')
-plt.errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf),yerr=np.array(pulse_en_semi_inf_sigma),linewidth=3,color=color[8],label=r'$E_{target}$')
+plt.errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf),yerr=np.array(pulse_en_semi_inf_sigma),color=color[8])
+plt.errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf)+np.array(pulse_en_SS),yerr=np.array(pulse_en_semi_inf_sigma),linewidth=3,color=color[8],label=r'$E_{target}$')
 # plt.errorbar(j_specific_target_chamber_pressure,j_specific_pulse_en_semi_inf,yerr=j_specific_pulse_en_semi_inf_sigma,color=color[8],fmt='+')
 # plt.plot(target_chamber_pressure,np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linestyle='--',color=color[9],label=r'$E_{rem}+E_{CX \: max}$')
 # plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6 + np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linewidth=3,color=color[9],label=r'$6 \cdot E_{target} +$'+'\n'+r'$ E_{rem}+E_{CX \: max}$')
@@ -435,6 +459,13 @@ else:
 	ax[1,0].set_yscale('log')
 	plt.pause(0.001)
 
+
+plt.figure(figsize=(10, 5))
+for i in range(len(target_chamber_pressure_2)):
+	plt.plot(radial_average_brightness_1ms_int_time[i],label='%.3gPa' %(target_chamber_pressure_2[i]))
+plt.legend()
+plt.legend(loc='best', fontsize='small')
+plt.pause(0.001)
 
 # plt.figure()
 # plt.plot(target_chamber_pressure,max_average_static_pressure)
