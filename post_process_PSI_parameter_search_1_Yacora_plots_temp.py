@@ -4725,6 +4725,12 @@ else:
 		intervals_power_rad_Hm = np.zeros_like(Te_all).tolist()
 		prob_power_rad_Hm = np.zeros_like(Te_all).tolist()
 		actual_values_power_rad_Hm = np.zeros_like(Te_all).tolist()
+		intervals_power_rad_Hm_H2p = np.zeros_like(Te_all).tolist()
+		prob_power_rad_Hm_H2p = np.zeros_like(Te_all).tolist()
+		actual_values_power_rad_Hm_H2p = np.zeros_like(Te_all).tolist()
+		intervals_power_rad_Hm_Hp = np.zeros_like(Te_all).tolist()
+		prob_power_rad_Hm_Hp = np.zeros_like(Te_all).tolist()
+		actual_values_power_rad_Hm_Hp = np.zeros_like(Te_all).tolist()
 		intervals_power_rad_H2 = np.zeros_like(Te_all).tolist()
 		prob_power_rad_H2 = np.zeros_like(Te_all).tolist()
 		actual_values_power_rad_H2 = np.zeros_like(Te_all).tolist()
@@ -4809,6 +4815,12 @@ else:
 					intervals_power_rad_Hm[i_t][i_r] = [0,0]
 					prob_power_rad_Hm[i_t][i_r] = [1]
 					actual_values_power_rad_Hm[i_t][i_r] = [0]
+					intervals_power_rad_Hm_H2p[i_t][i_r] = [0,0]
+					prob_power_rad_Hm_H2p[i_t][i_r] = [1]
+					actual_values_power_rad_Hm_H2p[i_t][i_r] = [0]
+					intervals_power_rad_Hm_Hp[i_t][i_r] = [0,0]
+					prob_power_rad_Hm_Hp[i_t][i_r] = [1]
+					actual_values_power_rad_Hm_Hp[i_t][i_r] = [0]
 					intervals_power_rad_H2[i_t][i_r] = [0,0]
 					prob_power_rad_H2[i_t][i_r] = [1]
 					actual_values_power_rad_H2[i_t][i_r] = [0]
@@ -4888,6 +4900,12 @@ else:
 					intervals_power_rad_Hm[i_t][i_r] = power_balance_data_dict[i]['power_rad_Hm']['intervals']
 					prob_power_rad_Hm[i_t][i_r] = power_balance_data_dict[i]['power_rad_Hm']['prob']
 					actual_values_power_rad_Hm[i_t][i_r] = power_balance_data_dict[i]['power_rad_Hm']['actual_values']
+					intervals_power_rad_Hm_H2p[i_t][i_r] = power_balance_data_dict[i]['power_rad_Hm_H2p']['intervals']
+					prob_power_rad_Hm_H2p[i_t][i_r] = power_balance_data_dict[i]['power_rad_Hm_H2p']['prob']
+					actual_values_power_rad_Hm_H2p[i_t][i_r] = power_balance_data_dict[i]['power_rad_Hm_H2p']['actual_values']
+					intervals_power_rad_Hm_Hp[i_t][i_r] = power_balance_data_dict[i]['power_rad_Hm_Hp']['intervals']
+					prob_power_rad_Hm_Hp[i_t][i_r] = power_balance_data_dict[i]['power_rad_Hm_Hp']['prob']
+					actual_values_power_rad_Hm_Hp[i_t][i_r] = power_balance_data_dict[i]['power_rad_Hm_Hp']['actual_values']
 					intervals_power_rad_H2[i_t][i_r] = power_balance_data_dict[i]['power_rad_H2']['intervals']
 					prob_power_rad_H2[i_t][i_r] = power_balance_data_dict[i]['power_rad_H2']['prob']
 					actual_values_power_rad_H2[i_t][i_r] = power_balance_data_dict[i]['power_rad_H2']['actual_values']
@@ -5136,6 +5154,12 @@ else:
 
 		most_likely_power_rad_Hm = calculate_most_likely(prob_power_rad_Hm,actual_values_power_rad_Hm)
 		figure_index = make_plot_type_1(most_likely_power_rad_Hm,'power_rad_Hm','power [W/m3]',figure_index)
+
+		most_likely_power_rad_Hm_H2p = calculate_most_likely(prob_power_rad_Hm_H2p,actual_values_power_rad_Hm_H2p)
+		figure_index = make_plot_type_1(most_likely_power_rad_Hm_H2p,'power_rad_Hm_H2p','power [W/m3]',figure_index)
+
+		most_likely_power_rad_Hm_Hp = calculate_most_likely(prob_power_rad_Hm_Hp,actual_values_power_rad_Hm_Hp)
+		figure_index = make_plot_type_1(most_likely_power_rad_Hm_Hp,'power_rad_Hm_Hp','power [W/m3]',figure_index)
 
 		most_likely_power_rad_H2 = calculate_most_likely(prob_power_rad_H2,actual_values_power_rad_H2)
 		figure_index = make_plot_type_1(most_likely_power_rad_H2,'power_rad_H2','power [W/m3]',figure_index)
@@ -5543,6 +5567,8 @@ else:
 		intervals_power_via_recombination_r, prob_power_via_recombination_r, actual_values_power_via_recombination_r = radial_sum_PDF_MC(actual_values_power_via_recombination,prob_power_via_recombination)
 		intervals_tot_rad_power_r, prob_tot_rad_power_r, actual_values_tot_rad_power_r = radial_sum_PDF_MC(actual_values_tot_rad_power,prob_tot_rad_power)
 		intervals_power_rad_Hm_r, prob_power_rad_Hm_r, actual_values_power_rad_Hm_r = radial_sum_PDF_MC(actual_values_power_rad_Hm,prob_power_rad_Hm)
+		intervals_power_rad_Hm_H2p_r, prob_power_rad_Hm_H2p_r, actual_values_power_rad_Hm_H2p_r = radial_sum_PDF_MC(actual_values_power_rad_Hm_H2p,prob_power_rad_Hm_H2p)
+		intervals_power_rad_Hm_Hp_r, prob_power_rad_Hm_Hp_r, actual_values_power_rad_Hm_Hp_r = radial_sum_PDF_MC(actual_values_power_rad_Hm_Hp,prob_power_rad_Hm_Hp)
 		intervals_power_rad_H2_r, prob_power_rad_H2_r, actual_values_power_rad_H2_r = radial_sum_PDF_MC(actual_values_power_rad_H2,prob_power_rad_H2)
 		intervals_power_rad_H2p_r, prob_power_rad_H2p_r, actual_values_power_rad_H2p_r = radial_sum_PDF_MC(actual_values_power_rad_H2p,prob_power_rad_H2p)
 		intervals_power_heating_rec_r, prob_power_heating_rec_r, actual_values_power_heating_rec_r = radial_sum_PDF_MC(actual_values_power_heating_rec,prob_power_heating_rec)
@@ -5576,6 +5602,8 @@ else:
 		most_likely_power_via_recombination_r,actual_values_power_via_recombination_r_up,actual_values_power_via_recombination_r_down = find_DPF_range_temporal(actual_values_power_via_recombination_r,prob_power_via_recombination_r,intervals_power_via_recombination_r)
 		most_likely_tot_rad_power_r,actual_values_tot_rad_power_r_up,actual_values_tot_rad_power_r_down = find_DPF_range_temporal(actual_values_tot_rad_power_r,prob_tot_rad_power_r,intervals_tot_rad_power_r)
 		most_likely_power_rad_Hm_r,actual_values_power_rad_Hm_r_up,actual_values_power_rad_Hm_r_down = find_DPF_range_temporal(actual_values_power_rad_Hm_r,prob_power_rad_Hm_r,intervals_power_rad_Hm_r)
+		most_likely_power_rad_Hm_H2p_r,actual_values_power_rad_Hm_H2p_r_up,actual_values_power_rad_Hm_H2p_r_down = find_DPF_range_temporal(actual_values_power_rad_Hm_H2p_r,prob_power_rad_Hm_H2p_r,intervals_power_rad_Hm_H2p_r)
+		most_likely_power_rad_Hm_Hp_r,actual_values_power_rad_Hm_Hp_r_up,actual_values_power_rad_Hm_Hp_r_down = find_DPF_range_temporal(actual_values_power_rad_Hm_Hp_r,prob_power_rad_Hm_Hp_r,intervals_power_rad_Hm_Hp_r)
 		most_likely_power_rad_H2_r,actual_values_power_rad_H2_r_up,actual_values_power_rad_H2_r_down = find_DPF_range_temporal(actual_values_power_rad_H2_r,prob_power_rad_H2_r,intervals_power_rad_H2_r)
 		most_likely_power_rad_H2p_r,actual_values_power_rad_H2p_r_up,actual_values_power_rad_H2p_r_down = find_DPF_range_temporal(actual_values_power_rad_H2p_r,prob_power_rad_H2p_r,intervals_power_rad_H2p_r)
 		most_likely_power_heating_rec_r,actual_values_power_heating_rec_r_up,actual_values_power_heating_rec_r_down = find_DPF_range_temporal(actual_values_power_heating_rec_r,prob_power_heating_rec_r,intervals_power_heating_rec_r)
@@ -5835,6 +5863,8 @@ else:
 		figure_index = make_plot_type_2(intervals_power_via_recombination_r,prob_power_via_recombination_r,most_likely_power_via_recombination_r,actual_values_power_via_recombination_r_down,actual_values_power_via_recombination_r_up,'power_via_recombination','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_tot_rad_power_r,prob_tot_rad_power_r,most_likely_tot_rad_power_r,actual_values_tot_rad_power_r_down,actual_values_tot_rad_power_r_up,'tot_rad_power','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rad_Hm_r,prob_power_rad_Hm_r,most_likely_power_rad_Hm_r,actual_values_power_rad_Hm_r_down,actual_values_power_rad_Hm_r_up,'power_rad_Hm','Power loss [W]',figure_index)
+		figure_index = make_plot_type_2(intervals_power_rad_Hm_H2p_r,prob_power_rad_Hm_H2p_r,most_likely_power_rad_Hm_H2p_r,actual_values_power_rad_Hm_H2p_r_down,actual_values_power_rad_Hm_H2p_r_up,'power_rad_Hm_H2p','Power loss [W]',figure_index)
+		figure_index = make_plot_type_2(intervals_power_rad_Hm_Hp_r,prob_power_rad_Hm_Hp_r,most_likely_power_rad_Hm_Hp_r,actual_values_power_rad_Hm_Hp_r_down,actual_values_power_rad_Hm_Hp_r_up,'power_rad_Hm_Hp','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rad_H2_r,prob_power_rad_H2_r,most_likely_power_rad_H2_r,actual_values_power_rad_H2_r_down,actual_values_power_rad_H2_r_up,'power_rad_H2','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rad_H2p_r,prob_power_rad_H2p_r,most_likely_power_rad_H2p_r,actual_values_power_rad_H2p_r_down,actual_values_power_rad_H2p_r_up,'power_rad_H2p','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_heating_rec_r,prob_power_heating_rec_r,most_likely_power_heating_rec_r,actual_values_power_heating_rec_r_down,actual_values_power_heating_rec_r_up,'power_heating_rec','Power loss [W]',figure_index)
@@ -5893,6 +5923,8 @@ else:
 		# plt.errorbar(time_crop,most_likely_power_rad_H2_r,yerr=[most_likely_power_rad_H2_r-actual_values_power_rad_H2_r_down,actual_values_power_rad_H2_r_up-most_likely_power_rad_H2_r],capsize=5,label='power_rad_H2')
 		# plt.errorbar(time_crop,most_likely_power_rad_H2p_r,yerr=[most_likely_power_rad_H2p_r-actual_values_power_rad_H2p_r_down,actual_values_power_rad_H2p_r_up-most_likely_power_rad_H2p_r],capsize=5,label='power_rad_H2p')
 		plt.plot(time_crop,most_likely_power_rad_Hm_r,label='power_rad_Hm')
+		plt.plot(time_crop,most_likely_power_rad_Hm_H2p_r,label='power_rad_Hm_H2p')
+		plt.plot(time_crop,most_likely_power_rad_Hm_Hp_r,label='power_rad_Hm_Hp')
 		plt.plot(time_crop,most_likely_power_rad_H2_r,label='power_rad_H2')
 		plt.plot(time_crop,most_likely_power_rad_H2p_r,label='power_rad_H2p')
 		plt.plot(time_crop,most_likely_power_heating_rec_r,label='power_heating_rec')
@@ -6259,6 +6291,8 @@ else:
 		intervals_power_via_recombination_tr, prob_power_via_recombination_tr = temporal_radial_sum_PDF_MC(actual_values_power_via_recombination_r,prob_power_via_recombination_r)
 		intervals_tot_rad_power_tr, prob_tot_rad_power_tr = temporal_radial_sum_PDF_MC(actual_values_tot_rad_power_r, prob_tot_rad_power_r)
 		intervals_power_rad_Hm_tr, prob_power_rad_Hm_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_Hm_r,prob_power_rad_Hm_r)
+		intervals_power_rad_Hm_H2p_tr, prob_power_rad_Hm_H2p_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_Hm_H2p_r,prob_power_rad_Hm_H2p_r)
+		intervals_power_rad_Hm_Hp_tr, prob_power_rad_Hm_Hp_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_Hm_Hp_r,prob_power_rad_Hm_Hp_r)
 		intervals_power_rad_H2_tr, prob_power_rad_H2_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_H2_r,prob_power_rad_H2_r)
 		intervals_power_rad_H2p_tr, prob_power_rad_H2p_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_H2p_r,prob_power_rad_H2p_r)
 		intervals_power_heating_rec_tr, prob_power_heating_rec_tr = temporal_radial_sum_PDF_MC(actual_values_power_heating_rec_r,prob_power_heating_rec_r)
@@ -6293,6 +6327,12 @@ else:
 		ML_power_rad_Hm = (np.add(intervals_power_rad_Hm_tr[1:],intervals_power_rad_Hm_tr[:-1])/2)[np.array(prob_power_rad_Hm_tr).argmax()]
 		temp = np.cumsum(prob_power_rad_Hm_tr)
 		ML_power_rad_Hm_sigma = np.mean([ML_power_rad_Hm-intervals_power_rad_Hm_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_Hm_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_Hm])
+		ML_power_rad_Hm_H2p = (np.add(intervals_power_rad_Hm_H2p_tr[1:],intervals_power_rad_Hm_H2p_tr[:-1])/2)[np.array(prob_power_rad_Hm_H2p_tr).argmax()]
+		temp = np.cumsum(prob_power_rad_Hm_H2p_tr)
+		ML_power_rad_Hm_H2p_sigma = np.mean([ML_power_rad_Hm_H2p-intervals_power_rad_Hm_H2p_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_Hm_H2p_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_Hm_H2p])
+		ML_power_rad_Hm_Hp = (np.add(intervals_power_rad_Hm_Hp_tr[1:],intervals_power_rad_Hm_Hp_tr[:-1])/2)[np.array(prob_power_rad_Hm_Hp_tr).argmax()]
+		temp = np.cumsum(prob_power_rad_Hm_Hp_tr)
+		ML_power_rad_Hm_Hp_sigma = np.mean([ML_power_rad_Hm_Hp-intervals_power_rad_Hm_Hp_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_Hm_Hp_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_Hm_Hp])
 		ML_power_rad_H2 = (np.add(intervals_power_rad_H2_tr[1:],intervals_power_rad_H2_tr[:-1])/2)[np.array(prob_power_rad_H2_tr).argmax()]
 		temp = np.cumsum(prob_power_rad_H2_tr)
 		ML_power_rad_H2_sigma = np.mean([ML_power_rad_H2-intervals_power_rad_H2_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_H2_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_H2])
@@ -6328,7 +6368,7 @@ else:
 		ML_power_rad_mol_visible_sigma = np.mean([ML_power_rad_mol_visible-intervals_power_rad_mol_visible_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_mol_visible_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_mol_visible])
 
 		results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
-		results_summary.loc[merge_ID_target,['B','Seed','p_n [Pa]','CB energy [J]','Delivered energy [J]','T_axial','Target','power_rad_excit','power_rad_excit_sigma','power_rad_rec_bremm','power_rad_rec_bremm_sigma','power_rad_mol','power_rad_mol_sigma','power_via_ionisation','power_via_ionisation_sigma','power_via_recombination','power_via_recombination_sigma','tot_rad_power','tot_rad_power_sigma','power_rad_Hm','power_rad_Hm_sigma','power_rad_H2','power_rad_H2_sigma','power_rad_H2p','power_rad_H2p_sigma','power_heating_rec','power_heating_rec_sigma','power_rec_neutral','power_rec_neutral_sigma','power_via_brem','power_via_brem_sigma','total_removed_power','total_removed_power_sigma','local_CX','local_CX_sigma','max_CX_energy','max_CX_energy_sigma','net_power_removed_plasma_column','net_power_removed_plasma_column_sigma']]=magnetic_field,feed_rate_SLM,target_chamber_pressure,0.5*(capacitor_voltage**2)*150e-6,energy_delivered_good_pulses,target_OES_distance,target_material,ML_power_rad_excit,ML_power_rad_excit_sigma,ML_power_rad_rec_bremm,ML_power_rad_rec_bremm_sigma,ML_power_rad_mol,ML_power_rad_mol_sigma,ML_power_via_ionisation,ML_power_via_ionisation_sigma,ML_power_via_recombination,ML_power_via_recombination_sigma,ML_tot_rad_power,ML_tot_rad_power_sigma,ML_power_rad_Hm,ML_power_rad_Hm_sigma,ML_power_rad_H2,ML_power_rad_H2_sigma,ML_power_rad_H2p,ML_power_rad_H2p_sigma,ML_power_heating_rec,ML_power_heating_rec_sigma,ML_power_rec_neutral,ML_power_rec_neutral_sigma,ML_power_via_brem,ML_power_via_brem_sigma,ML_total_removed_power,ML_total_removed_power_sigma,ML_local_CX,ML_local_CX_sigma,ML_E_HCX,ML_E_HCX_sigma,ML_net_power_removed_plasma_column,ML_net_power_removed_plasma_column_sigma
+		results_summary.loc[merge_ID_target,['B','Seed','p_n [Pa]','CB energy [J]','Delivered energy [J]','T_axial','Target','power_rad_excit','power_rad_excit_sigma','power_rad_rec_bremm','power_rad_rec_bremm_sigma','power_rad_mol','power_rad_mol_sigma','power_via_ionisation','power_via_ionisation_sigma','power_via_recombination','power_via_recombination_sigma','tot_rad_power','tot_rad_power_sigma','power_rad_Hm','power_rad_Hm_sigma','power_rad_Hm_H2p','power_rad_Hm_H2p_sigma','power_rad_Hm_Hp','power_rad_Hm_Hp_sigma','power_rad_H2','power_rad_H2_sigma','power_rad_H2p','power_rad_H2p_sigma','power_heating_rec','power_heating_rec_sigma','power_rec_neutral','power_rec_neutral_sigma','power_via_brem','power_via_brem_sigma','total_removed_power','total_removed_power_sigma','local_CX','local_CX_sigma','max_CX_energy','max_CX_energy_sigma','net_power_removed_plasma_column','net_power_removed_plasma_column_sigma']]=magnetic_field,feed_rate_SLM,target_chamber_pressure,0.5*(capacitor_voltage**2)*150e-6,energy_delivered_good_pulses,target_OES_distance,target_material,ML_power_rad_excit,ML_power_rad_excit_sigma,ML_power_rad_rec_bremm,ML_power_rad_rec_bremm_sigma,ML_power_rad_mol,ML_power_rad_mol_sigma,ML_power_via_ionisation,ML_power_via_ionisation_sigma,ML_power_via_recombination,ML_power_via_recombination_sigma,ML_tot_rad_power,ML_tot_rad_power_sigma,ML_power_rad_Hm,ML_power_rad_Hm_sigma,ML_power_rad_Hm_H2p,ML_power_rad_Hm_H2p_sigma,ML_power_rad_Hm_Hp,ML_power_rad_Hm_Hp_sigma,ML_power_rad_H2,ML_power_rad_H2_sigma,ML_power_rad_H2p,ML_power_rad_H2p_sigma,ML_power_heating_rec,ML_power_heating_rec_sigma,ML_power_rec_neutral,ML_power_rec_neutral_sigma,ML_power_via_brem,ML_power_via_brem_sigma,ML_total_removed_power,ML_total_removed_power_sigma,ML_local_CX,ML_local_CX_sigma,ML_E_HCX,ML_E_HCX_sigma,ML_net_power_removed_plasma_column,ML_net_power_removed_plasma_column_sigma
 		results_summary.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv')
 
 		plt.figure(figsize=(20, 10));
@@ -6339,6 +6379,8 @@ else:
 		plt.plot(np.sort(intervals_power_via_recombination_tr.tolist()*2)[1:-1],100*np.array([prob_power_via_recombination_tr]*2).T.flatten(),label='power_via_recombination (only potential) ML=%.3g+/-%.3gJ' %(ML_power_via_recombination,ML_power_via_recombination_sigma))
 		plt.plot(np.sort(intervals_tot_rad_power_tr.tolist()*2)[1:-1],100*np.array([prob_tot_rad_power_tr]*2).T.flatten(),label='tot_rad_power ML=%.3g+/-%.3gJ' %(ML_tot_rad_power,ML_tot_rad_power_sigma))
 		plt.plot(np.sort(intervals_power_rad_Hm_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_Hm_tr]*2).T.flatten(),label='power_rad_Hm ML=%.3g+/-%.3gJ' %(ML_power_rad_Hm,ML_power_rad_Hm_sigma))
+		plt.plot(np.sort(intervals_power_rad_Hm_H2p_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_Hm_H2p_tr]*2).T.flatten(),label='power_rad_Hm_H2p ML=%.3g+/-%.3gJ' %(ML_power_rad_Hm_H2p,ML_power_rad_Hm_H2p_sigma))
+		plt.plot(np.sort(intervals_power_rad_Hm_Hp_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_Hm_Hp_tr]*2).T.flatten(),label='power_rad_Hm_Hp ML=%.3g+/-%.3gJ' %(ML_power_rad_Hm_Hp,ML_power_rad_Hm_Hp_sigma))
 		plt.plot(np.sort(intervals_power_rad_H2_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_H2_tr]*2).T.flatten(),label='power_rad_H2 ML=%.3g+/-%.3gJ' %(ML_power_rad_H2,ML_power_rad_H2_sigma))
 		plt.plot(np.sort(intervals_power_rad_H2p_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_H2p_tr]*2).T.flatten(),label='power_rad_H2p ML=%.3g+/-%.3gJ' %(ML_power_rad_H2p,ML_power_rad_H2p_sigma))
 		plt.plot(np.sort(intervals_power_heating_rec_tr.tolist()*2)[1:-1],100*np.array([prob_power_heating_rec_tr]*2).T.flatten(),label='power_heating_rec ML=%.3g+/-%.3gJ' %(ML_power_heating_rec,ML_power_heating_rec_sigma))
@@ -6405,6 +6447,16 @@ else:
 		bayesian_results_dict['power_rad_Hm']['full'] = dict([('intervals',intervals_power_rad_Hm),('prob',prob_power_rad_Hm),('actual_values',actual_values_power_rad_Hm)])
 		bayesian_results_dict['power_rad_Hm']['radial_sum'] = dict([('intervals',intervals_power_rad_Hm_r),('prob',prob_power_rad_Hm_r),('actual_values',actual_values_power_rad_Hm_r)])
 		bayesian_results_dict['power_rad_Hm']['radial_time_sum'] = dict([('intervals',intervals_power_rad_Hm_tr),('prob',prob_power_rad_Hm_tr),('most_likely',ML_power_rad_Hm)])
+
+		bayesian_results_dict['power_rad_Hm_H2p'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['power_rad_Hm_H2p']['full'] = dict([('intervals',intervals_power_rad_Hm_H2p),('prob',prob_power_rad_Hm_H2p),('actual_values',actual_values_power_rad_Hm_H2p)])
+		bayesian_results_dict['power_rad_Hm_H2p']['radial_sum'] = dict([('intervals',intervals_power_rad_Hm_H2p_r),('prob',prob_power_rad_Hm_H2p_r),('actual_values',actual_values_power_rad_Hm_H2p_r)])
+		bayesian_results_dict['power_rad_Hm_H2p']['radial_time_sum'] = dict([('intervals',intervals_power_rad_Hm_H2p_tr),('prob',prob_power_rad_Hm_H2p_tr),('most_likely',ML_power_rad_Hm_H2p)])
+
+		bayesian_results_dict['power_rad_Hm_Hp'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['power_rad_Hm_Hp']['full'] = dict([('intervals',intervals_power_rad_Hm_Hp),('prob',prob_power_rad_Hm_Hp),('actual_values',actual_values_power_rad_Hm_Hp)])
+		bayesian_results_dict['power_rad_Hm_Hp']['radial_sum'] = dict([('intervals',intervals_power_rad_Hm_Hp_r),('prob',prob_power_rad_Hm_Hp_r),('actual_values',actual_values_power_rad_Hm_Hp_r)])
+		bayesian_results_dict['power_rad_Hm_Hp']['radial_time_sum'] = dict([('intervals',intervals_power_rad_Hm_Hp_tr),('prob',prob_power_rad_Hm_Hp_tr),('most_likely',ML_power_rad_Hm_Hp)])
 
 		bayesian_results_dict['power_rad_H2'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['power_rad_H2']['full'] = dict([('intervals',intervals_power_rad_H2),('prob',prob_power_rad_H2),('actual_values',actual_values_power_rad_H2)])

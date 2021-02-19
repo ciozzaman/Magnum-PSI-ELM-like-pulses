@@ -750,9 +750,11 @@ for i_Te_for_nH_ne,Te_for_nH_ne in enumerate(Te_values):
 record_nH_ne_values = np.array(record_nH_ne_values)
 nHp_ne_values = np.ones_like(ne_values)
 nH_ne_excited_states_atomic_recomb = (recombination_full.T * nHp_ne_values * ne_values).T
+emissivity_excited_states_atomic_recomb = (nH_ne_excited_states_atomic_recomb.T * ne_values).T * multiplicative_factor_full
 nHex_nH_excited_states_atomic_recomb = (recombination_full.T * nHp_ne_values * ne_values / record_nH_ne_values).T
 nH_ne_nHp_excited_states_atomic_recomb = recombination_full
 nH_ne_excited_states_atomic_excit = (excitation_full.T * record_nH_ne_values * ne_values).T
+emissivity_excited_states_atomic_excit = (nH_ne_excited_states_atomic_excit.T * ne_values).T * multiplicative_factor_full
 nHex_nH_excited_states_atomic_excit = (excitation_full.T * record_nH_ne_values * ne_values / record_nH_ne_values).T
 nH_ne_nH_excited_states_atomic_excit = excitation_full
 
@@ -772,18 +774,22 @@ nHp_ne_values = 1 - nH2p_ne_values + nHm_ne_values
 
 coeff_1 = From_H2p_pop_coeff_full_extra(np.array([Te_values,ne_values]).T,total_wavelengths)
 nH_ne_excited_states_mol_H2p = (coeff_1.T * nH2p_ne_values * ne_values).T
+emissivity_excited_states_mol_H2p = (nH_ne_excited_states_mol_H2p.T * ne_values).T * multiplicative_factor_full
 nHex_nH_excited_states_mol_H2p = (coeff_1.T * nH2p_ne_values * ne_values / record_nH_ne_values).T
 nH_ne_nH2p_excited_states_mol_H2p = coeff_1
 coeff_2 = From_H2_pop_coeff_full_extra(np.array([Te_values,ne_values]).T,total_wavelengths)
 nH_ne_excited_states_mol_H2 = (coeff_2.T * record_nH2_ne_values * ne_values).T
+emissivity_excited_states_mol_H2 = (nH_ne_excited_states_mol_H2.T * ne_values).T * multiplicative_factor_full
 nHex_nH_excited_states_mol_H2 = (coeff_2.T * record_nH2_ne_values * ne_values / record_nH_ne_values).T
 nH_ne_nH2_excited_states_mol_H2 = coeff_2
 coeff_3 = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te_values,T_Hp_values,T_Hm_values,ne_values,nHp_ne_values*ne_values]).T ,total_wavelengths)
 nH_ne_excited_states_mol_Hn_with_Hp = (coeff_3.T * nHm_ne_values * ne_values).T
+emissivity_excited_states_mol_Hn_with_Hp = (nH_ne_excited_states_mol_Hn_with_Hp.T * ne_values).T * multiplicative_factor_full
 nHex_nH_excited_states_mol_Hn_with_Hp = (coeff_3.T * nHm_ne_values * ne_values / record_nH_ne_values).T
 nH_nHn_nHp_excited_states_mol_Hn_with_Hp = (coeff_3.T * ne_values /(nHp_ne_values * ne_values)).T
 coeff_4 = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te_values,T_H2p_values,T_Hm_values,ne_values,nH2p_ne_values*ne_values]).T,total_wavelengths)
 nH_ne_excited_states_mol_Hn_with_H2p = (coeff_4.T * nHm_ne_values * ne_values).T
+emissivity_excited_states_mol_Hn_with_H2p = (nH_ne_excited_states_mol_Hn_with_H2p.T * ne_values).T * multiplicative_factor_full
 nHex_nH_excited_states_mol_Hn_with_H2p = (coeff_4.T * nHm_ne_values * ne_values / record_nH_ne_values).T
 nH_nHn_nH2p_excited_states_mol_Hn_with_H2p = (coeff_4.T * ne_values / (nH2p_ne_values * ne_values)).T
 
@@ -819,7 +825,7 @@ plt.pause(0.01)
 linestyle = ['-','--','-.']
 plt.figure()
 for index in range(len(ne_values)):
-	max_nH_ne = np.max([nH_ne_excited_states_atomic_recomb[index],nH_ne_excited_states_atomic_excit[index],nH_ne_excited_states_mol_H2p[index],nH_ne_excited_states_mol_H2[index],nH_ne_excited_states_mol_Hn_with_Hp[index],nH_ne_excited_states_mol_Hn_with_H2p[index]])
+	# max_nH_ne = np.max([nH_ne_excited_states_atomic_recomb[index],nH_ne_excited_states_atomic_excit[index],nH_ne_excited_states_mol_H2p[index],nH_ne_excited_states_mol_H2[index],nH_ne_excited_states_mol_Hn_with_Hp[index],nH_ne_excited_states_mol_Hn_with_H2p[index]])
 	if index == 0:
 		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_atomic_recomb[index][:6+1]/(nH_ne_excited_states_atomic_recomb[index][2]),color=color[0],linestyle=linestyle[index],label='recombination (ADAS)\n'+r'$H^+ + e^- → H(p) + hν$'+'\n'+r'$H^+ + 2e^- → H(p) + e^-$')
 		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_atomic_excit[index][:6+1]/(nH_ne_excited_states_atomic_excit[index][2]),color=color[1],linestyle=linestyle[index],label='direct excitation (ADAS)\n'+r'$H(q) + e^- → H(p>q) + e^-$')
@@ -844,6 +850,36 @@ plt.semilogy()
 # plt.semilogx()
 plt.grid()
 plt.pause(0.01)
+
+linestyle = ['-','--','-.']
+plt.figure()
+for index in range(len(ne_values)):
+	# max_nH_ne = np.max([nH_ne_excited_states_atomic_recomb[index],nH_ne_excited_states_atomic_excit[index],nH_ne_excited_states_mol_H2p[index],nH_ne_excited_states_mol_H2[index],nH_ne_excited_states_mol_Hn_with_Hp[index],nH_ne_excited_states_mol_Hn_with_H2p[index]])
+	if index == 0:
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_atomic_recomb[index][:6+1]/(emissivity_excited_states_atomic_recomb[index][2]),color=color[0],linestyle=linestyle[index],label='recombination (ADAS)\n'+r'$H^+ + e^- → H(p) + hν$'+'\n'+r'$H^+ + 2e^- → H(p) + e^-$')
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_atomic_excit[index][:6+1]/(emissivity_excited_states_atomic_excit[index][2]),color=color[1],linestyle=linestyle[index],label='direct excitation (ADAS)\n'+r'$H(q) + e^- → H(p>q) + e^-$')
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_mol_H2p[index][:6+1]/(emissivity_excited_states_mol_H2p[index][2]),color=color[2],linestyle=linestyle[index],label='H2+ dissociation (Yacora)\n'+r'${H_2}^+ + e^- → H(p) + H^+ + e^-$')
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_mol_H2[index][:6+1]/(emissivity_excited_states_mol_H2[index][2]),color=color[3],linestyle=linestyle[index],label='H2 dissociation (Yacora)\n'+r'$H_2 + e^- → H(p) + H(1) + e^-$')
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_mol_Hn_with_Hp[index][:6+1]/(emissivity_excited_states_mol_Hn_with_Hp[index][2]),color=color[4],linestyle=linestyle[index],label='H+ mutual neutralisation (Yacora)\n'+r'$H^+ + H^- → H(p) + H(1)$')
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_mol_Hn_with_H2p[index][:6+1]/(emissivity_excited_states_mol_Hn_with_H2p[index][2]),color=color[5],linestyle=linestyle[index],label='H2+ mutual neutralisation (Yacora)\n'+r'${H_2}^+ + H^- → H(p) + H_2$')
+	else:
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_atomic_recomb[index][:6+1]/(emissivity_excited_states_atomic_recomb[index][2]),color=color[0],linestyle=linestyle[index])
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_atomic_excit[index][:6+1]/(emissivity_excited_states_atomic_excit[index][2]),color=color[1],linestyle=linestyle[index])
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_mol_H2p[index][:6+1]/(emissivity_excited_states_mol_H2p[index][2]),color=color[2],linestyle=linestyle[index])
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_mol_H2[index][:6+1]/(emissivity_excited_states_mol_H2[index][2]),color=color[3],linestyle=linestyle[index])
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_mol_Hn_with_Hp[index][:6+1]/(emissivity_excited_states_mol_Hn_with_Hp[index][2]),color=color[4],linestyle=linestyle[index])
+		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_mol_Hn_with_H2p[index][:6+1]/(emissivity_excited_states_mol_Hn_with_H2p[index][2]),color=color[5],linestyle=linestyle[index])
+
+plt.xlabel('H excited state '+r'$p$')
+plt.ylabel('line ratio '+r'$\epsilon_{H(p)} / \epsilon_{H(4)}$')
+temp = np.array([Te_values,ne_values/1e20]).T
+plt.title('[Te[eV],ne['+r'$10^{20}$'+'#'+r'$/m^3$'+']] examples → "'+linestyle[0] +'"='+ str(temp[0])+ ', "'+linestyle[1] +'"='+ str(temp[1])+ ', "'+linestyle[2] +'"='+ str(temp[2]))
+plt.legend(loc='best', fontsize='x-small')
+plt.semilogy()
+# plt.semilogx()
+plt.grid()
+plt.pause(0.01)
+
 
 # linestyle = ['-','--',':']
 # plt.figure()

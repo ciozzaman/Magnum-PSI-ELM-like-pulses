@@ -1285,7 +1285,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 						total_power_via_recombination = (read_adf11(acdfile, 'acd', 1, 1, 1, Te_values.flatten(),ne_values.flatten() * 10 ** (0 - 6)) * (10 ** -6) * (ne_values.flatten()**2) *13.6/J_to_eV).reshape((TS_ne_steps,TS_Te_steps))
 						power_via_recombination = np.float32([(total_power_via_recombination * record_nHp_ne_values.reshape((Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps))).tolist()]*(H_steps))
 						power_via_brem =  np.float32([(record_nHp_ne_values.reshape(Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps) * 5.35*1e-37 * (Te_values/1000)**0.5 * (ne_values**2)).tolist()]*H_steps)	# Wesson, Tokamaks
-						power_rad_Hm = np.zeros((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps),dtype=np.float32)	# H, Hm, H2, H2p, ne, Te
+						power_rad_Hm_H2p = np.zeros((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps),dtype=np.float32)	# H, Hm, H2, H2p, ne, Te
+						power_rad_Hm_Hp = np.zeros((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps),dtype=np.float32)	# H, Hm, H2, H2p, ne, Te
 						power_rad_Hm_visible = np.zeros((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps),dtype=np.float32)	# H, Hm, H2, H2p, ne, Te
 						power_rec_neutral = 3/2*(power_via_recombination/13.6*(T_Hp_values.reshape((TS_ne_steps,TS_Te_steps))*eV_to_K)).astype(np.float32)	# power removed from plasma column due to recombination by the kinetic energy of the neutral (assuming Te=TH+)
 
@@ -1318,9 +1319,11 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									# nHp_ne_good = np.logical_or(nHp_ne_good,nHp_ne_mid).reshape((TS_ne_steps,TS_Te_steps))
 									nHp_ne_good = nHp_ne_good.reshape((TS_ne_steps,TS_Te_steps))
 									power_rad_Hm_visible[:,i3,i4,i5,nHp_ne_good] = (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( coeff_3_visible + coeff_4_visible )).astype(np.float32)[nHp_ne_good]
-									power_rad_Hm[:,i3,i4,i5,nHp_ne_good] = (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( coeff_3 + coeff_4 )).astype(np.float32)[nHp_ne_good]
+									power_rad_Hm_H2p[:,i3,i4,i5,nHp_ne_good] = (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( coeff_4 )).astype(np.float32)[nHp_ne_good]
+									power_rad_Hm_Hp[:,i3,i4,i5,nHp_ne_good] = (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( coeff_3 )).astype(np.float32)[nHp_ne_good]
 									nH_ne_excited_states_mol[:,i3,i4,i5] += (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( temp ))
-						power_rad_mol = (power_rad_Hm + power_rad_H2 + power_rad_H2p).astype(np.float32)
+						power_rad_mol = (power_rad_Hm_H2p + power_rad_Hm_Hp + power_rad_H2 + power_rad_H2p).astype(np.float32)
+						power_rad_Hm = (power_rad_Hm_H2p + power_rad_Hm_Hp).astype(np.float32)
 						power_rad_mol_visible = (power_rad_Hm_visible + power_rad_H2_visible + power_rad_H2p_visible).astype(np.float32)
 						power_heating_rec = (power_via_recombination - power_rad_rec_bremm + power_via_brem).astype(np.float32)
 						# power_heating_rec[power_heating_rec<0]=0
@@ -1328,7 +1331,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 						total_removed_power_atomic = np.float32(power_via_ionisation + power_rad_excit + power_via_recombination + power_rec_neutral + power_via_brem)
 						# total_removed_power = power_via_ionisation + power_rad_excit + power_via_recombination + power_rec_neutral + power_via_brem + power_rad_mol
 
-						return power_rad_H2p,power_rad_H2,power_rad_excit,power_via_ionisation,power_rad_rec_bremm,power_via_recombination,power_via_brem,power_rec_neutral,power_rad_Hm,power_rad_mol,power_heating_rec,tot_rad_power,total_removed_power_atomic,nH_ne_excited_states_mol,power_rad_mol_visible
+						return power_rad_H2p,power_rad_H2,power_rad_excit,power_via_ionisation,power_rad_rec_bremm,power_via_recombination,power_via_brem,power_rec_neutral,power_rad_Hm_H2p,power_rad_Hm_Hp,power_rad_Hm,power_rad_mol,power_heating_rec,tot_rad_power,total_removed_power_atomic,nH_ne_excited_states_mol,power_rad_mol_visible
 
 					def calc_stuff_2(arg):
 						try:
@@ -1678,7 +1681,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								time_lapsed = tm.time()-start_time
 								print('worker '+str(current_process())+' Initial loop nr '+str(loop_index)+'-3 done '+str(domain_index)+' in %.3gmin %.3gsec' %(int(time_lapsed/60),int(time_lapsed%60)) +' - good=%.3g, nan=%.3g, -inf=%.3g' %( np.sum(np.isfinite(calculated_emission_log_probs)),np.sum(np.isnan(calculated_emission_log_probs)),np.sum(np.isinf(calculated_emission_log_probs)) ) )
 
-								power_rad_H2p,power_rad_H2,power_rad_excit,power_via_ionisation,power_rad_rec_bremm,power_via_recombination,power_via_brem,power_rec_neutral,power_rad_Hm,power_rad_mol,power_heating_rec,tot_rad_power,total_removed_power_atomic,nH_ne_excited_states_mol,power_rad_mol_visible = calc_power_balance_elements_simplified2(H_steps,to_find_steps,H2_steps,to_find_steps,TS_ne_steps,TS_Te_steps,Te_values,ne_values,multiplicative_factor_full_full,multiplicative_factor_visible_light_full_full,record_nH_ne_values,record_nHm_ne_values,record_nH2_ne_values,record_nH2p_ne_values,record_nHp_ne_values,T_Hp_values,T_H2p_values,T_Hm_values,coeff_1_record,coeff_2_record,coeff_3_record,coeff_4_record)
+								power_rad_H2p,power_rad_H2,power_rad_excit,power_via_ionisation,power_rad_rec_bremm,power_via_recombination,power_via_brem,power_rec_neutral,power_rad_Hm_H2p,power_rad_Hm_Hp,power_rad_Hm,power_rad_mol,power_heating_rec,tot_rad_power,total_removed_power_atomic,nH_ne_excited_states_mol,power_rad_mol_visible = calc_power_balance_elements_simplified2(H_steps,to_find_steps,H2_steps,to_find_steps,TS_ne_steps,TS_Te_steps,Te_values,ne_values,multiplicative_factor_full_full,multiplicative_factor_visible_light_full_full,record_nH_ne_values,record_nHm_ne_values,record_nH2_ne_values,record_nH2p_ne_values,record_nHp_ne_values,T_Hp_values,T_H2p_values,T_Hm_values,coeff_1_record,coeff_2_record,coeff_3_record,coeff_4_record)
 								total_removed_power = total_removed_power_atomic + power_rad_mol
 
 								area = 2*np.pi*(r_crop[my_r_pos] + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))
@@ -2360,7 +2363,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							Hm_steps = to_find_steps+how_much_expand_nHm_nH2_indexes
 							H2p_steps = to_find_steps+how_much_expand_nH2p_nH2_indexes
 
-							power_rad_H2p,power_rad_H2,power_rad_excit,power_via_ionisation,power_rad_rec_bremm,power_via_recombination,power_via_brem,power_rec_neutral,power_rad_Hm,power_rad_mol,power_heating_rec,tot_rad_power,total_removed_power_atomic,nH_ne_excited_states_mol,power_rad_mol_visible = calc_power_balance_elements_simplified2(H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps,Te_values,ne_values,multiplicative_factor_full_full,multiplicative_factor_visible_light_full_full,record_nH_ne_values,record_nHm_ne_values,record_nH2_ne_values,record_nH2p_ne_values,record_nHp_ne_values,T_Hp_values,T_H2p_values,T_Hm_values,coeff_1_record,coeff_2_record,coeff_3_record_2,coeff_4_record_2)
+							power_rad_H2p,power_rad_H2,power_rad_excit,power_via_ionisation,power_rad_rec_bremm,power_via_recombination,power_via_brem,power_rec_neutral,power_rad_Hm_H2p,power_rad_Hm_Hp,power_rad_Hm,power_rad_mol,power_heating_rec,tot_rad_power,total_removed_power_atomic,nH_ne_excited_states_mol,power_rad_mol_visible = calc_power_balance_elements_simplified2(H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps,Te_values,ne_values,multiplicative_factor_full_full,multiplicative_factor_visible_light_full_full,record_nH_ne_values,record_nHm_ne_values,record_nH2_ne_values,record_nH2p_ne_values,record_nHp_ne_values,T_Hp_values,T_H2p_values,T_Hm_values,coeff_1_record,coeff_2_record,coeff_3_record_2,coeff_4_record_2)
 							total_removed_power = total_removed_power_atomic + power_rad_mol
 							del coeff_1_record,coeff_2_record,coeff_3_record_2,coeff_4_record_2
 
@@ -2843,6 +2846,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								power_balance_data_dict['tot_rad_power'] = dict([('intervals',intervals_tot_rad_power),('prob',prob_tot_rad_power),('actual_values',actual_values_tot_rad_power)])
 								intervals_power_rad_Hm,prob_power_rad_Hm,actual_values_power_rad_Hm = build_log_PDF(power_rad_Hm,PDF_intervals)
 								power_balance_data_dict['power_rad_Hm'] = dict([('intervals',intervals_power_rad_Hm),('prob',prob_power_rad_Hm),('actual_values',actual_values_power_rad_Hm)])
+								intervals_power_rad_Hm_H2p,prob_power_rad_Hm_H2p,actual_values_power_rad_Hm_H2p = build_log_PDF(power_rad_Hm_H2p,PDF_intervals)
+								power_balance_data_dict['power_rad_Hm_H2p'] = dict([('intervals',intervals_power_rad_Hm_H2p),('prob',prob_power_rad_Hm_H2p),('actual_values',actual_values_power_rad_Hm_H2p)])
+								intervals_power_rad_Hm_Hp,prob_power_rad_Hm_Hp,actual_values_power_rad_Hm_Hp = build_log_PDF(power_rad_Hm_Hp_Hp,PDF_intervals)
+								power_balance_data_dict['power_rad_Hm_Hp'] = dict([('intervals',intervals_power_rad_Hm_Hp),('prob',prob_power_rad_Hm_Hp),('actual_values',actual_values_power_rad_Hm_Hp)])
 								intervals_power_rad_H2,prob_power_rad_H2,actual_values_power_rad_H2 = build_log_PDF(power_rad_H2,PDF_intervals)
 								power_balance_data_dict['power_rad_H2'] = dict([('intervals',intervals_power_rad_H2),('prob',prob_power_rad_H2),('actual_values',actual_values_power_rad_H2)])
 								intervals_power_rad_H2p,prob_power_rad_H2p,actual_values_power_rad_H2p = build_log_PDF(power_rad_H2p,PDF_intervals)
