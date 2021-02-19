@@ -1106,7 +1106,7 @@ if initial_conditions:
 	radious_equivalent_to_downstream_peak_pressure = (area_equivalent_to_downstream_peak_pressure/3.14)**0.5
 
 	results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
-	fast_camera_record_duration = results_summary.loc[merge_ID_target,['fast_camera_record_duration']][0]	# [s]
+	fast_camera_record_duration = results_summary.loc[merge_ID_target,['fast_camera_record_duration_OES']][0]	# [s]
 	fast_camera_record_duration_dt = max(1,int(round(fast_camera_record_duration*1e3/dt)))
 	temp2 = generic_filter(temp2,np.mean,size=[fast_camera_record_duration_dt])
 	temp3 = generic_filter(temp3,np.mean,size=[fast_camera_record_duration_dt])
@@ -5380,16 +5380,22 @@ else:
 		figure_index = make_plot_type_1(most_likely_total_removed_power_visible_brightness,'total_removed_power_visible_brightness','power [W/m2]',figure_index)
 
 		results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
-		fast_camera_record_duration = results_summary.loc[merge_ID_target,['fast_camera_record_duration']][0]	# [s]
+		fast_camera_record_duration_OES = results_summary.loc[merge_ID_target,['fast_camera_record_duration_OES']][0]	# [s]
+		fast_camera_record_duration = results_summary.loc[merge_ID_target,['fast_camera_record_duration_long']][0]	# [s]
+		fast_camera_record_duration_OES_dt = max(1,int(round(fast_camera_record_duration_OES*1e3/dt)))
 		fast_camera_record_duration_dt = max(1,int(round(fast_camera_record_duration*1e3/dt)))
+		averaged_most_likely_total_removed_power_visible_brightness_OES = generic_filter(most_likely_total_removed_power_visible_brightness,np.mean,size=[fast_camera_record_duration_OES_dt,1])
+		averaged_most_likely_total_removed_power_visible_brightness_OES = averaged_most_likely_total_removed_power_visible_brightness_OES[np.max(averaged_most_likely_total_removed_power_visible_brightness_OES,axis=1).argmax()]
 		averaged_most_likely_total_removed_power_visible_brightness = generic_filter(most_likely_total_removed_power_visible_brightness,np.mean,size=[fast_camera_record_duration_dt,1])
 		averaged_most_likely_total_removed_power_visible_brightness = averaged_most_likely_total_removed_power_visible_brightness[np.max(averaged_most_likely_total_removed_power_visible_brightness,axis=1).argmax()]
 
 		plt.figure(figsize=(8, 5));
-		plt.plot(r_crop,averaged_most_likely_total_removed_power_visible_brightness)
+		plt.plot(r_crop,averaged_most_likely_total_removed_power_visible_brightness,label='%.3gms average' %(fast_camera_record_duration*1e3))
+		plt.plot(r_crop,averaged_most_likely_total_removed_power_visible_brightness_OES,label='%.3gms average' %(fast_camera_record_duration_OES_dt*1e3))
 		plt.xlabel('radious [m]')
+		plt.legend(loc='best', fontsize='xx-small')
 		plt.ylabel('average brightness [W/m2]      ')
-		plt.title(pre_title+' time average of the visible light brightness\nover a %.3gms window, consistent with fast camera' %(fast_camera_record_duration*1e3))
+		plt.title(pre_title+' time average of the visible light brightness\nover a window consistent with fast camera')
 		figure_index += 1
 		plt.savefig(path_where_to_save_everything + mod4 + '/bayesian/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
 			figure_index+1) + '.eps', bbox_inches='tight')
@@ -6363,6 +6369,8 @@ else:
 		plt.close('all')
 
 		bayesian_results_dict = dict([])
+		bayesian_results_dict['coord_info'] = dict([('r_crop',r_crop),('time_crop',time_crop)])
+
 		bayesian_results_dict['power_rad_excit'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['power_rad_excit']['full'] = dict([('intervals',intervals_power_rad_excit),('prob',prob_power_rad_excit),('actual_values',actual_values_power_rad_excit)])
 		bayesian_results_dict['power_rad_excit']['radial_sum'] = dict([('intervals',intervals_power_rad_excit_r),('prob',prob_power_rad_excit_r),('actual_values',actual_values_power_rad_excit_r)])
@@ -6428,12 +6436,14 @@ else:
 		bayesian_results_dict['total_removed_power']['radial_sum'] = dict([('intervals',intervals_total_removed_power_r),('prob',prob_total_removed_power_r),('actual_values',actual_values_total_removed_power_r)])
 		bayesian_results_dict['total_removed_power']['radial_time_sum'] = dict([('intervals',intervals_total_removed_power_tr),('prob',prob_total_removed_power_tr),('most_likely',ML_total_removed_power)])
 
-		bayesian_results_dict['total_removed_power_visible'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([])),('brightness',dict([])),('average_brightness',dict([]))])
+		bayesian_results_dict['total_removed_power_visible'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([])),('brightness',dict([])),('average_brightness',dict([])),('long_average_brightness',dict([]))])
 		bayesian_results_dict['total_removed_power_visible']['full'] = dict([('intervals',intervals_total_removed_power_visible),('prob',prob_total_removed_power_visible),('actual_values',actual_values_total_removed_power_visible)])
 		bayesian_results_dict['total_removed_power_visible']['radial_sum'] = dict([('intervals',intervals_total_removed_power_visible_r),('prob',prob_total_removed_power_visible_r),('actual_values',actual_values_total_removed_power_visible_r)])
 		bayesian_results_dict['total_removed_power_visible']['radial_time_sum'] = dict([('intervals',intervals_total_removed_power_visible_tr),('prob',prob_total_removed_power_visible_tr),('most_likely',ML_total_removed_power_visible)])
 		bayesian_results_dict['total_removed_power_visible']['brightness'] = dict([('most_likely',most_likely_total_removed_power_visible_brightness)])
-		bayesian_results_dict['total_removed_power_visible']['average_brightness'] = dict([('most_likely',averaged_most_likely_total_removed_power_visible_brightness)])
+		bayesian_results_dict['total_removed_power_visible']['long_average_brightness'] = dict([('most_likely',averaged_most_likely_total_removed_power_visible_brightness)])
+		bayesian_results_dict['total_removed_power_visible']['average_brightness'] = dict([('most_likely',averaged_most_likely_total_removed_power_visible_brightness_OES)])
+
 
 		bayesian_results_dict['local_CX'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['local_CX']['full'] = dict([('intervals',intervals_local_CX),('prob',prob_local_CX),('actual_values',actual_values_local_CX)])

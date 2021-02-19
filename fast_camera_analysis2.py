@@ -35,7 +35,8 @@ df_settings = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_d
 
 
 
-merge_ID_target_multipulse = np.flip([66,67,68,69,70,71,72,73,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92, 93, 94,95,96,97,98,99],axis=0)
+# merge_ID_target_multipulse = np.flip([66,67,68,69,70,71,72,73,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92, 93, 94,95,96,97,98,99],axis=0)
+merge_ID_target_multipulse = [66,67,68,69,70,71,72,73,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92, 93, 94,95,96,97,98,99]
 # merge_ID_target_multipulse = np.flip([66,67,68,69,70,71,72,73,75,76,77,78,79],axis=0)
 
 
@@ -260,14 +261,36 @@ for merge_ID_target in merge_ID_target_multipulse:
 			plt.savefig(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_item_'+str(j)+'_' + filename +'3.eps', bbox_inches='tight')
 			plt.close('all')
 
+			temp = np.nanmean(raw_data[:,110:150],axis=1)
+			temp[np.nanmax(raw_data,axis=1)>=saturation_counts] = np.nan
+			plt.figure(figsize=(8,6))
+			plt.imshow(temp,'rainbow',origin='lower',extent=[0,np.shape(raw_data)[2]*15/44,0,len(raw_data)/framerate*1e3],aspect='auto',norm=LogNorm())
+			# plt.imshow(cleaned[select],'rainbow',origin='lower')
+			if overexposed_local:
+				plt.colorbar().set_label('average counts [au] (%.3g%% volume overexposed)' %(fraction_overexposed_volume),fontsize=13)
+			else:
+				plt.colorbar().set_label('average counts [au]')
+			plt.plot([158*15/44,158*15/44],[0,len(raw_data)/framerate*1e3],'b',label='OES location')
+			plt.plot([(172-1)*15/44,(172-1)*15/44],[0,len(raw_data)/framerate*1e3],'b')
+			plt.title(full_folder+filename+'\nmagnetic_field %.3gT,steady state pressure %.3gPa,target/OES distance %.3gmm,ELM pulse voltage %.3gV\n temporal evolution of the radially averaged profile radially restricted' %(magnetic_field,SS_pressure,target_OES_distance,pulse_voltage),fontsize=12)
+			plt.legend(loc='best', fontsize='x-small')
+			plt.xlabel('longitudinal position [mm]')
+			plt.ylabel('time [ms]')
+			plt.grid()
+			# plt.pause(0.01)
+			plt.savefig(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_item_'+str(j)+'_' + filename +'4.eps', bbox_inches='tight')
+			plt.close('all')
+
 
 	temp = np.min([np.shape(value)[0] for value in all_averaged_profile])
 	all_averaged_profile = [value[:temp] for value in all_averaged_profile]
 	full_saved_file_dict['averaged_profile'] = np.mean(all_averaged_profile,axis=(0,1))	# counts are normalised for a 1ms exposure
 	fast_camera_record_duration = np.shape(all_averaged_profile)[1] / framerate	# [s]
+	fast_camera_record_duration_OES_location = max(1,np.sum(np.max(np.mean(all_averaged_profile,axis=0)[:,:,158:172],axis=(-1,-2))>0)) / framerate	# [s]
 	full_saved_file_dict['record_duration'] = fast_camera_record_duration
+	full_saved_file_dict['record_duration_OES_location'] = fast_camera_record_duration_OES_location
 	results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
-	results_summary.loc[merge_ID_target,['fast_camera_record_duration']]=fast_camera_record_duration
+	results_summary.loc[merge_ID_target,['fast_camera_record_duration_OES','fast_camera_record_duration_long']]=fast_camera_record_duration_OES_location,fast_camera_record_duration
 	results_summary.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv')
 
 	averaged_profile = np.mean(all_averaged_profile,axis=(0,1))
@@ -338,7 +361,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 	plt.ylabel('radial position [mm]')
 	plt.grid()
 	# plt.pause(0.01)
-	plt.yscale('log')
+	# plt.yscale('log')
 	plt.savefig(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_average'+'.eps', bbox_inches='tight')
 	plt.close('all')
 
@@ -415,16 +438,23 @@ for merge_ID_target in merge_ID_target_multipulse:
 	plt.close('all')
 
 	plt.figure(figsize=(10,5))
-	plt.plot(np.arange(np.shape(raw_data)[1])*15/44,np.mean(averaged_profile[:,158:172],axis=1))
-	plt.title('magnetic_field %.3gT,steady state pressure %.3gPa,target/OES distance %.3gmm,ELM pulse voltage %.3gV\n radial average brightness at OES location (scaled to 1ms int time)' %(magnetic_field,SS_pressure,target_OES_distance,pulse_voltage),fontsize=12)
+	plt.plot(np.arange(np.shape(raw_data)[1])*15/44,np.mean(averaged_profile[:,158:172],axis=1),label='full')
+	full_saved_file_dict['radial_average_brightness_1ms_int_time'] = np.mean(averaged_profile[:,158:172],axis=1)	# counts are normalised for a 1ms exposure
+	temp = np.mean(all_averaged_profile,axis=0)
+	temp = generic_filter(temp[:,:,158:172],np.mean,size=[int(round(fast_camera_record_duration_OES_location*framerate)),1,1])
+	temp = np.mean(temp,axis=-1)
+	temp = temp[np.max(temp,axis=-1).argmax()]
+	plt.plot(np.arange(np.shape(raw_data)[1])*15/44,temp,label='average restricted OES>0 times')
+	full_saved_file_dict['radial_average_brightness_OES_location_1ms_int_time'] = temp	# average restricted to times where the brightness at OES location is >0, counts are normalised for a 1ms exposure
+	plt.title('magnetic_field %.3gT,steady state pressure %.3gPa,target/OES distance %.3gmm,ELM pulse voltage %.3gV\n radial average brightness (%.3gms) at OES location (scaled to 1ms int time)' %(magnetic_field,SS_pressure,target_OES_distance,pulse_voltage,fast_camera_record_duration*1e3),fontsize=12)
 	plt.ylabel('counts [au]')
 	plt.xlabel('radial position [mm]')
+	plt.legend(loc='best', fontsize='x-small')
 	# plt.yticks(fontfamily=ticker.FormatStrFormatter('% 1.0f'))
 	plt.grid()
 	# plt.pause(0.01)
 	plt.savefig(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_average'+'4.eps', bbox_inches='tight')
 	plt.close('all')
-	full_saved_file_dict['radial_average_brightness_1ms_int_time'] = np.mean(averaged_profile[:,158:172],axis=1)	# counts are normalised for a 1ms exposure
 
 	temp = np.nanmean(all_averaged_profile,axis=(0,2))
 	temp[np.nanmax(all_averaged_profile,axis=(0,2))>=saturation_counts] = np.nan
@@ -436,7 +466,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 	else:
 		plt.colorbar().set_label('average counts [au]')
 	plt.plot([158*15/44,158*15/44],[0,len(raw_data)/framerate*1e3],'b',label='OES location')
-	plt.plot([(172-1)*15/44,(172-1)*15/44],[0,len(raw_data)/framerate*1e3],'b')
+	plt.plot([(172-1)*15/44,(172-1)*15/44],[0,len(raw_data)/framerate*1e3],'--w')
 	plt.title('magnetic_field %.3gT,steady state pressure %.3gPa,target/OES distance %.3gmm,ELM pulse voltage %.3gV\n temporal evolution of the radially averaged profile' %(magnetic_field,SS_pressure,target_OES_distance,pulse_voltage),fontsize=12)
 	plt.legend(loc='best', fontsize='x-small')
 	plt.xlabel('longitudinal position [mm]')
@@ -446,10 +476,30 @@ for merge_ID_target in merge_ID_target_multipulse:
 	plt.savefig(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_average'+'5.eps', bbox_inches='tight')
 	plt.close('all')
 
+	temp = np.nanmean(np.array(all_averaged_profile)[:,:,110:150],axis=(0,2))
+	temp[np.nanmax(all_averaged_profile,axis=(0,2))>=saturation_counts] = np.nan
+	plt.figure(figsize=(8,6))
+	plt.imshow(temp,'rainbow',origin='lower',extent=[0,np.shape(raw_data)[2]*15/44,0,len(raw_data)/framerate*1e3],aspect='auto',norm=LogNorm(),vmax=1000,vmin=1)
+	# plt.imshow(cleaned[select],'rainbow',origin='lower')
+	if overexposed_local:
+		plt.colorbar().set_label('average counts [au] (%.3g%% volume overexposed)' %(fraction_overexposed_volume),fontsize=13)
+	else:
+		plt.colorbar().set_label('average counts [au]')
+	plt.plot([158*15/44,158*15/44],[0,len(raw_data)/framerate*1e3],'b',label='OES location')
+	plt.plot([(172-1)*15/44,(172-1)*15/44],[0,len(raw_data)/framerate*1e3],'--w')
+	plt.title('magnetic_field %.3gT,steady state pressure %.3gPa,target/OES distance %.3gmm,ELM pulse voltage %.3gV\n temporal evolution of the radially averaged profile radially restricted' %(magnetic_field,SS_pressure,target_OES_distance,pulse_voltage),fontsize=12)
+	plt.legend(loc='best', fontsize='x-small')
+	plt.xlabel('longitudinal position [mm]')
+	plt.ylabel('time [ms]')
+	plt.grid()
+	# plt.pause(0.01)
+	plt.savefig(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_average'+'6.eps', bbox_inches='tight')
+	plt.close('all')
+
 	ani = coleval.movie_from_data(np.array([np.nanmean(all_averaged_profile,axis=(0))]), framerate, integration_time,'horizontal coord [pixels]','vertical coord [pixels]','Intersity [au]')
-	ani.save(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_average' + '6.mp4', fps=5, writer='ffmpeg',codec='mpeg4')
+	ani.save(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_average' + '7.mp4', fps=5, writer='ffmpeg',codec='mpeg4')
 	# ani.save(path_where_to_save_everything+'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_original.mp4', fps=5, extra_args=['-vcodec', 'libx264'])
 	plt.close()
 
 
-	np.savez_compressed(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target), bbox_inches='tight')
+	np.savez_compressed(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target),**full_saved_file_dict)

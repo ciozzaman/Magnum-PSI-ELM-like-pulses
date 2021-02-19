@@ -40,7 +40,7 @@ exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/IR_records_p
 
 temp=[]
 # merge_id_all = [66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 92, 93, 94, 96, 97, 98, 88, 99]
-merge_id_all = [85, 95, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99]
+merge_id_all = [85, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99, 95]
 # merge_id_all = [90, 91, 92, 93, 94]
 # merge_id_all = [89]
 for merge_id in merge_id_all:
@@ -1986,7 +1986,7 @@ for j in np.flip(all_j,axis=0):
 	# plt.plot(fit2[0][1] + np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/p2d_h/2,fit2[0][2] - (np.abs((max_diameter_to_fit/2)**2-(np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/2)**2)**0.5)/p2d_v,'g--')
 	plt.axes().set_aspect(aspect_ratio)
 	plt.legend(loc='best', fontsize='x-small')
-	plt.title(pre_title+'Temperature distribution, average 1.2 to 6ms after the averaged peaks in '+'IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
+	plt.title(pre_title+'Temperature distribution, average 1.4 to 6ms after the averaged peaks in '+'IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
 	figure_index+=1
 	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
 	plt.close()
@@ -2061,7 +2061,7 @@ for j in np.flip(all_j,axis=0):
 	# plt.plot(fit2[0][1] + np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/p2d_h/2,fit2[0][2] - (np.abs((max_diameter_to_fit/2)**2-(np.arange(-max_diameter_to_fit,+max_diameter_to_fit+max_diameter_to_fit/10,max_diameter_to_fit/10)/2)**2)**0.5)/p2d_v,'g--')
 	plt.axes().set_aspect(aspect_ratio)
 	plt.legend(loc='best', fontsize='x-small')
-	plt.title(pre_title+'Temperature increase, average 1.2 to 6ms after the averaged peaks in ' +str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
+	plt.title(pre_title+'Temperature increase, average 1.4 to 6ms after the averaged peaks in ' +str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
 	figure_index+=1
 	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
 	plt.close()
@@ -2447,8 +2447,8 @@ for j in np.flip(all_j,axis=0):
 
 		# ax2[0,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble))
 		ax2[0,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--g')
-		ax2[0,1].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b',label='dT(mean peak + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble))
-		ax2[0,1].plot([1000*temp_time[np.abs(temp_time-3e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b')
+		ax2[0,1].plot([1000*temp_time[np.abs(temp_time-10e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b',label='dT(mean peak + 10-11ms)=%.3g°C' %(np.mean(ensamble_peak_shape[np.abs(temp_time-10e-3).argmin():np.abs(temp_time-11e-3).argmin()])-SS_ensamble))
+		ax2[0,1].plot([1000*temp_time[np.abs(temp_time-11e-3).argmin()]]*2,[ensamble_peak_shape_full.min(),ensamble_peak_shape_full.max()],'--b')
 		ax2[0,1].plot(1000*peak_shape_time,ensamble_peak_shape_full,'k',linewidth=2)
 		ax2[0,1].set_ylim(top=min(ensamble_peak_shape_full.max()+40,ensamble_peak_shape_full.max()*1.07))
 
@@ -2464,8 +2464,8 @@ for j in np.flip(all_j,axis=0):
 
 		# ax2[1,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--g',label='dT=%.3g°C' %(ensamble_peak_mean_shape[np.abs(temp_time-1.5e-3).argmin()]-SS_ensamble_mean))
 		ax2[1,1].plot([1000*temp_time[np.abs(temp_time-1.5e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--g')
-		ax2[1,1].plot([1000*temp_time[np.abs(temp_time-2e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b',label='dT(mean peak + 2-3ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time-2e-3).argmin():np.abs(temp_time-3e-3).argmin()])-SS_ensamble_mean))
-		ax2[1,1].plot([1000*temp_time[np.abs(temp_time-3e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b')
+		ax2[1,1].plot([1000*temp_time[np.abs(temp_time-10e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b',label='dT(mean peak + 10-11ms)=%.3g°C' %(np.mean(ensamble_peak_mean_shape[np.abs(temp_time-10e-3).argmin():np.abs(temp_time-11e-3).argmin()])-SS_ensamble_mean))
+		ax2[1,1].plot([1000*temp_time[np.abs(temp_time-11e-3).argmin()]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--b')
 		ax2[1,1].plot(1000*peak_shape_time,ensamble_peak_mean_shape_full,'k',linewidth=2)
 		ax2[1,1].set_ylim(top=min(ensamble_peak_mean_shape_full.max()+40,ensamble_peak_mean_shape_full.max()*1.07))
 
@@ -2683,7 +2683,7 @@ for j in np.flip(all_j,axis=0):
 		ax[1,2].plot([-5,20],[fit[0][0]]*2,'--r')
 		ax[1,3].plot([-5,20],[fit[0][0]]*2,'--r')
 
-		ax2[1,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\nEnergy=%.3g+/-%.3gJ\nR2=%.3g' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2))
+		ax2[1,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_decrease(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]>pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2,label='semi-infinite solid\nT SS=%.3g+/-%.3g°C\nEdens=%.3g+/-%.3gJ/m2\ntau=%.3g+/-%.3gms\npulse Energy=%.3g+/-%.3gJ\nR2=%.3g\nSS Energy=%.3gJ' %(fit_wit_errors[0].nominal_value,fit_wit_errors[0].std_dev,pulse_energy_density.nominal_value,pulse_energy_density.std_dev,pulse_duration_ms.nominal_value,pulse_duration_ms.std_dev,pulse_energy.nominal_value,pulse_energy.std_dev,R2,SS_Energy))
 		ax2[1,1].plot(1000*(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3]),semi_infinite_sink_full_increase(temp_time[end_end_pulse])(peak_shape_time[peak_shape_time-fit[0][3]<=pulse_duration_ms.nominal_value*1e-3],*fit[0]),'--r',linewidth=2)
 		ax2[1,1].plot([1000*fit[0][3]]*2,[ensamble_peak_mean_shape_full.min(),ensamble_peak_mean_shape_full.max()],'--c')
 		ax2[1,0].plot([1000*fit[0][3]]*2,[0,1e6],'--c')
@@ -2780,7 +2780,7 @@ for j in np.flip(all_j,axis=0):
 	ax2[1,1].grid()
 	ax2[1,1].set_xlabel('time [ms]')
 	ax2[1,1].set_ylabel('temperature [°C]')
-	ax2[1,1].set_title('large area max fitted peak temp')
+	ax2[1,1].set_title('large area max fitted peak temp\narea=%.3g+/-%.3gm2' %(area_of_interest_sigma.nominal_value,area_of_interest_sigma.std_dev))
 	figure_index+=1
 	fig2.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
 	plt.close('all')

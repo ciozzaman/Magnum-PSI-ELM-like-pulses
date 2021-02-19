@@ -625,6 +625,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 		if isinstance(df_log.loc[j,['current_trace_file']][0],str):
 			fname_current_trace = df_log.loc[j,['current_trace_file']][0]
 			trash1, trash2, trash3, trash4, trash5, trash6, good_pulses, time_of_pulses = examine_current_trace(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/', fname_current_trace,number_of_pulses)
+			time_of_pulses = np.sort(time_of_pulses['peak_of_the_peak']) - np.min(time_of_pulses['peak_of_the_peak'])
 			current_traces = pd.read_csv(fdir+'/'+folder+'/'+"{0:0=2g}".format(int(sequence))+'/' + fname_current_trace+'.tsf',index_col=False, delimiter='\t')
 			current_traces_time = current_traces['Time [s]']
 			current_traces_total = current_traces['I_Src_AC [A]']

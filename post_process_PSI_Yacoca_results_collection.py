@@ -93,7 +93,10 @@ j_twoD_peak_evolution_time_averaged = []
 j_twoD_peak_evolution_temp_averaged_delta = []
 j_twoD_peak_evolution_temp_averaged = []
 j_collect_shape_information = []
+radial_average_brightness_OES_location_1ms_int_time = []
 radial_average_brightness_1ms_int_time = []
+radial_average_brightness_bayesian = []
+radial_average_brightness_bayesian_long = []
 
 for merge_ID_target in merge_ID_target_multipulse:
 	print('Looking at '+str(merge_ID_target))
@@ -126,7 +129,12 @@ for merge_ID_target in merge_ID_target_multipulse:
 
 	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 	full_saved_file_dict = np.load(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'.npz')
+	radial_average_brightness_OES_location_1ms_int_time.append(full_saved_file_dict['radial_average_brightness_OES_location_1ms_int_time'])
 	radial_average_brightness_1ms_int_time.append(full_saved_file_dict['radial_average_brightness_1ms_int_time'])
+
+	full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2_H2p_mol_lim/bayesian_results3'+'.npz')
+	radial_average_brightness_bayesian.append(full_saved_file_dict['total_removed_power_visible'].all()['average_brightness']['most_likely'])
+	radial_average_brightness_bayesian_long.append(full_saved_file_dict['total_removed_power_visible'].all()['long_average_brightness']['most_likely'])
 
 	temp1=[]
 	temp2=[]
@@ -248,16 +256,18 @@ ax1.set_xlabel('Pressure [Pa]')
 ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 ax3 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 ax4 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-ax3.spines["right"].set_position(("axes", 1.1))
+ax3.spines["right"].set_position(("axes", 1.1125))
 ax3.spines["right"].set_visible(True)
 ax4.spines["right"].set_position(("axes", 1.25))
 ax4.spines["right"].set_visible(True)
 ax1.plot(j_specific_target_chamber_pressure,j_specific_T_pre_pulse,'+b')
 a1, = ax1.plot(target_chamber_pressure_2,T_pre_pulse,'b')
-ax2.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse),'+r')
-a2, = ax2.plot(target_chamber_pressure_2,np.array(DT_pulse),'--r',label='mean temperature peak + 2/3ms')
-ax2.plot(target_chamber_pressure_2,np.array(DT_pulse_time_scaled2),'r',label='mean temperature t0 + 2/3ms')
-a2, = ax2.plot(target_chamber_pressure_2,np.array(DT_pulse_late),':r',label='mean temperature peak + 10/11ms')
+# ax2.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse),'+r')
+# a2, = ax2.plot(target_chamber_pressure_2,np.array(DT_pulse),'--r',label='mean temperature peak + 2/3ms')
+# ax2.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse_time_scaled),'+r')
+# ax2.plot(target_chamber_pressure_2,np.array(DT_pulse_time_scaled2),'r',label='mean temperature t0 + 2/3ms')
+ax2.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse_late),'+r')
+a2, = ax2.plot(target_chamber_pressure_2,np.array(DT_pulse_late),'r',label='mean temperature peak + 10/11ms')
 ax3.plot(j_specific_target_chamber_pressure,np.array(j_specific_pulse_t0_semi_inf),'+g')
 a3, = ax3.plot(target_chamber_pressure_2,np.array(pulse_t0_semi_inf2),'g')
 ax4.plot(j_specific_target_chamber_pressure,np.array(j_specific_pulse_en_semi_inf)+np.array(j_specific_pulse_en_SS),'+y')
@@ -461,8 +471,11 @@ else:
 
 
 plt.figure(figsize=(10, 5))
-for i in range(len(target_chamber_pressure_2)):
-	plt.plot(radial_average_brightness_1ms_int_time[i],label='%.3gPa' %(target_chamber_pressure_2[i]))
+for index in range(len(target_chamber_pressure_2)):
+	# plt.plot(radial_average_brightness_OES_location_1ms_int_time[index]/np.max(radial_average_brightness_OES_location_1ms_int_time),color=color[index],label='%.3gPa' %(target_chamber_pressure_2[index]))
+	plt.plot(radial_average_brightness_1ms_int_time[index]/np.max(radial_average_brightness_1ms_int_time),':',color=color[index])
+	plt.plot(radial_average_brightness_bayesian[index]/np.max(radial_average_brightness_bayesian),'--',color=color[index])
+	# plt.plot(radial_average_brightness_bayesian_long[index]/np.max(radial_average_brightness_bayesian_long),'-.',color=color[index])
 plt.legend()
 plt.legend(loc='best', fontsize='small')
 plt.pause(0.001)

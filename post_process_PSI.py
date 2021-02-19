@@ -920,7 +920,7 @@ for merge_ID_target in [85,86,87,88,89,92,93,94]:
 
 # # This is just to understand what are the Te/ne combinations I care about
 # plt.figure()
-# for merge_ID_target in [85,86,87,88,89,92,93,94,96,97]:
+# for merge_ID_target in [85,86,87,88,89,92,93,94,95,96,97,98,99]:
 #
 # 	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 # 	merge_Te_prof_multipulse = np.load(path_where_to_save_everything+'/TS_data_merge_' + str(merge_ID_target) +'.npz')['merge_Te_prof_multipulse']
@@ -951,11 +951,7 @@ for merge_ID_target in [85,86,87,88,89,92,93,94]:
 # plt.plot(np.linspace(1,1,10),np.linspace(1*10**18,5*10**21,10),'--',label='1eV')
 #
 # plt.plot(np.linspace(15,15,10),np.linspace(3*10**20,np.exp(49.9+0.45),10),'--',label='15eV')
-# plt.title('Te/ne paramenter space')
+# plt.title('Te/ne parameter space')
 # plt.legend(loc='best')
 #
 # plt.pause(0.01)
-
-
-
-
