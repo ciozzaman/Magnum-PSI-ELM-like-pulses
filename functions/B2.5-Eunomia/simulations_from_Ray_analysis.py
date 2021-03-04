@@ -102,6 +102,9 @@ pressure = [0.27,0.53,1.0,2.0,4.4]
 boltzmann_constant_J = 1.380649e-23	# J/K
 eV_to_K = 8.617333262145e-5	# eV/K
 hydrogen_mass = 1.008*1.660*1e-27	# kg
+ionisation_potential = 13.6	# eV
+dissociation_potential = 2.2	# eV
+J_to_eV = 6.242e18
 print('Reading data file..')
 
 figure_index=0
@@ -173,6 +176,12 @@ plt.figure(figure_18)
 figure_index +=1
 figure_19 = figure_index
 plt.figure(figure_19)
+figure_index +=1
+figure_20 = figure_index
+plt.figure(figure_20)
+figure_index +=1
+figure_21 = figure_index
+plt.figure(figure_21)
 collect_x = []
 collect_y = []
 collect_x1 = []
@@ -199,6 +208,7 @@ for index in range(len(file_array)):
 	vz_Hp = (data_matrix.sel(quantity='vz', species='H^+', filename=Data+file_array[index]).values)
 	vz_H = (data_matrix.sel(quantity='vz', species='H', filename=Data+file_array[index]).values)
 	vz_H2 = (data_matrix.sel(quantity='vz', species='H_2', filename=Data+file_array[index]).values)[0]
+	v_Hp = ((data_matrix.sel(quantity='vz', species='H^+', filename=Data+file_array[index]).values)**2 + (data_matrix.sel(quantity='vy', species='H^+', filename=Data+file_array[index]).values)**2 + (data_matrix.sel(quantity='vx', species='H^+', filename=Data+file_array[index]).values)**2)**0.5
 	v_H = ((data_matrix.sel(quantity='vz', species='H', filename=Data+file_array[index]).values)**2 + (data_matrix.sel(quantity='vy', species='H', filename=Data+file_array[index]).values)**2 + (data_matrix.sel(quantity='vx', species='H', filename=Data+file_array[index]).values)**2)**0.5
 	v_H2 = ((data_matrix.sel(quantity='vz', species='H_2', filename=Data+file_array[index]).values)[0]**2 + (data_matrix.sel(quantity='vy', species='H_2', filename=Data+file_array[index]).values)[0]**2 + (data_matrix.sel(quantity='vx', species='H_2', filename=Data+file_array[index]).values)[0]**2)**0.5
 	ratio = dens_H2/dens_e
@@ -313,6 +323,22 @@ for index in range(len(file_array)):
 	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))))
 	plt.plot((temp_e*dens_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
 	plt.plot(temp_e*dens_e,ratio,',',color=color[index])
+	plt.figure(figure_20)
+	ratio = dens_e
+	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))))
+	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	plt.plot(temp_e,ratio,',',color=color[index])
+	plt.figure(figure_21)
+	ratio = (0.5*(v_Hp**2)*hydrogen_mass + 5*temp_e/eV_to_K*boltzmann_constant_J + ionisation_potential/J_to_eV + 	dissociation_potential/J_to_eV)*dens_e*vz_Hp
+	# select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))))
+	# plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	temp1 = ratio[np.logical_and(z_data>-1.19867,z_data<-1.1982)]
+	temp2 = r_data[np.logical_and(z_data>-1.19867,z_data<-1.1982)]
+	temp1 = np.array([x for _, x in sorted(zip(temp2, temp1))])
+	temp2 = np.sort(temp2)
+	temp3 = np.array([[temp2[0]+np.diff(temp2)[0]/2]+(np.diff(temp2)[:-1]/2+np.diff(temp2)[1:]/2).tolist()+[np.diff(temp2)[-1]]])
+	temp = np.sum(temp1*2*np.pi*temp2*temp3)
+	plt.plot(z_data,ratio,'x',color=color[index],label='pressure %.3gPa, Power %.3gW' %(pressure[index],temp))
 
 # plt.plot([0.1,4],[1,1e-3],'k--')
 # plt.plot([0.1,4],[1000,1],'k--')
@@ -328,13 +354,22 @@ collect_temp_H = np.array([item for sublist in collect_temp_H for item in sublis
 collect_dens_H = np.array([item for sublist in collect_dens_H for item in sublist])
 plt.figure(figure_1)
 fit = np.polyfit(np.log(collect_x),np.log(collect_y),2)
+fit2 = np.polyfit(np.log(collect_x),np.log(collect_y),1)
 collect_x = np.sort(collect_x)
-temp2 = np.exp(np.polyval(fit,np.log(collect_x)))
-collect_x_max = np.exp(-fit[1]/(2*fit[0]))
-temp2[collect_x<collect_x_max]=temp2.max()
-plt.plot(collect_x,10*temp2,'k--',label='*10 and /10 of log log fit\n'+str(fit))
-plt.plot(collect_x,0.1*temp2,'k--')
-plt.plot(collect_x,temp2,'k')
+if False:	# a linead dependency is more representative of a pure dilution due to temperature increase (n*T~P)
+	temp2 = np.exp(np.polyval(fit,np.log(collect_x)))
+	collect_x_max = np.exp(-fit[1]/(2*fit[0]))
+	temp2[collect_x<collect_x_max]=temp2.max()
+	plt.plot(collect_x,10*temp2,'k--',label='*10 and /10 of log log fit\n'+str(fit))
+	plt.plot(collect_x,0.1*temp2,'k--')
+	plt.plot(collect_x,temp2,'k')
+else:
+	temp2 = np.exp(np.polyval(fit2,np.log(collect_x)))
+	# collect_x_max = np.exp(-fit[1]/(2*fit[0]))
+	# temp2[collect_x<collect_x_max]=temp2.max()
+	plt.plot(collect_x,10*temp2,'k--',label='*10 and /10 of log log fit\n'+str(fit2))
+	plt.plot(collect_x,0.1*temp2,'k--')
+	plt.plot(collect_x,temp2,'k')
 plt.xlabel(r'$T_e$'+' [eV]')
 plt.ylabel(r'$n_{H_2} / n_e$')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
@@ -502,6 +537,20 @@ plt.xlabel(r'$T_e * n_e$'+' [eV]')
 plt.ylabel(r'$n_{H_2} * T_{H_2}$')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
 plt.legend(loc='best', fontsize='small'),plt.semilogy(),plt.semilogx()
+plt.grid()
+plt.pause(0.01)
+plt.figure(figure_20)
+plt.xlabel(r'$n_e$'+' [#/m3]')
+plt.ylabel(r'$T_e$'+' [eV]')
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
+plt.legend(loc='best', fontsize='small'),plt.semilogy(),plt.semilogx()
+plt.grid()
+plt.pause(0.01)
+plt.figure(figure_21)
+plt.xlabel('z[mm]')
+plt.ylabel('power flow'+' [W/m2]')
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
+plt.legend(loc='best', fontsize='small')
 plt.grid()
 plt.pause(0.01)
 

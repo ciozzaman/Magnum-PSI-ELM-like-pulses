@@ -494,6 +494,7 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 	current_traces_time = current_traces['Time [s]']
 	current_traces_total = current_traces['I_Src_AC [A]']
 	voltage_traces_total = current_traces['U_Src_DC [V]']
+	target_voltage_traces_total = current_traces['U_Tar_DC [V]']
 	power_traces_total = np.abs( current_traces_total * voltage_traces_total )
 	# plt.figure()
 	# plt.plot(current_traces_time,current_traces_total)
@@ -694,12 +695,29 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 			# phase = np.angle(spectra)
 			# magnitude = 2 * np.abs(spectra) / len(spectra)
 		# steady_state_power = np.max(magnitude)/2
+
+		# the way the steady state power is calculated prior 04/03/2021 does not work, the intervai i sample is just too small
+		exclusion_zone_around_peak_right = 10e-3	# +/- ms
+		exclusion_zone_around_peak_right = int(exclusion_zone_around_peak_right/time_resolution)
+		exclusion_zone_around_peak_left = 4e-3	# +/- ms
+		exclusion_zone_around_peak_left = int(exclusion_zone_around_peak_left/time_resolution)
+		temp = np.arange(len(power_traces_total))
+		good_times = np.ones_like(power_traces_total).astype(bool)
+		for i_peak_pos,peak_pos in enumerate(all_peaks):
+			good_times[np.logical_and(temp>peak_pos-exclusion_zone_around_peak_left,temp<peak_pos+exclusion_zone_around_peak_right)] = False
+		steady_state_power = np.mean(power_traces_total[good_times])
+		mean_steady_state_power = np.mean(power_traces_total[good_times])
+		mean_steady_state_power_std = np.std(power_traces_total[good_times])
+
 		energy_per_pulse = []
 		duration_per_pulse = []
 		energy_per_pulse_good_pulses = []
 		duration_per_pulse_good_pulses = []
-		all_steady_state_power = []
+		# all_steady_state_power = []
 		peak_shape = []
+		current_peak_shape = []
+		voltage_peak_shape = []
+		target_voltage_peak_shape = []
 		interval_between_pulses = np.median(np.diff(all_peaks))
 		interval_to_find_peak = int(0.0004/time_resolution)
 		if want_the_plot_of_mean_power_profile:
@@ -725,6 +743,9 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 					left = peak_pos-int(interval_between_pulses*2/3)
 					right = peak_pos+int(interval_between_pulses*2/3)
 					power_traces_corrected = np.array(power_traces_total[left:right])
+					current_traces_corrected = np.array(current_traces_total[left:right])
+					voltage_traces_corrected = np.array(voltage_traces_total[left:right])
+					target_voltage_traces_corrected = np.array(target_voltage_traces_total[left:right])
 					current_traces_time_corrected = np.array(current_traces_time[left:right])
 					# spectra = np.fft.fft(power_traces_corrected)
 					# phase = np.angle(spectra)
@@ -740,7 +761,7 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 					# interpolated = interpolate.splev(current_traces_time[left:right], tck)
 					interpolated = np.convolve(power_traces_corrected, np.ones((interval_to_find_peak))/interval_to_find_peak , mode='same')
 					real_peak_loc = np.arange(left,right)[interpolated.argmax()]
-					steady_state_power = np.mean([*power_traces_total[real_peak_loc-int(5e-3/time_resolution):real_peak_loc-int(1e-3/time_resolution)]])#,*power_traces_corrected[real_peak_loc+int(10e-3/time_resolution):real_peak_loc+int(13e-3/time_resolution)]])
+					# steady_state_power = np.mean([*power_traces_total[real_peak_loc-int(2e-3/time_resolution):real_peak_loc-int(1e-3/time_resolution)]])#,*power_traces_corrected[real_peak_loc+int(10e-3/time_resolution):real_peak_loc+int(13e-3/time_resolution)]])
 					# plt.figure();plt.plot(current_traces_time[left:right]-current_traces_time[real_peak_loc],power_traces_corrected-steady_state_power);plt.plot(current_traces_time[left:right]-current_traces_time[real_peak_loc],interpolated-steady_state_power,'--');plt.grid();plt.pause(0.01)
 					real_peak_loc = interpolated.argmax()
 					if False:	# I want the real start and end of the pulse, this approximation is not enough
@@ -761,9 +782,12 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 					else:
 						energy_per_pulse.append(np.trapz(power_traces_corrected[left:right], current_traces_time_corrected[left:right]))
 						duration_per_pulse.append(current_traces_time_corrected[right-1]-current_traces_time_corrected[left])
-					all_steady_state_power.append(steady_state_power)
+					# all_steady_state_power.append(steady_state_power)
 					if not (i_peak_pos+1 in double):
 						peak_shape.append(power_traces_corrected[real_peak_loc-int(interval_between_pulses*0.6):real_peak_loc+int(interval_between_pulses*0.6)]-steady_state_power)
+						current_peak_shape.append(current_traces_corrected[real_peak_loc-int(interval_between_pulses*0.6):real_peak_loc+int(interval_between_pulses*0.6)])
+						voltage_peak_shape.append(voltage_traces_corrected[real_peak_loc-int(interval_between_pulses*0.6):real_peak_loc+int(interval_between_pulses*0.6)])
+						target_voltage_peak_shape.append(target_voltage_traces_corrected[real_peak_loc-int(interval_between_pulses*0.6):real_peak_loc+int(interval_between_pulses*0.6)])
 						# plt.plot(current_traces_time[left+real_peak_loc-int(interval_between_pulses*0.6):left+real_peak_loc+int(interval_between_pulses*0.6)]-time_between_pulses*i_peak_pos,power_traces_corrected[real_peak_loc-int(interval_between_pulses*0.6):real_peak_loc+int(interval_between_pulses*0.6)]-steady_state_power)#,plt.plot(power_traces[left:right],'+');plt.pause(0.01)
 						energy_per_pulse_good_pulses.append(np.trapz(power_traces_corrected[left:right], current_traces_time_corrected[left:right]))
 						duration_per_pulse_good_pulses.append(current_traces_time_corrected[right-1]-current_traces_time_corrected[left])
@@ -772,9 +796,15 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 							plt.plot(np.array(interpolated[real_peak_loc-int(interval_between_pulses*0.6):real_peak_loc+int(interval_between_pulses*0.6)]-steady_state_power),'--')#,plt.plot(power_traces[left:right],'+');plt.pause(0.01)
 							# plt.plot(np.arange(len(np.array(power_traces_corrected[real_peak_loc-int(interval_between_pulses*0.6):real_peak_loc+int(interval_between_pulses*0.6)]-steady_state_power)))[real_peak_loc],interpolated.max(),'+')
 		mean_peak_shape = np.mean(peak_shape,axis=0)
+		mean_current_peak_shape = np.mean(current_peak_shape,axis=0)
+		mean_voltage_peak_shape = np.mean(voltage_peak_shape,axis=0)
+		mean_target_voltage_peak_shape = np.mean(target_voltage_peak_shape,axis=0)
 		mean_peak_std = np.std(peak_shape,axis=0)
-		mean_steady_state_power = np.mean(all_steady_state_power)
-		mean_steady_state_power_std = np.std(all_steady_state_power)
+		mean_current_peak_std = np.std(current_peak_shape,axis=0)
+		mean_voltage_peak_std = np.std(voltage_peak_shape,axis=0)
+		mean_target_voltage_peak_std = np.std(target_voltage_peak_shape,axis=0)
+		# mean_steady_state_power = np.mean(all_steady_state_power)
+		# mean_steady_state_power_std = np.std(all_steady_state_power)
 		if want_the_plot_of_mean_power_profile:
 			plt.errorbar(np.arange(len(mean_peak_shape)),mean_peak_shape,yerr=mean_peak_std,color='k')
 			plt.title(fdir_long+'\n'+fname_current_trace)
@@ -784,13 +814,19 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 			left = mean_peak_shape.argmax() - int(2e-3/time_resolution)
 			pulse_start = np.abs(np.cumsum(mean_peak_shape[left:]) - np.cumsum(mean_peak_shape[left:]).max()/50).argmin()	# 50 is arbitrary
 			mean_peak_shape = mean_peak_shape[left+pulse_start-int(interval_between_pulses/2):left+pulse_start+int(interval_between_pulses/2)]
+			mean_current_peak_shape = mean_current_peak_shape[left+pulse_start-int(interval_between_pulses/2):left+pulse_start+int(interval_between_pulses/2)]
+			mean_voltage_peak_shape = mean_voltage_peak_shape[left+pulse_start-int(interval_between_pulses/2):left+pulse_start+int(interval_between_pulses/2)]
+			mean_target_voltage_peak_shape = mean_target_voltage_peak_shape[left+pulse_start-int(interval_between_pulses/2):left+pulse_start+int(interval_between_pulses/2)]
 			mean_peak_std = mean_peak_std[left+pulse_start-int(interval_between_pulses/2):left+pulse_start+int(interval_between_pulses/2)]
+			mean_current_peak_std = mean_current_peak_std[left+pulse_start-int(interval_between_pulses/2):left+pulse_start+int(interval_between_pulses/2)]
+			mean_voltage_peak_std = mean_voltage_peak_std[left+pulse_start-int(interval_between_pulses/2):left+pulse_start+int(interval_between_pulses/2)]
+			mean_target_voltage_peak_std = mean_target_voltage_peak_std[left+pulse_start-int(interval_between_pulses/2):left+pulse_start+int(interval_between_pulses/2)]
 		except:
 			print('failed to find the start of the averaged pulse')
 		# plt.figure();
 		# plt.plot(energy_per_pulse,':k');plt.pause(0.01)
 		if want_the_mean_power_profile==True:
-			return bad, good[0], any[0], any[-1], miss,double, good, time_of_pulses, np.array(energy_per_pulse), np.array(duration_per_pulse),np.median(energy_per_pulse_good_pulses),np.median(duration_per_pulse_good_pulses),mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution
+			return bad, good[0], any[0], any[-1], miss,double, good, time_of_pulses, np.array(energy_per_pulse), np.array(duration_per_pulse),np.median(energy_per_pulse_good_pulses),np.median(duration_per_pulse_good_pulses),mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution,mean_current_peak_shape,mean_current_peak_std,mean_voltage_peak_shape,mean_voltage_peak_std,mean_target_voltage_peak_shape,mean_target_voltage_peak_std
 		else:
 			return bad, good[0], any[0], any[-1], miss,double, good, time_of_pulses, np.array(energy_per_pulse), np.array(duration_per_pulse),np.median(energy_per_pulse_good_pulses),np.median(duration_per_pulse_good_pulses)
 	else:
@@ -2072,7 +2108,7 @@ def shift_between_TS_and_power_source(merge_ID_target,plot_report=False):
 	for j in all_j:
 		(merge_folder,sequence,fname_current_trace) = df_log.loc[j,['folder','sequence','current_trace_file']]
 		sequence = int(sequence)
-		bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_delivered_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
+		bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_delivered_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution, = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
 		current_traces = pd.read_csv(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/'+ fname_current_trace+'.tsf',index_col=False, delimiter='\t')
 		current_traces_time = current_traces['Time [s]']
 		current_traces_total = current_traces['I_Src_AC [A]']

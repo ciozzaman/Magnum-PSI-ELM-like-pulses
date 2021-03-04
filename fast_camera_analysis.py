@@ -144,7 +144,7 @@ figure_index = 1
 
 median_50_all = []
 median_100_all = []
-median_166_all = []
+median_OES_all = []
 median_target_all = []
 median_250_all = []
 SS_pressure_all = []
@@ -152,7 +152,7 @@ averaged_profile_all = []
 target_OES_distance_all = []
 plasma_diameter_50 = []
 plasma_diameter_100 = []
-plasma_diameter_166 = []
+plasma_diameter_OES = []
 plasma_diameter_target = []
 figure_index += 2
 plt.figure(figure_index,figsize=(12,6))
@@ -191,9 +191,22 @@ for merge_ID_target in [99,98,96,97]:	# pressure scan
 		select = [name[:2]=="{0:0=2d}".format(int(file_index)) for name in filenames]
 		filenames = filenames[select]
 
+		mm_per_pixel = 15/44	# mm/#
+		target_location = 230*mm_per_pixel +target_OES_distance - 31.2
+		target_location_left = target_location - 16*mm_per_pixel
+		target_location_right = target_location - 11*mm_per_pixel
+		target_location_left_pixel = int(round(target_location/mm_per_pixel))-16
+		target_location_right_pixel = int(round(target_location/mm_per_pixel))-11
+		LOS_size = 3.8	# mm diameter
+		OES_location = 230*mm_per_pixel - 31.2
+		OES_location_left = 230*mm_per_pixel - 31.2 - LOS_size/2
+		OES_location_right = 230*mm_per_pixel - 31.2 + LOS_size/2
+		OES_location_left_pixel = int(round(OES_location_left/mm_per_pixel))
+		OES_location_right_pixel = int(round(OES_location_right/mm_per_pixel))
+
 		# median_50 = []
 		# median_100 = []
-		# median_166 = []
+		# median_OES = []
 
 		for i_filename,filename in enumerate(filenames):
 			raw_images, setup, bpp = read_frames(full_folder+filename)#,start_frame=1,count=1)
@@ -221,19 +234,19 @@ for merge_ID_target in [99,98,96,97]:	# pressure scan
 			# select = np.sum(cleaned[:,:,150:230],axis=(1,2)).argmax()
 			select = (np.sum(raw_data>0,axis=(1,2))>5).argmax()	# I do this because I want them all aligned to when the pulse frst arrive in the camera field of view
 
-			# select_for_plot = np.sum(cleaned[:,60:200,214:220],axis=(1,2)).argmax()
+			# select_for_plot = np.sum(cleaned[:,60:200,target_location_left_pixel:target_location_right_pixel+1],axis=(1,2)).argmax()
 			# plt.figure()
-			# plt.imshow(cleaned[select_for_plot],'rainbow',origin='lower',extent=[0,np.shape(cleaned[select_for_plot])[0]*15/44,0,np.shape(cleaned[select_for_plot])[1]*15/44])
+			# plt.imshow(cleaned[select_for_plot],'rainbow',origin='lower',extent=[0,np.shape(cleaned[select_for_plot])[0]*mm_per_pixel,0,np.shape(cleaned[select_for_plot])[1]*mm_per_pixel])
 			# # plt.imshow(cleaned[select],'rainbow',origin='lower')
 			# plt.colorbar()
-			# plt.plot([158*15/44,158*15/44],[60*15/44,200*15/44],'--k',label='OES location')
-			# plt.plot([(172-1)*15/44,(172-1)*15/44],[60*15/44,200*15/44],'--k')
-			# plt.plot([47*15/44,47*15/44],[60*15/44,200*15/44],':k')
-			# plt.plot([(53-1)*15/44,(53-1)*15/44],[60*15/44,200*15/44],':k')
-			# plt.plot([97*15/44,97*15/44],[60*15/44,200*15/44],':k')
-			# plt.plot([(103-1)*15/44,(103-1)*15/44],[60*15/44,200*15/44],':k')
-			# plt.plot([214*15/44,214*15/44],[60*15/44,200*15/44],':k')
-			# plt.plot([(220-1)*15/44,(220-1)*15/44],[60*15/44,200*15/44],':k')
+			# plt.plot([OES_location_left,OES_location_left],[60*mm_per_pixel,200*mm_per_pixel],'--k',label='OES location')
+			# plt.plot([OES_location_right,OES_location_right],[60*mm_per_pixel,200*mm_per_pixel],'--k')
+			# plt.plot([47*mm_per_pixel,47*mm_per_pixel],[60*mm_per_pixel,200*mm_per_pixel],':k')
+			# plt.plot([(53-1)*mm_per_pixel,(53-1)*mm_per_pixel],[60*mm_per_pixel,200*mm_per_pixel],':k')
+			# plt.plot([97*mm_per_pixel,97*mm_per_pixel],[60*mm_per_pixel,200*mm_per_pixel],':k')
+			# plt.plot([(103-1)*mm_per_pixel,(103-1)*mm_per_pixel],[60*mm_per_pixel,200*mm_per_pixel],':k')
+			# plt.plot([214*mm_per_pixel,214*mm_per_pixel],[60*mm_per_pixel,200*mm_per_pixel],':k')
+			# plt.plot([(220-1)*mm_per_pixel,(220-1)*mm_per_pixel],[60*mm_per_pixel,200*mm_per_pixel],':k')
 			# plt.title(full_folder+filename+'\nmagnetic_field %.3gT,steady state pressure %.3gPa,target/OES distance %.3gmm,ELM pulse voltage %.3gV\nsampled regions' %(magnetic_field,SS_pressure,target_OES_distance,pulse_voltage))
 			# plt.legend(loc='best')
 			# plt.xlabel('[mm]')
@@ -244,76 +257,76 @@ for merge_ID_target in [99,98,96,97]:	# pressure scan
 			# if i_filename==0:
 			# 		median_50 = np.zeros((len(filenames),2*len(cleaned)))
 			# 		median_100 = np.zeros((len(filenames),2*len(cleaned)))
-			# 		median_166 = np.zeros((len(filenames),2*len(cleaned)))
+			# 		median_OES = np.zeros((len(filenames),2*len(cleaned)))
 			# 		median_200 = np.zeros((len(filenames),2*len(cleaned)))
 			# 		median_250 = np.zeros((len(filenames),2*len(cleaned)))
 
 			if median_50==[]:
 				median_50 = np.zeros((1,2*300))
 				median_100 = np.zeros((1,2*300))
-				median_166 = np.zeros((1,2*300))
+				median_OES = np.zeros((1,2*300))
 				median_target = np.zeros((1,2*300))
 				median_250 = np.zeros((1,2*300))
 
 				# median_50[0,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,47:53],axis=(1,2))
 				# median_100[0,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,97:103],axis=(1,2))
-				# median_166[0,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,158:172],axis=(1,2))
-				# median_target[0,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,214:220],axis=(1,2))
+				# median_OES[0,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,OES_location_left_pixel:OES_location_right_pixel+1],axis=(1,2))
+				# median_target[0,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,target_location_left_pixel:target_location_right_pixel+1],axis=(1,2))
 				# median_250[0,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,250:255],axis=(1,2))
 			else:
 				median_50 = np.concatenate((median_50,np.zeros((1,2*300))))
 				median_100 = np.concatenate((median_100,np.zeros((1,2*300))))
-				median_166 = np.concatenate((median_166,np.zeros((1,2*300))))
+				median_OES = np.concatenate((median_OES,np.zeros((1,2*300))))
 				median_target = np.concatenate((median_target,np.zeros((1,2*300))))
 				median_250 = np.concatenate((median_250,np.zeros((1,2*300))))
 
 			median_50[-1,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,47:53],axis=(1,2))
 			median_100[-1,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,97:103],axis=(1,2))
-			median_166[-1,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,158:172],axis=(1,2))
-			median_target[-1,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,214:220],axis=(1,2))
+			median_OES[-1,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,OES_location_left_pixel:OES_location_right_pixel+1],axis=(1,2))
+			median_target[-1,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,target_location_left_pixel:target_location_right_pixel+1],axis=(1,2))
 			median_250[-1,-select+300:len(cleaned)-select+300] = np.mean(cleaned[:,60:200,250:255],axis=(1,2))
 
 	averaged_profile = np.mean(averaged_profile,axis=0)
 	averaged_profile_all.append(averaged_profile)
 	temp = np.mean(averaged_profile[:,47:53],axis=1)
 	axis_pixel = max(1,temp.argmax())
-	axis_loc_50 = axis_pixel*15/44
-	# top_loc_50 = ((np.mean(averaged_profile[axis_pixel:,47:53],axis=1)>5).argmin() + axis_pixel)*15/44
-	# bottom_loc_50 = (np.mean(averaged_profile[:axis_pixel,47:53],axis=1)<5).argmin()*15/44
-	top_loc_50 = (np.abs(temp[axis_pixel:]-temp.argmax()/10).argmin()+axis_pixel)*15/44
-	bottom_loc_50 = (np.abs(temp[:axis_pixel]-temp.argmax()/10).argmin())*15/44
+	axis_loc_50 = axis_pixel*mm_per_pixel
+	# top_loc_50 = ((np.mean(averaged_profile[axis_pixel:,47:53],axis=1)>5).argmin() + axis_pixel)*mm_per_pixel
+	# bottom_loc_50 = (np.mean(averaged_profile[:axis_pixel,47:53],axis=1)<5).argmin()*mm_per_pixel
+	top_loc_50 = (np.abs(temp[axis_pixel:]-temp.argmax()/10).argmin()+axis_pixel)*mm_per_pixel
+	bottom_loc_50 = (np.abs(temp[:axis_pixel]-temp.argmax()/10).argmin())*mm_per_pixel
 	plasma_diameter_50.append(top_loc_50-bottom_loc_50)
 	temp = np.mean(averaged_profile[:,97:103],axis=1)
 	axis_pixel = max(1,temp.argmax())
-	axis_loc_100 = axis_pixel*15/44
-	# top_loc_100 = ((np.mean(averaged_profile[axis_pixel:,97:103],axis=1)>5).argmin() + axis_pixel)*15/44
-	# bottom_loc_100 = (np.mean(averaged_profile[:axis_pixel,97:103],axis=1)<5).argmin()*15/44
-	top_loc_100 = (np.abs(temp[axis_pixel:]-temp.argmax()/10).argmin()+axis_pixel)*15/44
-	bottom_loc_100 = (np.abs(temp[:axis_pixel]-temp.argmax()/10).argmin())*15/44
+	axis_loc_100 = axis_pixel*mm_per_pixel
+	# top_loc_100 = ((np.mean(averaged_profile[axis_pixel:,97:103],axis=1)>5).argmin() + axis_pixel)*mm_per_pixel
+	# bottom_loc_100 = (np.mean(averaged_profile[:axis_pixel,97:103],axis=1)<5).argmin()*mm_per_pixel
+	top_loc_100 = (np.abs(temp[axis_pixel:]-temp.argmax()/10).argmin()+axis_pixel)*mm_per_pixel
+	bottom_loc_100 = (np.abs(temp[:axis_pixel]-temp.argmax()/10).argmin())*mm_per_pixel
 	plasma_diameter_100.append(top_loc_100-bottom_loc_100)
-	temp = np.mean(averaged_profile[:,158:172],axis=1)
+	temp = np.mean(averaged_profile[:,OES_location_left_pixel:OES_location_right_pixel+1],axis=1)
 	axis_pixel = max(1,temp.argmax())
-	axis_loc_166 = axis_pixel*15/44
-	# top_loc_166 = ((np.mean(averaged_profile[axis_pixel:,158:172],axis=1)>5).argmin() + axis_pixel)*15/44
-	# bottom_loc_166 = (np.mean(averaged_profile[:axis_pixel,158:172],axis=1)<5).argmin()*15/44
-	top_loc_166 = (np.abs(temp[axis_pixel:]-temp.argmax()/10).argmin()+axis_pixel)*15/44
-	bottom_loc_166 = (np.abs(temp[:axis_pixel]-temp.argmax()/10).argmin())*15/44
-	plasma_diameter_166.append(top_loc_166-bottom_loc_166)
-	temp = np.mean(averaged_profile[:,214:220],axis=1)
+	axis_loc_OES = axis_pixel*mm_per_pixel
+	# top_loc_OES = ((np.mean(averaged_profile[axis_pixel:,OES_location_left_pixel:OES_location_right_pixel+1],axis=1)>5).argmin() + axis_pixel)*mm_per_pixel
+	# bottom_loc_OES = (np.mean(averaged_profile[:axis_pixel,OES_location_left_pixel:OES_location_right_pixel+1],axis=1)<5).argmin()*mm_per_pixel
+	top_loc_OES = (np.abs(temp[axis_pixel:]-temp.argmax()/10).argmin()+axis_pixel)*mm_per_pixel
+	bottom_loc_OES = (np.abs(temp[:axis_pixel]-temp.argmax()/10).argmin())*mm_per_pixel
+	plasma_diameter_OES.append(top_loc_OES-bottom_loc_OES)
+	temp = np.mean(averaged_profile[:,target_location_left_pixel:target_location_right_pixel+1],axis=1)
 	axis_pixel = max(1,temp.argmax())
-	axis_loc_target = axis_pixel*15/44
-	# top_loc_target = ((np.mean(averaged_profile[axis_pixel:,214:220],axis=1)>5).argmin() + axis_pixel)*15/44
-	# bottom_loc_target = (np.mean(averaged_profile[:axis_pixel,214:220],axis=1)<5).argmin()*15/44
-	top_loc_target = (np.abs(temp[axis_pixel:]-temp.argmax()/10).argmin()+axis_pixel)*15/44
-	bottom_loc_target = (np.abs(temp[:axis_pixel]-temp.argmax()/10).argmin())*15/44
+	axis_loc_target = axis_pixel*mm_per_pixel
+	# top_loc_target = ((np.mean(averaged_profile[axis_pixel:,target_location_left_pixel:target_location_right_pixel+1],axis=1)>5).argmin() + axis_pixel)*mm_per_pixel
+	# bottom_loc_target = (np.mean(averaged_profile[:axis_pixel,target_location_left_pixel:target_location_right_pixel+1],axis=1)<5).argmin()*mm_per_pixel
+	top_loc_target = (np.abs(temp[axis_pixel:]-temp.argmax()/10).argmin()+axis_pixel)*mm_per_pixel
+	bottom_loc_target = (np.abs(temp[:axis_pixel]-temp.argmax()/10).argmin())*mm_per_pixel
 	plasma_diameter_target.append(top_loc_target-bottom_loc_target)
 
 			# median_100.append(np.sum(cleaned[select:,:,100],axis=1))
-			# median_166.append(np.sum(cleaned[select:,:,166],axis=1))
+			# median_OES.append(np.sum(cleaned[select:,:,166],axis=1))
 
 	# 		plt.plot(np.arange(-select,len(cleaned)-select),np.mean(cleaned[:,60:200,50],axis=1),'--',label=filename+'__50')
 	# 		plt.plot(np.arange(-select,len(cleaned)-select),np.mean(cleaned[:,60:200,100],axis=1),':',label=filename+'__100')
-	# 		plt.plot(np.arange(-select,len(cleaned)-select),np.mean(cleaned[:,60:200,166],axis=1),label=filename+'__166')
+	# 		plt.plot(np.arange(-select,len(cleaned)-select),np.mean(cleaned[:,60:200,166],axis=1),label=filename+'__OES')
 	# 		plt.plot(np.arange(-select,len(cleaned)-select),np.mean(cleaned[:,60:200,223],axis=1),label=filename+'__223')
 	# plt.legend(loc='best')
 	# plt.title(folder+filename)
@@ -321,24 +334,24 @@ for merge_ID_target in [99,98,96,97]:	# pressure scan
 	# plt.pause(0.01)
 	plt.figure(figure_index)
 	if counter==0:
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-50)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-100)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %((166-50)*15/44))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
 		plt.plot([(np.arange(-300,300)*1000/framerate)[np.median(median_50,axis=0).argmax()]]*2,[0,np.median(median_50,axis=0).max()],'--C'+str(counter))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %((166-100)*15/44))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0),'C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', OES location')
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_223,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', -%.3gmm from OES' %((223-100)*15/44))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0),'C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', OES location')
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_223,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', -%.3gmm from OES' %((223-100)*mm_per_pixel))
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', target location')
 		plt.plot([(np.arange(-300,300)*1000/framerate)[np.median(median_target,axis=0).argmax()]]*2,[0,np.median(median_target,axis=0).max()],'-.C'+str(counter))
 	else:
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-50)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-100)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter))
 		plt.plot([(np.arange(-300,300)*1000/framerate)[np.median(median_50,axis=0).argmax()]]*2,[0,np.median(median_50,axis=0).max()],'--C'+str(counter))
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0),'C'+str(counter))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0),'C'+str(counter))
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure))
 		plt.plot([(np.arange(-300,300)*1000/framerate)[np.median(median_target,axis=0).argmax()]]*2,[0,np.median(median_target,axis=0).max()],'-.C'+str(counter))
 		plt.legend(loc='best')
@@ -348,22 +361,22 @@ for merge_ID_target in [99,98,96,97]:	# pressure scan
 
 	plt.figure(figure_index+1)
 	if counter==0:
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-50)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-100)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0)/np.median(median_target,axis=0),'--C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %((166-50)*15/44))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0)/np.median(median_target,axis=0),':C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %((166-100)*15/44))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0)/np.median(median_target,axis=0),'C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', OES location')
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_223,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', -%.3gmm from OES' %((223-100)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0)/np.median(median_166,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', target location')
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0)/np.median(median_target,axis=0),'--C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0)/np.median(median_target,axis=0),':C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0)/np.median(median_target,axis=0),'C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', OES location')
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_223,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', -%.3gmm from OES' %((223-100)*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0)/np.median(median_OES,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', target location')
 	else:
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-50)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-100)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0)/np.median(median_target,axis=0),'--C'+str(counter),label='pressure %.3gPa' %(SS_pressure))
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0)/np.median(median_target,axis=0),':C'+str(counter))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0)/np.median(median_target,axis=0),'C'+str(counter))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0)/np.median(median_166,axis=0),'-.C'+str(counter))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0)/np.median(median_target,axis=0),'C'+str(counter))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0)/np.median(median_OES,axis=0),'-.C'+str(counter))
 		plt.legend(loc='best')
 		# plt.title(full_folder+filename)
 		plt.grid()
@@ -371,24 +384,24 @@ for merge_ID_target in [99,98,96,97]:	# pressure scan
 
 	plt.figure(figure_index+2)
 	if counter==0:
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-50)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-100)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0)/(plasma_diameter_50[-1]**2),'--C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %((166-50)*15/44))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0)/(plasma_diameter_50[-1]**2),'--C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
 		plt.plot([(np.arange(-300,300)*1000/framerate)[np.median(median_50,axis=0).argmax()]]*2,[0,np.median(median_50,axis=0).max()/(plasma_diameter_50[-1]**2)],'--C'+str(counter))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0)/(plasma_diameter_100[-1]**2),':C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %((166-100)*15/44))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0)/(plasma_diameter_166[-1]**2),'C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', OES location')
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_223,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', -%.3gmm from OES' %((223-100)*15/44))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0)/(plasma_diameter_100[-1]**2),':C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0)/(plasma_diameter_OES[-1]**2),'C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', OES location')
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_223,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', -%.3gmm from OES' %((223-100)*mm_per_pixel))
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0)/(plasma_diameter_target[-1]**2),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', target location')
 		plt.plot([(np.arange(-300,300)*1000/framerate)[np.median(median_target,axis=0).argmax()]]*2,[0,np.median(median_target,axis=0).max()/(plasma_diameter_target[-1]**2)],'-.C'+str(counter))
 	else:
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-50)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-100)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0)/(plasma_diameter_50[-1]**2),'--C'+str(counter))
 		plt.plot([(np.arange(-300,300)*1000/framerate)[np.median(median_50,axis=0).argmax()]]*2,[0,np.median(median_50,axis=0).max()/(plasma_diameter_50[-1]**2)],'--C'+str(counter))
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0)/(plasma_diameter_100[-1]**2),':C'+str(counter))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0)/(plasma_diameter_166[-1]**2),'C'+str(counter))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0)/(plasma_diameter_OES[-1]**2),'C'+str(counter))
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0)/(plasma_diameter_target[-1]**2),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure))
 		plt.plot([(np.arange(-300,300)*1000/framerate)[np.median(median_target,axis=0).argmax()]]*2,[0,np.median(median_target,axis=0).max()/(plasma_diameter_target[-1]**2)],'-.C'+str(counter))
 		plt.legend(loc='best')
@@ -398,22 +411,22 @@ for merge_ID_target in [99,98,96,97]:	# pressure scan
 
 	plt.figure(figure_index+3)
 	if counter==0:
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-50)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-100)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0)/np.median(median_target,axis=0)/(plasma_diameter_50[-1]**2)*(plasma_diameter_target[-1]**2),'--C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %((166-50)*15/44))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0)/np.median(median_target,axis=0)/(plasma_diameter_100[-1]**2)*(plasma_diameter_target[-1]**2),':C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %((166-100)*15/44))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0)/np.median(median_target,axis=0)/(plasma_diameter_166[-1]**2)*(plasma_diameter_target[-1]**2),'C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', OES location')
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_223,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', -%.3gmm from OES' %((223-100)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0)/np.median(median_166,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', target location')
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0)/np.median(median_target,axis=0)/(plasma_diameter_50[-1]**2)*(plasma_diameter_target[-1]**2),'--C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0)/np.median(median_target,axis=0)/(plasma_diameter_100[-1]**2)*(plasma_diameter_target[-1]**2),':C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0)/np.median(median_target,axis=0)/(plasma_diameter_OES[-1]**2)*(plasma_diameter_target[-1]**2),'C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', OES location')
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_223,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', -%.3gmm from OES' %((223-100)*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0)/np.median(median_OES,axis=0),'-.C'+str(counter),label='pressure %.3gPa' %(SS_pressure)+', target location')
 	else:
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-50)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %((166-100)*15/44))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0),'--C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-50*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0),':C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', %.3gmm from OES' %(OES_location-100*mm_per_pixel))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0),'C'+str(counter),label='target/OES distance %.3gmm' %(target_OES_distance)+', OES location')
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_50,axis=0)/np.median(median_target,axis=0)/(plasma_diameter_50[-1]**2)*(plasma_diameter_target[-1]**2),'--C'+str(counter),label='pressure %.3gPa' %(SS_pressure))
 		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_100,axis=0)/np.median(median_target,axis=0)/(plasma_diameter_100[-1]**2)*(plasma_diameter_target[-1]**2),':C'+str(counter))
-		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_166,axis=0)/np.median(median_target,axis=0)/(plasma_diameter_166[-1]**2)*(plasma_diameter_target[-1]**2),'C'+str(counter))
-		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0)/np.median(median_166,axis=0),'-.C'+str(counter))
+		plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_OES,axis=0)/np.median(median_target,axis=0)/(plasma_diameter_OES[-1]**2)*(plasma_diameter_target[-1]**2),'C'+str(counter))
+		# plt.plot(np.arange(-300,300)*1000/framerate,np.median(median_target,axis=0)/np.median(median_OES,axis=0),'-.C'+str(counter))
 		plt.legend(loc='best')
 		# plt.title(full_folder+filename)
 		plt.grid()
@@ -425,7 +438,7 @@ for merge_ID_target in [99,98,96,97]:	# pressure scan
 
 	median_50_all.append(np.median(median_50,axis=0))
 	median_100_all.append(np.median(median_100,axis=0))
-	median_166_all.append(np.median(median_166,axis=0))
+	median_OES_all.append(np.median(median_OES,axis=0))
 	median_target_all.append(np.median(median_target,axis=0))
 	median_250_all.append(np.median(median_250,axis=0))
 
@@ -469,15 +482,15 @@ plt.pause(0.01)
 plt.figure(figsize=(12,6))
 temp = np.divide(median_50_all,median_target_all)
 temp[np.isinf(temp)]=0
-plt.plot(SS_pressure_all,np.nanmax(temp,axis=-1),'C0',label='emission %.3gmm from OES/target location\npeak ratio' %((166-50)*15/44))
-plt.plot(SS_pressure_all,np.nanmean(temp,axis=-1),'--C0',label='emission %.3gmm from OES/target location\nmean ratio' %((166-50)*15/44))
-plt.plot(SS_pressure_all,np.diagonal(temp[:,np.array(median_target_all).argmax(axis=1)]),':C0',label='emission %.3gmm from OES/target location\nratio at max target emissivity' %((166-50)*15/44))
+plt.plot(SS_pressure_all,np.nanmax(temp,axis=-1),'C0',label='emission %.3gmm from OES/target location\npeak ratio' %(OES_location-50*mm_per_pixel))
+plt.plot(SS_pressure_all,np.nanmean(temp,axis=-1),'--C0',label='emission %.3gmm from OES/target location\nmean ratio' %(OES_location-50*mm_per_pixel))
+plt.plot(SS_pressure_all,np.diagonal(temp[:,np.array(median_target_all).argmax(axis=1)]),':C0',label='emission %.3gmm from OES/target location\nratio at max target emissivity' %(OES_location-50*mm_per_pixel))
 temp = np.divide(median_100_all,median_target_all)
 temp[np.isinf(temp)]=0
-plt.plot(SS_pressure_all,np.nanmax(temp,axis=-1),'C1',label='emission %.3gmm from OES/target location' %((166-100)*15/44))
+plt.plot(SS_pressure_all,np.nanmax(temp,axis=-1),'C1',label='emission %.3gmm from OES/target location' %(OES_location-100*mm_per_pixel))
 plt.plot(SS_pressure_all,np.nanmean(temp,axis=-1),'--C1')
 plt.plot(SS_pressure_all,np.diagonal(temp[:,np.array(median_target_all).argmax(axis=1)]),':C1')
-temp = np.divide(median_166_all,median_target_all)
+temp = np.divide(median_OES_all,median_target_all)
 temp[np.isinf(temp)]=0
 plt.plot(SS_pressure_all,np.nanmax(temp,axis=-1),'C2',label='emission OES/target location')
 plt.plot(SS_pressure_all,np.nanmean(temp,axis=-1),'--C2')
@@ -496,13 +509,13 @@ plt.figure(figsize=(12,6))
 averaged_profile_all = np.array(averaged_profile_all)
 # temp = np.divide(median_50_all,median_target_all)
 # temp[np.isinf(temp)]=0
-plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,47:53],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,214:220],axis=(1,2)),'-C0',label='emission %.3gmm from OES/target location' %((166-50)*15/44))
+plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,47:53],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,target_location_left_pixel:target_location_right_pixel+1],axis=(1,2)),'-C0',label='emission %.3gmm from OES/target location' %(OES_location-50*mm_per_pixel))
 # temp = np.divide(median_100_all,median_target_all)
 # temp[np.isinf(temp)]=0
-plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,97:103],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,214:220],axis=(1,2)),'-C1',label='emission %.3gmm from OES/target location' %((166-100)*15/44))
-# temp = np.divide(median_166_all,median_target_all)
+plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,97:103],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,target_location_left_pixel:target_location_right_pixel+1],axis=(1,2)),'-C1',label='emission %.3gmm from OES/target location' %(OES_location-100*mm_per_pixel))
+# temp = np.divide(median_OES_all,median_target_all)
 # temp[np.isinf(temp)]=0
-plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,158:172],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,214:220],axis=(1,2)),'-C2',label='emission OES/target location')
+plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,OES_location_left_pixel:OES_location_right_pixel+1],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,target_location_left_pixel:target_location_right_pixel+1],axis=(1,2)),'-C2',label='emission OES/target location')
 plt.grid()
 plt.legend(loc='best', fontsize='x-small')
 # plt.title('Target/OES distance scan magnetic_field %.3gT,steady state pressure %.3gPa,ELM pulse voltage %.3gV' %(magnetic_field,SS_pressure,pulse_voltage)+'\naverage of the fast camera counts between vertical pixels 60 and 200 at the specified location')
@@ -516,15 +529,15 @@ plt.pause(0.01)
 plt.figure(figsize=(12,6))
 temp = (np.divide(median_50_all,median_target_all).T*(np.divide(plasma_diameter_target,plasma_diameter_50)**2)).T
 temp[np.isinf(temp)]=0
-plt.plot(SS_pressure_all,np.nanmax(temp,axis=-1),'C0',label='emission %.3gmm from OES/target location\npeak ratio' %((166-50)*15/44))
-plt.plot(SS_pressure_all,np.nanmean(temp,axis=-1),'--C0',label='emission %.3gmm from OES/target location\nmean ratio' %((166-50)*15/44))
-plt.plot(SS_pressure_all,np.diagonal(temp[:,np.array(median_target_all).argmax(axis=1)]),':C0',label='emission %.3gmm from OES/target location\nratio at max target emissivity' %((166-50)*15/44))
+plt.plot(SS_pressure_all,np.nanmax(temp,axis=-1),'C0',label='emission %.3gmm from OES/target location\npeak ratio' %(OES_location-50*mm_per_pixel))
+plt.plot(SS_pressure_all,np.nanmean(temp,axis=-1),'--C0',label='emission %.3gmm from OES/target location\nmean ratio' %(OES_location-50*mm_per_pixel))
+plt.plot(SS_pressure_all,np.diagonal(temp[:,np.array(median_target_all).argmax(axis=1)]),':C0',label='emission %.3gmm from OES/target location\nratio at max target emissivity' %(OES_location-50*mm_per_pixel))
 temp = (np.divide(median_100_all,median_target_all).T*(np.divide(plasma_diameter_target,plasma_diameter_100)**2)).T
 temp[np.isinf(temp)]=0
-plt.plot(SS_pressure_all,np.nanmax(temp,axis=-1),'C1',label='emission %.3gmm from OES/target location' %((166-100)*15/44))
+plt.plot(SS_pressure_all,np.nanmax(temp,axis=-1),'C1',label='emission %.3gmm from OES/target location' %(OES_location-100*mm_per_pixel))
 plt.plot(SS_pressure_all,np.nanmean(temp,axis=-1),'--C1')
 plt.plot(SS_pressure_all,np.diagonal(temp[:,np.array(median_target_all).argmax(axis=1)]),':C1')
-temp = (np.divide(median_166_all,median_target_all).T*(np.divide(plasma_diameter_target,plasma_diameter_166)**2)).T
+temp = (np.divide(median_OES_all,median_target_all).T*(np.divide(plasma_diameter_target,plasma_diameter_OES)**2)).T
 temp[np.isinf(temp)]=0
 plt.plot(SS_pressure_all,np.nanmax(temp,axis=-1),'C2',label='emission OES/target location')
 plt.plot(SS_pressure_all,np.nanmean(temp,axis=-1),'--C2')
@@ -542,13 +555,13 @@ plt.pause(0.01)
 plt.figure(figsize=(12,6))
 # temp = (np.divide(median_50_all,median_target_all).T/(np.array(plasma_diameter_50)*np.array(plasma_diameter_target))**2).T
 # temp[np.isinf(temp)]=0
-plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,47:53],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,214:220],axis=(1,2))*(np.divide(plasma_diameter_target,plasma_diameter_50)**2),'-C0',label='emission %.3gmm from OES/target location' %((166-50)*15/44))
+plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,47:53],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,target_location_left_pixel:target_location_right_pixel+1],axis=(1,2))*(np.divide(plasma_diameter_target,plasma_diameter_50)**2),'-C0',label='emission %.3gmm from OES/target location' %(OES_location-50*mm_per_pixel))
 # temp = (np.divide(median_100_all,median_target_all).T/(np.array(plasma_diameter_100)*np.array(plasma_diameter_target))**2).T
 # temp[np.isinf(temp)]=0
-plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,97:103],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,214:220],axis=(1,2))*(np.divide(plasma_diameter_target,plasma_diameter_100)**2),'-C1',label='emission %.3gmm from OES/target location' %((166-100)*15/44))
-# temp = (np.divide(median_166_all,median_target_all).T/(np.array(plasma_diameter_166)*np.array(plasma_diameter_target))**2).T
+plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,97:103],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,target_location_left_pixel:target_location_right_pixel+1],axis=(1,2))*(np.divide(plasma_diameter_target,plasma_diameter_100)**2),'-C1',label='emission %.3gmm from OES/target location' %(OES_location-100*mm_per_pixel))
+# temp = (np.divide(median_OES_all,median_target_all).T/(np.array(plasma_diameter_OES)*np.array(plasma_diameter_target))**2).T
 # temp[np.isinf(temp)]=0
-plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,158:172],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,214:220],axis=(1,2))*(np.divide(plasma_diameter_target,plasma_diameter_166)**2),'-C2',label='emission OES/target location')
+plt.plot(SS_pressure_all,np.mean(averaged_profile_all[:,60:200,OES_location_left_pixel:OES_location_right_pixel+1],axis=(1,2))/np.mean(averaged_profile_all[:,60:200,target_location_left_pixel:target_location_right_pixel+1],axis=(1,2))*(np.divide(plasma_diameter_target,plasma_diameter_OES)**2),'-C2',label='emission OES/target location')
 plt.grid()
 plt.legend(loc='best', fontsize='x-small')
 # plt.title('Target/OES distance scan magnetic_field %.3gT,steady state pressure %.3gPa,ELM pulse voltage %.3gV' %(magnetic_field,SS_pressure,pulse_voltage)+'\naverage of the fast camera counts between vertical pixels 60 and 200 at the specified location')
@@ -567,11 +580,11 @@ ax1 = fig.add_subplot(1,1,1)
 for i in range(len(averaged_profile_all)):
 	temp_temp = np.mean(averaged_profile_all[i],axis=0)
 	temp_temp[np.arange(np.shape(averaged_profile_all)[1])>230]=0
-	ax1.plot(np.arange(np.shape(averaged_profile_all)[1])*15/44,temp_temp,color=color[i],label='Pressure = %.3gPa' %(SS_pressure_all[i]))
+	ax1.plot(np.arange(np.shape(averaged_profile_all)[1])*mm_per_pixel,temp_temp,color=color[i],label='Pressure = %.3gPa' %(SS_pressure_all[i]))
 # plt.yscale('log')
-ax1.plot([230*15/44]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-.',label='target')
-ax1.plot([158*15/44]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-',label='TS/OES')
-ax1.plot([172*15/44]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-')
+ax1.plot([230*mm_per_pixel]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-.',label='target')
+ax1.plot([OES_location_left]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-',label='TS/OES')
+ax1.plot([OES_location_right]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-')
 ax1.set_title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field,target_OES_distance,pulse_voltage)+'\nAverage of emissivity in the radial direction')
 ax1.set_xlabel('longitudinal position [mm]')
 ax1.set_ylabel('Average brightness [au]')
@@ -584,7 +597,7 @@ if merge_ID_target==85:
 	for i in range(len(averaged_profile_all)):
 		temp_temp = np.mean(averaged_profile_all[i],axis=0)
 		temp_temp[np.arange(np.shape(averaged_profile_all)[1])>230]=0
-		ax2.plot(np.arange(np.shape(averaged_profile_all)[1])*15/44,temp_temp,color=color[i])
+		ax2.plot(np.arange(np.shape(averaged_profile_all)[1])*mm_per_pixel,temp_temp,color=color[i])
 	ax2.set_xlim(left=75,right=78)
 	ax2.set_ylim(bottom=600,top=800)
 	ax2.set_yscale('linear')
@@ -594,7 +607,7 @@ elif merge_ID_target==97:
 	for i in range(len(averaged_profile_all)):
 		temp_temp = np.mean(averaged_profile_all[i],axis=0)
 		temp_temp[np.arange(np.shape(averaged_profile_all)[1])>230]=0
-		ax2.plot(np.arange(np.shape(averaged_profile_all)[1])*15/44,temp_temp,color=color[i])
+		ax2.plot(np.arange(np.shape(averaged_profile_all)[1])*mm_per_pixel,temp_temp,color=color[i])
 	ax2.set_xlim(left=75,right=78)
 	ax2.set_ylim(bottom=100,top=210)
 	ax2.set_yscale('linear')
@@ -605,9 +618,9 @@ plt.pause(0.01)
 
 
 plt.figure(figsize=(12,6))
-plt.plot(SS_pressure_all,plasma_diameter_50,'C0',label='%.3gmm from OES' %((166-50)*15/44))
-plt.plot(SS_pressure_all,plasma_diameter_100,'C1',label='%.3gmm from OES' %((166-100)*15/44))
-plt.plot(SS_pressure_all,plasma_diameter_166,'C2',label='OES location')
+plt.plot(SS_pressure_all,plasma_diameter_50,'C0',label='%.3gmm from OES' %(OES_location-50*mm_per_pixel))
+plt.plot(SS_pressure_all,plasma_diameter_100,'C1',label='%.3gmm from OES' %(OES_location-100*mm_per_pixel))
+plt.plot(SS_pressure_all,plasma_diameter_OES,'C2',label='OES location')
 plt.plot(SS_pressure_all,plasma_diameter_target,'C3',label='target location')
 plt.grid()
 plt.legend(loc='best', fontsize='x-small')
@@ -677,7 +690,7 @@ for i_j,j in enumerate(file_id):
 	average = average/(setup.ShutterNs/1000)
 
 	plt.figure(figsize=(8,6))
-	plt.imshow(average,'rainbow',origin='lower',extent=[0,np.shape(raw_data)[1]*15/44,0,np.shape(raw_data)[2]*15/44])
+	plt.imshow(average,'rainbow',origin='lower',extent=[0,np.shape(raw_data)[1]*mm_per_pixel,0,np.shape(raw_data)[2]*mm_per_pixel])
 	# plt.imshow(cleaned[select],'rainbow',origin='lower')
 	if overexposed_local:
 		plt.colorbar().set_label('average counts [au] (overexposed)')
@@ -713,10 +726,10 @@ for i_j,j in enumerate(file_id):
 	# counts are normalised for a 1ms exposure
 	average = average/(setup.ShutterNs/1000)
 
-	plt.plot(np.arange(np.shape(average)[0])*15/44,np.mean(average[110:150],axis=0),label='%.3g Pa' %(target_chamber_pressure[i_j]))
+	plt.plot(np.arange(np.shape(average)[0])*mm_per_pixel,np.mean(average[110:150],axis=0),label='%.3g Pa' %(target_chamber_pressure[i_j]))
 plt.title('steady state samples average profile\nmagnetic_field %.3gT,target/OES distance %.3gmm,no ELM pulse' %(1.2,-(z_position[i_j]+78.8)),fontsize=12)
-# plt.plot([195*15/44]*2,[0,np.mean(average,axis=0).max()],'k-.',label='target')
-plt.plot([195*15/44]*2,[0,0.5],'k-.',label='target')
+# plt.plot([195*mm_per_pixel]*2,[0,np.mean(average,axis=0).max()],'k-.',label='target')
+plt.plot([195*mm_per_pixel]*2,[0,0.5],'k-.',label='target')
 plt.legend(loc='best', fontsize='x-small')
 plt.xlabel('longitudinal position [mm]')
 plt.ylabel('Average brightness [au]')

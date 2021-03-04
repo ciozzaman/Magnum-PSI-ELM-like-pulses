@@ -99,7 +99,7 @@ for j in all_j:
 		im = Image.open(fname)
 		data = np.array(im)
 		plt.imshow(data, 'rainbow', origin='lower')
-		plt.colorbar().set_label('Counts [au]')
+		# plt.colorbar().set_label('Counts [au]')
 		plt.xlabel('wavelength axis [pixel]')
 		plt.ylabel('LOS axis [pixel]')
 		plt.title('Filename '+filenames[index]+' vmax='+str(np.max(data)))

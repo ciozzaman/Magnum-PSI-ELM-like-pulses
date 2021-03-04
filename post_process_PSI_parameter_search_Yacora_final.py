@@ -33,7 +33,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from functools import partial
 import traceback
 # set_start_method('spawn')
-number_cpu_available = 10	#cpu_count()
+number_cpu_available = 8	#cpu_count()
 # pool = get_context('spawn').Pool(number_cpu_available)
 print('Number of cores available: '+str(number_cpu_available))
 # number_cpu_available = 10
@@ -109,8 +109,8 @@ dissociation_potential = 2.2	# eV
 
 # merge_ID_target_multipulse = np.flip([851,86,87,89,92, 93, 94],axis=0)
 # merge_ID_target_multipulse = np.flip([73,77,78,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
-# merge_ID_target_multipulse = [88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
-merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
+merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98]
+# merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
 # merge_ID_target_multipulse = np.flip([85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99],axis=0)
 # merge_ID_target_multipulse = np.flip([86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
 # merge_ID_target_multipulse = np.flip([95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 88],axis=0)
@@ -119,6 +119,7 @@ merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97
 # merge_ID_target_multipulse = np.flip([99,85,97,89,92, 93,95],axis=0)
 # merge_ID_target_multipulse = [85]
 
+merge_ID_target_multipulse = np.flip(merge_ID_target_multipulse,axis=0)
 
 for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don't have a temperature profile
 	merge_time_window = [-1,2]
@@ -128,16 +129,17 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 	# 	merge_time_window = [-10,10]
 
 
-	# recorded_data_override = [True,True,True]
-	recorded_data_override = [False,False,False]
+	recorded_data_override = [True,True,True]
+	# recorded_data_override = [False,False,False]
 	# recorded_data_override = [True,True]
+	completion_loop_done = True
 	do_only_one_loop = False
 	include_particles_limitation = True
 	H2_suppression = True
 
-	if H2_suppression == True:
-		externally_provided_H2p_Hn_steps = 19
-		externally_provided_H_steps = 19
+	if H2_suppression:
+		externally_provided_H2p_Hn_steps = 17
+		externally_provided_H_steps = 17
 		externally_provided_H2_steps = 1
 	else:
 		externally_provided_H2p_Hn_steps = 11
@@ -236,7 +238,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 				magnetic_field.append(df_log.loc[j,['B']])
 				(merge_folder,sequence,fname_current_trace) = df_log.loc[j,['folder','sequence','current_trace_file']]
 				sequence = int(sequence)
-				bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_delivered_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
+				bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_delivered_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution, = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
 				energy_delivered_good_pulses.append(median_energy_delivered_good_pulses)
 				power_pulse_shape_time_dependent.append(mean_peak_shape)
 				power_pulse_shape_time_dependent_std.append(mean_peak_std)
@@ -250,8 +252,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 			magnetic_field = np.nanmean(magnetic_field)	# T
 			energy_delivered_good_pulses = np.nanmean(energy_delivered_good_pulses)	# J
 			# power_pulse_shape = np.sum(np.divide(power_pulse_shape,power_pulse_shape_std),axis=0)/np.sum(np.divide(1,power_pulse_shape_std),axis=0)
-			power_pulse_shape_time_dependent = np.mean(power_pulse_shape_time_dependent,axis=0)
-			power_pulse_shape_time_dependent_std = np.sum(0.25*np.array(power_pulse_shape_time_dependent_std)**2,axis=0)**0.5
+			power_pulse_shape_time_dependent = 0.92*np.mean(power_pulse_shape_time_dependent,axis=0)	# 0.92 is the efficiency of electricity to plasma heat conversion
+			power_pulse_shape_time_dependent_std = 0.92*np.sum(0.25*np.array(power_pulse_shape_time_dependent_std)**2,axis=0)**0.5	# 0.92 is the efficiency of electricity to plasma heat conversion
 			# steady_state_power = np.sum(np.divide(steady_state_power,steady_state_power_std),axis=0)/np.sum(np.divide(1,power_pulse_shape_std),axis=0)
 			steady_state_power = np.mean(steady_state_power,axis=0)
 			steady_state_power_std = np.sum(0.25*np.array(steady_state_power_std)**2,axis=0)**0.5
@@ -282,6 +284,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 			print('n_weights')
 			print(n_weights)
 			print('recorded data override is '+str(recorded_data_override))
+			print('will the very last loop be done on top of the third, just to redo points that failed? '+str(completion_loop_done))
 			fixed_fractions_nHm_H2p = [1/4,1,4]
 			max_frac_acceptable_deviation_ext = 0.08	#0.07
 			print('the fixed values of nH-/nH2+ tested are '+str(fixed_fractions_nHm_H2p)+' +/-'+str(max_frac_acceptable_deviation_ext*100)+'%')
@@ -750,7 +753,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 					# this is to estimate better the background max H2 density
 					# I assume the flow velocity from CTS (Jonathan) of 10km/s
 					T_Hp = np.min([np.max([1000*np.ones_like(merge_Te_prof_multipulse_interp_crop_limited),merge_Te_prof_multipulse_interp_crop_limited/eV_to_K],axis=0),12000*np.ones_like(merge_Te_prof_multipulse_interp_crop_limited)],axis=0)	# K
-					area = 2*np.pi*(r_crop + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))	# m^2
+					# area = 2*np.pi*(r_crop + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))	# m^2
+					temp = np.pi*((r_crop + np.median(np.diff(r_crop))/2)**2)
+					area = np.array([temp[0]]+np.diff(temp).tolist())	# m^2
 					ionisation_potential = 13.6	# eV
 					heat_inflow_upstream = np.sum(area * merge_ne_prof_multipulse_interp_crop_limited * 10000*(ionisation_potential+ T_Hp*eV_to_K +merge_Te_prof_multipulse_interp_crop_limited)/J_to_eV,axis=1)* 1e20	# W
 					sound_speed = (merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J/(hydrogen_mass))**0.5	# m/s
@@ -759,7 +764,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 					neat_background_heating = heat_inflow_upstream - heat_flux_target
 					neat_background_heating[neat_background_heating<0] = 0
 					net_power_in = neat_background_heating*np.median(np.diff(time_crop))/1000	# J
-					volume = (0.38+target_OES_distance/1000)*np.pi*(0.4**2)	# m^2
+					volume = (0.351+target_OES_distance/1000)*np.pi*(0.4**2)	# m^2
 					H2_mass = target_chamber_pressure*2*hydrogen_mass/(boltzmann_constant_J*300)*volume	# kg
 					heat_capacity_H2 = 14.5	# kJ/(kg K)
 					temp_increase = net_power_in/(heat_capacity_H2*H2_mass)
@@ -1328,7 +1333,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 						power_heating_rec = (power_via_recombination - power_rad_rec_bremm + power_via_brem).astype(np.float32)
 						# power_heating_rec[power_heating_rec<0]=0
 						tot_rad_power = (power_rad_excit+power_rad_rec_bremm+power_rad_mol).astype(np.float32)
-						total_removed_power_atomic = np.float32(power_via_ionisation + power_rad_excit + power_via_recombination + power_rec_neutral + power_via_brem)
+						# total_removed_power_atomic = np.float32(power_via_ionisation + power_rad_excit + power_via_recombination + power_rec_neutral + power_via_brem)
+						total_removed_power_atomic = np.float32(power_via_ionisation + power_rad_excit + power_rad_rec_bremm + power_rec_neutral)
 						# total_removed_power = power_via_ionisation + power_rad_excit + power_via_recombination + power_rec_neutral + power_via_brem + power_rad_mol
 
 						return power_rad_H2p,power_rad_H2,power_rad_excit,power_via_ionisation,power_rad_rec_bremm,power_via_recombination,power_via_brem,power_rec_neutral,power_rad_Hm_H2p,power_rad_Hm_Hp,power_rad_Hm,power_rad_mol,power_heating_rec,tot_rad_power,total_removed_power_atomic,nH_ne_excited_states_mol,power_rad_mol_visible
@@ -1476,6 +1482,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								# nH_ne_probs = gauss(np.linspace(-2,+2,5),1/((2*np.pi)**0.5),1,0)
 								# nH_ne_probs = nH_ne_probs/np.sum(nH_ne_probs)
 
+							# first 2 loops of evaluation, in order to improve the resolution in Te and ne
 							PDF_matrix_shape = []
 							for loop_index in [0,1]:
 								TS_Te_steps = len(Te_values_array)
@@ -1561,6 +1568,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								T_H2_values[T_H2_values<300]=300
 								T_H_values = np.exp(TH_fit_from_simulations(np.log(Te_values.flatten())))/eV_to_K	# K
 								T_H_values[T_H_values<300]=300
+								T_H_values_low = np.exp(TH_low_fit_from_simulations(np.log(Te_values.flatten())))/eV_to_K	# K
+								T_H_values_low[T_H_values_low<300]=300
 								coeff_3_record = []
 								coeff_4_record = []
 								record_nH_ne_values = []
@@ -1679,12 +1688,15 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								calculated_emission_log_probs = calculated_emission_log_probs-np.log(np.sum(np.exp(calculated_emission_log_probs)))	# normalisation for logarithmic probabilities
 
 								time_lapsed = tm.time()-start_time
-								print('worker '+str(current_process())+' Initial loop nr '+str(loop_index)+'-3 done '+str(domain_index)+' in %.3gmin %.3gsec' %(int(time_lapsed/60),int(time_lapsed%60)) +' - good=%.3g, nan=%.3g, -inf=%.3g' %( np.sum(np.isfinite(calculated_emission_log_probs)),np.sum(np.isnan(calculated_emission_log_probs)),np.sum(np.isinf(calculated_emission_log_probs)) ) )
+								print('worker '+str(current_process())+' Initial loop nr '+str(loop_index)+'-3 done '+str(domain_index)+' in %.3gmin %.3gsec' %(int(time_lapsed/60),int(time_lapsed%60)) +'shape '+str(np.shape(calculated_emission_log_probs))+' - good=%.3g, nan=%.3g, -inf=%.3g' %( np.sum(np.isfinite(calculated_emission_log_probs)),np.sum(np.isnan(calculated_emission_log_probs)),np.sum(np.isinf(calculated_emission_log_probs)) ) )
 
 								power_rad_H2p,power_rad_H2,power_rad_excit,power_via_ionisation,power_rad_rec_bremm,power_via_recombination,power_via_brem,power_rec_neutral,power_rad_Hm_H2p,power_rad_Hm_Hp,power_rad_Hm,power_rad_mol,power_heating_rec,tot_rad_power,total_removed_power_atomic,nH_ne_excited_states_mol,power_rad_mol_visible = calc_power_balance_elements_simplified2(H_steps,to_find_steps,H2_steps,to_find_steps,TS_ne_steps,TS_Te_steps,Te_values,ne_values,multiplicative_factor_full_full,multiplicative_factor_visible_light_full_full,record_nH_ne_values,record_nHm_ne_values,record_nH2_ne_values,record_nH2p_ne_values,record_nHp_ne_values,T_Hp_values,T_H2p_values,T_Hm_values,coeff_1_record,coeff_2_record,coeff_3_record,coeff_4_record)
 								total_removed_power = total_removed_power_atomic + power_rad_mol
 
-								area = 2*np.pi*(r_crop[my_r_pos] + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))
+								# area = 2*np.pi*(r_crop[my_r_pos] + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))
+								temp = np.pi*((r_crop + np.median(np.diff(r_crop))/2)**2)
+								area = np.array([temp[0]]+np.diff(temp).tolist())[my_r_pos] # m^2
+
 								length = 0.351+target_OES_distance/1000	# mm distance skimmer to OES/TS + OES/TS to target
 								total_removed_power_times_volume = total_removed_power * area*length
 								# power_penalty = np.zeros_like((total_removed_power_times_volume),dtype=np.float32)
@@ -1692,7 +1704,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									select = total_removed_power_times_volume>interpolated_power_pulse_shape(time_crop[my_time_pos])/source_power_spread
 									power_penalty[select] = np.float32(-0.5*((total_removed_power_times_volume[select] - interpolated_power_pulse_shape(time_crop[my_time_pos])/source_power_spread)/(interpolated_power_pulse_shape_std(time_crop[my_time_pos])))**2)
 								else:	# here I do
-									max_local_flow_vel = max(1,homogeneous_mach_number[my_time_pos])*upstream_adiabatic_collisional_velocity[my_time_pos,my_r_pos]
+									# max_local_flow_vel = max(1,homogeneous_mach_number[my_time_pos])*upstream_adiabatic_collisional_velocity[my_time_pos,my_r_pos]
+									max_local_flow_vel = homogeneous_mach_number[my_time_pos]*upstream_adiabatic_collisional_velocity[my_time_pos,my_r_pos]
 									total_removable_power_times_volume_SS = area*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*Te_all_upstream[my_time_pos,my_r_pos] + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*max_local_flow_vel*ne_all_upstream[my_time_pos,my_r_pos]*1e20
 									total_removable_power_times_volume_dynamic = area*length/dt*1000*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*Te_values + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*ne_values
 									total_removable_power_times_volume = total_removable_power_times_volume_SS + total_removable_power_times_volume_dynamic
@@ -1804,7 +1817,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 													temp1,temp1_sigma =	np.float32(RR_rate_creation_H2p(*arguments,temp_nH_excited_states,particle_molecular_precision,particle_atomic_precision))
 													all_net_H2p_destruction[:,:,:,:,i5,i6] = np.float32(temp - temp1)
 													all_net_H2p_destruction_sigma[:,:,:,:,i5,i6] = 0.5*(temp_sigma**2 + temp1_sigma**2)**0.5
-										del temp_coord,temp,temp_sigma,temp1,temp1_sigma
+										try:
+											del temp_coord,temp,temp_sigma,temp1,temp1_sigma
+										except:
+											print('worker '+str(current_process())+' Initial loop nr '+str(loop_index)+'-1 done '+str(domain_index)+' in %.3gmin %.3gsec' %(int(time_lapsed/60),int(time_lapsed%60)) + 'for some reason del temp_coord,temp,temp_sigma,temp1,temp1_sigma failed' )
 										all_net_Hp_destruction *= area*length*dt/1000
 										all_net_e_destruction *= area*length*dt/1000
 										all_net_Hm_destruction *= area*length*dt/1000
@@ -1896,10 +1912,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									marginalised_log_prob_ne_Te = np.sum(np.exp(likelihood_log_probs)*hypervolume_of_each_combination,axis=(0,1,2,3))	# ne, Te
 									del hypervolume_of_each_combination
 									# print(marginalised_log_prob_ne_Te)
-									index_most_likely = marginalised_log_prob_ne_Te.argmax()
-									# print(index_most_likely)
-									most_likely_Te_index = index_most_likely%TS_Te_steps
-									most_likely_ne_index = (index_most_likely-most_likely_Te_index)//TS_Te_steps%TS_ne_steps
+									index_most_likely_marginalised = marginalised_log_prob_ne_Te.argmax()
+									# print(index_most_likely_marginalised)
+									most_likely_Te_index = index_most_likely_marginalised%TS_Te_steps
+									most_likely_ne_index = (index_most_likely_marginalised-most_likely_Te_index)//TS_Te_steps%TS_ne_steps
 									marginalised_log_prob_ne = marginalised_log_prob_ne_Te[:,most_likely_Te_index]
 									marginalised_log_prob_Te = marginalised_log_prob_ne_Te[most_likely_ne_index]
 									# print(marginalised_log_prob_ne)
@@ -2004,10 +2020,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							del hypervolume_of_each_combination
 							marginalised_likelihood_log_probs -= np.max(marginalised_likelihood_log_probs)
 							marginalised_likelihood_log_probs -= np.log(np.sum(np.exp(marginalised_likelihood_log_probs)))	# normalisation for logarithmic probabilities
-							index_most_likely = marginalised_likelihood_log_probs.argmax()
-							most_likely_marginalised_nH2p_nH2_index = index_most_likely%to_find_steps
-							most_likely_marginalised_nHm_nH2_index = (index_most_likely-most_likely_marginalised_nH2p_nH2_index)//to_find_steps%to_find_steps
-							most_likely_marginalised_nH_ne_index = ((index_most_likely-most_likely_marginalised_nH2p_nH2_index)//to_find_steps-most_likely_marginalised_nHm_nH2_index)//to_find_steps%H_steps
+							index_most_likely_marginalised = marginalised_likelihood_log_probs.argmax()
+							most_likely_marginalised_nH2p_nH2_index = index_most_likely_marginalised%to_find_steps
+							most_likely_marginalised_nHm_nH2_index = (index_most_likely_marginalised-most_likely_marginalised_nH2p_nH2_index)//to_find_steps%to_find_steps
+							most_likely_marginalised_nH_ne_index = ((index_most_likely_marginalised-most_likely_marginalised_nH2p_nH2_index)//to_find_steps-most_likely_marginalised_nHm_nH2_index)//to_find_steps%H_steps
 
 							# now I cannot do this, because I don't have fixed density intervals
 							# most_likely_marginalised_nH2p_ne_value = nH2p_ne_values[most_likely_marginalised_nH2p_nH2_index]
@@ -2399,7 +2415,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							# local_CX = P_RR_Hp_H1s__H1s_Hp(T_Hp_values,T_H_values,ne_values.flatten()*1e-20).reshape(np.shape(ne_values)) * (record_nH_ne_values.reshape((H_steps,TS_ne_steps,TS_Te_steps)))
 							# local_CX = np.transpose([[[local_CX]*H2p_steps]*H2_steps]*Hm_steps , (3,0,1,2,4,5))	# H, Hm, H2, H2p, ne, Te
 
-							area = 2*np.pi*(r_crop[my_r_pos] + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))
+							# area = 2*np.pi*(r_crop[my_r_pos] + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))
+							temp = np.pi*((r_crop + np.median(np.diff(r_crop))/2)**2)
+							area = np.array([temp[0]]+np.diff(temp).tolist())[my_r_pos]
 							length = 0.351+target_OES_distance/1000	# mm distance skimmer to OES/TS + OES/TS to target
 							total_removed_power_times_volume = total_removed_power * area*length
 							# power_penalty = np.zeros_like((total_removed_power_times_volume),dtype=np.float32)
@@ -2407,7 +2425,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								select = total_removed_power_times_volume>interpolated_power_pulse_shape(time_crop[my_time_pos])/source_power_spread
 								power_penalty[select] = np.float32(-0.5*((total_removed_power_times_volume[select] - interpolated_power_pulse_shape(time_crop[my_time_pos])/source_power_spread)/(interpolated_power_pulse_shape_std(time_crop[my_time_pos])))**2)
 							else:	# H, Hm, H2, H2p, ne, Te
-								max_local_flow_vel = max(1,homogeneous_mach_number[my_time_pos])*upstream_adiabatic_collisional_velocity[my_time_pos,my_r_pos]
+								# max_local_flow_vel = max(1,homogeneous_mach_number[my_time_pos])*upstream_adiabatic_collisional_velocity[my_time_pos,my_r_pos]
+								max_local_flow_vel = homogeneous_mach_number[my_time_pos]*upstream_adiabatic_collisional_velocity[my_time_pos,my_r_pos]
 								total_removable_power_times_volume_SS = area*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*Te_all_upstream[my_time_pos,my_r_pos] + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*max_local_flow_vel*ne_all_upstream[my_time_pos,my_r_pos]*1e20
 								total_removable_power_times_volume_dynamic = area*length/dt*1000*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*Te_values + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*ne_values
 								total_removable_power_times_volume = total_removable_power_times_volume_SS + total_removable_power_times_volume_dynamic
@@ -2508,7 +2527,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											temp1,temp1_sigma =	np.float32(RR_rate_creation_H2p(*arguments,temp_nH_excited_states,particle_molecular_precision,particle_atomic_precision))
 											all_net_H2p_destruction[:,:,:,:,i5,i6] = np.float32(temp - temp1)
 											all_net_H2p_destruction_sigma[:,:,:,:,i5,i6] = 0.5*(temp_sigma**2 + temp1_sigma**2)**0.5
-								del temp_coord,temp,temp_sigma,temp1,temp1_sigma
+								try:
+									del temp_coord,temp,temp_sigma,temp1,temp1_sigma
+								except:
+									print('worker '+str(current_process())+' marker 1-1 '+str(domain_index)+' in %.3gmin %.3gsec' %(int(time_lapsed/60),int(time_lapsed%60)) +' for some reason del temp_coord,temp,temp_sigma,temp1,temp1_sigma failed' )
 							if include_particles_limitation:
 								particles_penalty = np.zeros_like((likelihood_log_probs),dtype=np.float32)
 								all_net_Hp_destruction *= area*length*dt/1000
@@ -2562,12 +2584,18 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							CX_term_1_2 = np.float32(dr*(eff_CX_RR + all_H_destruction_RR))
 							delta_t = (T_Hp_values - T_H_values)
 							delta_t[delta_t<0] = 0
+							delta_t_low = (T_Hp_values - T_H_values_low)
+							delta_t_low[delta_t_low<0] = 0
 							CX_term_1_3 = np.float32(3/2* ((delta_t.reshape(np.shape(Te_values))) * boltzmann_constant_J)*(eff_CX_RR)/(thermal_velocity_H.reshape(np.shape(Te_values))))
+							CX_term_1_11 = np.float32(3/2* ((delta_t_low.reshape(np.shape(Te_values))) * boltzmann_constant_J)*(eff_CX_RR)/(thermal_velocity_H.reshape(np.shape(Te_values))))
 							CX_term_1_4 = np.float32(np.ones_like(eff_CX_RR)/(thermal_velocity_H.reshape(np.shape(Te_values))))
 							thermal_velocity_H2 = ( (T_H2_values*boltzmann_constant_J)/ (2*hydrogen_mass))**0.5
-							CX_term_1_5 = np.float32(dr*(all_H2_destruction_RR)/(thermal_velocity_H2.reshape(np.shape(Te_values))))
+							CX_term_1_5 = np.float32(dr*all_H2_destruction_RR/(thermal_velocity_H2.reshape(np.shape(Te_values))))
 							CX_term_1_6 = np.float32(np.ones_like(eff_CX_RR)/(thermal_velocity_H2.reshape(np.shape(Te_values))))
 							CX_term_1_7 = np.float32(3/2* ((T_Hp_values.reshape(np.shape(Te_values))) * boltzmann_constant_J *1e20)*(all_H_creation_RR))
+							CX_term_1_8 =np.float32(dr*all_H2_destruction_RR/(thermal_velocity_H.reshape(np.shape(Te_values))))
+							CX_term_1_9 =np.float32(np.ones_like(all_H2_destruction_RR)/(thermal_velocity_H.reshape(np.shape(Te_values))))
+							# CX_term_1_10 =np.float32(np.ones_like(all_H2_destruction_RR)/(thermal_velocity_H2.reshape(np.shape(Te_values))))
 							del thermal_velocity_H,thermal_velocity_H2
 
 							index_best_fit = calculated_emission_log_probs_expanded.argmax()
@@ -2606,6 +2634,14 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							most_likely_T_H2p_value = np.exp(TH2_fit_from_simulations(np.log(most_likely_Te_value)))/eV_to_K	# K
 							most_likely_T_Hp_value = most_likely_Te_value/eV_to_K	# K
 							most_likely_T_H_value = np.exp(TH_fit_from_simulations(np.log(most_likely_Te_value)))/eV_to_K	# K
+							most_likely_power_rad_excit = power_rad_excit.flatten()[index_most_likely]
+							most_likely_power_rad_rec_bremm = power_rad_rec_bremm.flatten()[index_most_likely]
+							most_likely_power_rad_mol = power_rad_mol.flatten()[index_most_likely]
+							most_likely_power_via_ionisation = power_via_ionisation.flatten()[index_most_likely]
+							most_likely_power_via_recombination = power_via_recombination.flatten()[index_most_likely]
+							most_likely_power_rad_Hm = power_rad_Hm .flatten()[index_most_likely]
+							most_likely_power_rad_H2 = power_rad_H2.flatten()[index_most_likely]
+							most_likely_power_rad_H2p = power_rad_H2p.flatten()[index_most_likely]
 
 							most_likely_total_removable_power_times_volume = total_removable_power_times_volume[most_likely_nH_ne_index,most_likely_nHm_nH2_index,most_likely_nH2_ne_index,most_likely_nH2p_nH2_index,most_likely_ne_index,most_likely_Te_index]/area/length
 							max_total_removable_power_times_volume = total_removable_power_times_volume.max()/area/length
@@ -2661,10 +2697,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							marginalised_likelihood_log_probs = np.log(np.sum(np.exp(likelihood_log_probs)*np.float32(hypervolume_of_each_combination),axis=(2,4,5)))	# H, Hm, H2, H2p, ne, Te
 							marginalised_likelihood_log_probs = marginalised_likelihood_log_probs-np.max(marginalised_likelihood_log_probs)
 							marginalised_likelihood_log_probs = marginalised_likelihood_log_probs-np.log(np.sum(np.exp(marginalised_likelihood_log_probs)))	# normalisation for logarithmic probabilities
-							index_most_likely = marginalised_likelihood_log_probs.argmax()
-							most_likely_marginalised_nH2p_nH2_index = index_most_likely%(H2p_steps)
-							most_likely_marginalised_nHm_nH2_index = (index_most_likely-most_likely_marginalised_nH2p_nH2_index)//(H2p_steps)%(Hm_steps)
-							most_likely_marginalised_nH_ne_index = ((index_most_likely-most_likely_marginalised_nH2p_nH2_index)//(H2p_steps)-most_likely_marginalised_nHm_nH2_index)//(Hm_steps)%(H_steps)
+							index_most_likely_marginalised = marginalised_likelihood_log_probs.argmax()
+							most_likely_marginalised_nH2p_nH2_index = index_most_likely_marginalised%(H2p_steps)
+							most_likely_marginalised_nHm_nH2_index = (index_most_likely_marginalised-most_likely_marginalised_nH2p_nH2_index)//(H2p_steps)%(Hm_steps)
+							most_likely_marginalised_nH_ne_index = ((index_most_likely_marginalised-most_likely_marginalised_nH2p_nH2_index)//(H2p_steps)-most_likely_marginalised_nHm_nH2_index)//(Hm_steps)%(H_steps)
 
 							# now I cannot do this, because I don't have fixed density intervals
 							# most_likely_marginalised_nH2p_ne_value = nH2p_ne_values[most_likely_marginalised_nH2p_ne_index]
@@ -2848,7 +2884,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								power_balance_data_dict['power_rad_Hm'] = dict([('intervals',intervals_power_rad_Hm),('prob',prob_power_rad_Hm),('actual_values',actual_values_power_rad_Hm)])
 								intervals_power_rad_Hm_H2p,prob_power_rad_Hm_H2p,actual_values_power_rad_Hm_H2p = build_log_PDF(power_rad_Hm_H2p,PDF_intervals)
 								power_balance_data_dict['power_rad_Hm_H2p'] = dict([('intervals',intervals_power_rad_Hm_H2p),('prob',prob_power_rad_Hm_H2p),('actual_values',actual_values_power_rad_Hm_H2p)])
-								intervals_power_rad_Hm_Hp,prob_power_rad_Hm_Hp,actual_values_power_rad_Hm_Hp = build_log_PDF(power_rad_Hm_Hp_Hp,PDF_intervals)
+								intervals_power_rad_Hm_Hp,prob_power_rad_Hm_Hp,actual_values_power_rad_Hm_Hp = build_log_PDF(power_rad_Hm_Hp,PDF_intervals)
 								power_balance_data_dict['power_rad_Hm_Hp'] = dict([('intervals',intervals_power_rad_Hm_Hp),('prob',prob_power_rad_Hm_Hp),('actual_values',actual_values_power_rad_Hm_Hp)])
 								intervals_power_rad_H2,prob_power_rad_H2,actual_values_power_rad_H2 = build_log_PDF(power_rad_H2,PDF_intervals)
 								power_balance_data_dict['power_rad_H2'] = dict([('intervals',intervals_power_rad_H2),('prob',prob_power_rad_H2),('actual_values',actual_values_power_rad_H2)])
@@ -2862,6 +2898,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								power_balance_data_dict['power_via_brem'] = dict([('intervals',intervals_power_via_brem),('prob',prob_power_via_brem),('actual_values',actual_values_power_via_brem)])
 								intervals_total_removed_power,prob_total_removed_power,actual_values_total_removed_power = build_log_PDF(total_removed_power,PDF_intervals)
 								power_balance_data_dict['total_removed_power'] = dict([('intervals',intervals_total_removed_power),('prob',prob_total_removed_power),('actual_values',actual_values_total_removed_power)])
+								if not(my_time_pos in sample_time_step):
+									if not(my_r_pos in sample_radious):
+										del power_rad_excit,power_rad_rec_bremm,power_rad_mol,power_via_ionisation,power_via_recombination,power_rad_Hm,power_rad_H2,power_rad_H2p,tot_rad_power,power_via_brem,power_heating_rec,power_rec_neutral,total_removed_power
 								intervals_nH_ne_excited_states,prob_nH_ne_excited_states,actual_values_nH_ne_excited_states = build_log_PDF(nH_ne_excited_states,PDF_intervals)
 								power_balance_data_dict['nH_ne_excited_states'] = dict([('intervals',intervals_nH_ne_excited_states),('prob',prob_nH_ne_excited_states),('actual_values',actual_values_nH_ne_excited_states)])
 								intervals_ne_values,prob_ne_values,actual_values_ne_values = build_log_PDF(all_ne_values,PDF_intervals,treshold_ratio=1.05)
@@ -2930,6 +2969,14 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								# intervals_CX_term_1_7,prob_CX_term_1_7,actual_values_CX_term_1_7 = build_log_PDF(CX_term_1_7,PDF_intervals)
 								power_balance_data_dict['CX_term_1_7'] = build_log_PDF(CX_term_1_7,PDF_intervals,require_dict=True)
 								del CX_term_1_7
+								power_balance_data_dict['CX_term_1_8'] = build_log_PDF(CX_term_1_8,PDF_intervals,require_dict=True)
+								del CX_term_1_8
+								power_balance_data_dict['CX_term_1_9'] = build_log_PDF(CX_term_1_9,PDF_intervals,require_dict=True)
+								del CX_term_1_9
+								# power_balance_data_dict['CX_term_1_10'] = build_log_PDF(CX_term_1_10,PDF_intervals,require_dict=True)
+								# del CX_term_1_10
+								power_balance_data_dict['CX_term_1_11'] = build_log_PDF(CX_term_1_11,PDF_intervals,require_dict=True)
+								del CX_term_1_11
 								# intervals_H_creation_RR,prob_H_creation_RR,actual_values_H_creation_RR = build_log_PDF(np.float64(all_H_creation_RR)*1e20,PDF_intervals)
 								power_balance_data_dict['H_creation_RR'] = build_log_PDF(np.float64(all_H_creation_RR)*1e20,PDF_intervals,require_dict=True)
 								del all_H_creation_RR
@@ -3022,8 +3069,11 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											return diff
 										x_scale = np.abs(np.array([1e-3,sol_line.x[0],1e-3,sol_line.x[1],sol_line.x[2]]))
 										x_scale[x_scale==0]=1e-6
-										sol_parab = least_squares(find_correlation,[0,sol_line.x[0],0,sol_line.x[1],sol_line.x[2]],max_nfev=10000,x_scale=x_scale)
-										R2_sol_parab = 1-find_correlation(sol_parab.x)
+										try:
+											sol_parab = least_squares(find_correlation,[0,sol_line.x[0],0,sol_line.x[1],sol_line.x[2]],max_nfev=10000,x_scale=x_scale)
+											R2_sol_parab = 1-find_correlation(sol_parab.x)
+										except:
+											R2_sol_parab = 0
 
 										nH2p_ne_values_full,nHm_ne_values_full = np.meshgrid(np.arange(H2p_steps),np.arange(Hm_steps))
 										temp = np.exp(marginalised_likelihood_log_probs[most_likely_marginalised_nH_ne_index,:,:])
@@ -3555,12 +3605,25 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										T_H2p_values_full = np.exp(TH2_fit_from_simulations(np.log(Te_values_full.flatten())))/eV_to_K	# K
 										T_Hp_values_full = Te_values_full.flatten()/eV_to_K	# K
 										# power_rad_excit,power_rad_rec_bremm,power_rad_mol,power_via_ionisation,power_via_recombination = calc_power_balance_elements(Te_values_full,ne_values_full,nH_ne_values_full,nHm_ne_values_full,nH2p_ne_values_full,nH2_ne_values_full,T_Hp_values_full,T_Hm_values_full,T_H2p_values_full)
-										most_likely_power_rad_excit,most_likely_power_rad_rec_bremm,most_likely_power_rad_mol,most_likely_power_via_ionisation,most_likely_power_via_recombination,most_likely_power_rad_Hm,most_likely_power_rad_H2,most_likely_power_rad_H2p = calc_power_balance_elements(most_likely_Te_value,most_likely_ne_value,most_likely_nH_ne_value,most_likely_nHm_ne_value,most_likely_nH2p_ne_value,most_likely_nH2_ne_value,most_likely_T_Hp_value,most_likely_T_Hm_value,most_likely_T_H2p_value)
-										most_likely_tot_rad_power = most_likely_power_rad_excit+most_likely_power_rad_rec_bremm+most_likely_power_rad_mol
-										most_likely_power_via_brem =  5.35*1e-37 * ( most_likely_ne_value**2 ) * (1 - most_likely_nH2p_ne_value + most_likely_nHm_ne_value) * (most_likely_Te_value/1000)**0.5
-										most_likely_power_heating_rec = most_likely_power_via_recombination-most_likely_power_rad_rec_bremm + most_likely_power_via_brem
-										most_likely_power_rec_neutral = most_likely_power_rad_rec_bremm + 3/2*most_likely_power_via_recombination/13.6*most_likely_Te_value
-										most_likely_total_removed_power = most_likely_power_via_ionisation + most_likely_power_rad_mol + most_likely_power_rad_excit + most_likely_power_via_recombination + most_likely_power_via_brem + most_likely_power_rec_neutral
+										# most_likely_power_rad_excit,most_likely_power_rad_rec_bremm,most_likely_power_rad_mol,most_likely_power_via_ionisation,most_likely_power_via_recombination,most_likely_power_rad_Hm,most_likely_power_rad_H2,most_likely_power_rad_H2p = calc_power_balance_elements(most_likely_Te_value,most_likely_ne_value,most_likely_nH_ne_value,most_likely_nHm_ne_value,most_likely_nH2p_ne_value,most_likely_nH2_ne_value,most_likely_T_Hp_value,most_likely_T_Hm_value,most_likely_T_H2p_value)
+										most_likely_power_rad_excit = power_rad_excit.flatten()[index_most_likely]
+										most_likely_power_rad_rec_bremm = power_rad_rec_bremm.flatten()[index_most_likely]
+										most_likely_power_rad_mol = power_rad_mol.flatten()[index_most_likely]
+										most_likely_power_via_ionisation = power_via_ionisation.flatten()[index_most_likely]
+										most_likely_power_via_recombination = power_via_recombination.flatten()[index_most_likely]
+										most_likely_power_rad_Hm = power_rad_Hm.flatten()[index_most_likely]
+										most_likely_power_rad_H2 = power_rad_H2.flatten()[index_most_likely]
+										most_likely_power_rad_H2p = power_rad_H2p.flatten()[index_most_likely]
+										most_likely_tot_rad_power = tot_rad_power.flatten()[index_most_likely]
+										most_likely_power_via_brem = power_via_brem.flatten()[index_most_likely]
+										most_likely_power_heating_rec = power_heating_rec.flatten()[index_most_likely]
+										most_likely_power_rec_neutral = power_rec_neutral.flatten()[index_most_likely]
+										most_likely_total_removed_power = total_removed_power.flatten()[index_most_likely]
+										# most_likely_tot_rad_power = most_likely_power_rad_excit+most_likely_power_rad_rec_bremm+most_likely_power_rad_mol
+										# most_likely_power_via_brem =  5.35*1e-37 * ( most_likely_ne_value**2 ) * (1 - most_likely_nH2p_ne_value + most_likely_nHm_ne_value) * (most_likely_Te_value/1000)**0.5
+										# most_likely_power_heating_rec = most_likely_power_via_recombination-most_likely_power_rad_rec_bremm + most_likely_power_via_brem
+										# most_likely_power_rec_neutral = most_likely_power_rad_rec_bremm + 3/2*most_likely_power_via_recombination/13.6*most_likely_Te_value
+										# most_likely_total_removed_power = most_likely_power_via_ionisation + most_likely_power_rad_mol + most_likely_power_rad_excit + most_likely_power_via_recombination + most_likely_power_via_brem + most_likely_power_rec_neutral
 										color = ['b', 'r', 'm', 'y', 'g', 'c', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
 										im = ax[plot_index,0].plot(power_rad_excit[select],100*temp_prob/max_temp_prob,color[0]+'+',label='power_rad_excit');
 										im = ax[plot_index,0].plot(most_likely_power_rad_excit,100,color[0]+'o',markersize=30,fillstyle='none');
@@ -3651,7 +3714,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											ax[plot_index,0].set_ylabel('normalised likelihood')
 											ax[plot_index,0].set_xlabel('particles [#*10^20]')
 											# ax[plot_index,0].set_xscale('log')
-											ax[plot_index,0].legend(loc='best', fontsize='x-small')
+											# ax[plot_index,0].legend(loc='best', fontsize='x-small')
 											ax[plot_index,0].grid()
 
 											im = ax[plot_index,1].plot(all_net_Hp_destruction_full,100*temp_prob/max_temp_prob,color[0]+'+');
@@ -3662,6 +3725,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											ax[plot_index,1].set_title('H+ consumed within time and volume step')
 											ax[plot_index,1].set_ylabel('normalised likelihood')
 											ax[plot_index,1].set_xlabel('particles [#*10^20]')
+											ax[plot_index,1].grid()
 
 											plot_index += 1
 											im = ax[plot_index,0].plot(all_net_Hm_destruction_full,100*temp_prob/max_temp_prob,color[0]+'+');
@@ -3672,6 +3736,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											ax[plot_index,0].set_title('H- consumed within time and volume step')
 											ax[plot_index,0].set_ylabel('normalised likelihood')
 											ax[plot_index,0].set_xlabel('particles [#*10^20]')
+											ax[plot_index,0].grid()
 
 											im = ax[plot_index,1].plot(all_net_H2p_destruction_full,100*temp_prob/max_temp_prob,color[0]+'+');
 											im = ax[plot_index,1].plot(most_likely_net_H2p_destruction,100,color[0]+'o',markersize=30,fillstyle='none');
@@ -3681,6 +3746,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											ax[plot_index,1].set_title('H2+ consumed within time and volume step')
 											ax[plot_index,1].set_ylabel('normalised likelihood')
 											ax[plot_index,1].set_xlabel('particles [#*10^20]')
+											ax[plot_index,1].grid()
 
 										save_done = 0
 										save_index=1
@@ -4406,6 +4472,110 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 
 					if ( (not os.path.exists(path_where_to_save_everything + mod4 +'/results2.npz') ) or recorded_data_override[1] ):
 
+
+						all_indexes = []
+						global_index = 0
+						to_print=collect_power_PDF
+						for my_time_pos in range(len(time_crop)):
+							for my_r_pos in range(len(r_crop)):
+								if (merge_Te_prof_multipulse_interp_crop[my_time_pos,my_r_pos]> 0 and merge_ne_prof_multipulse_interp_crop[my_time_pos,my_r_pos]> 0):
+									if nHm_ne_all[my_time_pos,my_r_pos]==0:
+										all_indexes.append([global_index,my_time_pos,my_r_pos,2,guess,ionization_length_H[my_time_pos, my_r_pos],ionization_length_H2[my_time_pos, my_r_pos],to_print])
+								global_index+=1
+
+						# if __name__ == '__main__':
+						try:
+							# with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+								# pool = Pool(number_cpu_available)
+							all_results = []
+							for fraction in range(int(np.ceil(len(all_indexes)/(number_cpu_available*4)))):
+								with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+									print('starting set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1)))
+									temp = pool.map(calc_stuff_2, all_indexes[fraction*(number_cpu_available*4):(fraction+1)*(number_cpu_available*4)])
+									pool.close()
+									pool.join()
+									pool.terminate()
+									del pool
+									all_results.extend(temp)
+									print('set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1))+' done')
+								#all_results = [*pool.map(calc_stuff, all_indexes)]
+						except Exception as e:
+							print('parent multiprocessor terminated with error '+str(e))
+							pool.close()
+						# pool.close()
+							pool.join()
+							pool.terminate()
+							del pool
+
+						for i in range(len(all_results)):
+							if (all_results[i].results)[17]==False:
+								nH_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[0]
+								nHp_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[1]
+								nHm_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[2]
+								nH2_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[3]
+								nH2p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[4]
+								nH3p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[5]
+								residuals_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[6]
+								Te_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[7]
+								ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[8]
+								sigma_Te_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[9]
+								sigma_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[10]
+								sigma_nH_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[11]
+								sigma_nHp_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[12]
+								sigma_nHm_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[13]
+								sigma_nH2_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[14]
+								sigma_nH2p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[15]
+								sigma_nH3p_ne_all[int(all_results[i].my_time_pos), int(all_results[i].my_r_pos)] = (all_results[i].results)[16]
+								# power_balance_data[int(all_results[i].my_time_pos)*np.shape(nH_ne_all)[1] + int(all_results[i].my_r_pos)] = (all_results[i].results)[18]
+								power_balance_data_dict[int(all_results[i].my_time_pos)*np.shape(nH_ne_all)[1] + int(all_results[i].my_r_pos)] = (all_results[i].results)[18]
+
+						np.savez_compressed(path_where_to_save_everything + mod4 +'/results2',nH_ne_all=nH_ne_all,nHp_ne_all=nHp_ne_all,nHm_ne_all=nHm_ne_all,nH2_ne_all=nH2_ne_all,nH2p_ne_all=nH2p_ne_all,nH3p_ne_all=nH3p_ne_all,residuals_all=residuals_all,Te_all=Te_all,ne_all=ne_all,sigma_Te_all=sigma_Te_all,sigma_ne_all=sigma_ne_all,sigma_nH_ne_all=sigma_nH_ne_all,sigma_nHp_ne_all=sigma_nHp_ne_all,sigma_nHm_ne_all=sigma_nHm_ne_all,sigma_nH2_ne_all=sigma_nH2_ne_all,sigma_nH2p_ne_all=sigma_nH2p_ne_all,sigma_nH3p_ne_all=sigma_nH3p_ne_all)
+						if collect_power_PDF:
+							with open(path_where_to_save_everything + mod4 +'/power_balance2.data', 'wb') as filehandle:
+							    pickle.dump(power_balance_data_dict, filehandle)
+						else:
+							with open(path_where_to_save_everything + mod4 +'/power_balance2_no_PDF.data', 'wb') as filehandle:
+							    pickle.dump(power_balance_data_dict, filehandle)
+
+					else:
+						nH_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['nH_ne_all']
+						nHp_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['nHp_ne_all']
+						nHm_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['nHm_ne_all']
+						nH2_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['nH2_ne_all']
+						nH2p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['nH2p_ne_all']
+						nH3p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['nH3p_ne_all']
+						residuals_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['residuals_all']
+						try:
+							Te_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['Te_all']
+							ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['ne_all']
+						except:
+							print('Bayesian Te, ne not present')
+							Te_all = cp.deepcopy(merge_Te_prof_multipulse_interp_crop_limited)
+							ne_all = cp.deepcopy(merge_ne_prof_multipulse_interp_crop_limited)
+						try:
+							sigma_Te_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['sigma_Te_all']
+							sigma_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['sigma_ne_all']
+							sigma_nH_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['sigma_nH_ne_all']
+							sigma_nHp_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['sigma_nHp_ne_all']
+							sigma_nHm_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['sigma_nHm_ne_all']
+							sigma_nH2_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['sigma_nH2_ne_all']
+							sigma_nH2p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['sigma_nH2p_ne_all']
+							sigma_nH3p_ne_all = np.load(path_where_to_save_everything + mod4 +'/results2.npz')['sigma_nH3p_ne_all']
+						except:
+							print('sigma not present')
+						try:
+							with open(path_where_to_save_everything + mod4 +'/power_balance2.data', 'rb') as filehandle:
+							    power_balance_data_dict = pickle.load(filehandle)
+						except:
+							print('power_balance_data_dict not present')
+
+					# this will be done later, no need to do it here
+					# global_pass = 3
+					# exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/post_process_PSI_parameter_search_1_Yacora_plots_temp.py").read())
+
+
+					# cycle always done, just have the chance to run points that failed before, maybe because of memory errors.
+					if completion_loop_done:
 
 						all_indexes = []
 						global_index = 0

@@ -3249,15 +3249,17 @@ if False:# up to 06/10/2020. Ray gave me new and better data and I adapted this 
 	TH2_fit_from_simulations = interpolate.interp1d(np.log([1e-5,0.1,2,4]),np.log([0.99e-5,0.099,0.3,0.3]),fill_value='extrapolate')
 elif True:
 	temp = np.arange(1e-2,30,0.05)
-	fit = [-0.38781087, -1.48232135,  0.23416186]
+	# fit = [-0.38781087, -1.48232135,  0.23416186]
+	fit = [-1.3934874, 0.02018249]	# I use this because a linear log/log relationship is representative of dilution via temperature increase, that is ultimately what happens.
 	temp2 = np.exp(np.polyval(fit,np.log(temp)))
-	temp_max = np.exp(-fit[1]/(2*fit[0]))
-	temp2[temp<temp_max]=temp2.max()
+	# temp_max = np.exp(-fit[1]/(2*fit[0]))	# this is to avoid the density to decrease with decrease temperature passed the peak
+	# temp2[temp<temp_max]=temp2.max()
 	nH2_ne_fit_from_simulations = interpolate.interp1d(temp,temp2,fill_value='extrapolate')
-	nH_ne_fit_from_simulations = lambda Te: np.nanmax([np.exp(np.polyval([-0.15109974,-0.98294073,-2.03131663],np.log(Te))),np.exp(limit_H_down(np.log(Te)))*5],axis=0)
 	limit_H_up = interpolate.interp1d(np.log([0.1,4]),np.log([20,20]),fill_value='extrapolate')
 	limit_H_down = interpolate.interp1d(np.log([1e-5,0.1,0.5,2,4]),np.log([0.2,0.2,0.006,0.003,0.003]),fill_value='extrapolate')
+	nH_ne_fit_from_simulations = lambda Te: np.nanmax([np.exp(np.polyval([-0.15109974,-0.98294073,-2.03131663],np.log(Te))),np.exp(limit_H_down(np.log(Te)))*5],axis=0)
 TH_fit_from_simulations = interpolate.interp1d(np.log([1e-5,0.1,3]),np.log([0.99e-5,0.099,1.4]),fill_value='extrapolate')
+TH_low_fit_from_simulations = interpolate.interp1d(np.log([1e-5,0.1,3]),np.log([0.99e-5,0.099,0.5]),fill_value='extrapolate')
 TH2_fit_from_simulations = interpolate.interp1d(np.log([1e-5,0.1,2,4]),np.log([0.99e-5,0.099,0.3,0.3]),fill_value='extrapolate')
 
 
@@ -3367,7 +3369,7 @@ def nHm_nH2_values_Te_2(Te,to_find_steps):
 		nHm_nH2_values = np.array(temp).T
 	return nHm_nH2_values
 
-if False:	# this seems very bad, in the sense that for low Te the concentration actially decrease
+if False:	# this seems very bad, in the sense that for low Te the concentration actually decrease
 	# nH2_ne_fit_from_simulations = lambda Te: np.exp(np.polyval([0.22332556,-1.33762069,-1.11738361],np.log(Te)))
 	nH2_ne_fit_from_simulations = lambda Te: np.exp(np.polyval([-0.38781087,-1.48232135,0.23416186],np.log(Te)))
 

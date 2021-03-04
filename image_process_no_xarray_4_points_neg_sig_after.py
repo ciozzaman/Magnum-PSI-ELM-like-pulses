@@ -21,8 +21,8 @@ from scipy import interpolate
 from scipy.signal import find_peaks
 from multiprocessing import Pool,cpu_count
 # number_cpu_available = 14	#cpu_count()
+number_cpu_available = 8
 print('Number of cores available: '+str(number_cpu_available))
-# number_cpu_available = 10
 # print("Number of cores available doesn't work, so I take 10: "+str(number_cpu_available))
 import shutil
 mkl.set_num_threads(number_cpu_available)

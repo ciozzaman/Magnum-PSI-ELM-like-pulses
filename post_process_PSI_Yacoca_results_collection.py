@@ -70,7 +70,22 @@ max_CX_energy = []
 average_static_pressure = []
 average_Te = []
 average_ne = []
+power_rad_Hm = []
+power_rad_Hm_H2p = []
+power_rad_Hm_Hp = []
+power_rad_H2 = []
+power_rad_H2p = []
+power_rad_Hm_sigma = []
+power_rad_Hm_H2p_sigma = []
+power_rad_Hm_Hp_sigma = []
+power_rad_H2_sigma = []
+power_rad_H2p_sigma = []
+power_via_ionisation = []
+power_via_ionisation_sigma = []
+power_via_recombination = []
+power_via_recombination_sigma = []
 pulse_t0_semi_inf2 = []
+pulse_t0_semi_inf2_sigma = []
 
 j_specific_target_chamber_pressure = []
 j_specific_target_OES_distance = []
@@ -80,13 +95,18 @@ j_specific_delivered_pulse_energy = []
 j_specific_magnetic_field = []
 j_specific_T_pre_pulse = []
 j_specific_DT_pulse = []
+j_specific_DT_pulse_sigma = []
 j_specific_DT_pulse_late = []
+j_specific_DT_pulse_late_sigma = []
 j_specific_DT_pulse_time_scaled = []
+j_specific_DT_pulse_time_scaled_sigma = []
 j_specific_pulse_en_semi_inf = []
 j_specific_pulse_en_semi_inf_sigma = []
 j_specific_pulse_en_SS = []
 j_specific_pulse_t0_semi_inf = []
+j_specific_pulse_t0_semi_inf_sigma = []
 j_specific_area_of_interest_IR = []
+j_specific_area_of_interest_IR_sigma = []
 j_specific_merge_ID_target = []
 
 j_twoD_peak_evolution_time_averaged = []
@@ -101,6 +121,8 @@ radial_average_brightness_bayesian_long = []
 for merge_ID_target in merge_ID_target_multipulse:
 	print('Looking at '+str(merge_ID_target))
 	target_chamber_pressure_2.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
+	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
+	full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2_H2p_mol_lim/bayesian_results3'+'.npz')
 	if merge_ID_target != 88:
 		target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
 		target_OES_distance.append(np.float(results_summary.loc[merge_ID_target,['T_axial']]))
@@ -112,29 +134,44 @@ for merge_ID_target in merge_ID_target_multipulse:
 
 		net_power_removed_plasma_column.append(np.float(results_summary.loc[merge_ID_target,['net_power_removed_plasma_column']]))
 		net_power_removed_plasma_column_sigma.append(np.float(results_summary.loc[merge_ID_target,['net_power_removed_plasma_column_sigma']]))
-		tot_rad_power.append(np.float(results_summary.loc[merge_ID_target,['tot_rad_power']]))
+		tot_rad_power.append(full_saved_file_dict['tot_rad_power'].all()['radial_time_sum']['most_likely'])
 		tot_rad_power_sigma.append(np.float(results_summary.loc[merge_ID_target,['tot_rad_power_sigma']]))
-		power_rec_neutral.append(np.float(results_summary.loc[merge_ID_target,['power_rec_neutral']]))
+		power_via_ionisation.append(full_saved_file_dict['power_via_ionisation'].all()['radial_time_sum']['most_likely'])
+		power_via_ionisation_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_via_ionisation_sigma']]))
+		power_via_recombination.append(full_saved_file_dict['power_via_recombination'].all()['radial_time_sum']['most_likely'])
+		power_via_recombination_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_via_recombination_sigma']]))
+		power_rec_neutral.append(full_saved_file_dict['power_rec_neutral'].all()['radial_time_sum']['most_likely'])
 		power_rec_neutral_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rec_neutral_sigma']]))
-		power_rad_mol.append(np.float(results_summary.loc[merge_ID_target,['power_rad_mol']]))
+		power_rad_mol.append(full_saved_file_dict['power_rad_mol'].all()['radial_time_sum']['most_likely'])
 		power_rad_mol_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_mol_sigma']]))
-		power_rad_excit.append(np.float(results_summary.loc[merge_ID_target,['power_rad_excit']]))
+		power_rad_excit.append(full_saved_file_dict['power_rad_excit'].all()['radial_time_sum']['most_likely'])
 		power_rad_excit_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_excit_sigma']]))
-		power_rad_rec_bremm.append(np.float(results_summary.loc[merge_ID_target,['power_rad_rec_bremm']]))
+		power_rad_rec_bremm.append(full_saved_file_dict['power_rad_rec_bremm'].all()['radial_time_sum']['most_likely'])
 		power_rad_rec_bremm_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_rec_bremm_sigma']]))
 		max_CX_energy.append(np.float(results_summary.loc[merge_ID_target,['max_CX_energy']]))
 		average_static_pressure.append(np.float(results_summary.loc[merge_ID_target,['average_static_pressure']]))
 		average_Te.append(np.float(results_summary.loc[merge_ID_target,['average_Te']]))
 		average_ne.append(np.float(results_summary.loc[merge_ID_target,['average_ne']]))
+		power_rad_Hm.append(full_saved_file_dict['power_rad_Hm'].all()['radial_time_sum']['most_likely'])
+		power_rad_Hm_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_Hm_sigma']]))
+		# power_rad_Hm_sigma.append(full_saved_file_dict['power_rad_Hm'].all()['radial_time_sum']['most_likely_sigma'])
+		# power_rad_Hm_H2p.append(full_saved_file_dict['power_rad_Hm_H2p'].all()['radial_time_sum']['most_likely'])
+		# power_rad_Hm_H2p_sigma.append(full_saved_file_dict['power_rad_Hm_H2p'].all()['radial_time_sum']['most_likely_sigma'])
+		# power_rad_Hm_Hp.append(full_saved_file_dict['power_rad_Hm_Hp'].all()['radial_time_sum']['most_likely'])
+		# power_rad_Hm_Hp_sigma.append(full_saved_file_dict['power_rad_Hm_Hp'].all()['radial_time_sum']['most_likely_sigma'])
+		power_rad_H2.append(full_saved_file_dict['power_rad_H2'].all()['radial_time_sum']['most_likely'])
+		power_rad_H2_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_H2_sigma']]))
+		# power_rad_H2_sigma.append(full_saved_file_dict['power_rad_H2'].all()['radial_time_sum']['most_likely_sigma'])
+		power_rad_H2p.append(full_saved_file_dict['power_rad_H2p'].all()['radial_time_sum']['most_likely'])
+		power_rad_H2p_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_H2p_sigma']]))
+		# power_rad_H2p_sigma.append(full_saved_file_dict['power_rad_H2p'].all()['radial_time_sum']['most_likely_sigma'])
+		radial_average_brightness_bayesian.append(full_saved_file_dict['total_removed_power_visible'].all()['average_brightness']['most_likely'])
+		radial_average_brightness_bayesian_long.append(full_saved_file_dict['total_removed_power_visible'].all()['long_average_brightness']['most_likely'])
 
 	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 	full_saved_file_dict = np.load(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'.npz')
 	radial_average_brightness_OES_location_1ms_int_time.append(full_saved_file_dict['radial_average_brightness_OES_location_1ms_int_time'])
 	radial_average_brightness_1ms_int_time.append(full_saved_file_dict['radial_average_brightness_1ms_int_time'])
-
-	full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2_H2p_mol_lim/bayesian_results3'+'.npz')
-	radial_average_brightness_bayesian.append(full_saved_file_dict['total_removed_power_visible'].all()['average_brightness']['most_likely'])
-	radial_average_brightness_bayesian_long.append(full_saved_file_dict['total_removed_power_visible'].all()['long_average_brightness']['most_likely'])
 
 	temp1=[]
 	temp2=[]
@@ -147,42 +184,66 @@ for merge_ID_target in merge_ID_target_multipulse:
 	temp9=[]
 	all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
 	for j in all_j:
-		j_specific_merge_ID_target.append(merge_ID_target)
-		j_specific_target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
-		j_specific_target_OES_distance.append(np.float(results_summary.loc[merge_ID_target,['T_axial']]))
-		j_specific_feed_rate_SLM.append(np.float(results_summary.loc[merge_ID_target,['Seed']]))
-		j_specific_CB_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['CB energy [J]']]))
-		j_specific_delivered_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['Delivered energy [J]']]))
-		j_specific_magnetic_field.append(np.float(results_summary.loc[merge_ID_target,['B']]))
-
-		j_specific_T_pre_pulse.append(df_log.loc[j,['T_pre_pulse']])
-		temp1.append(df_log.loc[j,['T_pre_pulse']])
-		j_specific_DT_pulse.append(df_log.loc[j,['DT_pulse']])
-		temp2.append(df_log.loc[j,['DT_pulse']])
-		j_specific_DT_pulse_late.append(df_log.loc[j,['DT_pulse_late']])
-		temp8.append(df_log.loc[j,['DT_pulse_late']])
-		j_specific_pulse_en_semi_inf.append(df_log.loc[j,['pulse_en_semi_inf [J]']])
-		temp3.append(df_log.loc[j,['pulse_en_semi_inf [J]']])
-		j_specific_pulse_en_semi_inf_sigma.append(df_log.loc[j,['pulse_en_semi_inf_sigma [J]']])
-		temp5.append(df_log.loc[j,['pulse_en_semi_inf_sigma [J]']])
-		j_specific_area_of_interest_IR.append(df_log.loc[j,['area_of_interest [m2]']])
-		temp4.append(df_log.loc[j,['area_of_interest [m2]']])
-		j_specific_pulse_t0_semi_inf.append(df_log.loc[j,['pulse_t0_semi_inf [ms]']])
-		temp6.append(df_log.loc[j,['pulse_t0_semi_inf [ms]']])
-		j_specific_DT_pulse_time_scaled.append(df_log.loc[j,['DT_pulse_time_scaled']])
-		temp7.append(df_log.loc[j,['DT_pulse_time_scaled']])
-		j_specific_pulse_en_SS.append(df_log.loc[j,['SS_Energy [J]']])
-		temp9.append(df_log.loc[j,['SS_Energy [J]']])
-
 		IR_trace, = df_log.loc[j,['IR_trace']]
-		if np.logical_not(isinstance(IR_trace,str)):
-			j_twoD_peak_evolution_time_averaged.append(np.ones_like(j_twoD_peak_evolution_time_averaged[-1])*np.nan)
-			# j_twoD_peak_evolution_temp_averaged_delta.append(np.ones_like(j_twoD_peak_evolution_temp_averaged_delta[-1])*np.nan)
-			# j_twoD_peak_evolution_temp_averaged.append(np.ones_like(j_twoD_peak_evolution_temp_averaged[-1])*np.nan)
-			j_collect_shape_information.append(np.ones_like(j_collect_shape_information[-1])*np.nan)
-		else:
+		if isinstance(IR_trace,str):
+			j_specific_merge_ID_target.append(merge_ID_target)
+			j_specific_target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
+			j_specific_target_OES_distance.append(np.float(results_summary.loc[merge_ID_target,['T_axial']]))
+			j_specific_feed_rate_SLM.append(np.float(results_summary.loc[merge_ID_target,['Seed']]))
+			j_specific_CB_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['CB energy [J]']]))
+			j_specific_delivered_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['Delivered energy [J]']]))
+			j_specific_magnetic_field.append(np.float(results_summary.loc[merge_ID_target,['B']]))
+
 			path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 			full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
+			# j_specific_T_pre_pulse.append(df_log.loc[j,['T_pre_pulse']])
+			# temp1.append(df_log.loc[j,['T_pre_pulse']])
+			# j_specific_DT_pulse.append(df_log.loc[j,['DT_pulse']])
+			# temp2.append(df_log.loc[j,['DT_pulse']])
+			# j_specific_DT_pulse_late.append(df_log.loc[j,['DT_pulse_late']])
+			# temp8.append(df_log.loc[j,['DT_pulse_late']])
+			# j_specific_pulse_en_semi_inf.append(df_log.loc[j,['pulse_en_semi_inf [J]']])
+			# temp3.append(df_log.loc[j,['pulse_en_semi_inf [J]']])
+			# temp5.append(df_log.loc[j,['pulse_en_semi_inf_sigma [J]']])
+			# j_specific_area_of_interest_IR.append(df_log.loc[j,['area_of_interest [m2]']])
+			# j_specific_area_of_interest_IR.append(df_log.loc[j,['area_of_interest [m2]']])
+			# temp4.append(df_log.loc[j,['area_of_interest [m2]']])
+			# j_specific_pulse_t0_semi_inf.append(df_log.loc[j,['pulse_t0_semi_inf [ms]']])
+			# temp6.append(df_log.loc[j,['pulse_t0_semi_inf [ms]']][0])
+			# j_specific_DT_pulse_time_scaled.append(df_log.loc[j,['DT_pulse_time_scaled']])
+			# temp7.append(df_log.loc[j,['DT_pulse_time_scaled']])
+			# j_specific_pulse_en_SS.append(df_log.loc[j,['SS_Energy [J]']])
+			# temp9.append(df_log.loc[j,['SS_Energy [J]']])
+			j_specific_T_pre_pulse.append(full_saved_file_dict['T_pre_pulse'])
+			temp1.append(full_saved_file_dict['T_pre_pulse'])
+			j_specific_DT_pulse.append(full_saved_file_dict['average_pulse_fitted_data']['temperature']['peak_plus_2_3'])
+			j_specific_DT_pulse_sigma.append(full_saved_file_dict['average_pulse_fitted_data']['temperature']['peak_plus_2_3_sigma'])
+			temp2.append(full_saved_file_dict['average_pulse_fitted_data']['temperature']['peak_plus_2_3'])
+			j_specific_DT_pulse_late.append(full_saved_file_dict['average_pulse_fitted_data']['temperature']['peak_plus_10_11'])
+			j_specific_DT_pulse_late_sigma.append(full_saved_file_dict['average_pulse_fitted_data']['temperature']['peak_plus_10_11_sigma'])
+			temp8.append(full_saved_file_dict['average_pulse_fitted_data']['temperature']['peak_plus_10_11'])
+			j_specific_pulse_en_semi_inf.append(full_saved_file_dict['average_pulse_fitted_data']['energy_fit']['pulse_energy'])
+			temp3.append(full_saved_file_dict['average_pulse_fitted_data']['energy_fit']['pulse_energy'])
+			j_specific_pulse_en_semi_inf_sigma.append(full_saved_file_dict['average_pulse_fitted_data']['energy_fit']['pulse_energy_sigma'])
+			temp5.append(full_saved_file_dict['average_pulse_fitted_data']['energy_fit']['pulse_energy_sigma'])
+			j_specific_area_of_interest_IR.append(full_saved_file_dict['average_pulse_fitted_data']['area_of_interest'])
+			j_specific_area_of_interest_IR_sigma.append(full_saved_file_dict['average_pulse_fitted_data']['area_of_interest_sigma'])
+			temp4.append(full_saved_file_dict['average_pulse_fitted_data']['area_of_interest'])
+			j_specific_pulse_t0_semi_inf.append(full_saved_file_dict['average_pulse_fitted_data']['energy_fit']['pulse_t0_semi_inf'])
+			j_specific_pulse_t0_semi_inf_sigma.append(full_saved_file_dict['average_pulse_fitted_data']['energy_fit']['pulse_t0_semi_inf_sigma'])
+			temp6.append(full_saved_file_dict['average_pulse_fitted_data']['energy_fit']['pulse_t0_semi_inf'])
+			j_specific_DT_pulse_time_scaled.append(full_saved_file_dict['average_pulse_peak_data']['energy_fit']['DT_pulse_time_scaled'])
+			j_specific_DT_pulse_time_scaled_sigma.append(full_saved_file_dict['average_pulse_peak_data']['energy_fit']['DT_pulse_time_scaled_sigma'])
+			temp7.append(full_saved_file_dict['average_pulse_peak_data']['energy_fit']['DT_pulse_time_scaled'])
+			j_specific_pulse_en_SS.append(full_saved_file_dict['average_pulse_fitted_data']['SS_Energy'])
+			temp9.append(full_saved_file_dict['average_pulse_fitted_data']['SS_Energy'])
+
+		# if np.logical_not(isinstance(IR_trace,str)):
+		# 	j_twoD_peak_evolution_time_averaged.append(np.ones_like(j_twoD_peak_evolution_time_averaged[-1])*np.nan)
+		# 	# j_twoD_peak_evolution_temp_averaged_delta.append(np.ones_like(j_twoD_peak_evolution_temp_averaged_delta[-1])*np.nan)
+		# 	# j_twoD_peak_evolution_temp_averaged.append(np.ones_like(j_twoD_peak_evolution_temp_averaged[-1])*np.nan)
+		# 	j_collect_shape_information.append(np.ones_like(j_collect_shape_information[-1])*np.nan)
+		# else:
 			j_twoD_peak_evolution_time_averaged.append(full_saved_file_dict['twoD_peak_evolution_time_averaged'])
 			# j_twoD_peak_evolution_temp_averaged_delta.append(full_saved_file_dict['twoD_peak_evolution_temp_averaged_delta'])
 			# j_twoD_peak_evolution_temp_averaged.append(full_saved_file_dict['twoD_peak_evolution_temp_averaged'])
@@ -326,14 +387,13 @@ ax1.grid()
 # ax2.grid()
 plt.pause(0.01)
 
-
 plt.figure(figsize=(10, 5))
 plt.plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{upstream}$')
 plt.errorbar(target_chamber_pressure,net_power_removed_plasma_column,yerr=np.array(net_power_removed_plasma_column_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{removed \: from \: plasma}$')
 plt.errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),capsize=5,color=color[2],label=r'$E_{radiated}$')
 plt.errorbar(target_chamber_pressure,power_rec_neutral,yerr=np.array(power_rec_neutral_sigma),capsize=5,color=color[3],label=r'$E_{neutral \: from \: recombination}$')
 # plt.errorbar(target_chamber_pressure,power_rad_mol,yerr=np.array(power_rad_mol_sigma),linestyle='--',capsize=5,color=color[4],label=r'$E_{radiated \: molecules}$')
-# plt.errorbar(target_chamber_pressure,power_rad_excit,yerr=np.array(power_rad_excit_sigma),linestyle='--',capsize=5,color=color[5],label=r'$E_{direct \: excitation}$')
+# plt.errorbar(target_chamber_pressure,power_rad_excit,yerr=np.array(power_rad_excit_sigma),linestyle='--',capsize=5,color=color[5],label=r'$E_{excitation}$')
 # plt.errorbar(target_chamber_pressure,power_rad_rec_bremm,yerr=np.array(power_rad_rec_bremm_sigma),linestyle='--',capsize=5,color=color[6],label=r'$E_{radiated \: recombination + bremsstrahlung}$')
 # plt.plot(target_chamber_pressure,max_CX_energy,linewidth=3,color=color[7],label=r'$E_{CX \: max}$')
 # plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6,linewidth=3,color=color[8],label=r'$E_{target}$')
@@ -351,6 +411,131 @@ plt.xlabel('Target chamber pressure [Pa]')
 plt.ylabel('Energy [J]')
 if merge_ID_target==85:
 	plt.xlim(right=target_chamber_pressure[-2])
+plt.pause(0.001)
+
+plt.figure(figsize=(10, 8))
+plt.plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{upstream}$')
+plt.plot(target_chamber_pressure,max_CX_energy,linewidth=3,color=color[7],label=r'$E_{CX \: max}$')
+plt.errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf)+np.array(pulse_en_SS),yerr=np.array(pulse_en_semi_inf_sigma),linewidth=3,color=color[8],label=r'$E_{target}$')
+plt.errorbar(target_chamber_pressure,net_power_removed_plasma_column,yerr=np.array(net_power_removed_plasma_column_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{removed \: from \: plasma}$')
+plt.errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),capsize=5,color=color[2],label=r'$E_{radiated}$')
+plt.errorbar(target_chamber_pressure,power_rec_neutral,yerr=np.array(power_rec_neutral_sigma),capsize=5,color=color[3],label=r'$E_{neutral \: from \: recombination}$')
+plt.errorbar(target_chamber_pressure,power_rad_mol,yerr=np.array(power_rad_mol_sigma),linestyle='--',capsize=5,color=color[4],label=r'$E_{radiated \: molecules}$')
+plt.errorbar(target_chamber_pressure,power_rad_Hm,yerr=np.array(power_rad_Hm_sigma),linestyle='-.',capsize=5,color=color[9],label=r'$E_{radiated \: H^- + e \: H^- + H^+}$')
+plt.errorbar(target_chamber_pressure,power_rad_H2p,yerr=np.array(power_rad_H2p_sigma),linestyle='-.',capsize=5,color=color[10],label=r'$E_{radiated \: {H_2}^+ + e}$')
+plt.errorbar(target_chamber_pressure,power_rad_H2,yerr=np.array(power_rad_H2_sigma),linestyle='-.',capsize=5,color=color[11],label=r'$E_{radiated \: H_2 + e}$')
+# plt.errorbar(target_chamber_pressure,power_rad_Hm_H2p,yerr=np.array(power_rad_Hm_H2p_sigma),linestyle='-.',capsize=5,color=color[12],label=r'$E_{radiated \: from \: H^- + {H_2}^+}$')
+# plt.errorbar(target_chamber_pressure,power_rad_Hm_Hp,yerr=np.array(power_rad_Hm_Hp_sigma),linestyle='-.',capsize=5,color=color[13],label=r'$E_{radiated \: from \: $H^- + H^+}$')
+plt.errorbar(target_chamber_pressure,power_rad_excit,yerr=np.array(power_rad_excit_sigma),linestyle='--',capsize=5,color=color[5],label=r'$E_{excitation}$')
+plt.errorbar(target_chamber_pressure,power_rad_rec_bremm,yerr=np.array(power_rad_rec_bremm_sigma),linestyle='--',capsize=5,color=color[6],label=r'$E_{recomb. \: radiated \: + \: brems.}$')
+# plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6,linewidth=3,color=color[8],label=r'$E_{target}$')
+# plt.errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf),yerr=np.array(pulse_en_semi_inf_sigma),color=color[8])
+# plt.errorbar(j_specific_target_chamber_pressure,j_specific_pulse_en_semi_inf,yerr=j_specific_pulse_en_semi_inf_sigma,color=color[8],fmt='+')
+# plt.plot(target_chamber_pressure,np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linestyle='--',color=color[9],label=r'$E_{rem}+E_{CX \: max}$')
+# plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6 + np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linewidth=3,color=color[9],label=r'$6 \cdot E_{target} +$'+'\n'+r'$ E_{rem}+E_{CX \: max}$')
+# plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf) + np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linewidth=3,color=color[9],label=r'$E_{target} +$'+'\n'+r'$ E_{rem}+E_{CX \: max}$')
+# plt.legend(loc=2, fontsize='x-small',ncol=2,handleheight=2, labelspacing=0.00005)
+plt.errorbar(target_chamber_pressure,power_via_ionisation,yerr=np.array(power_via_ionisation_sigma),capsize=5,color=color[14],label=r'$E_{ionisation \: (only \: potential)}$')
+plt.errorbar(target_chamber_pressure,power_via_recombination,yerr=np.array(power_via_recombination_sigma),capsize=5,color=color[3],label=r'$E_{recombination \: (only \: potential)}$')
+plt.legend(loc=2, fontsize='x-small')
+plt.grid()
+plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ\n ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
+plt.xlabel('Target chamber pressure [Pa]')
+plt.ylabel('Energy [J]')
+# plt.semilogy()
+# plt.ylim(bottom=np.max(delivered_pulse_energy)/100)
+# if merge_ID_target==85:
+# 	plt.xlim(right=target_chamber_pressure[-2])
+plt.pause(0.001)
+
+plt.figure(figsize=(10, 8))
+plt.plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{upstream}$')
+plt.plot(target_chamber_pressure,max_CX_energy,linewidth=3,color=color[7],label=r'$E_{CX \: max}$')
+plt.errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf)+np.array(pulse_en_SS),yerr=np.array(pulse_en_semi_inf_sigma),linewidth=3,color=color[8],label=r'$E_{target}$')
+plt.errorbar(target_chamber_pressure,net_power_removed_plasma_column,yerr=np.array(net_power_removed_plasma_column_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{removed \: from \: plasma}$')
+plt.errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),capsize=5,color=color[2],label=r'$E_{radiated}$')
+plt.errorbar(target_chamber_pressure,power_rec_neutral,yerr=np.array(power_rec_neutral_sigma),capsize=5,color=color[3],label=r'$E_{neutral \: from \: recombination}$')
+# plt.errorbar(target_chamber_pressure,power_rad_mol,yerr=np.array(power_rad_mol_sigma),linestyle='--',capsize=5,color=color[4],label=r'$E_{radiated \: molecules}$')
+# plt.errorbar(target_chamber_pressure,power_rad_Hm,yerr=np.array(power_rad_Hm_sigma),linestyle='-.',capsize=5,color=color[9],label=r'$E_{radiated \: H^- + e \: H^- + H^+}$')
+# plt.errorbar(target_chamber_pressure,power_rad_H2p,yerr=np.array(power_rad_H2p_sigma),linestyle='-.',capsize=5,color=color[10],label=r'$E_{radiated \: {H_2}^+ + e}$')
+# plt.errorbar(target_chamber_pressure,power_rad_H2,yerr=np.array(power_rad_H2_sigma),linestyle='-.',capsize=5,color=color[11],label=r'$E_{radiated \: H_2 + e}$')
+# # plt.errorbar(target_chamber_pressure,power_rad_Hm_H2p,yerr=np.array(power_rad_Hm_H2p_sigma),linestyle='-.',capsize=5,color=color[12],label=r'$E_{radiated \: from \: H^- + {H_2}^+}$')
+# # plt.errorbar(target_chamber_pressure,power_rad_Hm_Hp,yerr=np.array(power_rad_Hm_Hp_sigma),linestyle='-.',capsize=5,color=color[13],label=r'$E_{radiated \: from \: $H^- + H^+}$')
+# plt.errorbar(target_chamber_pressure,power_rad_excit,yerr=np.array(power_rad_excit_sigma),linestyle='--',capsize=5,color=color[5],label=r'$E_{excitation}$')
+# plt.errorbar(target_chamber_pressure,power_rad_rec_bremm,yerr=np.array(power_rad_rec_bremm_sigma),linestyle='--',capsize=5,color=color[6],label=r'$E_{recomb. \: radiated \: + \: brems.}$')
+# plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6,linewidth=3,color=color[8],label=r'$E_{target}$')
+# plt.errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf),yerr=np.array(pulse_en_semi_inf_sigma),color=color[8])
+# plt.errorbar(j_specific_target_chamber_pressure,j_specific_pulse_en_semi_inf,yerr=j_specific_pulse_en_semi_inf_sigma,color=color[8],fmt='+')
+# plt.plot(target_chamber_pressure,np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linestyle='--',color=color[9],label=r'$E_{rem}+E_{CX \: max}$')
+# plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6 + np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linewidth=3,color=color[9],label=r'$6 \cdot E_{target} +$'+'\n'+r'$ E_{rem}+E_{CX \: max}$')
+# plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf) + np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linewidth=3,color=color[9],label=r'$E_{target} +$'+'\n'+r'$ E_{rem}+E_{CX \: max}$')
+# plt.legend(loc=2, fontsize='x-small',ncol=2,handleheight=2, labelspacing=0.00005)
+plt.errorbar(target_chamber_pressure,power_via_ionisation,yerr=np.array(power_via_ionisation_sigma),capsize=5,color=color[14],label=r'$E_{ionisation \: (only \: potential)}$')
+plt.errorbar(target_chamber_pressure,power_via_recombination,yerr=np.array(power_via_recombination_sigma),capsize=5,color=color[9],label=r'$E_{recombination \: (only \: potential)}$')
+plt.legend(loc=2, fontsize='x-small')
+plt.grid()
+plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ\n ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
+plt.xlabel('Target chamber pressure [Pa]')
+plt.ylabel('Energy [J]')
+# plt.semilogy()
+# plt.ylim(bottom=np.max(delivered_pulse_energy)/100)
+# if merge_ID_target==85:
+# 	plt.xlim(right=target_chamber_pressure[-2])
+plt.pause(0.001)
+
+power_rad_mol = np.array(power_rad_mol)
+power_rad_Hm = np.array(power_rad_Hm)
+power_rad_H2p = np.array(power_rad_H2p)
+power_rad_H2 = np.array(power_rad_H2)
+power_rad_excit = np.array(power_rad_excit)
+power_rad_rec_bremm = np.array(power_rad_rec_bremm)
+plt.figure(figsize=(10, 5));
+temp = power_rad_Hm + power_rad_H2p + power_rad_H2 + power_rad_excit + power_rad_rec_bremm
+labels = [r'$E_{radiated \: H^- + {H_2}^+ \:,\: H^- + H^+}$' , r'$E_{radiated \: {H_2}^+ + e}$' , r'$E_{radiated \: H_2 + e}$' , r'$E_{excitation}$' , r'$E_{recomb. \: radiated \: + \: brems.}$' ]
+plt.stackplot(target_chamber_pressure,power_rad_Hm/temp,power_rad_H2p/temp,power_rad_H2/temp,power_rad_excit/temp,power_rad_rec_bremm/temp,labels=labels)
+plt.errorbar(target_chamber_pressure,power_rad_mol/temp,yerr=np.array(power_rad_mol_sigma)/temp,linestyle='--',capsize=5,color=color[6],label=r'$E_{radiated \: molecules}$')
+plt.legend(loc='best', fontsize='x-small')
+plt.ylim(bottom=0,top=1)
+plt.ylabel('fraction of the total radiated energy [au]')
+plt.xlabel('Target chamber pressure [Pa]')
+plt.grid()
+plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ\n ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
+plt.pause(0.001)
+
+
+plt.figure(figsize=(10, 8))
+# plt.plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{upstream}$')
+# plt.plot(target_chamber_pressure,max_CX_energy,linewidth=3,color=color[7],label=r'$E_{CX \: max}$')
+# plt.errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf)+np.array(pulse_en_SS),yerr=np.array(pulse_en_semi_inf_sigma),linewidth=3,color=color[8],label=r'$E_{target}$')
+# plt.errorbar(target_chamber_pressure,net_power_removed_plasma_column,yerr=np.array(net_power_removed_plasma_column_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{removed \: from \: plasma}$')
+# plt.errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),capsize=5,color=color[2],label=r'$E_{radiated}$')
+# plt.errorbar(target_chamber_pressure,power_rec_neutral,yerr=np.array(power_rec_neutral_sigma),capsize=5,color=color[3],label=r'$E_{neutral \: from \: recombination}$')
+plt.errorbar(target_chamber_pressure,power_rad_mol,yerr=np.array(power_rad_mol_sigma),linestyle='--',capsize=5,color=color[4],label=r'$E_{radiated \: molecules}$')
+plt.errorbar(target_chamber_pressure,power_rad_Hm,yerr=np.array(power_rad_Hm_sigma),linestyle='-.',capsize=5,color=color[9],label=r'$E_{radiated \: H^- + {H_2}^+ \:,\: H^- + H^+}$')
+plt.errorbar(target_chamber_pressure,power_rad_H2p,yerr=np.array(power_rad_H2p_sigma),linestyle='-.',capsize=5,color=color[10],label=r'$E_{radiated \: {H_2}^+ + e}$')
+plt.errorbar(target_chamber_pressure,power_rad_H2,yerr=np.array(power_rad_H2_sigma),linestyle='-.',capsize=5,color=color[11],label=r'$E_{radiated \: H_2 + e}$')
+# plt.errorbar(target_chamber_pressure,power_rad_Hm_H2p,yerr=np.array(power_rad_Hm_H2p_sigma),linestyle='-.',capsize=5,color=color[12],label=r'$E_{radiated \: from \: H^- + {H_2}^+}$')
+# plt.errorbar(target_chamber_pressure,power_rad_Hm_Hp,yerr=np.array(power_rad_Hm_Hp_sigma),linestyle='-.',capsize=5,color=color[13],label=r'$E_{radiated \: from \: $H^- + H^+}$')
+plt.errorbar(target_chamber_pressure,power_rad_excit,yerr=np.array(power_rad_excit_sigma),linestyle='--',capsize=5,color=color[5],label=r'$E_{excitation}$')
+plt.errorbar(target_chamber_pressure,power_rad_rec_bremm,yerr=np.array(power_rad_rec_bremm_sigma),linestyle='--',capsize=5,color=color[6],label=r'$E_{recomb. \: radiated \: + \: brems.}$')
+# plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6,linewidth=3,color=color[8],label=r'$E_{target}$')
+# plt.errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf),yerr=np.array(pulse_en_semi_inf_sigma),color=color[8])
+# plt.errorbar(j_specific_target_chamber_pressure,j_specific_pulse_en_semi_inf,yerr=j_specific_pulse_en_semi_inf_sigma,color=color[8],fmt='+')
+# plt.plot(target_chamber_pressure,np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linestyle='--',color=color[9],label=r'$E_{rem}+E_{CX \: max}$')
+# plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf)/np.array(area_of_interest_IR)*np.array(area_equiv_max_static_pressure)*6 + np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linewidth=3,color=color[9],label=r'$6 \cdot E_{target} +$'+'\n'+r'$ E_{rem}+E_{CX \: max}$')
+# plt.plot(target_chamber_pressure,np.array(pulse_en_semi_inf) + np.array(net_power_removed_plasma_column) + np.array(max_CX_energy),linewidth=3,color=color[9],label=r'$E_{target} +$'+'\n'+r'$ E_{rem}+E_{CX \: max}$')
+# plt.legend(loc=2, fontsize='x-small',ncol=2,handleheight=2, labelspacing=0.00005)
+# plt.errorbar(target_chamber_pressure,power_via_ionisation,yerr=np.array(power_via_ionisation_sigma),capsize=5,color=color[14],label=r'$E_{ionisation \: (only \: potential)}$')
+# plt.errorbar(target_chamber_pressure,power_via_recombination,yerr=np.array(power_via_recombination_sigma),capsize=5,color=color[3],label=r'$E_{recombination \: (only \: potential)}$')
+plt.legend(loc=2, fontsize='x-small')
+plt.grid()
+plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
+plt.xlabel('Target chamber pressure [Pa]')
+plt.ylabel('Energy [J]')
+# plt.semilogy()
+# plt.ylim(bottom=np.max(delivered_pulse_energy)/100)
+# if merge_ID_target==85:
+# 	plt.xlim(right=target_chamber_pressure[-2])
 plt.pause(0.001)
 
 
@@ -471,7 +656,7 @@ else:
 
 
 plt.figure(figsize=(10, 5))
-for index in range(len(target_chamber_pressure_2)):
+for index in range(len(target_chamber_pressure)):
 	# plt.plot(radial_average_brightness_OES_location_1ms_int_time[index]/np.max(radial_average_brightness_OES_location_1ms_int_time),color=color[index],label='%.3gPa' %(target_chamber_pressure_2[index]))
 	plt.plot(radial_average_brightness_1ms_int_time[index]/np.max(radial_average_brightness_1ms_int_time),':',color=color[index])
 	plt.plot(radial_average_brightness_bayesian[index]/np.max(radial_average_brightness_bayesian),'--',color=color[index])

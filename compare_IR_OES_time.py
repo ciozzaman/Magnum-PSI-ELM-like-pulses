@@ -368,7 +368,7 @@ if print_2:
 
 
 #   S T O P !
-# This path is abanconed because I don't have a good enough precisio. in IR, OES and source measurements time.
+# This path is abanconed because I don't have a good enough precision. in IR, OES and source measurements time.
 # The best I have is the difference between relative source and IR times (last plot), that is close within ~5-10 ms, but I think this is way too much.
 
 
