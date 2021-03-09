@@ -109,7 +109,8 @@ dissociation_potential = 2.2	# eV
 
 # merge_ID_target_multipulse = np.flip([851,86,87,89,92, 93, 94],axis=0)
 # merge_ID_target_multipulse = np.flip([73,77,78,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
-merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98]
+# merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
+# merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89]
 # merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
 # merge_ID_target_multipulse = np.flip([85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99],axis=0)
 # merge_ID_target_multipulse = np.flip([86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
@@ -117,9 +118,9 @@ merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97
 # merge_ID_target_multipulse = np.flip([95, 94, 93, 92, 89, 87, 86, 85],axis=0)
 # merge_ID_target_multipulse = [73,77,78,79]
 # merge_ID_target_multipulse = np.flip([99,85,97,89,92, 93,95],axis=0)
-# merge_ID_target_multipulse = [85]
+merge_ID_target_multipulse = [85,86,87,88,89,95, 96, 97, 98, 99]
 
-merge_ID_target_multipulse = np.flip(merge_ID_target_multipulse,axis=0)
+# merge_ID_target_multipulse = np.flip(merge_ID_target_multipulse,axis=0)
 
 for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don't have a temperature profile
 	merge_time_window = [-1,2]
@@ -129,13 +130,13 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 	# 	merge_time_window = [-10,10]
 
 
-	recorded_data_override = [True,True,True]
-	# recorded_data_override = [False,False,False]
+	# recorded_data_override = [True,True,True]
+	recorded_data_override = [False,False,False]
 	# recorded_data_override = [True,True]
 	completion_loop_done = True
 	do_only_one_loop = False
 	include_particles_limitation = True
-	H2_suppression = True
+	H2_suppression = False
 
 	if H2_suppression:
 		externally_provided_H2p_Hn_steps = 17
@@ -218,6 +219,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 			else:
 				print('There is an error, the reference shot for TS/power source shift was not given')
 				exit()
+			internal_shift_TS_to_power_source = shift_between_TS_and_power_source(merge_ID_target)
 
 			all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
 			target_chamber_pressure = []
@@ -238,7 +240,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 				magnetic_field.append(df_log.loc[j,['B']])
 				(merge_folder,sequence,fname_current_trace) = df_log.loc[j,['folder','sequence','current_trace_file']]
 				sequence = int(sequence)
-				bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_delivered_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution, = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
+				bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_delivered_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution,*trash = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
 				energy_delivered_good_pulses.append(median_energy_delivered_good_pulses)
 				power_pulse_shape_time_dependent.append(mean_peak_shape)
 				power_pulse_shape_time_dependent_std.append(mean_peak_std)
@@ -409,7 +411,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 						yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
 						if np.sum(yy>0)<5:
 							profile_centres.append(0)
-							profile_sigma.append(10)
+							profile_sigma.append(50)
 							profile_centres_score.append(np.max(TS_r))
 							continue
 						yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
@@ -666,6 +668,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 					# x_local = xx - spatial_factor * 17.4 / 1000
 					dr_crop = np.median(np.diff(r_crop))
 
+					# This is kind of deprecated, but I don't remove it for fear of breaking the code
 					merge_dTe_prof_multipulse_interp_crop_limited = cp.deepcopy(merge_dTe_prof_multipulse_interp_crop)
 					merge_dTe_prof_multipulse_interp_crop_limited[merge_Te_prof_multipulse_interp_crop < 0.1] = 0
 					merge_Te_prof_multipulse_interp_crop_limited = cp.deepcopy(merge_Te_prof_multipulse_interp_crop)
@@ -2910,15 +2913,29 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								all_nHm_ne_values = np.array([np.transpose(np.array([record_nHm_ne_values.reshape((H2_steps,Hm_steps,TS_ne_steps,TS_Te_steps)).tolist()]*H2p_steps), (2,1,0,3,4)).tolist()]*H_steps,dtype=np.float32)
 								intervals_nHm_ne_values,prob_nHm_ne_values,actual_values_nHm_ne_values = build_log_PDF(all_nHm_ne_values,PDF_intervals)
 								power_balance_data_dict['nHm_ne_values'] = dict([('intervals',intervals_nHm_ne_values),('prob',prob_nHm_ne_values),('actual_values',actual_values_nHm_ne_values)])
-								del all_nHm_ne_values
+								all_nHm_values = all_nHm_ne_values*ne_values
+								intervals_nHm_values,prob_nHm_values,actual_values_nHm_values = build_log_PDF(all_nHm_values,PDF_intervals)
+								power_balance_data_dict['nHm_values'] = dict([('intervals',intervals_nHm_values),('prob',prob_nHm_values),('actual_values',actual_values_nHm_values)])
+								del all_nHm_ne_values,all_nHm_values
 								all_nH2p_ne_values = np.array([[record_nH2p_ne_values.reshape((H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)).tolist()]*Hm_steps]*H_steps,dtype=np.float32)
 								intervals_nH2p_ne_values,prob_nH2p_ne_values,actual_values_nH2p_ne_values = build_log_PDF(all_nH2p_ne_values,PDF_intervals)
 								power_balance_data_dict['nH2p_ne_values'] = dict([('intervals',intervals_nH2p_ne_values),('prob',prob_nH2p_ne_values),('actual_values',actual_values_nH2p_ne_values)])
-								del all_nH2p_ne_values
+								all_nH2p_values = all_nH2p_ne_values*ne_values
+								intervals_nH2p_values,prob_nH2p_values,actual_values_nH2p_values = build_log_PDF(all_nH2p_values,PDF_intervals)
+								power_balance_data_dict['nH2p_values'] = dict([('intervals',intervals_nH2p_values),('prob',prob_nH2p_values),('actual_values',actual_values_nH2p_values)])
+								del all_nH2p_ne_values,all_nH2p_values
 								intervals_nH2_ne_values,prob_nH2_ne_values,actual_values_nH2_ne_values = build_log_PDF(all_nH2_ne_values,PDF_intervals)
 								power_balance_data_dict['nH2_ne_values'] = dict([('intervals',intervals_nH2_ne_values),('prob',prob_nH2_ne_values),('actual_values',actual_values_nH2_ne_values)])
+								all_nH2_values = all_nH2_ne_values*ne_values
+								intervals_nH2_values,prob_nH2_values,actual_values_nH2_values = build_log_PDF(all_nH2_values,PDF_intervals)
+								power_balance_data_dict['nH2_values'] = dict([('intervals',intervals_nH2_values),('prob',prob_nH2_values),('actual_values',actual_values_nH2_values)])
+								del all_nH2_values
 								intervals_nH_ne_values,prob_nH_ne_values,actual_values_nH_ne_values = build_log_PDF(all_nH_ne_values,PDF_intervals)
 								power_balance_data_dict['nH_ne_values'] = dict([('intervals',intervals_nH_ne_values),('prob',prob_nH_ne_values),('actual_values',actual_values_nH_ne_values)])
+								all_nH_values = all_nH_ne_values*ne_values
+								intervals_nH_values,prob_nH_values,actual_values_nH_values = build_log_PDF(all_nH_values,PDF_intervals)
+								power_balance_data_dict['nH_values'] = dict([('intervals',intervals_nH_values),('prob',prob_nH_values),('actual_values',actual_values_nH_values)])
+								del all_nH_values
 								if include_particles_limitation:
 									intervals_net_e_destruction,prob_net_e_destruction,actual_values_net_e_destruction = build_log_PDF(all_net_e_destruction,PDF_intervals)
 									power_balance_data_dict['net_e_destruction'] = dict([('intervals',intervals_net_e_destruction),('prob',prob_net_e_destruction),('actual_values',actual_values_net_e_destruction)])

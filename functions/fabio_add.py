@@ -478,7 +478,7 @@ def get_metadata(fdir,folder,sequence,untitled,filename_metadata,pulse_frequency
 
 ####################################################################################################
 
-def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pulse = 0.0002,want_the_prominences=False,want_the_power_per_pulse=False,want_the_mean_power_profile=False,time_between_pulses=0.1001,want_the_plot_of_mean_power_profile=False):
+def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pulse = 0.0002,want_the_prominences=False,want_the_power_per_pulse=False,want_the_mean_power_profile=False,time_between_pulses=0.1001,want_the_plot_of_mean_power_profile=False,SS_current=140):
 
 	# 14/05/2019 Script to analyse the current traces of Magnum-PSI to spot good or bad pulses
 
@@ -492,7 +492,7 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 
 	current_traces = pd.read_csv(fdir_long + fname_current_trace+'.tsf',index_col=False, delimiter='\t')
 	current_traces_time = current_traces['Time [s]']
-	current_traces_total = current_traces['I_Src_AC [A]']
+	current_traces_total = current_traces['I_Src_AC [A]']	# this is the current of the Rogowski coil, and it is only the current on top of the SS. the SS component here have to be removed.
 	voltage_traces_total = current_traces['U_Src_DC [V]']
 	target_voltage_traces_total = current_traces['U_Tar_DC [V]']
 	power_traces_total = np.abs( current_traces_total * voltage_traces_total )
@@ -669,6 +669,18 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 	prominences = get_proms(current_traces_total,all_peaks)[0]
 	prominences[prominences==0]=np.max(prominences[prominences>0])
 
+	exclusion_zone_around_peak_right = 10e-3	# +/- ms
+	exclusion_zone_around_peak_right = int(exclusion_zone_around_peak_right/time_resolution)
+	exclusion_zone_around_peak_left = 4e-3	# +/- ms
+	exclusion_zone_around_peak_left = int(exclusion_zone_around_peak_left/time_resolution)
+	temp = np.arange(len(power_traces_total))
+	good_times = np.ones_like(power_traces_total).astype(bool)
+	for i_peak_pos,peak_pos in enumerate(all_peaks):
+		good_times[np.logical_and(temp>peak_pos-exclusion_zone_around_peak_left,temp<peak_pos+exclusion_zone_around_peak_right)] = False
+	rogowski_coil_offset_current = np.mean(current_traces_total[good_times])
+	current_traces_total = current_traces_total - rogowski_coil_offset_current + SS_current
+	power_traces_total = np.abs( current_traces_total * voltage_traces_total )
+
 	if want_the_prominences==True:
 		return bad, good[0], any[0], any[-1], miss,double, good, time_of_pulses, prominences
 	elif want_the_power_per_pulse==True:
@@ -708,6 +720,12 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 		steady_state_power = np.mean(power_traces_total[good_times])
 		mean_steady_state_power = np.mean(power_traces_total[good_times])
 		mean_steady_state_power_std = np.std(power_traces_total[good_times])
+		mean_steady_state_current = np.mean(current_traces_total[good_times])
+		mean_steady_state_current_std = np.std(current_traces_total[good_times])
+		mean_steady_state_voltage = np.mean(voltage_traces_total[good_times])
+		mean_steady_state_voltage_std = np.std(voltage_traces_total[good_times])
+		mean_steady_state_target_voltage = np.mean(target_voltage_traces_total[good_times])
+		mean_steady_state_target_voltage_std = np.std(target_voltage_traces_total[good_times])
 
 		energy_per_pulse = []
 		duration_per_pulse = []
@@ -813,6 +831,7 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 		try:	# this extra is to get a window around the pulse from the start of the pulse and not the peak
 			left = mean_peak_shape.argmax() - int(2e-3/time_resolution)
 			pulse_start = np.abs(np.cumsum(mean_peak_shape[left:]) - np.cumsum(mean_peak_shape[left:]).max()/50).argmin()	# 50 is arbitrary
+			# pulse_start = (mean_peak_shape[left:]>mean_peak_shape[left:].max()/50).argmax()	# 50 is arbitrary
 			mean_peak_shape = mean_peak_shape[left+pulse_start-int(interval_between_pulses/2):left+pulse_start+int(interval_between_pulses/2)]
 			mean_current_peak_shape = mean_current_peak_shape[left+pulse_start-int(interval_between_pulses/2):left+pulse_start+int(interval_between_pulses/2)]
 			mean_voltage_peak_shape = mean_voltage_peak_shape[left+pulse_start-int(interval_between_pulses/2):left+pulse_start+int(interval_between_pulses/2)]
@@ -826,7 +845,7 @@ def examine_current_trace(fdir_long,fname_current_trace,number_pulses,minimum_pu
 		# plt.figure();
 		# plt.plot(energy_per_pulse,':k');plt.pause(0.01)
 		if want_the_mean_power_profile==True:
-			return bad, good[0], any[0], any[-1], miss,double, good, time_of_pulses, np.array(energy_per_pulse), np.array(duration_per_pulse),np.median(energy_per_pulse_good_pulses),np.median(duration_per_pulse_good_pulses),mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution,mean_current_peak_shape,mean_current_peak_std,mean_voltage_peak_shape,mean_voltage_peak_std,mean_target_voltage_peak_shape,mean_target_voltage_peak_std
+			return bad, good[0], any[0], any[-1], miss,double, good, time_of_pulses, np.array(energy_per_pulse), np.array(duration_per_pulse),np.median(energy_per_pulse_good_pulses),np.median(duration_per_pulse_good_pulses),mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution,mean_current_peak_shape,mean_current_peak_std,mean_voltage_peak_shape,mean_voltage_peak_std,mean_target_voltage_peak_shape,mean_target_voltage_peak_std,mean_steady_state_current,mean_steady_state_current_std,mean_steady_state_voltage,mean_steady_state_voltage_std,mean_steady_state_target_voltage,mean_steady_state_target_voltage_std
 		else:
 			return bad, good[0], any[0], any[-1], miss,double, good, time_of_pulses, np.array(energy_per_pulse), np.array(duration_per_pulse),np.median(energy_per_pulse_good_pulses),np.median(duration_per_pulse_good_pulses)
 	else:
@@ -2106,13 +2125,13 @@ def shift_between_TS_and_power_source(merge_ID_target,plot_report=False):
 	steady_state_power = []
 	steady_state_power_std = []
 	for j in all_j:
-		(merge_folder,sequence,fname_current_trace) = df_log.loc[j,['folder','sequence','current_trace_file']]
+		(merge_folder,sequence,fname_current_trace,SS_current) = df_log.loc[j,['folder','sequence','current_trace_file','I']]
 		sequence = int(sequence)
-		bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_delivered_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution, = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
-		current_traces = pd.read_csv(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/'+ fname_current_trace+'.tsf',index_col=False, delimiter='\t')
-		current_traces_time = current_traces['Time [s]']
-		current_traces_total = current_traces['I_Src_AC [A]']
-		voltage_traces_total = current_traces['U_Src_DC [V]']
+		bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_delivered_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution,*trash = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True,SS_current=SS_current)
+		# current_traces = pd.read_csv(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/'+ fname_current_trace+'.tsf',index_col=False, delimiter='\t')
+		# current_traces_time = current_traces['Time [s]']
+		# current_traces_total = current_traces['I_Src_AC [A]']
+		# voltage_traces_total = current_traces['U_Src_DC [V]']
 		# plt.figure()
 		# plt.plot(current_traces_time,-current_traces_total*voltage_traces_total/np.max(-current_traces_total*voltage_traces_total),label='power')
 		# plt.plot(current_traces_time,current_traces_total/np.max(current_traces_total),label='current')
@@ -2166,18 +2185,21 @@ def shift_between_TS_and_power_source(merge_ID_target,plot_report=False):
 		yy = merge_ne_prof_multipulse[index]
 		yy_sigma = merge_dne_multipulse[index]
 		yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
-		if np.sum(yy>0)==0:
-			profile_centres.append(0)
-			profile_sigma.append(10)
-			profile_centres_score.append(np.max(TS_r))
+		if np.sum(yy>0)<5:
+			# profile_centres.append(0)
+			# profile_sigma.append(10)
+			# profile_centres_score.append(np.max(TS_r))
 			continue
 		yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
 		p0 = [np.max(yy), 10, 0]
 		bds = [[0, 0, np.min(TS_r)], [np.inf, TS_size[1], np.max(TS_r)]]
+		# try:
 		fit = curve_fit(gauss, TS_r, yy, p0, sigma=yy_sigma, maxfev=100000, bounds=bds)
 		profile_centres.append(fit[0][-1])
 		profile_sigma.append(fit[0][-2])
 		profile_centres_score.append(fit[1][-1, -1])
+		# except:
+		# 	fit = 'gna'
 	# plt.figure();plt.plot(TS_r,merge_Te_prof_multipulse[index]);plt.plot(TS_r,gauss(TS_r,*fit[0]));plt.pause(0.01)
 	profile_centres = np.array(profile_centres)
 	profile_sigma = np.array(profile_sigma)
@@ -2189,6 +2211,23 @@ def shift_between_TS_and_power_source(merge_ID_target,plot_report=False):
 	# temp_r, temp_t = np.meshgrid(TS_r_new, merge_time)
 	# plt.figure();plt.pcolor(temp_t,temp_r,merge_Te_prof_multipulse,vmin=0);plt.colorbar().set_label('Te [eV]');plt.pause(0.01)
 	# plt.figure();plt.pcolor(temp_t,temp_r,merge_ne_prof_multipulse,vmin=0);plt.colorbar().set_label('ne [10^20 #/m^3]');plt.pause(0.01)
+
+	if os.path.exists(path_where_to_save_everything + '/TS_SS_data_merge_' + str(merge_ID_target) + '.npz'):
+		merge_Te_prof_multipulse_SS = np.load(path_where_to_save_everything + '/TS_SS_data_merge_' + str(merge_ID_target) + '.npz')['merge_Te_prof_multipulse']
+		merge_dTe_multipulse_SS = np.load(path_where_to_save_everything + '/TS_SS_data_merge_' + str(merge_ID_target) + '.npz')['merge_dTe_multipulse']
+		merge_ne_prof_multipulse_SS = np.load(path_where_to_save_everything + '/TS_SS_data_merge_' + str(merge_ID_target) + '.npz')['merge_ne_prof_multipulse']
+		merge_dne_multipulse_SS = np.load(path_where_to_save_everything + '/TS_SS_data_merge_' + str(merge_ID_target) + '.npz')['merge_dne_multipulse']
+		temp = np.mean(merge_ne_prof_multipulse,axis=1)
+		start = (temp>np.mean(merge_ne_prof_multipulse_SS)).argmax()
+		end = (np.flip(temp,axis=0)>np.mean(merge_ne_prof_multipulse_SS)).argmax()
+		merge_Te_prof_multipulse[:start] = merge_Te_prof_multipulse_SS
+		merge_dTe_multipulse[:start] = 2*merge_Te_prof_multipulse_SS
+		merge_ne_prof_multipulse[:start] = merge_ne_prof_multipulse_SS
+		merge_dne_multipulse[:start] = merge_ne_prof_multipulse_SS
+		merge_Te_prof_multipulse[-end:] = merge_Te_prof_multipulse_SS
+		merge_dTe_multipulse[-end:] = 2*merge_Te_prof_multipulse_SS
+		merge_ne_prof_multipulse[-end:] = merge_ne_prof_multipulse_SS
+		merge_dne_multipulse[-end:] = merge_ne_prof_multipulse_SS
 
 
 	left = power_pulse_shape_time_dependent.argmax() - int(2e-3/time_resolution)
@@ -2209,11 +2248,21 @@ def shift_between_TS_and_power_source(merge_ID_target,plot_report=False):
 	# plt.grid()
 	# plt.pause(0.01)
 
+	# proper area
+	TS_r_new_positive = np.sort(np.abs(TS_r_new[TS_r_new>=0]))
+	# TS_r_new_positive = np.sort(np.abs(np.concatenate((TS_r_new_positive,[0]))))
+	temp = np.pi*((TS_r_new_positive + np.median(np.diff(TS_r_new_positive))/2)**2)
+	area_positive = np.array([temp[0]]+np.diff(temp).tolist())
+	TS_r_new_negative = np.sort(np.abs(TS_r_new[TS_r_new<0]))
+	# TS_r_new_negative = np.sort(np.abs(np.concatenate((TS_r_new_negative,[0]))))
+	temp = np.pi*((TS_r_new_negative + np.median(np.diff(TS_r_new_negative))/2)**2)
+	area_negative = np.array([temp[0]]+np.diff(temp).tolist())
+	area = np.concatenate((np.flip(area_negative,axis=0),area_positive))/2	# the last /2 is due to the fact that I didn't do the left/right average so I'm double counting the area
 
-	start_r = np.abs(r - 0).argmin()
-	end_r = np.abs(r - 5).argmin() + 1
-	r_crop = r[start_r:end_r]
-	area = 2*np.pi*(np.abs(TS_r_new) + np.median(np.diff(TS_r_new))/2) * np.median(np.diff(TS_r_new))/2	# the last /2 is due to the fact that I didn't do the left/right average so I'm double counting the area
+	# start_r = np.abs(r - 0).argmin()
+	# end_r = np.abs(r - 5).argmin() + 1
+	# r_crop = r[start_r:end_r]
+	# area = 2*np.pi*(np.abs(TS_r_new) + np.median(np.diff(TS_r_new))/2) * np.median(np.diff(TS_r_new))/2	# the last /2 is due to the fact that I didn't do the left/right average so I'm double counting the area
 	# energy_flow = np.sum(merge_ne_prof_multipulse*(13.6 + merge_Te_prof_multipulse) * area,axis=-1)
 	hydrogen_mass = 1.008*1.660*1e-27	# kg
 	boltzmann_constant_J = 1.380649e-23	# J/K
@@ -2250,7 +2299,7 @@ def shift_between_TS_and_power_source(merge_ID_target,plot_report=False):
 		plt.xlabel('Time from 1/50 of maximum energy transferred [s]')
 		plt.ylabel('cumulative energy transferred [au]')
 		plt.grid()
-		plt.title('merge '+str(merge_ID_target)+' shift to remove from current trace to match TS = %.5gms' %(offset_current_trace))
+		plt.title('merge '+str(merge_ID_target)+' shift to remove\nfrom current trace to match TS = %.5gms' %(offset_current_trace))
 		plt.legend(loc='best')
 		plt.pause(0.01)
 
@@ -2266,3 +2315,216 @@ def DOM52sec(value):
 		return out
 	else:
 		return np.nan
+
+def load_TS(path_where_to_save_everything,merge_ID_target,start_time,end_time,new_timesteps,spatial_factor=1,time_shift_factor=0):
+
+	merge_Te_prof_multipulse = np.load(path_where_to_save_everything + '/TS_data_merge_' + str(merge_ID_target) + '.npz')['merge_Te_prof_multipulse']
+	merge_dTe_multipulse = np.load(path_where_to_save_everything + '/TS_data_merge_' + str(merge_ID_target) + '.npz')['merge_dTe_multipulse']
+	merge_ne_prof_multipulse = np.load(path_where_to_save_everything + '/TS_data_merge_' + str(merge_ID_target) + '.npz')['merge_ne_prof_multipulse']
+	merge_dne_multipulse = np.load(path_where_to_save_everything + '/TS_data_merge_' + str(merge_ID_target) + '.npz')['merge_dne_multipulse']
+	merge_time_original = np.load(path_where_to_save_everything + '/TS_data_merge_' + str(merge_ID_target) + '.npz')['merge_time']
+	dt = np.nanmedian(np.diff(new_timesteps))
+
+	TS_size = [-4.149230769230769056e+01, 4.416923076923076508e+01]
+	TS_r = TS_size[0] + np.linspace(0, 1, 65) * (TS_size[1] - TS_size[0])
+	TS_dr = np.median(np.diff(TS_r)) / 1000
+	gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
+	profile_centres = []
+	profile_sigma = []
+	profile_centres_score = []
+	for index in range(np.shape(merge_ne_prof_multipulse)[0]):
+		yy = merge_ne_prof_multipulse[index]
+		yy_sigma = merge_dne_multipulse[index]
+		yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
+		if np.sum(yy>0)<5:
+			profile_centres.append(0)
+			profile_sigma.append(np.max(TS_r))
+			profile_centres_score.append(np.inf)
+			continue
+		yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
+		p0 = [np.max(yy), 10, 0]
+		bds = [[0, 0, np.min(TS_r)], [np.inf, TS_size[1], np.max(TS_r)]]
+		fit = curve_fit(gauss, TS_r, yy, p0, sigma=yy_sigma, maxfev=100000, bounds=bds)
+		profile_centres.append(fit[0][-1])
+		profile_sigma.append(fit[0][-2])
+		profile_centres_score.append(fit[1][-1, -1])
+	# plt.figure();plt.plot(TS_r,merge_Te_prof_multipulse[index]);plt.plot(TS_r,gauss(TS_r,*fit[0]));plt.pause(0.01)
+	profile_centres = np.array(profile_centres)
+	profile_sigma = np.array(profile_sigma)
+	profile_centres_score = np.array(profile_centres_score)
+	# centre = np.nanmean(profile_centres[profile_centres_score < 1])
+	centre = np.nansum(profile_centres/(profile_centres_score**1))/np.sum(1/profile_centres_score**1)
+	TS_r_new = (TS_r - centre) / 1000
+	print('TS profile centre at %.3gmm compared to the theoretical centre' %centre)
+	# temp_r, temp_t = np.meshgrid(TS_r_new, merge_time)
+	# plt.figure();plt.pcolor(temp_t,temp_r,merge_Te_prof_multipulse,vmin=0);plt.colorbar().set_label('Te [eV]');plt.pause(0.01)
+	# plt.figure();plt.pcolor(temp_t,temp_r,merge_ne_prof_multipulse,vmin=0);plt.colorbar().set_label('ne [10^20 #/m^3]');plt.pause(0.01)
+
+	if os.path.exists(path_where_to_save_everything + '/TS_SS_data_merge_' + str(merge_ID_target) + '.npz'):
+		merge_Te_prof_multipulse_SS = np.load(path_where_to_save_everything + '/TS_SS_data_merge_' + str(merge_ID_target) + '.npz')['merge_Te_prof_multipulse']
+		merge_dTe_multipulse_SS = np.load(path_where_to_save_everything + '/TS_SS_data_merge_' + str(merge_ID_target) + '.npz')['merge_dTe_multipulse']
+		merge_ne_prof_multipulse_SS = np.load(path_where_to_save_everything + '/TS_SS_data_merge_' + str(merge_ID_target) + '.npz')['merge_ne_prof_multipulse']
+		merge_dne_multipulse_SS = np.load(path_where_to_save_everything + '/TS_SS_data_merge_' + str(merge_ID_target) + '.npz')['merge_dne_multipulse']
+
+		if False:	# I don't think I need this part, I use the SS info to replace directly the original time dependent data
+			gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
+			yy = merge_ne_prof_multipulse_SS
+			yy_sigma = merge_dne_multipulse_SS
+			if np.sum(np.isfinite(yy_sigma))>0:
+				yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
+				yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
+			else:
+				yy_sigma = np.ones_like(yy)*np.nanmin([np.nanmax(yy),1])
+			p0 = [np.max(yy), 10, 0]
+			bds = [[0, 0, np.min(TS_r)], [np.inf, TS_size[1], np.max(TS_r)]]
+			fit = curve_fit(gauss, TS_r, yy, p0, sigma=yy_sigma, maxfev=100000, bounds=bds)
+			SS_profile_centres=[fit[0][-1]]
+			SS_profile_sigma=[fit[0][-2]]
+			SS_profile_centres_score=[fit[1][-1, -1]]
+			# plt.figure();plt.plot(TS_r,merge_ne_prof_multipulse,label='ne')
+			# plt.plot([fit[0][-1],fit[0][-1]],[np.max(merge_ne_prof_multipulse),np.min(merge_ne_prof_multipulse)],'--',label='ne')
+			yy = merge_Te_prof_multipulse_SS
+			yy_sigma = merge_dTe_multipulse_SS
+			if np.sum(np.isfinite(yy_sigma))>0:
+				yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
+				yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
+			else:
+				yy_sigma = np.ones_like(yy)*np.nanmin([np.nanmax(yy),1])
+			p0 = [np.max(yy), 10, 0]
+			bds = [[0, 0, np.min(TS_r)], [np.inf, TS_size[1], np.max(TS_r)]]
+			fit = curve_fit(gauss, TS_r, yy, p0, sigma=yy_sigma, maxfev=100000, bounds=bds)
+			SS_profile_centres = np.append(SS_profile_centres,[fit[0][-1]],axis=0)
+			SS_profile_sigma = np.append(SS_profile_sigma,[fit[0][-2]],axis=0)
+			SS_profile_centres_score = np.append(SS_profile_centres_score,[fit[1][-1, -1]],axis=0)
+			SS_centre = np.nanmean(SS_profile_centres)
+			SS_TS_r_new = (TS_r - SS_centre) / 1000
+			print('TS profile SS_centre at %.3gmm compared to the theoretical centre' %centre)
+
+			# This is the mean of Te and ne weighted in their own uncertainties.
+			interp_range_r = max(dx, TS_dr) * 1.5
+			# weights_r = TS_r_new/interp_range_r
+			weights_r = SS_TS_r_new
+			merge_Te_prof_multipulse_SS_interp = np.zeros_like(merge_Te_prof_multipulse_interp[ 0])
+			merge_dTe_prof_multipulse_SS_interp = np.zeros_like(merge_Te_prof_multipulse_interp[ 0])
+			merge_ne_prof_multipulse_SS_interp = np.zeros_like(merge_Te_prof_multipulse_interp[ 0])
+			merge_dne_prof_multipulse_SS_interp = np.zeros_like(merge_Te_prof_multipulse_interp[ 0])
+			for i_r, value_r in enumerate(np.abs(r)):
+				if np.sum(np.abs(np.abs(SS_TS_r_new) - value_r) < interp_range_r) == 0:
+					continue
+				selected_values = np.abs(np.abs(SS_TS_r_new) - value_r) < interp_range_r
+				selected_values[merge_Te_prof_multipulse_SS == 0] = False
+				# weights = 1/np.abs(weights_r[selected_values]+1e-5)
+				weights = 1/((weights_r[selected_values]-value_r)/interp_range_r)**2
+				# weights = np.ones((np.sum(selected_values)))
+				if np.sum(selected_values) == 0:
+					continue
+				merge_Te_prof_multipulse_SS_interp[i_r] = np.sum(merge_Te_prof_multipulse_SS[selected_values]*weights / merge_dTe_multipulse_SS[selected_values]) / np.sum(weights / merge_dTe_multipulse_SS[selected_values])
+				merge_ne_prof_multipulse_SS_interp[i_r] = np.sum(merge_ne_prof_multipulse_SS[selected_values]*weights / merge_dne_multipulse_SS[selected_values]) / np.sum(weights / merge_dne_multipulse_SS[selected_values])
+				if False: 	# suggestion from Daljeet: use the "worst case scenario" in therms of uncertainty
+					merge_dTe_prof_multipulse_SS_interp[i_r] = 1/(np.sum(1 / merge_dTe_multipulse_SS[selected_values]))*(np.sum( ((merge_Te_prof_multipulse_SS_interp[i_r]-merge_Te_prof_multipulse_SS[selected_values])/merge_dTe_multipulse_SS[selected_values])**2 )**0.5)
+					merge_dne_prof_multipulse_SS_interp[i_r] = 1/(np.sum(1 / merge_dne_multipulse_SS[selected_values]))*(np.sum( ((merge_ne_prof_multipulse_SS_interp[i_r]-merge_ne_prof_multipulse_SS[selected_values])/merge_dne_multipulse_SS[selected_values])**2 )**0.5)
+				else:
+					merge_dTe_prof_multipulse_SS_interp_temp = 1/(np.sum(1 / merge_dTe_multipulse_SS[selected_values]))*(np.sum( ((merge_Te_prof_multipulse_SS_interp[i_r]-merge_Te_prof_multipulse_SS[selected_values])/merge_dTe_multipulse_SS[selected_values])**2 )**0.5)
+					merge_dne_prof_multipulse_SS_interp_temp = 1/(np.sum(1 / merge_dne_multipulse_SS[selected_values]))*(np.sum( ((merge_ne_prof_multipulse_SS_interp[i_r]-merge_ne_prof_multipulse_SS[selected_values])/merge_dne_multipulse_SS[selected_values])**2 )**0.5)
+					merge_dTe_prof_multipulse_SS_interp[i_r] = max(merge_dTe_prof_multipulse_SS_interp_temp,(np.max(merge_Te_prof_multipulse_SS[selected_values])-np.min(merge_Te_prof_multipulse_SS[selected_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
+					merge_dne_prof_multipulse_SS_interp[i_r] = max(merge_dne_prof_multipulse_SS_interp_temp,(np.max(merge_ne_prof_multipulse_SS[selected_values])-np.min(merge_ne_prof_multipulse_SS[selected_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
+			temp_r, temp_t = np.meshgrid(r, new_timesteps)
+
+			start_r = np.abs(r - 0).argmin()
+			end_r = np.abs(r - 5).argmin() + 1
+			r_crop = r[start_r:end_r]
+			merge_Te_prof_multipulse_SS_interp_crop = merge_Te_prof_multipulse_SS_interp[start_r:end_r]
+			merge_dTe_prof_multipulse_SS_interp_crop = merge_dTe_prof_multipulse_SS_interp[start_r:end_r]
+			merge_ne_prof_multipulse_SS_interp_crop = merge_ne_prof_multipulse_SS_interp[start_r:end_r]
+			merge_dne_prof_multipulse_SS_interp_crop = merge_dne_prof_multipulse_SS_interp[start_r:end_r]
+
+			gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
+			yy = merge_ne_prof_multipulse_SS_interp_crop
+			yy_sigma = merge_dne_prof_multipulse_SS_interp_crop
+			yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
+			yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
+			p0 = [np.max(yy), np.max(r_crop)/2, np.min(r_crop)]
+			bds = [[0, 0, np.min(r_crop)], [np.inf, np.max(r_crop), np.max(r_crop)]]
+			fit = curve_fit(gauss, r_crop, yy, p0, maxfev=100000, bounds=bds, sigma=yy_sigma,absolute_sigma=True)
+			SS_averaged_profile_sigma=fit[0][-2]
+			# plt.figure();plt.plot(TS_r,merge_Te_prof_multipulse[index]);plt.plot(TS_r,gauss(TS_r,*fit[0]));plt.pause(0.01)
+
+			for i_t in range(len(time_crop)):	# the 2e20 limit in density comes from VanDerMeiden2012a
+				merge_Te_prof_multipulse_interp_crop[i_t,merge_ne_prof_multipulse_interp_crop[i_t]<2] = np.max([merge_Te_prof_multipulse_SS_interp_crop[merge_ne_prof_multipulse_interp_crop[i_t]<2],merge_Te_prof_multipulse_interp_crop[i_t,merge_ne_prof_multipulse_interp_crop[i_t]<2]],axis=0)
+				merge_dTe_prof_multipulse_interp_crop[i_t,merge_ne_prof_multipulse_interp_crop[i_t]<2] = np.max([merge_Te_prof_multipulse_SS_interp_crop[merge_ne_prof_multipulse_interp_crop[i_t]<2],merge_dTe_prof_multipulse_SS_interp_crop[merge_ne_prof_multipulse_interp_crop[i_t]<2]],axis=0)
+				merge_ne_prof_multipulse_interp_crop[i_t,merge_ne_prof_multipulse_interp_crop[i_t]<2] = np.max([merge_ne_prof_multipulse_SS_interp_crop[merge_ne_prof_multipulse_interp_crop[i_t]<2],merge_ne_prof_multipulse_interp_crop[i_t,merge_ne_prof_multipulse_interp_crop[i_t]<2]],axis=0)
+				merge_dne_prof_multipulse_interp_crop[i_t,merge_ne_prof_multipulse_interp_crop[i_t]<2] = np.max([merge_ne_prof_multipulse_SS_interp_crop[merge_ne_prof_multipulse_interp_crop[i_t]<2],merge_dne_prof_multipulse_SS_interp_crop[merge_ne_prof_multipulse_interp_crop[i_t]<2]],axis=0)
+
+		else:
+			temp = np.mean(merge_ne_prof_multipulse,axis=1)
+			start = (temp>np.mean(merge_ne_prof_multipulse_SS)).argmax()
+			end = (np.flip(temp,axis=0)>np.mean(merge_ne_prof_multipulse_SS)).argmax()
+			merge_Te_prof_multipulse[:start] = merge_Te_prof_multipulse_SS
+			merge_dTe_multipulse[:start] = 2*merge_Te_prof_multipulse_SS
+			merge_ne_prof_multipulse[:start] = merge_ne_prof_multipulse_SS
+			merge_dne_multipulse[:start] = merge_ne_prof_multipulse_SS
+			merge_Te_prof_multipulse[-end:] = merge_Te_prof_multipulse_SS
+			merge_dTe_multipulse[-end:] = 2*merge_Te_prof_multipulse_SS
+			merge_ne_prof_multipulse[-end:] = merge_ne_prof_multipulse_SS
+			merge_dne_multipulse[-end:] = merge_ne_prof_multipulse_SS
+
+	# This is the mean of Te and ne weighted in their own uncertainties.
+	temp1 = np.zeros_like(inverted_profiles[:, 0])
+	temp2 = np.zeros_like(inverted_profiles[:, 0])
+	temp3 = np.zeros_like(inverted_profiles[:, 0])
+	temp4 = np.zeros_like(inverted_profiles[:, 0])
+	interp_range_t = max(dt, TS_dt) * 1.5
+	interp_range_r = max(dx, TS_dr) * 1.5
+	weights_r = (np.zeros_like(merge_Te_prof_multipulse) + TS_r_new)
+	weights_t = (((np.zeros_like(merge_Te_prof_multipulse)).T + merge_time).T)
+	for i_t, value_t in enumerate(new_timesteps):
+		if np.sum(np.abs(merge_time - value_t) < interp_range_t) == 0:
+			continue
+		for i_r, value_r in enumerate(np.abs(r)):
+			if np.sum(np.abs(np.abs(TS_r_new) - value_r) < interp_range_r) == 0:
+				continue
+			elif np.sum(np.logical_and(np.abs(merge_time - value_t) < interp_range_t,np.sum(merge_Te_prof_multipulse, axis=1) > 0)) == 0:
+				continue
+			selected_values_t = np.logical_and(np.abs(merge_time - value_t) < interp_range_t,np.sum(merge_Te_prof_multipulse, axis=1) > 0)
+			selected_values_r = np.abs(np.abs(TS_r_new) - value_r) < interp_range_r
+			selected_values = (np.array([selected_values_t])).T * selected_values_r
+			selected_values[merge_Te_prof_multipulse == 0] = False
+			# weights = 1/(weights_r[selected_values]-value_r)**2 + 1/(weights_t[selected_values]-value_t)**2
+			weights = 1/((weights_t[selected_values]-value_t)/interp_range_t)**2 + 1/((weights_r[selected_values]-value_r)/interp_range_r)**2
+			if np.sum(selected_values) == 0:
+				continue
+			# temp1[i_t,i_r] = np.mean(merge_Te_prof_multipulse[selected_values_t][:,selected_values_r])
+			# temp2[i_t, i_r] = np.max(merge_dTe_multipulse[selected_values_t][:,selected_values_r]) / (np.sum(np.isfinite(merge_dTe_multipulse[selected_values_t][:,selected_values_r])) ** 0.5)
+			temp1[i_t, i_r] = np.sum(merge_Te_prof_multipulse[selected_values]*weights / merge_dTe_multipulse[selected_values]) / np.sum(weights / merge_dTe_multipulse[selected_values])
+			# temp3[i_t,i_r] = np.mean(merge_ne_prof_multipulse[selected_values_t][:,selected_values_r])
+			# temp4[i_t, i_r] = np.max(merge_dne_multipulse[selected_values_t][:,selected_values_r]) / (np.sum(np.isfinite(merge_dne_multipulse[selected_values_t][:,selected_values_r])) ** 0.5)
+			temp3[i_t, i_r] = np.sum(merge_ne_prof_multipulse[selected_values]*weights / merge_dne_multipulse[selected_values]) / np.sum(weights / merge_dne_multipulse[selected_values])
+			if False: 	# suggestion from Daljeet: use the "worst case scenario" in therms of uncertainty
+				# temp2[i_t, i_r] = (np.sum(selected_values) / (np.sum(1 / merge_dTe_multipulse[selected_values]) ** 2)) ** 0.5
+				# temp4[i_t, i_r] = (np.sum(selected_values) / (np.sum(1 / merge_dne_multipulse[selected_values]) ** 2)) ** 0.5
+				temp2[i_t, i_r] = 1/(np.sum(1 / merge_dTe_multipulse[selected_values]))*(np.sum( ((temp1[i_t, i_r]-merge_Te_prof_multipulse[selected_values])/merge_dTe_multipulse[selected_values])**2 )**0.5)
+				temp4[i_t, i_r] = 1/(np.sum(1 / merge_dne_multipulse[selected_values]))*(np.sum( ((temp3[i_t, i_r]-merge_ne_prof_multipulse[selected_values])/merge_dne_multipulse[selected_values])**2 )**0.5)
+			else:
+				# temp2_temp = 1/(np.sum(1 / merge_dTe_multipulse[selected_values]))*(np.sum( ((temp1[i_t, i_r]-merge_Te_prof_multipulse[selected_values])/merge_dTe_multipulse[selected_values])**2 )**0.5)
+				# temp4_temp = 1/(np.sum(1 / merge_dne_multipulse[selected_values]))*(np.sum( ((temp3[i_t, i_r]-merge_ne_prof_multipulse[selected_values])/merge_dne_multipulse[selected_values])**2 )**0.5)
+				temp2[i_t, i_r] = max(np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dTe_multipulse[selected_values]),(np.max(merge_Te_prof_multipulse[selected_values])-np.min(merge_Te_prof_multipulse[selected_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
+				temp4[i_t, i_r] = max(np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dne_multipulse[selected_values]),(np.max(merge_ne_prof_multipulse[selected_values])-np.min(merge_ne_prof_multipulse[selected_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
+
+	merge_Te_prof_multipulse_interp = np.array(temp1)
+	merge_dTe_prof_multipulse_interp = np.array(temp2)
+	merge_ne_prof_multipulse_interp = np.array(temp3)
+	merge_dne_prof_multipulse_interp = np.array(temp4)
+
+	# I crop to the usefull stuff
+	start_r = np.abs(r - 0).argmin()
+	end_r = np.abs(r - 5).argmin() + 1
+	merge_Te_prof_multipulse_interp_crop = merge_Te_prof_multipulse_interp[start_time:end_time,start_r:end_r]
+	merge_Te_prof_multipulse_interp_crop[merge_Te_prof_multipulse_interp_crop<0]=0
+	merge_dTe_prof_multipulse_interp_crop = merge_dTe_prof_multipulse_interp[start_time:end_time, start_r:end_r]
+	merge_ne_prof_multipulse_interp_crop = merge_ne_prof_multipulse_interp[start_time:end_time,start_r:end_r]
+	merge_ne_prof_multipulse_interp_crop[merge_ne_prof_multipulse_interp_crop<0]=0
+	merge_dne_prof_multipulse_interp_crop = merge_dne_prof_multipulse_interp[start_time:end_time, start_r:end_r]
+
+	return centre,profile_centres,profile_sigma,profile_centres_score,merge_Te_prof_multipulse_interp_crop,merge_dTe_prof_multipulse_interp_crop,merge_ne_prof_multipulse_interp_crop,merge_dne_prof_multipulse_interp_crop
+
+##########################################################################################################################################################################

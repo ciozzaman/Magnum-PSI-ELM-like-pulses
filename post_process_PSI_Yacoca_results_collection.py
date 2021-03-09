@@ -117,12 +117,17 @@ radial_average_brightness_OES_location_1ms_int_time = []
 radial_average_brightness_1ms_int_time = []
 radial_average_brightness_bayesian = []
 radial_average_brightness_bayesian_long = []
+power_density_distribution_uniform_mach = []
+time_source_power = []
+power_pulse_shape = []
 
 for merge_ID_target in merge_ID_target_multipulse:
 	print('Looking at '+str(merge_ID_target))
 	target_chamber_pressure_2.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
 	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 	full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2_H2p_mol_lim/bayesian_results3'+'.npz')
+	time_source_power.append(full_saved_file_dict['input_power']['TS']['time_source_power'])
+	power_pulse_shape.append(full_saved_file_dict['input_power']['TS']['power_pulse_shape'])
 	if merge_ID_target != 88:
 		target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
 		target_OES_distance.append(np.float(results_summary.loc[merge_ID_target,['T_axial']]))
@@ -167,6 +172,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 		# power_rad_H2p_sigma.append(full_saved_file_dict['power_rad_H2p'].all()['radial_time_sum']['most_likely_sigma'])
 		radial_average_brightness_bayesian.append(full_saved_file_dict['total_removed_power_visible'].all()['average_brightness']['most_likely'])
 		radial_average_brightness_bayesian_long.append(full_saved_file_dict['total_removed_power_visible'].all()['long_average_brightness']['most_likely'])
+		power_density_distribution_uniform_mach.append(full_saved_file_dict['input_power']['TS']['power_density_distribution_uniform_mach']['radial_sum'])
 
 	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 	full_saved_file_dict = np.load(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'.npz')
@@ -664,6 +670,21 @@ for index in range(len(target_chamber_pressure)):
 plt.legend()
 plt.legend(loc='best', fontsize='small')
 plt.pause(0.001)
+
+plt.figure(figsize=(10, 5))
+for index in range(len(target_chamber_pressure_2)):
+	plt.plot(time_source_power[index],power_pulse_shape[index],color=color[index],label='%.3gPa' %(target_chamber_pressure_2[index]))
+plt.legend()
+plt.legend(loc='best', fontsize='small')
+plt.pause(0.001)
+
+plt.figure(figsize=(10, 5))
+for index in range(len(target_chamber_pressure)):
+	plt.plot(time_source_power[index],power_density_distribution_uniform_mach[index],color=color[index],label='%.3gPa' %(target_chamber_pressure[index]))
+plt.legend()
+plt.legend(loc='best', fontsize='small')
+plt.pause(0.001)
+
 
 # plt.figure()
 # plt.plot(target_chamber_pressure,max_average_static_pressure)

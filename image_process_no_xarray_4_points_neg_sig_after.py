@@ -623,8 +623,8 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 		if not os.path.exists(path_where_to_save_everything):
 			os.makedirs(path_where_to_save_everything)
 		if isinstance(df_log.loc[j,['current_trace_file']][0],str):
-			fname_current_trace = df_log.loc[j,['current_trace_file']][0]
-			trash1, trash2, trash3, trash4, trash5, trash6, good_pulses, time_of_pulses = examine_current_trace(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/', fname_current_trace,number_of_pulses)
+			fname_current_trace,SS_current = df_log.loc[j,['current_trace_file','I']]
+			trash1, trash2, trash3, trash4, trash5, trash6, good_pulses, time_of_pulses = examine_current_trace(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/', fname_current_trace,number_of_pulses,SS_current=SS_current)
 			time_of_pulses = np.sort(time_of_pulses['peak_of_the_peak']) - np.min(time_of_pulses['peak_of_the_peak'])
 			current_traces = pd.read_csv(fdir+'/'+folder+'/'+"{0:0=2g}".format(int(sequence))+'/' + fname_current_trace+'.tsf',index_col=False, delimiter='\t')
 			current_traces_time = current_traces['Time [s]']
@@ -634,7 +634,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 			plt.grid()
 			plt.title('Current trace for '+str(j))
 			plt.xlabel('time [s]')
-			plt.ylabel('current [A]')
+			plt.ylabel('Rogowski coil current [A]')
 			plt.savefig(path_where_to_save_everything + '/file_index_' + str(j) + 'time_profile1.eps', bbox_inches='tight')
 			plt.close()
 
@@ -1649,18 +1649,21 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 		composed_array = np.array(temp)
 	elif True:	# here a 2D polinomial fit fith weights on the distance, and a median filter beforehand. Here I include also the sigma of single pixels
 
-		time_range_for_interp = conventional_time_step*1.3
+		time_range_for_interp = conventional_time_step*1.5
+		rows_range_for_interp = 4
+		# time_range_for_interp = conventional_time_step*1.7
+		# rows_range_for_interp = 4
 		max_time_expansion = conventional_time_step
-		rows_range_for_interp = 3
 		max_row_expansion = 2
-		min_points_for_interp = 15
+		min_points_for_interp = 17
 
 		merge_values_medianfiltered = medfilt(merge_values,[1,3])
-		merge_values_sigma_medianfiltered = np.zeros((3,*np.shape(merge_values_sigma)))
-		merge_values_sigma_medianfiltered[1] = merge_values_sigma
-		merge_values_sigma_medianfiltered[0,:,:-1] = merge_values_sigma[:,:-1]
-		merge_values_sigma_medianfiltered[2,:,1:] = merge_values_sigma[:,1:]
-		merge_values_sigma_medianfiltered = np.max(merge_values_sigma_medianfiltered,axis=0)
+		# merge_values_sigma_medianfiltered = np.zeros((3,*np.shape(merge_values_sigma)))
+		# merge_values_sigma_medianfiltered[1] = merge_values_sigma
+		# merge_values_sigma_medianfiltered[0,:,:-1] = merge_values_sigma[:,:-1]
+		# merge_values_sigma_medianfiltered[2,:,1:] = merge_values_sigma[:,1:]
+		# merge_values_sigma_medianfiltered = np.max(merge_values_sigma_medianfiltered,axis=0)
+		merge_values_sigma_medianfiltered = generic_filter(merge_values_sigma,np.max,size=[1,3])
 
 		from scipy.optimize import least_squares
 		def polynomial_2D_residuals(coord):
@@ -1685,10 +1688,22 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 			return internal_func
 
 		def polynomial_2D_residuals_11(coord):
+			# coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
 			def internal_func(coeff):
 				residuals = ((np.array(coord[0])-coord[4])**2)*coeff[0] + (np.array(coord[0])-coord[4])*coeff[1] + coeff[2]*( np.exp(coeff[3]*(np.array(coord[0])-coord[4])) -1) + ((np.array(coord[1])-coord[5])**2)*coeff[4] + (np.array(coord[1])-coord[5])*coeff[5] + coeff[6] - np.array(coord[2])
 				residuals = (residuals)**2 / (np.array(coord[3])**2)
 				residuals = residuals * (1/np.abs(np.abs(np.array(coord[0])-coord[4])+0.01))
+				return residuals
+			return internal_func
+
+		def polynomial_2D_11(coord):
+			# coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
+			def internal_func(trash,*coeff):
+				# print(trash)
+				# print(coeff)
+				residuals = ((np.array(coord[0])-coord[4])**2)*coeff[0] + (np.array(coord[0])-coord[4])*coeff[1] + coeff[2]*( np.exp(coeff[3]*(np.array(coord[0])-coord[4])) -1) + ((np.array(coord[1])-coord[5])**2)*coeff[4] + (np.array(coord[1])-coord[5])*coeff[5] + coeff[6] - np.array(coord[2])
+				# residuals = (residuals)**2 / (np.array(coord[3])**2)
+				residuals = residuals**2 /np.abs(np.abs(np.array(coord[0])-coord[4])+0.01)
 				return residuals
 			return internal_func
 
@@ -1698,6 +1713,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 				residuals = residuals * (1/(np.abs(np.array(coord[0])-coord[3])+0.01)**2)
 				return residuals
 			return internal_func
+
 		def polynomial_2D_2(coord,coeff):
 			z = (np.array(coord[0])**3)*coeff[0] +(np.array(coord[0])**2)*coeff[1] + (np.array(coord[0]))*coeff[2] + (np.array(coord[1])**2)*coeff[3] + (np.array(coord[1]))*coeff[4] + coeff[5]
 			return z
@@ -1712,6 +1728,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 				self.number_of_points_for_interpolation = number_of_points_for_interpolation
 
 		def calc_stuff(arg,row_steps=row_steps,merge_time=merge_time,merge_row=merge_row,merge_values_medianfiltered=merge_values_medianfiltered,merge_values_sigma_medianfiltered=merge_values_sigma_medianfiltered,time_range_for_interp=time_range_for_interp,rows_range_for_interp=rows_range_for_interp,calc_stuff_output=calc_stuff_output):
+		# def calc_stuff(arg,row_steps=row_steps,merge_time=merge_time,merge_row=merge_row,merge_values_medianfiltered=merge_values,merge_values_sigma_medianfiltered=merge_values_sigma,time_range_for_interp=time_range_for_interp,rows_range_for_interp=rows_range_for_interp,calc_stuff_output=calc_stuff_output):
 			i = arg[0]
 			interpolated_time = arg[1]
 			print(interpolated_time)
@@ -1746,39 +1763,52 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 				merge_row_selected = merge_row[selected]
 				# interpolation_borders_expanded[i,j] = np.sum(selected)
 				number_of_points_for_interpolation[j] = np.sum(selected)
-				guess = [1,1,1,1,1,1,100]
+				guess = [0,0,0,0,0,0,100]
 				# for z, interpolated_wave in enumerate(range(1608)):
-				def calc_fit(z,record_previous_sol=record_previous_sol,j=j,merge_values_medianfiltered=merge_values_medianfiltered[selected],merge_values_sigma_medianfiltered=merge_values_sigma_medianfiltered[selected],merge_time_selected=merge_time_selected,merge_row_selected=merge_row_selected,interpolated_time=interpolated_time,interpolated_row=interpolated_row,bds=bds):
+				def calc_fit(z,record_previous_sol=record_previous_sol,j=j,merge_values_medianfiltered_int=merge_values_medianfiltered[selected],merge_values_sigma_medianfiltered_int=merge_values_sigma_medianfiltered[selected],merge_time_selected=merge_time_selected,merge_row_selected=merge_row_selected,interpolated_time=interpolated_time,interpolated_row=interpolated_row,bds=bds):
 					# values = merge_values[selected,z]
-					values = merge_values_medianfiltered[:,z]	# modified 29/03/2020 to do the filtering only once
-					values_sigma = merge_values_sigma_medianfiltered[:,z]
+					values = merge_values_medianfiltered_int[:,z]	# modified 29/03/2020 to do the filtering only once
+					values_sigma = merge_values_sigma_medianfiltered_int[:,z]
 					# start = tm.time()
 					if record_previous_sol==0:
-						guess = [1,1,1,1,1,1,1]
+						# guess = [1,1,1,1,1,1,1]
+						guess = [0,0,0,0,0,0,0]
 					else:
 						guess = record_previous_sol[z]
 					guess[-1]=np.nanmean(values)
-					if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
-						fit = least_squares(polynomial_2D_residuals_11([merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]),guess,bounds=bds,max_nfev=125,ftol=1e-7)
-					else:
-						fit = least_squares(polynomial_2D_residuals_11([merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]),guess,bounds=bds,max_nfev=75,ftol=1e-5)
-					# print(tm.time()-start)
-					_, s, VT = svd(fit.jac, full_matrices=False)	# this method is from https://stackoverflow.com/questions/40187517/getting-covariance-matrix-of-fitted-parameters-from-scipy-optimize-least-squares
-					threshold = np.finfo(float).eps * max(fit.jac.shape) * s[0]
-					s = s[s > threshold]
-					VT = VT[:s.size]
-					pcov = np.dot(VT.T / s**2, VT)
-					# print(tm.time()-start)
-					# result = polynomial_2D_1([interpolated_time,interpolated_row,interpolated_time,interpolated_row],correlated_values(fit.x,pcov))
-					# composed_array[j,z] = fit.x[-1]
-					# composed_array_sigma[j,z] = pcov[-1,-1]**0.5
-					# guess = fit.x
-					# print(fit.x)
-					# plt.figure();plt.tricontourf(merge_time_selected,merge_row_selected,values);plt.colorbar();plt.plot(merge_time_selected,merge_row_selected,'+k');index+=1;plt.savefig('/home/ffederic/work/Collaboratory/image'+str(index)+ '.eps',bbox_inches='tight');plt.close()
-					# plt.figure();plt.tricontourf(merge_time_selected,merge_row_selected,polynomial_2D([merge_time_selected,merge_row_selected],fit.x));plt.colorbar();plt.plot(merge_time_selected,merge_row_selected,'+k');index+=1;plt.savefig('/home/ffederic/work/Collaboratory/image'+str(index)+ '.eps',bbox_inches='tight');plt.close()
-					# # plt.pause(0.01)
-					# composed_array[i,j,z] = polynomial_2D([interpolated_time,interpolated_row],fit.x)
-					return z,fit.x[-1],pcov[-1,-1]**0.5,output(fit.x)
+					time_scale = (merge_time_selected.max()-merge_time_selected.min())/np.std(values)
+					row_scale = (merge_row_selected.max()-merge_row_selected.min())/np.std(values)
+					x_scale=[time_scale**2,time_scale,time_scale,1,row_scale**2,row_scale,1]
+					coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
+					try:
+						if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
+							fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7)
+						else:
+							fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5)
+						return z,fit[0][-1],fit[1][-1,-1]**0.5,output(fit[0])
+					except:
+						print('main fast fit failed, z='+str(z)+', j='+str(j))
+						if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
+							fit = least_squares(polynomial_2D_residuals_11(coord),guess,bounds=bds,max_nfev=125,ftol=1e-7)
+						else:
+							fit = least_squares(polynomial_2D_residuals_11(coord),guess,bounds=bds,max_nfev=75,ftol=1e-5)
+						# print(tm.time()-start)
+						_, s, VT = svd(fit.jac, full_matrices=False)	# this method is from https://stackoverflow.com/questions/40187517/getting-covariance-matrix-of-fitted-parameters-from-scipy-optimize-least-squares
+						threshold = np.finfo(float).eps * max(fit.jac.shape) * s[0]
+						s = s[s > threshold]
+						VT = VT[:s.size]
+						pcov = np.dot(VT.T / s**2, VT)
+						# print(tm.time()-start)
+						# result = polynomial_2D_1([interpolated_time,interpolated_row,interpolated_time,interpolated_row],correlated_values(fit.x,pcov))
+						# composed_array[j,z] = fit.x[-1]
+						# composed_array_sigma[j,z] = pcov[-1,-1]**0.5
+						# guess = fit.x
+						# print(fit.x)
+						# plt.figure();plt.tricontourf(merge_time_selected,merge_row_selected,values);plt.colorbar();plt.plot(merge_time_selected,merge_row_selected,'+k');index+=1;plt.savefig('/home/ffederic/work/Collaboratory/image'+str(index)+ '.eps',bbox_inches='tight');plt.close()
+						# plt.figure();plt.tricontourf(merge_time_selected,merge_row_selected,polynomial_2D([merge_time_selected,merge_row_selected],fit.x));plt.colorbar();plt.plot(merge_time_selected,merge_row_selected,'+k');index+=1;plt.savefig('/home/ffederic/work/Collaboratory/image'+str(index)+ '.eps',bbox_inches='tight');plt.close()
+						# # plt.pause(0.01)
+						# composed_array[i,j,z] = polynomial_2D([interpolated_time,interpolated_row],fit.x)
+						return z,fit.x[-1],pcov[-1,-1]**0.5,output(fit.x)
 
 
 				composed_row = map(calc_fit, range(1608))
@@ -1803,7 +1833,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 
 			if np.min(number_of_points_for_interpolation) == 0:
 				for j, interpolated_row in enumerate(row_steps):
-					guess = [1, 1, 1, 1,1,1, 100]
+					guess = [0,0,0,0,0,0,100]
 					if (j<=0 or j>=len(row_steps)-1):
 						continue
 					else:
@@ -1848,21 +1878,34 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 								values_sigma = merge_values_sigma_medianfiltered[selected,z]
 								guess = record_previous_sol[z]
 								guess[-1]=np.nanmean(values)
-								if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
-									fit = least_squares(polynomial_2D_residuals_11([merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]),guess,bounds=bds,max_nfev=500,ftol=1e-7)
-								else:
-									fit = least_squares(polynomial_2D_residuals_11([merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]),guess,bounds=bds,max_nfev=100,ftol=1e-5)
-								_, s, VT = svd(fit.jac, full_matrices=False)	# this method is from https://stackoverflow.com/questions/40187517/getting-covariance-matrix-of-fitted-parameters-from-scipy-optimize-least-squares
-								threshold = np.finfo(float).eps * max(fit.jac.shape) * s[0]
-								s = s[s > threshold]
-								VT = VT[:s.size]
-								pcov = np.dot(VT.T / s**2, VT)
-								result = polynomial_2D_1([interpolated_time,interpolated_row,interpolated_time,interpolated_row],correlated_values(fit.x,pcov))
-								composed_array[j,z] = fit.x[-1]
-								composed_array_sigma[j,z] = pcov[-1,-1]**0.5
-								# guess = fit.x
+								time_scale = (merge_time_selected.max()-merge_time_selected.min())/np.std(values)
+								row_scale = (merge_row_selected.max()-merge_row_selected.min())/np.std(values)
+								x_scale=[time_scale**2,time_scale,time_scale,1,row_scale**2,row_scale,1]
+								coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
+								try:
+									if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
+										fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7)
+									else:
+										fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5)
+									composed_array[j,z] = fit[0][-1]
+									composed_array_sigma[j,z] = fit[0][-1,-1]**0.5
+								except:
+									print('main fast fit failed, z='+str(z)+', j='+str(j))
+									if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
+										fit = least_squares(polynomial_2D_residuals_11(coord),guess,bounds=bds,max_nfev=500,ftol=1e-7)
+									else:
+										fit = least_squares(polynomial_2D_residuals_11(coord),guess,bounds=bds,max_nfev=100,ftol=1e-5)
+									_, s, VT = svd(fit.jac, full_matrices=False)	# this method is from https://stackoverflow.com/questions/40187517/getting-covariance-matrix-of-fitted-parameters-from-scipy-optimize-least-squares
+									threshold = np.finfo(float).eps * max(fit.jac.shape) * s[0]
+									s = s[s > threshold]
+									VT = VT[:s.size]
+									pcov = np.dot(VT.T / s**2, VT)
+									composed_array[j,z] = fit.x[-1]
+									composed_array_sigma[j,z] = pcov[-1,-1]**0.5
+									# guess = fit.x
 								if False:	# I stop doing the plots because it slows down too much the process 25/05/2020
 									if ( (z == max_value_index) and (j%140==0) ):
+										result = polynomial_2D_1([interpolated_time,interpolated_row,interpolated_time,interpolated_row],correlated_values(fit.x,pcov))
 										merge_time_selected = np.flip(np.array([x for _, x in sorted(zip(values, merge_time_selected))]),axis=0)
 										merge_row_selected = np.flip(np.array([x for _, x in sorted(zip(values, merge_row_selected))]),axis=0)
 										values = np.flip(np.sort(values),axis=0)
@@ -1881,7 +1924,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 											plt.savefig(path_where_to_save_everything + '/extended_fit_record' + '/' + 'fitting_expanded_example_time'+str(i)+'_row'+str(j)+'_wavel_pos'+str(z)+'_data.eps',bbox_inches='tight')
 										except:
 											print('there was some error in plotting fitting_expanded_example_time'+str(i)+'_row'+str(j)+'_wavel_pos'+str(z)+'.eps')
-										plt.close()
+										plt.close('all')
 
 										xv,yv = np.meshgrid(np.linspace(np.min(merge_time_selected),np.max(merge_time_selected),10),np.linspace(np.min(merge_row_selected),np.max(merge_row_selected),10))
 										plt.figure(figsize=(10, 10))

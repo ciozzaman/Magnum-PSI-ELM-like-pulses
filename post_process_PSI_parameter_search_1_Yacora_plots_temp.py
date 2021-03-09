@@ -29,7 +29,7 @@ if False:
 	T_H = 1*np.ones_like(Te_all)/eV_to_K	# K
 elif True:
 	# Te_all[Te_all<300*eV_to_K]=300*eV_to_K
-	Te_all[nH_ne_all==0]=merge_Te_prof_multipulse_interp_crop_limited[nH_ne_all==0]
+	Te_all[nH_ne_all==0]=merge_Te_prof_multipulse_interp_crop[nH_ne_all==0]
 	T_Hp = Te_all/eV_to_K	# K
 	T_Hp[T_Hp<300]=300
 	T_Hm = np.exp(TH2_fit_from_simulations(np.log(Te_all)))/eV_to_K	# K
@@ -112,7 +112,7 @@ if initial_conditions:
 
 	temp_r, temp_t = np.meshgrid([*r_crop-dx/2,r_crop.max()+dx/2], [*time_crop-dt/2,time_crop.max()+dt/2])
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t,temp_r, merge_ne_prof_multipulse_interp_crop_limited, cmap='rainbow');
+	plt.pcolor(temp_t,temp_r, merge_ne_prof_multipulse_interp_crop, cmap='rainbow');
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	plt.legend(loc='best', fontsize='xx-small')
 	plt.colorbar(orientation="horizontal").set_label('density [10^20 # m^-3]')  # ;plt.pause(0.01)
@@ -141,7 +141,7 @@ if initial_conditions:
 	plt.close()
 
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, merge_Te_prof_multipulse_interp_crop_limited, cmap='rainbow');
+	plt.pcolor(temp_t, temp_r, merge_Te_prof_multipulse_interp_crop, cmap='rainbow');
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	plt.legend(loc='best', fontsize='xx-small')
 	plt.colorbar(orientation="horizontal").set_label('temperature [eV]')  # ;plt.pause(0.01)
@@ -155,7 +155,7 @@ if initial_conditions:
 	plt.close()
 
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, merge_dTe_prof_multipulse_interp_crop_limited, cmap='rainbow');
+	plt.pcolor(temp_t, temp_r, merge_dTe_prof_multipulse_interp_crop, cmap='rainbow');
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	plt.legend(loc='best', fontsize='xx-small')
 	plt.colorbar(orientation="horizontal").set_label('temperature [eV]')  # ;plt.pause(0.01)
@@ -350,9 +350,9 @@ if initial_conditions:
 			yy_sigma = merge_dne_multipulse_target[index]
 			yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
 			if np.sum(yy>0)<5:
-				profile_target_centres.append(0)
-				profile_target_sigma.append(10)
-				profile_target_centres_score.append(np.max(TS_r))
+				# profile_target_centres.append(0)
+				# profile_target_sigma.append(10)
+				# profile_target_centres_score.append(np.max(TS_r))
 				continue
 			yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
 			p0 = [np.max(yy), 10, 0]
@@ -368,7 +368,7 @@ if initial_conditions:
 		# centre = np.nanmean(profile_target_centres[profile_target_centres_score < 1])
 		centre_target = np.nansum(profile_target_centres/(profile_target_centres_score**1))/np.sum(1/profile_target_centres_score**1)
 		TS_r_new_target = (TS_r - centre_target) / 1000
-		print('TS profile centre at %.3gmm compared to the theoretical centre' %centre)
+		print('TS profile centre at %.3gmm compared to the theoretical centre or the target TS' %centre_target)
 		# temp_r, temp_t = np.meshgrid(TS_r_new, merge_time)
 		# plt.figure();plt.pcolor(temp_t,temp_r,merge_Te_prof_multipulse,vmin=0);plt.colorbar().set_label('Te [eV]');plt.pause(0.01)
 		# plt.figure();plt.pcolor(temp_t,temp_r,merge_ne_prof_multipulse,vmin=0);plt.colorbar().set_label('ne [10^20 #/m^3]');plt.pause(0.01)
@@ -615,9 +615,9 @@ if initial_conditions:
 			yy_sigma = merge_dne_multipulse_upstream[index]
 			yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
 			if np.sum(yy>0)<5:
-				profile_upstream_centres.append(0)
-				profile_upstream_sigma.append(10)
-				profile_upstream_centres_score.append(np.max(TS_r))
+				# profile_upstream_centres.append(0)
+				# profile_upstream_sigma.append(10)
+				# profile_upstream_centres_score.append(np.max(TS_r))
 				continue
 			yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
 			p0 = [np.max(yy), 10, 0]
@@ -1041,7 +1041,7 @@ if initial_conditions:
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
 	plt.ylabel('radial location [m]      ')
-	plt.title(pre_title+'Upstream total pressure homogeneous mach num\n'+label_ion_source_at_upstream)
+	plt.title(pre_title+'Upstream total pressure homogeneous mach number\n'+label_ion_source_at_upstream)
 	figure_index += 1
 	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
 		figure_index) + '.eps', bbox_inches='tight')
@@ -1062,12 +1062,12 @@ if initial_conditions:
 	plt.close()
 
 	# area = 2*np.pi*(r_crop + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))
-	area_equivalent_to_downstream_peak_total_pressure = merge_ne_prof_multipulse_interp_crop_limited*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass + (nHp_ne_all*merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J))
+	area_equivalent_to_downstream_peak_total_pressure = merge_ne_prof_multipulse_interp_crop*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass + (nHp_ne_all*merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J))
 	temp_index = np.sum(area_equivalent_to_downstream_peak_total_pressure*area,axis=-1).argmax()
 	area_equivalent_to_downstream_peak_total_pressure = np.sum(area_equivalent_to_downstream_peak_total_pressure*area,axis=-1)/np.max(area_equivalent_to_downstream_peak_total_pressure,axis=-1)
 	radious_equivalent_to_downstream_peak_total_pressure = (area_equivalent_to_downstream_peak_total_pressure/3.14)**0.5
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop_limited*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass + (nHp_ne_all*merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J)), cmap='rainbow');
+	plt.pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass + (nHp_ne_all*merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J)), cmap='rainbow');
 	plt.plot(time_crop,radious_equivalent_to_downstream_peak_total_pressure,'--',color='grey',label='radious equivalent to\nmaximum pressure\narea %.3gm2' %(area_equivalent_to_downstream_peak_total_pressure[temp_index]))
 	plt.plot([time_crop[temp_index]]*2,[temp_r.min(),temp_r.max()],'--',color='grey')
 	plt.legend(loc='best', fontsize='xx-small')
@@ -1081,12 +1081,12 @@ if initial_conditions:
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
 
-	area_equivalent_to_downstream_peak_pressure = (merge_ne_prof_multipulse_interp_crop_limited*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass))
+	area_equivalent_to_downstream_peak_pressure = (merge_ne_prof_multipulse_interp_crop*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass))
 	temp_index = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1).argmax()
 	area_equivalent_to_downstream_peak_pressure = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1)/np.max(area_equivalent_to_downstream_peak_pressure,axis=-1)
 	radious_equivalent_to_downstream_peak_pressure = (area_equivalent_to_downstream_peak_pressure/3.14)**0.5
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, (merge_ne_prof_multipulse_interp_crop_limited*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass)), cmap='rainbow');
+	plt.pcolor(temp_t, temp_r, (merge_ne_prof_multipulse_interp_crop*1e20*((((homogeneous_mach_number*upstream_adiabatic_collisional_velocity.T).T)**2)*hydrogen_mass)), cmap='rainbow');
 	plt.plot(time_crop,radious_equivalent_to_downstream_peak_pressure,'--',color='grey',label='radious equivalent to\nmaximum pressure\narea %.3gm2' %(area_equivalent_to_downstream_peak_pressure[temp_index]))
 	plt.plot([time_crop[temp_index]]*2,[temp_r.min(),temp_r.max()],'--',color='grey')
 	plt.legend(loc='best', fontsize='xx-small')
@@ -1100,12 +1100,12 @@ if initial_conditions:
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
 
-	area_equivalent_to_downstream_peak_pressure = merge_ne_prof_multipulse_interp_crop_limited*1e20*( (nHp_ne_all*merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J))
+	area_equivalent_to_downstream_peak_pressure = merge_ne_prof_multipulse_interp_crop*1e20*( (nHp_ne_all*merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J))
 	temp_index = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1).argmax()
 	temp = np.nanmax(np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1)/sum(area))
 	temp2 = np.max(area_equivalent_to_downstream_peak_pressure,axis=-1)
-	temp3 = np.max(merge_Te_prof_multipulse_interp_crop_limited,axis=-1)
-	temp4 = np.max(merge_ne_prof_multipulse_interp_crop_limited,axis=-1)
+	temp3 = np.max(merge_Te_prof_multipulse_interp_crop,axis=-1)
+	temp4 = np.max(merge_ne_prof_multipulse_interp_crop,axis=-1)
 	# print((np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1)/sum(area)))
 	# print(temp)
 	area_equivalent_to_downstream_peak_pressure = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1)/np.max(area_equivalent_to_downstream_peak_pressure,axis=-1)
@@ -1122,7 +1122,7 @@ if initial_conditions:
 	results_summary.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv')
 
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop_limited*1e20*( (nHp_ne_all*merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop_limited/eV_to_K*boltzmann_constant_J)), cmap='rainbow');
+	plt.pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop*1e20*( (nHp_ne_all*merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J)), cmap='rainbow');
 	plt.plot(time_crop,radious_equivalent_to_downstream_peak_pressure,'--',color='grey',label='radious equivalent to\nmaximum tot pressure\narea %.3gm2' %(area_equivalent_to_downstream_peak_pressure[temp_index]))
 	plt.plot([time_crop[temp_index]]*2,[temp_r.min(),temp_r.max()],'--',color='grey')
 	plt.legend(loc='best', fontsize='xx-small')
@@ -1136,9 +1136,9 @@ if initial_conditions:
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
 
-	power_density_distribution_uniform_mach = ( 0.5*hydrogen_mass*((upstream_adiabatic_collisional_velocity.T * homogeneous_mach_number).T **2) + 5*Te_all_upstream/eV_to_K*boltzmann_constant_J + (ionisation_potential + dissociation_potential)/J_to_eV ) * ne_all_upstream*1e20*((upstream_adiabatic_collisional_velocity.T * homogeneous_mach_number).T)
+	upstream_power_density_distribution_uniform_mach = ( 0.5*hydrogen_mass*((upstream_adiabatic_collisional_velocity.T * homogeneous_mach_number).T **2) + 5*Te_all_upstream/eV_to_K*boltzmann_constant_J + (ionisation_potential + dissociation_potential)/J_to_eV ) * ne_all_upstream*1e20*((upstream_adiabatic_collisional_velocity.T * homogeneous_mach_number).T)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, power_density_distribution_uniform_mach, cmap='rainbow');
+	plt.pcolor(temp_t, temp_r, upstream_power_density_distribution_uniform_mach, cmap='rainbow');
 	plt.colorbar(orientation="horizontal").set_label('Power density [W/m2]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -1149,9 +1149,9 @@ if initial_conditions:
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
 
-	power_density_distribution_uniform_flow_velocity = ((( 0.5*hydrogen_mass*homogeneous_flow_vel**2 + (5*Te_all_upstream/eV_to_K*boltzmann_constant_J + (ionisation_potential + dissociation_potential)/J_to_eV).T ).T * ne_all_upstream*1e20).T*homogeneous_flow_vel).T
+	upstream_power_density_distribution_uniform_flow_velocity = ((( 0.5*hydrogen_mass*homogeneous_flow_vel**2 + (5*Te_all_upstream/eV_to_K*boltzmann_constant_J + (ionisation_potential + dissociation_potential)/J_to_eV).T ).T * ne_all_upstream*1e20).T*homogeneous_flow_vel).T
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, power_density_distribution_uniform_flow_velocity/area, cmap='rainbow');
+	plt.pcolor(temp_t, temp_r, upstream_power_density_distribution_uniform_flow_velocity/area, cmap='rainbow');
 	plt.colorbar(orientation="horizontal").set_label('Power density [W/m2]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -1162,11 +1162,50 @@ if initial_conditions:
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
 
+	power_density_distribution_uniform_mach = ( 0.5*hydrogen_mass*((upstream_adiabatic_collisional_velocity.T * homogeneous_mach_number).T **2) + 5*merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J + (ionisation_potential + dissociation_potential)/J_to_eV ) * merge_ne_prof_multipulse_interp_crop*1e20*((upstream_adiabatic_collisional_velocity.T * homogeneous_mach_number).T)
+	plt.figure(figsize=(8, 5));
+	plt.pcolor(temp_t, temp_r, power_density_distribution_uniform_mach, cmap='rainbow');
+	plt.colorbar(orientation="horizontal").set_label('Power density [W/m2]')  # ;plt.pause(0.01)
+	plt.axes().set_aspect(20)
+	plt.xlabel('time [ms]')
+	plt.ylabel('radial location [m]      ')
+	plt.title(pre_title+'Downstream power temporal and spatial distribution\nwith uniform Mach number from upstream')
+	figure_index += 1
+	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+		figure_index) + '.eps', bbox_inches='tight')
+	plt.close()
+
+	power_density_distribution_uniform_flow_velocity = ((( 0.5*hydrogen_mass*homogeneous_flow_vel**2 + (5*merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J + (ionisation_potential + dissociation_potential)/J_to_eV).T ).T * merge_ne_prof_multipulse_interp_crop*1e20).T*homogeneous_flow_vel).T
+	plt.figure(figsize=(8, 5));
+	plt.pcolor(temp_t, temp_r, power_density_distribution_uniform_flow_velocity/area, cmap='rainbow');
+	plt.colorbar(orientation="horizontal").set_label('Power density [W/m2]')  # ;plt.pause(0.01)
+	plt.axes().set_aspect(20)
+	plt.xlabel('time [ms]')
+	plt.ylabel('radial location [m]      ')
+	plt.title(pre_title+'Downstream power temporal and spatial distribution\nwith uniform flow velocity from upstream')
+	figure_index += 1
+	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+		figure_index) + '.eps', bbox_inches='tight')
+	plt.close()
+
+	plt.figure(figsize=(8, 5));
+	plt.plot(time_crop,power_pulse_shape_crop*1e-3,label='plasma source power input')
+	plt.plot(time_crop,np.sum(upstream_power_density_distribution_uniform_mach*area,axis=1)*1e-3,label='upstream power flow')
+	plt.plot(time_crop,np.sum(power_density_distribution_uniform_mach*area,axis=1)*1e-3,label='downstream power flow')
+	plt.legend(loc='best', fontsize='xx-small')
+	plt.xlabel('time [ms]')
+	plt.ylabel('power [kW]      ')
+	plt.title(pre_title+'Comparison of the power avaliable\nwith detected')
+	figure_index += 1
+	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+		figure_index) + '.eps', bbox_inches='tight')
+	plt.close()
+
 	plt.figure(figsize=(8, 5));
 	plt.plot(time_crop, np.max(inverted_profiles_crop[:,0],axis=-1)/np.max(inverted_profiles_crop[:,0]),label='max emissivity n=4');
 	plt.plot(time_crop, np.max(inverted_profiles_crop[:,3],axis=-1)/np.max(inverted_profiles_crop[:,3]),label='max emissivity n=7');
-	plt.plot(time_crop, merge_ne_prof_multipulse_interp_crop_limited[:,0]/np.max(merge_ne_prof_multipulse_interp_crop_limited[:,0]),label='ne');
-	plt.plot(time_crop, merge_Te_prof_multipulse_interp_crop_limited[:,0]/np.max(merge_Te_prof_multipulse_interp_crop_limited[:,0]),label='Te');
+	plt.plot(time_crop, merge_ne_prof_multipulse_interp_crop[:,0]/np.max(merge_ne_prof_multipulse_interp_crop[:,0]),label='ne');
+	plt.plot(time_crop, merge_Te_prof_multipulse_interp_crop[:,0]/np.max(merge_Te_prof_multipulse_interp_crop[:,0]),label='Te');
 	plt.errorbar(time_crop, interpolated_power_pulse_shape(time_crop)/np.max(interpolated_power_pulse_shape(time_crop)),yerr=interpolated_power_pulse_shape_std(time_crop)/np.max(interpolated_power_pulse_shape(time_crop)),label='Source power');
 	plt.legend(loc='best', fontsize='xx-small')
 	# plt.semilogy()
@@ -1180,7 +1219,7 @@ if initial_conditions:
 
 	temp_time_crop = time_crop[time_crop<=0.9]
 	temp_r, temp_t = np.meshgrid([*r_crop-dx/2,r_crop.max()+dx/2], [*temp_time_crop-dt/2,temp_time_crop.max()+dt/2])
-	selected = np.ones_like(merge_Te_prof_multipulse_interp_crop_limited).T
+	selected = np.ones_like(merge_Te_prof_multipulse_interp_crop).T
 
 	fig, ax = plt.subplots( 3,1,figsize=(5, 7), squeeze=False, sharex=True)
 	plot_index = 0
@@ -1189,11 +1228,11 @@ if initial_conditions:
 	ax[plot_index,0].set_ylim(bottom=0,top=150)
 	ax[plot_index,0].grid()
 	plot_index +=1
-	im1 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9], cmap='rainbow',vmax=9);
+	im1 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_Te_prof_multipulse_interp_crop[time_crop<=0.9], cmap='rainbow',vmax=9);
 	#fig.colorbar(im, ax=ax[plot_index,0],orientation="vertical").set_label('temperature [eV]')
 	ax[plot_index,0].set_ylabel('radial loc [m]')
 	plot_index +=1
-	im2 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9], cmap='rainbow',vmax=50)
+	im2 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop[time_crop<=0.9], cmap='rainbow',vmax=50)
 	#fig.colorbar(im, ax=ax[plot_index,0],orientation="vertical").set_label('density [10^20 # m^-3]')
 	ax[plot_index,0].set_ylabel('radial loc [m]')
 	ax[plot_index,0].set_xlabel('time [ms]')
@@ -1206,7 +1245,7 @@ if initial_conditions:
 
 	cbar1 = fig.colorbar(im1, cax=cax)
 	cbar1.set_label('Te [eV]')
-	CS1 = ax[1,0].contour(time_crop[time_crop<=0.9],r_crop,merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9].T,levels=np.linspace(0,merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9].max(),num=6)[1:-1],colors=['k','grey','w','b'],linewidths=2,linestyles='--')
+	CS1 = ax[1,0].contour(time_crop[time_crop<=0.9],r_crop,merge_Te_prof_multipulse_interp_crop[time_crop<=0.9].T,levels=np.linspace(0,merge_Te_prof_multipulse_interp_crop[time_crop<=0.9].max(),num=6)[1:-1],colors=['k','grey','w','b'],linewidths=2,linestyles='--')
 	cbar1.add_lines(CS1)
 
 	box = ax[2,0].get_position()
@@ -1216,7 +1255,7 @@ if initial_conditions:
 
 	cbar2 = fig.colorbar(im2, cax=cax)
 	cbar2.set_label('ne [10^20 # m^-3]')
-	CS2 = ax[2,0].contour(time_crop[time_crop<=0.9],r_crop,merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9].T,levels=np.linspace(0,merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9].max(),num=6)[1:-1],colors=['k','grey','w','b'],linewidths=2,linestyles='--')
+	CS2 = ax[2,0].contour(time_crop[time_crop<=0.9],r_crop,merge_ne_prof_multipulse_interp_crop[time_crop<=0.9].T,levels=np.linspace(0,merge_ne_prof_multipulse_interp_crop[time_crop<=0.9].max(),num=6)[1:-1],colors=['k','grey','w','b'],linewidths=2,linestyles='--')
 	cbar2.add_lines(CS2)
 
 	fig.suptitle(pre_title)
@@ -1232,11 +1271,11 @@ if initial_conditions:
 	ax[plot_index,0].set_ylim(bottom=0,top=150)
 	ax[plot_index,0].grid()
 	plot_index +=1
-	im1 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9], cmap='rainbow',vmax=9);
+	im1 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_Te_prof_multipulse_interp_crop[time_crop<=0.9], cmap='rainbow',vmax=9);
 	#fig.colorbar(im, ax=ax[plot_index,0],orientation="vertical").set_label('temperature [eV]')
 	ax[plot_index,0].set_ylabel('radial loc [m]')
 	plot_index +=1
-	im2 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9], cmap='rainbow',vmax=50)
+	im2 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_ne_prof_multipulse_interp_crop[time_crop<=0.9], cmap='rainbow',vmax=50)
 	#fig.colorbar(im, ax=ax[plot_index,0],orientation="vertical").set_label('density [10^20 # m^-3]')
 	ax[plot_index,0].set_ylabel('radial loc [m]')
 	ax[plot_index,0].set_xlabel('time [ms]')
@@ -1249,7 +1288,7 @@ if initial_conditions:
 
 	cbar1 = fig.colorbar(im1, cax=cax)
 	cbar1.set_label('Te [eV]')
-	CS1 = ax[1,0].contour(time_crop[time_crop<=0.9],r_crop,merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9].T,levels=np.linspace(0,merge_Te_prof_multipulse_interp_crop_limited[time_crop<=0.9].max(),num=6)[1:-1],colors='k',linewidths=2,linestyles='--')
+	CS1 = ax[1,0].contour(time_crop[time_crop<=0.9],r_crop,merge_Te_prof_multipulse_interp_crop[time_crop<=0.9].T,levels=np.linspace(0,merge_Te_prof_multipulse_interp_crop[time_crop<=0.9].max(),num=6)[1:-1],colors='k',linewidths=2,linestyles='--')
 	ax[1,0].clabel(CS1, inline=1, fontsize=14,fmt='%.2f',inline_spacing=9)
 	# cbar1.add_lines(CS1)
 
@@ -1260,7 +1299,7 @@ if initial_conditions:
 
 	cbar2 = fig.colorbar(im2, cax=cax)
 	cbar2.set_label('ne [10^20 # m^-3]')
-	CS2 = ax[2,0].contour(time_crop[time_crop<=0.9],r_crop,merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9].T,levels=np.linspace(0,merge_ne_prof_multipulse_interp_crop_limited[time_crop<=0.9].max(),num=6)[1:-1],colors='k',linewidths=2,linestyles='--')
+	CS2 = ax[2,0].contour(time_crop[time_crop<=0.9],r_crop,merge_ne_prof_multipulse_interp_crop[time_crop<=0.9].T,levels=np.linspace(0,merge_ne_prof_multipulse_interp_crop[time_crop<=0.9].max(),num=6)[1:-1],colors='k',linewidths=2,linestyles='--')
 	ax[2,0].clabel(CS2, inline=1, fontsize=14,fmt='%.1f',inline_spacing=9)
 	# cbar2.add_lines(CS2)
 
@@ -4830,6 +4869,12 @@ else:
 		intervals_power_rad_mol_visible = np.zeros_like(Te_all).tolist()
 		prob_power_rad_mol_visible = np.zeros_like(Te_all).tolist()
 		actual_values_power_rad_mol_visible = np.zeros_like(Te_all).tolist()
+		intervals_Te_values = np.zeros_like(Te_all).tolist()
+		prob_Te_values = np.zeros_like(Te_all).tolist()
+		actual_values_Te_values = np.zeros_like(Te_all).tolist()
+		intervals_ne_values = np.zeros_like(Te_all).tolist()
+		prob_ne_values = np.zeros_like(Te_all).tolist()
+		actual_values_ne_values = np.zeros_like(Te_all).tolist()
 
 
 		for i_t in range(np.shape(Te_all)[0]):
@@ -4929,6 +4974,12 @@ else:
 					intervals_power_rad_mol_visible[i_t][i_r] = [0,0]
 					prob_power_rad_mol_visible[i_t][i_r] = [1]
 					actual_values_power_rad_mol_visible[i_t][i_r] = [0]
+					intervals_Te_values[i_t][i_r] = [0,0]
+					prob_Te_values[i_t][i_r] = [1]
+					actual_values_Te_values[i_t][i_r] = [0]
+					intervals_ne_values[i_t][i_r] = [0,0]
+					prob_ne_values[i_t][i_r] = [1]
+					actual_values_ne_values[i_t][i_r] = [0]
 				else:
 					intervals_power_rad_excit[i_t][i_r] = power_balance_data_dict[i]['power_rad_excit']['intervals']
 					prob_power_rad_excit[i_t][i_r] = power_balance_data_dict[i]['power_rad_excit']['prob']
@@ -5023,13 +5074,19 @@ else:
 					intervals_power_rad_mol_visible[i_t][i_r] = power_balance_data_dict[i]['power_rad_mol_visible']['intervals']
 					prob_power_rad_mol_visible[i_t][i_r] = power_balance_data_dict[i]['power_rad_mol_visible']['prob']
 					actual_values_power_rad_mol_visible[i_t][i_r] = power_balance_data_dict[i]['power_rad_mol_visible']['actual_values']
+					intervals_Te_values[i_t][i_r] = power_balance_data_dict[i]['Te_values']['intervals']
+					prob_Te_values[i_t][i_r] = power_balance_data_dict[i]['Te_values']['prob']
+					actual_values_Te_values[i_t][i_r] = power_balance_data_dict[i]['Te_values']['actual_values']
+					intervals_ne_values[i_t][i_r] = power_balance_data_dict[i]['ne_values']['intervals']
+					prob_ne_values[i_t][i_r] = power_balance_data_dict[i]['ne_values']['prob']
+					actual_values_ne_values[i_t][i_r] = power_balance_data_dict[i]['ne_values']['actual_values']
 
 		if not os.path.exists(path_where_to_save_everything + mod4 + '/bayesian'):
 			os.makedirs(path_where_to_save_everything + mod4 + '/bayesian')
 
 		def make_plot_type_1(most_likely_something,label,label_units,figure_index):
 			plt.figure(figsize=(8, 5));
-			plt.pcolor(temp_t, temp_r, most_likely_something,cmap='rainbow',vmin=max(max(1,np.nanmin(most_likely_something)),np.nanmax(most_likely_something)*1e-6), norm=LogNorm());
+			plt.pcolor(temp_t, temp_r, most_likely_something,cmap='rainbow',vmin=max(max(0.1,np.nanmin(most_likely_something)),np.nanmax(most_likely_something)*1e-6), norm=LogNorm());
 			plt.colorbar(orientation="horizontal").set_label(label_units)  # ;plt.pause(0.01)
 			plt.axes().set_aspect(20)
 			plt.xlabel('time [ms]')
@@ -5566,7 +5623,7 @@ else:
 
 		most_likely_n_H2CX = np.array(calculate_most_likely(prob_n_H2CX,actual_values_n_H2CX))
 		most_likely_n_H2CX[np.isnan(most_likely_n_H2CX)]=0
-		arbitrary_plasma_column_border = most_likely_n_H2CX<np.nanmax(nH2_rmax)
+		arbitrary_plasma_column_border = most_likely_n_H2CX<nH2_rmax
 		arbitrary_plasma_column_border = np.array([r_crop[max(0,value-1)] for value in np.sum(arbitrary_plasma_column_border,axis=1)])
 		H2_inflow_sides_plasma_column = np.sum(2*np.pi*arbitrary_plasma_column_border*length*nH2vH2_rmax*dt/1000)
 		H2_pre_ELMlike_pulse = np.pi*(np.max(arbitrary_plasma_column_border)**2)*length*nH2_rmax
@@ -5651,6 +5708,12 @@ else:
 
 		most_likely_power_rad_mol_visible = calculate_most_likely(prob_power_rad_mol_visible,actual_values_power_rad_mol_visible)
 		figure_index = make_plot_type_1(most_likely_power_rad_mol_visible,'power_rad_mol_visible','power [W/m3]',figure_index)
+
+		most_likely_Te_values = calculate_most_likely(prob_Te_values,actual_values_Te_values)
+		figure_index = make_plot_type_1(most_likely_Te_values,'Te_values','temperature [eV]',figure_index)
+
+		most_likely_ne_values = calculate_most_likely(prob_ne_values,actual_values_ne_values)
+		figure_index = make_plot_type_1(most_likely_ne_values,'ne_values','density [#/m3]',figure_index)
 
 
 		# area = 2*np.pi*(r_crop + np.median(np.diff(r_crop))/2) * np.median(np.diff(r_crop))
@@ -6167,7 +6230,7 @@ else:
 		plt.plot(time_crop,most_likely_total_removed_power_r,label='total_removed_power from plasma fliud\nionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral')
 		plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		plt.plot(time_crop, heat_inflow_upstream_min,'--k');
-		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop_limited+13.6+2.2)*merge_ne_prof_multipulse_interp_crop_limited*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
+		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop+13.6+2.2)*merge_ne_prof_multipulse_interp_crop*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
 		plt.plot(time_crop[1:], energy_variation_dt,'--',color='gray',label='stored in plasma');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,ls='--',label='Power from plasma source')
 		plt.grid()
@@ -6194,7 +6257,7 @@ else:
 		plt.errorbar(time_crop,most_likely_total_removed_power_r,yerr=[most_likely_total_removed_power_r-actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up-most_likely_total_removed_power_r],capsize=5,label='total_removed_power from plasma fliud\nionisation + rad_mol + rad_excit + recombination*pot + brem + rec_neutral')
 		plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		plt.plot(time_crop, heat_inflow_upstream_min,'--k');
-		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop_limited+13.6+2.2)*merge_ne_prof_multipulse_interp_crop_limited*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
+		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop+13.6+2.2)*merge_ne_prof_multipulse_interp_crop*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
 		plt.plot(time_crop[1:], energy_variation_dt,'--',color='gray',label='stored in plasma');
 		plt.errorbar(time_source_power_crop,power_pulse_shape_crop,yerr=power_pulse_shape_std_crop,ls='--',label='Power from plasma source')
 		plt.grid()
@@ -6223,7 +6286,7 @@ else:
 		# plt.plot(time_crop,most_likely_power_rad_mol_r,'--',color=color[5],label='power_rad_mol')
 		# plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		# plt.plot(time_crop, heat_inflow_upstream_min,'--k');
-		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop_limited+13.6+2.2)*merge_ne_prof_multipulse_interp_crop_limited*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
+		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop+13.6+2.2)*merge_ne_prof_multipulse_interp_crop*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
 		# plt.plot(time_crop[1:], energy_variation_dt,'--',color='gray',label='stored in plasma');
 		plt.grid()
 		# plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
@@ -6251,7 +6314,7 @@ else:
 		plt.plot(time_crop,most_likely_power_rad_mol_r,color=color[5],label='H excitation from molecular reactions')
 		# plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		# plt.plot(time_crop, heat_inflow_upstream_min,'--k');
-		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop_limited+13.6+2.2)*merge_ne_prof_multipulse_interp_crop_limited*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
+		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop+13.6+2.2)*merge_ne_prof_multipulse_interp_crop*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
 		# plt.plot(time_crop[1:], energy_variation_dt,'--',color='gray',label='stored in plasma');
 		plt.grid()
 		# plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
@@ -6279,7 +6342,7 @@ else:
 		plt.plot(time_crop,most_likely_power_rec_neutral_r,color=color[5],label='power_rec_neutral')
 		# plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		# plt.plot(time_crop, heat_inflow_upstream_min,'--k');
-		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop_limited+13.6+2.2)*merge_ne_prof_multipulse_interp_crop_limited*1e20/6.24e18*area,axis=1)*length/dt*1000,':',color='gray',label='stored in plasma');
+		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop+13.6+2.2)*merge_ne_prof_multipulse_interp_crop*1e20/6.24e18*area,axis=1)*length/dt*1000,':',color='gray',label='stored in plasma');
 		plt.plot(time_crop[1:], energy_variation_dt,'--',color='gray',label='stored in plasma');
 		plt.grid()
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
@@ -6310,7 +6373,7 @@ else:
 		plt.plot(time_crop,most_likely_power_rec_neutral_r,color=color[5],label='power_rec_neutral')
 		# plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		# plt.plot(time_crop, heat_inflow_upstream_min,'--k');
-		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop_limited+13.6+2.2)*merge_ne_prof_multipulse_interp_crop_limited*1e20/6.24e18*area,axis=1)*length/dt*1000,':',color='gray',label='stored in plasma');
+		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop+13.6+2.2)*merge_ne_prof_multipulse_interp_crop*1e20/6.24e18*area,axis=1)*length/dt*1000,':',color='gray',label='stored in plasma');
 		plt.plot(time_crop[1:], energy_variation_dt,'--',color='gray',label='stored in plasma');
 		plt.grid()
 		plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
@@ -6729,6 +6792,29 @@ else:
 		bayesian_results_dict['miscellaneous']['H2_inflow_sides_plasma_column'] = H2_inflow_sides_plasma_column
 		bayesian_results_dict['miscellaneous']['H2_pre_ELMlike_pulse'] = H2_pre_ELMlike_pulse
 		bayesian_results_dict['miscellaneous']['coord_info'] = dict([('r_crop',r_crop),('time_crop',time_crop),('area',area),('length',length)])
+		bayesian_results_dict['miscellaneous']['homogeneous_mach_number'] = homogeneous_mach_number
+		bayesian_results_dict['miscellaneous']['homogeneous_flow_vel'] = homogeneous_flow_vel
+		try:
+			bayesian_results_dict['miscellaneous']['shift_TS_to_power_source'] = dict([('internal',internal_shift_TS_to_power_source),('upstream',shift_TS_to_power_source)])
+			bayesian_results_dict['input_power'] = dict([])
+			bayesian_results_dict['input_power']['TS'] = dict([])
+			bayesian_results_dict['input_power']['TS']['upstream_power_density_distribution_uniform_mach'] = dict([])
+			bayesian_results_dict['input_power']['TS']['upstream_power_density_distribution_uniform_mach']['full'] = upstream_power_density_distribution_uniform_mach
+			bayesian_results_dict['input_power']['TS']['upstream_power_density_distribution_uniform_mach']['radial_sum'] = np.sum(upstream_power_density_distribution_uniform_mach*area,axis=1)
+			bayesian_results_dict['input_power']['TS']['upstream_power_density_distribution_uniform_flow_velocity'] = dict([])
+			bayesian_results_dict['input_power']['TS']['upstream_power_density_distribution_uniform_flow_velocity']['full'] = upstream_power_density_distribution_uniform_flow_velocity
+			bayesian_results_dict['input_power']['TS']['upstream_power_density_distribution_uniform_flow_velocity']['radial_sum'] = np.sum(upstream_power_density_distribution_uniform_flow_velocity*area,axis=1)
+			bayesian_results_dict['input_power']['TS']['power_density_distribution_uniform_mach'] = dict([])
+			bayesian_results_dict['input_power']['TS']['power_density_distribution_uniform_mach']['full'] = power_density_distribution_uniform_mach
+			bayesian_results_dict['input_power']['TS']['power_density_distribution_uniform_mach']['radial_sum'] = np.sum(power_density_distribution_uniform_mach*area,axis=1)
+			bayesian_results_dict['input_power']['TS']['power_density_distribution_uniform_flow_velocity'] = dict([])
+			bayesian_results_dict['input_power']['TS']['power_density_distribution_uniform_flow_velocity']['full'] = power_density_distribution_uniform_flow_velocity
+			bayesian_results_dict['input_power']['TS']['power_density_distribution_uniform_flow_velocity']['radial_sum'] = np.sum(power_density_distribution_uniform_flow_velocity*area,axis=1)
+			bayesian_results_dict['input_power']['TS']['steady_state_power'] = steady_state_power
+			bayesian_results_dict['input_power']['TS']['time_source_power'] = time_source_power
+			bayesian_results_dict['input_power']['TS']['power_pulse_shape'] = power_pulse_shape
+		except:
+			bayesian_results_dict['miscellaneous']['shift_TS_to_power_source'] = dict([('upstream',shift_TS_to_power_source)])
 
 		bayesian_results_dict['power_rad_excit'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['power_rad_excit']['full'] = dict([('intervals',intervals_power_rad_excit),('prob',prob_power_rad_excit),('actual_values',actual_values_power_rad_excit),('most_likely',most_likely_power_rad_excit)])
@@ -6794,6 +6880,18 @@ else:
 		bayesian_results_dict['power_rec_neutral']['full'] = dict([('intervals',intervals_power_rec_neutral),('prob',prob_power_rec_neutral),('actual_values',actual_values_power_rec_neutral),('most_likely',most_likely_power_rec_neutral)])
 		bayesian_results_dict['power_rec_neutral']['radial_sum'] = dict([('intervals',intervals_power_rec_neutral_r),('prob',prob_power_rec_neutral_r),('actual_values',actual_values_power_rec_neutral_r),('most_likely',most_likely_power_rec_neutral_r)])
 		bayesian_results_dict['power_rec_neutral']['radial_time_sum'] = dict([('intervals',intervals_power_rec_neutral_tr),('prob',prob_power_rec_neutral_tr),('most_likely',ML_power_rec_neutral),('most_likely_sigma',ML_power_rec_neutral_sigma)])
+
+		bayesian_results_dict['Te'] = dict([('original_TS',dict([])),('bayesian',dict([]))])
+		bayesian_results_dict['Te']['original_TS'] = dict([('full',dict([]))])
+		bayesian_results_dict['Te']['original_TS']['full'] = dict([('most_likely',merge_Te_prof_multipulse_interp_crop),('most_likely_sigma',merge_dTe_prof_multipulse_interp_crop)])
+		bayesian_results_dict['Te']['bayesian'] = dict([('full',dict([]))])
+		bayesian_results_dict['Te']['bayesian']['full'] = dict([('intervals',intervals_Te_values),('prob',prob_Te_values),('actual_values',actual_values_Te_values),('most_likely',most_likely_Te_values)])
+
+		bayesian_results_dict['ne'] = dict([('original_TS',dict([])),('bayesian',dict([]))])
+		bayesian_results_dict['ne']['original_TS'] = dict([('full',dict([]))])
+		bayesian_results_dict['ne']['original_TS']['full'] = dict([('most_likely',merge_ne_prof_multipulse_interp_crop),('most_likely_sigma',merge_dne_prof_multipulse_interp_crop)])
+		bayesian_results_dict['ne']['bayesian'] = dict([('full',dict([]))])
+		bayesian_results_dict['ne']['bayesian']['full'] = dict([('intervals',intervals_ne_values),('prob',prob_ne_values),('actual_values',actual_values_ne_values),('most_likely',most_likely_ne_values)])
 
 		bayesian_results_dict['power_via_brem'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['power_via_brem']['full'] = dict([('intervals',intervals_power_via_brem),('prob',prob_power_via_brem),('actual_values',actual_values_power_via_brem),('most_likely',most_likely_power_via_brem)])

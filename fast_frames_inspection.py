@@ -171,7 +171,7 @@ for j in all_j:
 merge_ID_target = int(input('insert the merge_ID as per file /home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/settings_3.csv'))
 all_j = find_index_of_file(merge_ID_target, df_settings, df_log, only_OES=True)
 for j in all_j:
-	(folder,date,sequence,untitled,fname_current_trace,first_pulse_at_this_frame,bad_pulses_indexes) = df_log.loc[j,['folder','date','sequence','untitled','current_trace_file','first_pulse_at_this_frame','bad_pulses_indexes']]
+	(folder,date,sequence,untitled,fname_current_trace,first_pulse_at_this_frame,bad_pulses_indexes,SS_current) = df_log.loc[j,['folder','date','sequence','untitled','current_trace_file','first_pulse_at_this_frame','bad_pulses_indexes','I']]
 	type = '.tif'
 	filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0', type)
 	type = '.txt'
@@ -180,14 +180,14 @@ for j in all_j:
 	# data_sum = []
 	# for index, filename in enumerate(filenames):
 
-	current_traces = pd.read_csv(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/' + fname_current_trace+'.tsf',index_col=False, delimiter='\t')
-	current_traces_time = current_traces['Time [s]']
-	current_traces_total = current_traces['I_Src_AC [A]']
-	voltage_traces_total = current_traces['U_Src_DC [V]']
-	target_voltage_traces_total = current_traces['U_Tar_DC [V]']
+	# current_traces = pd.read_csv(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/' + fname_current_trace+'.tsf',index_col=False, delimiter='\t')
+	# current_traces_time = current_traces['Time [s]']
+	# current_traces_total = current_traces['I_Src_AC [A]']
+	# voltage_traces_total = current_traces['U_Src_DC [V]']
+	# target_voltage_traces_total = current_traces['U_Tar_DC [V]']
 	# plt.figure();plt.plot(current_traces_time,current_traces_total);plt.plot(current_traces_time,voltage_traces_total);plt.plot(current_traces_time,target_voltage_traces_total);plt.plot(current_traces_time,-current_traces_total*voltage_traces_total);plt.xlabel('time [s]');plt.ylabel('current [A]');plt.pause(0.01)
 
-	bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses = examine_current_trace(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0])
+	bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses = examine_current_trace(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],SS_current=SS_current)
 	print([bad_pulses])
 	to_plot = []
 	for index in range(max(*miss_pulses,*double_pulses,*good_pulses)):
@@ -321,7 +321,7 @@ for j in all_j:
 merge_ID_target = int(input('insert the merge_ID as per file /home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/settings_1.csv'))
 all_j=find_index_of_file(merge_ID_target,df_settings,df_log)
 for j in all_j:
-	(folder,date,sequence,untitled,fname_current_trace) = df_log.loc[j,['folder','date','sequence','untitled','current_trace_file']]
+	(folder,date,sequence,untitled,fname_current_trace,SS_current) = df_log.loc[j,['folder','date','sequence','untitled','current_trace_file','I']]
 	type = '.tif'
 	filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0', type)
 	type = '.txt'
@@ -374,7 +374,7 @@ for j in all_j:
 		index-=1
 	plt.close()
 
-	bad_pulses,first_good_pulse,first_pulse,last_pulse = examine_current_trace(fdir+'/'+folder+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0])
+	bad_pulses,first_good_pulse,first_pulse,last_pulse = examine_current_trace(fdir+'/'+folder+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],SS_current=SS_current)
 
 
 

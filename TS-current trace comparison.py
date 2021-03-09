@@ -47,12 +47,12 @@ power_pulse_shape_time_dependent_std = []
 steady_state_power = []
 steady_state_power_std = []
 for j in all_j:
-	(merge_folder,sequence,fname_current_trace) = df_log.loc[j,['folder','sequence','current_trace_file']]
-	bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
-	current_traces = pd.read_csv(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/'+ fname_current_trace+'.tsf',index_col=False, delimiter='\t')
-	current_traces_time = current_traces['Time [s]']
-	current_traces_total = current_traces['I_Src_AC [A]']
-	voltage_traces_total = current_traces['U_Src_DC [V]']
+	(merge_folder,sequence,fname_current_trace,SS_current) = df_log.loc[j,['folder','sequence','current_trace_file','I']]
+	bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,time_resolution = examine_current_trace(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True,SS_current=SS_current)
+	# current_traces = pd.read_csv(fdir+'/'+merge_folder+'/'+"{0:0=2d}".format(sequence)+'/'+ fname_current_trace+'.tsf',index_col=False, delimiter='\t')
+	# current_traces_time = current_traces['Time [s]']
+	# current_traces_total = current_traces['I_Src_AC [A]']	# this is the current of the Rogowski coil, and it is only the current on top of the SS. the SS component here have to be removed.
+	# voltage_traces_total = current_traces['U_Src_DC [V]']
 	# plt.figure()
 	# plt.plot(current_traces_time,-current_traces_total*voltage_traces_total/np.max(-current_traces_total*voltage_traces_total),label='power')
 	# plt.plot(current_traces_time,current_traces_total/np.max(current_traces_total),label='current')

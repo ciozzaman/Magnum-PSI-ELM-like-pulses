@@ -62,7 +62,7 @@ for i in range(len(df_log)-1):
 # all_j = [227,232,247,250]
 # all_j = [*np.arange(267,270+1),*np.arange(272,275+1),*np.arange(277,286+1),393,394,*np.arange(396,403+1)]
 
-# all_j = np.flip(all_j,axis=0)
+all_j = np.flip(all_j,axis=0)
 
 # for j in np.flip(all_j,axis=0):
 for j in all_j:
@@ -73,7 +73,7 @@ for j in all_j:
 
 	df_log = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/shots_3.csv',index_col=0)
 	(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
-	(IR_trace,IR_reference,IR_shape,magnetic_field,target_OES_distance,target_chamber_pressure,capacitor_voltage) = df_log.loc[j,['IR_trace','IR_reference','IR_shape','B','T_axial','p_n [Pa]','Vc']]
+	(IR_trace,IR_reference,IR_shape,magnetic_field,target_OES_distance,target_chamber_pressure,capacitor_voltage,SS_current) = df_log.loc[j,['IR_trace','IR_reference','IR_shape','B','T_axial','p_n [Pa]','Vc','I']]
 	(CB_to_OES_initial_delay,incremental_step,number_of_pulses) = df_log.loc[j,['CB_to_OES_initial_delay','incremental_step','number_of_pulses']]
 	number_of_pulses = int(number_of_pulses)
 	(folder,date,sequence,untitled,target_material,fname_current_trace,first_pulse_at_this_frame,bad_pulses_indexes) = df_log.loc[j,['folder','date','sequence','untitled','Target','current_trace_file','first_pulse_at_this_frame','bad_pulses_indexes']]
@@ -96,7 +96,7 @@ for j in all_j:
 
 	if isinstance(fname_current_trace,str):
 		if os.path.exists(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/'+fname_current_trace+'.tsf'):
-			bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,ADC_time_resolution,mean_current_peak_shape,mean_current_peak_std,mean_voltage_peak_shape,mean_voltage_peak_std,mean_target_voltage_peak_shape,mean_target_voltage_peak_std = examine_current_trace(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True)
+			bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_good_pulses,median_duration_good_pulses,mean_peak_shape,mean_peak_std,mean_steady_state_power,mean_steady_state_power_std,ADC_time_resolution,mean_current_peak_shape,mean_current_peak_std,mean_voltage_peak_shape,mean_voltage_peak_std,mean_target_voltage_peak_shape,mean_target_voltage_peak_std,mean_steady_state_current,mean_steady_state_current_std,mean_steady_state_voltage,mean_steady_state_voltage_std,mean_steady_state_target_voltage,mean_steady_state_target_voltage_std = examine_current_trace(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True,want_the_mean_power_profile=True,SS_current=SS_current)
 			ADC_time_resolution = ADC_time_resolution*1e3	# ms
 			if False:
 				current_traces = pd.read_csv(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/' + fname_current_trace+'.tsf',index_col=False, delimiter='\t')
@@ -122,9 +122,11 @@ for j in all_j:
 				plt.grid()
 				plt.title(pre_title+'file '+fname_current_trace)
 				plt.pause(0.01)
+			peak_size = int(round(median_duration_good_pulses/ADC_time_resolution*1e3))
+			peak_loc = generic_filter(mean_peak_shape,np.mean,size=[peak_size]).argmax()
 			fig, ax1 = plt.subplots(figsize=(12, 5))
 			fig.subplots_adjust(right=0.77)
-			ax1.set_title(pre_title+'Average pulse shape at plasma source\n'+fname_current_trace+'\nenergy during pulse=%.3gJ, pulse duration=%.3gms, SS during pulse=%.3gJ' %(median_energy_good_pulses,median_duration_good_pulses*1e3,mean_steady_state_power*median_duration_good_pulses))
+			ax1.set_title(pre_title+'Average pulse shape at plasma source\n'+fname_current_trace+'\nenergy during pulse=%.3gJ, pulse duration=%.3gms, SS during pulse=%.3gJ, --=SS' %(median_energy_good_pulses,median_duration_good_pulses*1e3,mean_steady_state_power*median_duration_good_pulses))
 			ax1.set_xlabel('time (arbitrary) [ms]')
 			ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 			ax3 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
@@ -136,11 +138,18 @@ for j in all_j:
 			a1, = ax1.plot(np.arange(len(mean_peak_shape))*ADC_time_resolution,mean_peak_shape+mean_steady_state_power,'b')
 			ax1.plot(np.arange(len(mean_peak_shape))*ADC_time_resolution,mean_steady_state_power*np.ones_like(mean_peak_shape),'--b')
 			ax1.fill_between(np.arange(len(mean_peak_shape))*ADC_time_resolution, mean_peak_shape - mean_peak_std+mean_steady_state_power-mean_steady_state_power_std, mean_peak_shape + mean_peak_std+mean_steady_state_power+mean_steady_state_power_std,color='royalblue', alpha=0.4)
+			ax1.axvline(x=(peak_loc-peak_size/2)*ADC_time_resolution,color='k',linestyle='--')
+			ax1.axvline(x=(peak_loc+peak_size/2)*ADC_time_resolution,color='k',linestyle='--')
+			# ax1.plot([(peak_loc-peak_size/2)*ADC_time_resolution]*2,[mean_peak_shape.min()+mean_steady_state_power,mean_peak_shape.max()+mean_steady_state_power],'--k')
+			# ax1.plot([(peak_loc+peak_size/2)*ADC_time_resolution]*2,[mean_peak_shape.min()+mean_steady_state_power,mean_peak_shape.max()+mean_steady_state_power],'--k')
 			a2, = ax2.plot(np.arange(len(mean_peak_shape))*ADC_time_resolution,mean_current_peak_shape,'r')
+			ax2.plot(np.arange(len(mean_peak_shape))*ADC_time_resolution,mean_steady_state_current*np.ones_like(mean_peak_shape),'--r')
 			ax2.fill_between(np.arange(len(mean_peak_shape))*ADC_time_resolution, mean_current_peak_shape - mean_current_peak_std, mean_current_peak_shape + mean_current_peak_std,color='lightcoral', alpha=0.4)
 			a3, = ax3.plot(np.arange(len(mean_peak_shape))*ADC_time_resolution,mean_voltage_peak_shape,'g')
+			ax3.plot(np.arange(len(mean_peak_shape))*ADC_time_resolution,mean_steady_state_voltage*np.ones_like(mean_peak_shape),'--g')
 			ax3.fill_between(np.arange(len(mean_peak_shape))*ADC_time_resolution, mean_voltage_peak_shape - mean_voltage_peak_std, mean_voltage_peak_shape + mean_voltage_peak_std,color='palegreen', alpha=0.4)
 			a4, = ax4.plot(np.arange(len(mean_peak_shape))*ADC_time_resolution,mean_target_voltage_peak_shape,'y')
+			ax4.plot(np.arange(len(mean_peak_shape))*ADC_time_resolution,mean_steady_state_target_voltage*np.ones_like(mean_peak_shape),'--y')
 			ax4.fill_between(np.arange(len(mean_peak_shape))*ADC_time_resolution, mean_target_voltage_peak_shape - mean_target_voltage_peak_std, mean_target_voltage_peak_shape + mean_target_voltage_peak_std,color='khaki', alpha=0.4)
 			# ax2.plot(j_specific_target_chamber_pressure,np.array(j_specific_DT_pulse_time_scaled),'or')
 			ax1.set_ylabel('power [W]', color=a1.get_color())
@@ -160,22 +169,29 @@ for j in all_j:
 			plt.savefig(path_where_to_save_everything +'/ADC_'+fname_current_trace+'.png', bbox_inches='tight')
 			plt.close()
 			power_source_dict = dict([])
-			power_source_dict['time_resolution'] = ADC_time_resolution/1e3
+			power_source_dict['time_resolution'] = ADC_time_resolution/1e3	# s
 			power_source_dict['median_energy_good_pulses'] = median_energy_good_pulses
 			power_source_dict['median_duration_good_pulses'] = median_duration_good_pulses
-			power_source_dict['mean_steady_state_power'] = mean_steady_state_power
 			power_source_dict['power'] = dict([])
 			power_source_dict['power']['average'] = mean_peak_shape+mean_steady_state_power
 			power_source_dict['power']['std'] = mean_peak_std + mean_steady_state_power_std
+			power_source_dict['power']['SS'] = mean_steady_state_power
+			power_source_dict['power']['SS_std'] = mean_steady_state_power_std
 			power_source_dict['current'] = dict([])
 			power_source_dict['current']['average'] = mean_current_peak_shape
 			power_source_dict['current']['std'] = mean_current_peak_std
+			power_source_dict['current']['SS'] = mean_steady_state_current
+			power_source_dict['current']['SS_std'] = mean_steady_state_current_std
 			power_source_dict['voltage'] = dict([])
 			power_source_dict['voltage']['average'] = mean_voltage_peak_shape
 			power_source_dict['voltage']['std'] = mean_voltage_peak_std
+			power_source_dict['voltage']['SS'] = mean_steady_state_voltage
+			power_source_dict['voltage']['SS_std'] = mean_steady_state_voltage_std
 			power_source_dict['target_voltage'] = dict([])
 			power_source_dict['target_voltage']['average'] = mean_target_voltage_peak_shape
 			power_source_dict['target_voltage']['std'] = mean_target_voltage_peak_std
+			power_source_dict['target_voltage']['SS'] = mean_steady_state_target_voltage
+			power_source_dict['target_voltage']['SS_std'] = mean_steady_state_target_voltage_std
 			np.savez_compressed(path_where_to_save_everything +'/ADC_'+fname_current_trace,**power_source_dict)
 
 	if bad_pulses_indexes=='':
