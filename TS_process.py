@@ -5,7 +5,7 @@ exec(open("/home/ffederic/work/analysis_scripts/scripts/preamble_import_batch.py
 os.chdir('/home/ffederic/work/Collaboratory/test/experimental_data')
 from functions.spectools import rotate,do_tilt, binData, get_angle, get_tilt,get_angle_2
 from functions.Calibrate import do_waveL_Calib, do_Intensity_Calib
-from functions.fabio_add import find_nearest_index,multi_gaussian,all_file_names,load_dark,find_index_of_file,get_metadata,movie_from_data,get_angle_no_lines,do_tilt_no_lines,four_point_transform,fix_minimum_signal,fix_minimum_signal2,get_bin_and_interv_no_lines,examine_current_trace
+from functions.fabio_add import find_nearest_index,multi_gaussian,all_file_names,load_dark,find_index_of_file,get_metadata,movie_from_data,get_angle_no_lines,do_tilt_no_lines,four_point_transform,fix_minimum_signal,fix_minimum_signal2,get_bin_and_interv_no_lines,examine_current_trace,find_TS_centre,average_TS_around_axis
 from functions.GetSpectrumGeometry import getGeom
 from functions.SpectralFit import doSpecFit_single_frame
 from functions.GaussFitData import doLateralfit_time_tependent
@@ -29,11 +29,17 @@ df_log = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/f
 df_settings = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/settings_3.csv',index_col=0)
 
 TS_size=[-4.149230769230769056e+01,4.416923076923076508e+01]
+boltzmann_constant_J = 1.380649e-23	# J/K
+eV_to_K = 8.617333262145e-5	# eV/K
+hydrogen_mass = 1.008*1.660*1e-27	# kg
 
-for merge_ID_target in range(85,100,1):
-# for merge_ID_target in [70,73,75,76,77,78,79,101]:
+for merge_ID_target in range(66,104,1):
+# for merge_ID_target in [101,103]:
 # for merge_ID_target in range(96,100,1):
 # for merge_ID_target in range(17,32,1):
+# for merge_ID_target in range(66,84,1):
+	if len(find_index_of_file(merge_ID_target,df_settings,df_log))==0:
+		continue
 	print('merge '+str(merge_ID_target))
 	try:
 		if not os.path.exists('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)):
@@ -139,15 +145,22 @@ for merge_ID_target in range(85,100,1):
 			plt.close()
 
 			if len(merge_Te_prof_multipulse_SS)>0:
+				merge_Te_prof_multipulse_SS = np.mean(merge_Te_prof_multipulse_SS,axis=0)
+				merge_dTe_multipulse_SS = np.mean(merge_dTe_multipulse_SS,axis=0)
+				merge_ne_prof_multipulse_SS = np.mean(merge_ne_prof_multipulse_SS,axis=0)
+				merge_dne_multipulse_SS = np.mean(merge_dne_multipulse_SS,axis=0)
+
 				fig = plt.figure(figsize=(20, 10))
 				fig.add_subplot(1, 2, 1)
-				plt.errorbar(np.linspace(TS_size[0],TS_size[1],len(Te_prof_multipulse[0])),np.mean(merge_Te_prof_multipulse_SS,axis=0),yerr=np.max(merge_dTe_multipulse_SS,axis=0))
+				# plt.errorbar(np.linspace(TS_size[0],TS_size[1],len(Te_prof_multipulse[0])),merge_Te_prof_multipulse_SS,yerr=np.max(merge_dTe_multipulse_SS,axis=0))
+				plt.errorbar(np.linspace(TS_size[0],TS_size[1],len(Te_prof_multipulse[0])),merge_Te_prof_multipulse_SS,yerr=merge_dTe_multipulse_SS)
 				plt.title('Steady state Te for merge ' + str(merge_ID_target) + ' before the pulse')
 				plt.xlabel('radial location [mm]')
 				plt.ylabel('temperature [eV]')
 				plt.grid()
 				fig.add_subplot(1, 2, 2)
-				plt.errorbar(np.linspace(TS_size[0],TS_size[1],len(Te_prof_multipulse[0])),np.mean(merge_ne_prof_multipulse_SS,axis=0),yerr=np.max(merge_dne_multipulse_SS,axis=0))
+				# plt.errorbar(np.linspace(TS_size[0],TS_size[1],len(Te_prof_multipulse[0])),merge_ne_prof_multipulse_SS,yerr=np.max(merge_dne_multipulse_SS,axis=0))
+				plt.errorbar(np.linspace(TS_size[0],TS_size[1],len(Te_prof_multipulse[0])),merge_ne_prof_multipulse_SS,yerr=merge_dne_multipulse_SS)
 				plt.title('Steady state ne for merge ' + str(merge_ID_target) + ' before the pulse')
 				plt.xlabel('radial location [mm]')
 				plt.ylabel('electron density [10^20 #/m^3]')
@@ -155,7 +168,7 @@ for merge_ID_target in range(85,100,1):
 				plt.savefig('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) + '/TS_SS_before_merge_' + str(merge_ID_target) + '.eps', bbox_inches='tight')
 				plt.close()
 
-				np.savez_compressed('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) +'/TS_SS_data_merge_'+str(merge_ID_target),merge_Te_prof_multipulse=np.mean(merge_Te_prof_multipulse_SS,axis=0),merge_dTe_multipulse=np.mean(merge_dTe_multipulse_SS,axis=0),merge_ne_prof_multipulse=np.mean(merge_ne_prof_multipulse_SS,axis=0),merge_dne_multipulse=np.mean(merge_dne_multipulse_SS,axis=0))
+				np.savez_compressed('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) +'/TS_SS_data_merge_'+str(merge_ID_target),merge_Te_prof_multipulse=merge_Te_prof_multipulse_SS,merge_dTe_multipulse=merge_dTe_multipulse_SS,merge_ne_prof_multipulse=merge_ne_prof_multipulse_SS,merge_dne_multipulse=merge_dne_multipulse_SS)
 
 
 			merge_Te_prof_multipulse = np.array(merge_Te_prof_multipulse)
@@ -171,6 +184,12 @@ for merge_ID_target in range(85,100,1):
 			merge_time = np.sort(merge_time)
 			merge_time+=0.19		#internal time shift of thompson scattering
 
+		full_saved_file_dict = dict([])
+		full_saved_file_dict['merge_Te_prof_multipulse'] = merge_Te_prof_multipulse
+		full_saved_file_dict['merge_dTe_multipulse'] = merge_dTe_multipulse
+		full_saved_file_dict['merge_ne_prof_multipulse'] = merge_ne_prof_multipulse
+		full_saved_file_dict['merge_dne_multipulse'] = merge_dne_multipulse
+		full_saved_file_dict['merge_time'] =merge_time
 
 		fig=plt.figure(figsize=(10, 20))
 		# fig=plt.figure(merge_ID_target * 100 + 2)
@@ -364,7 +383,7 @@ for merge_ID_target in range(85,100,1):
 		if False:	# this bit is to try to estimate opacity, but presently does not work
 			radious=1	#cm
 			aspect_ratio=100	#length over radious
-			ev_to_K = 11600
+			# ev_to_K = 11600
 			average_Te = cp.deepcopy(merge_Te_prof_multipulse)
 			average_Te[average_Te==0] = np.nan
 			average_Te = np.nanmean(average_Te,axis=1)[index_t0:index_t2]
@@ -479,8 +498,66 @@ for merge_ID_target in range(85,100,1):
 			plt.savefig('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) + '/TS_opacity_effect_excitation_merge_' + str(merge_ID_target) + '.eps',bbox_inches='tight')
 			plt.close()
 
+		try:
+			#  added 2021/03/28 to calculate the flow to the target
+			TS_r = TS_size[0] + np.linspace(0, 1, 65) * (TS_size[1] - TS_size[0])
+			TS_dt = np.nanmedian(np.diff(merge_time))
+			profile_centres,profile_sigma,profile_centres_score,centre = find_TS_centre(merge_ne_prof_multipulse,merge_dne_multipulse,TS_r,TS_size)
 
-		np.savez_compressed('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) +'/TS_data_merge_'+str(merge_ID_target),merge_Te_prof_multipulse=merge_Te_prof_multipulse,merge_dTe_multipulse=merge_dTe_multipulse,merge_ne_prof_multipulse=merge_ne_prof_multipulse,merge_dne_multipulse=merge_dne_multipulse,merge_time=merge_time)
+			TS_r_new = (TS_r - centre) / 1000
+			print('TS profile centre at %.3gmm compared to the theoretical centre' %centre)
+			if len(merge_Te_prof_multipulse_SS)>0:
+				temp = np.mean(merge_ne_prof_multipulse,axis=1)
+				start = (temp>np.mean(merge_ne_prof_multipulse_SS)).argmax()
+				end = (np.flip(temp,axis=0)>np.mean(merge_ne_prof_multipulse_SS)).argmax()
+				merge_Te_prof_multipulse[:start] = merge_Te_prof_multipulse_SS
+				merge_dTe_multipulse[:start] = 2*merge_Te_prof_multipulse_SS
+				merge_ne_prof_multipulse[:start] = merge_ne_prof_multipulse_SS
+				merge_dne_multipulse[:start] = merge_ne_prof_multipulse_SS
+				merge_Te_prof_multipulse[-end:] = merge_Te_prof_multipulse_SS
+				merge_dTe_multipulse[-end:] = 2*merge_Te_prof_multipulse_SS
+				merge_ne_prof_multipulse[-end:] = merge_ne_prof_multipulse_SS
+				merge_dne_multipulse[-end:] = merge_ne_prof_multipulse_SS
+
+			dx = 1.06478505470992 / 1e3	# 10/02/2020 from	Calculate magnification_FF.xlsx
+			number_of_radial_divisions = 20
+			r = np.arange(number_of_radial_divisions)*dx
+			new_timesteps = np.arange(-0.5,1.5,0.05)	# ms
+			temp = np.pi*((r + np.median(np.diff(r))/2)**2)
+			area = np.array([temp[0]]+np.diff(temp).tolist())
+
+			merge_Te_prof_multipulse_interp_crop,merge_dTe_prof_multipulse_interp_crop,merge_ne_prof_multipulse_interp_crop,merge_dne_prof_multipulse_interp_crop,interp_range_r = average_TS_around_axis(merge_Te_prof_multipulse,merge_dTe_multipulse,merge_ne_prof_multipulse,merge_dne_multipulse,r,TS_r,TS_dt,TS_r_new,merge_time,new_timesteps,number_of_radial_divisions)
+
+			adiabatic_collisional_velocity = ((merge_Te_prof_multipulse_interp_crop + 5/3 *merge_Te_prof_multipulse_interp_crop)/eV_to_K*boltzmann_constant_J/hydrogen_mass)**0.5
+			Bohm_adiabatic_flow = 0.5*merge_ne_prof_multipulse_interp_crop*1e20*adiabatic_collisional_velocity	# 0.5 time reduction on ne in the presheath
+
+			plt.figure(figsize=(8, 5));
+			plt.plot(new_timesteps, np.sum(Bohm_adiabatic_flow*area,axis=1));
+			plt.xlabel('time from beginning of pulse [ms]')
+			plt.ylabel('integrated Bohm adiabatic flow [#/s]')
+			plt.title('Flow felocity for merge ' + str(merge_ID_target))
+			plt.grid()
+			# plt.pause(0.001)
+			plt.savefig('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) + '/TS_flow_velocity_merge_' + str(merge_ID_target) + '.eps',bbox_inches='tight')
+			plt.close()
+
+			full_saved_file_dict['averaged_stats'] = dict([])
+			full_saved_file_dict['averaged_stats']['Bohm_adiabatic_flow'] = Bohm_adiabatic_flow
+			full_saved_file_dict['averaged_stats']['integrated_Bohm_adiabatic_flow'] = np.sum(Bohm_adiabatic_flow*area,axis=1)
+			full_saved_file_dict['averaged_stats']['new_timesteps'] = new_timesteps
+			full_saved_file_dict['averaged_stats']['merge_Te_prof_multipulse_interp_crop'] = merge_Te_prof_multipulse_interp_crop
+			full_saved_file_dict['averaged_stats']['merge_dTe_prof_multipulse_interp_crop'] = merge_dTe_prof_multipulse_interp_crop
+			full_saved_file_dict['averaged_stats']['merge_ne_prof_multipulse_interp_crop'] = merge_ne_prof_multipulse_interp_crop
+			full_saved_file_dict['averaged_stats']['merge_dne_prof_multipulse_interp_crop'] = merge_dne_prof_multipulse_interp_crop
+			full_saved_file_dict['averaged_stats']['profile_centres'] = profile_centres
+			full_saved_file_dict['averaged_stats']['profile_sigma'] = profile_sigma
+			full_saved_file_dict['averaged_stats']['profile_centres_score'] = profile_centres_score
+			full_saved_file_dict['averaged_stats']['centre'] = centre
+
+		except Exception as e:
+			print('merge '+str(merge_ID_target)+' particle flow FAILED!, exception '+ str(e))
+
+		np.savez_compressed('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) +'/TS_data_merge_'+str(merge_ID_target),**full_saved_file_dict)
 
 	except Exception as e:
-		print('merge '+str(merge_ID_target)+' FAILED!, exception '+e)
+		print('merge '+str(merge_ID_target)+' FAILED!, exception '+ str(e))

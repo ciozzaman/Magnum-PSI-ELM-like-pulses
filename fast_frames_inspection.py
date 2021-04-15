@@ -60,110 +60,196 @@ geom_null.loc[0] = [0,0,geom['binInterv'],geom['bin00a'],geom['bin00b']]
 
 #	SECTION IF I DON'T HAVE THE RECORD OF THE CURRENT
 
-merge_ID_target = int(input('insert the merge_ID as per file /home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/settings_1.csv'))
-all_j=find_index_of_file(merge_ID_target,df_settings,df_log)
-for j in all_j:
-	(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
-	type = '.tif'
-	filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0', type)
-	type = '.txt'
-	filename_metadata = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0', type)[0]
-	# data_sum = []
-	# for index, filename in enumerate(filenames):
-	# 	fname = fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0/'+filenames[index]
-	# 	im = Image.open(fname)
-	# 	data = np.array(im)
-	# 	data_sum.append(np.sum(data))
-	# plt.figure()
-	# plt.plot(data_sum)
-	# plt.pause(0.001)
+if False:	# pre 19/03/2021 version
+	merge_ID_target = int(input('insert the merge_ID as per file /home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/settings_1.csv'))
+	all_j=find_index_of_file(merge_ID_target,df_settings,df_log)
+	for j in all_j:
+		(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
+		type = '.tif'
+		filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0', type)
+		type = '.txt'
+		filename_metadata = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0', type)[0]
+		# data_sum = []
+		# for index, filename in enumerate(filenames):
+		# 	fname = fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0/'+filenames[index]
+		# 	im = Image.open(fname)
+		# 	data = np.array(im)
+		# 	data_sum.append(np.sum(data))
+		# plt.figure()
+		# plt.plot(data_sum)
+		# plt.pause(0.001)
 
 
-	max_value=0
-	for filename in filenames:
-		fname = fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0/'+filename
-		im = Image.open(fname)
-		data = np.array(im)
-		if data.max()>4000:
-			print(fname)
-			print('is overexposed to '+str(data.max()))
-		max_value = max(max_value,data.max())
-	print('maximum value of '+str(max_value))
+		max_value=0
+		for filename in filenames:
+			fname = fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0/'+filename
+			im = Image.open(fname)
+			data = np.array(im)
+			if data.max()>4000:
+				print(fname)
+				print('is overexposed to '+str(data.max()))
+			max_value = max(max_value,data.max())
+		print('maximum value of '+str(max_value))
 
-	index=0
-	result = 'n'
-	plt.ion()
-	plt.figure()
-	while result != 'y':
-		fname = fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0/'+filenames[index]
-		im = Image.open(fname)
-		data = np.array(im)
-		plt.imshow(data, 'rainbow', origin='lower')
-		# plt.colorbar().set_label('Counts [au]')
-		plt.xlabel('wavelength axis [pixel]')
-		plt.ylabel('LOS axis [pixel]')
-		plt.title('Filename '+filenames[index]+' vmax='+str(np.max(data)))
-		plt.draw()
-		result = input('is here present the first pulse? \n u: unsure, y: yes, n: no, r: repeat from start')
-		if result == 'y':
-			first_frame = index+1
-		elif result == 'r':
-			index = int(input('from which index do you want to restart?'))-1
-		index+=1
-	# plt.close()
+		index=0
+		result = 'n'
+		plt.ion()
+		plt.figure()
+		while result != 'y':
+			fname = fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0/'+filenames[index]
+			im = Image.open(fname)
+			data = np.array(im)
+			plt.imshow(data, 'rainbow', origin='lower')
+			# plt.colorbar().set_label('Counts [au]')
+			plt.xlabel('wavelength axis [pixel]')
+			plt.ylabel('LOS axis [pixel]')
+			plt.title('Filename '+filenames[index]+' vmax='+str(np.max(data)))
+			plt.draw()
+			result = input('is here present the first pulse? \n u: unsure, y: yes, n: no, r: repeat from start')
+			if result == 'y':
+				first_frame = index+1
+			elif result == 'r':
+				index = int(input('from which index do you want to restart?'))-1
+			index+=1
+		# plt.close()
 
-	index=-1
-	result = 'n'
-	# plt.ion()
-	# plt.figure()
-	while result != 'y':
-		fname = fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0/'+filenames[index]
-		im = Image.open(fname)
-		data = np.array(im)
-		plt.imshow(data, 'rainbow', origin='lower')
-		# plt.colorbar()
-		plt.title('Filename '+str(filenames[index])+' vmax='+str(np.max(data)))
-		plt.draw()
-		result = input('is here present the last pulse? \n u: unsure, y: yes, n: no, r: repeat from start')
-		if result == 'y':
-			last_frame = index+2
-		elif result == 'r':
-			index=int(input('from which index do you want to restart?'))+1
-		index-=1
-	plt.close()
+		index=-1
+		result = 'n'
+		# plt.ion()
+		# plt.figure()
+		while result != 'y':
+			fname = fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0/'+filenames[index]
+			im = Image.open(fname)
+			data = np.array(im)
+			plt.imshow(data, 'rainbow', origin='lower')
+			# plt.colorbar()
+			plt.title('Filename '+str(filenames[index])+' vmax='+str(np.max(data)))
+			plt.draw()
+			result = input('is here present the last pulse? \n u: unsure, y: yes, n: no, r: repeat from start')
+			if result == 'y':
+				last_frame = index+2
+			elif result == 'r':
+				index=int(input('from which index do you want to restart?'))+1
+			index-=1
+		plt.close()
 
-	result = input('Do you consider more trustworthy the first or lase frame you found? \n f: first, l: last')
-	if result == 'f':
-		last_frame = int(first_frame +df_log.loc[j, ['number_of_pulses']][0])
-	if result == 'l':
-		first_frame = int(len(filenames) + last_frame - df_log.loc[j, ['number_of_pulses']][0]+1)
+		result = input('Do you consider more trustworthy the first or lase frame you found? \n f: first, l: last')
+		if result == 'f':
+			last_frame = int(first_frame +df_log.loc[j, ['number_of_pulses']][0])
+		if result == 'l':
+			first_frame = int(len(filenames) + last_frame - df_log.loc[j, ['number_of_pulses']][0]+1)
 
-	print('first frame = '+str(first_frame))
-	print('last frame = ' + str(last_frame))
+		print('first frame = '+str(first_frame))
+		print('last frame = ' + str(last_frame))
 
-	# plt.figure()
-	data_all = []
-	for index, filename in enumerate(filenames[max(first_frame-1,0):int(min(df_log.loc[j, ['number_of_pulses']][0]+first_frame-1,len(filenames)))]):
-		fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0/' + \
-				filename
-		im = Image.open(fname)
-		data = np.array(im)
-		data_all.append(data)
-	data_all = np.array(data_all)
-	data_sum = np.sum(data_all[:, :, 1300:1500], axis=(-1, -2))
-	# data_sum = np.sum(data_all[:, :, 700:900], axis=(-1, -2))
-	plt.figure()
-	plt.plot(range(1,1+len(data_all)),data_sum)
-	plt.plot(range(1,1+len(data_all)),data_sum, 'o')
-	for i in range(1,1+len(data_all)):
-		plt.plot([i, i], [np.min(data_sum), np.max(data_sum)])
-	plt.pause(0.001)
+		# plt.figure()
+		data_all = []
+		for index, filename in enumerate(filenames[max(first_frame-1,0):int(min(df_log.loc[j, ['number_of_pulses']][0]+first_frame-1,len(filenames)))]):
+			fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0/' + \
+					filename
+			im = Image.open(fname)
+			data = np.array(im)
+			data_all.append(data)
+		data_all = np.array(data_all)
+		data_sum = np.sum(data_all[:, :, 1300:1500], axis=(-1, -2))
+		# data_sum = np.sum(data_all[:, :, 700:900], axis=(-1, -2))
+		plt.figure()
+		plt.plot(range(1,1+len(data_all)),data_sum)
+		plt.plot(range(1,1+len(data_all)),data_sum, 'o')
+		for i in range(1,1+len(data_all)):
+			plt.plot([i, i], [np.min(data_sum), np.max(data_sum)])
+		plt.pause(0.001)
 
+else:	# post 19/03/22021 version
+	merge_ID_target = int(input('insert the merge_ID as per file /home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/settings_1.csv'))
+	all_j=find_index_of_file(merge_ID_target,df_settings,df_log)
+	for j in all_j:
+		check_if_skip = input('selected j='+str(j)+', happy to look at it or skip?[y=look at it]')
+		if check_if_skip!='y':
+			continue
 
+		(folder,date,sequence,untitled,number_of_pulses) = df_log.loc[j,['folder','date','sequence','untitled','number_of_pulses']]
+		type = '.tif'
+		filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)
+		type = '.txt'
+		filename_metadata = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)[0]
 
+		data_all = []
+		for index, filename in enumerate(filenames):
+			fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + filename
+			im = Image.open(fname)
+			data = np.array(im)
+			data_all.append(data)
+		data_all = np.array(data_all)
+		plt.figure(j+1)
+		plt.imshow(np.sum(data_all,axis=0), 'rainbow', origin='lower')
+		plt.colorbar()
+		plt.pause(0.01)
+		peak_location = int(input('insert the strongest peak horizontal location'))
+		peak_location_delta = int(input('insert the strongest peak horizontal +/- range location'))
+		plt.close()
 
+		data_sum = np.sum(data_all[:, :, peak_location - peak_location_delta:peak_location + peak_location_delta], axis=(-1, -2))
+		data_max = np.max(data_all[:, :, peak_location - peak_location_delta:peak_location + peak_location_delta], axis=(-1, -2))
+		data_max = (data_max-data_max.min())/(data_max.max()-data_max.min())*(data_sum.max()-data_sum.min()) + data_sum.min()
+		# bad_pulses_indexes = bad_pulses_indexes[bad_pulses_indexes+first_pulse_at_this_frame<len(data_all)]
+		plt.figure(j*10+2)
+		plt.plot(range(1,1+len(data_all)),data_sum)
+		plt.plot(range(1,1+len(data_all)),data_max,'--')
+		plt.plot(range(1,1+len(data_all)),data_sum, 'o')
+		# plt.plot(bad_pulses_indexes+first_pulse_at_this_frame-1,data_sum[(bad_pulses_indexes+first_pulse_at_this_frame-2).astype(int)],'x',markersize=20)
+		for i in range(1,1+len(data_all)):
+			plt.plot([i, i], [np.min(data_sum), np.max(data_sum)])
+		plt.pause(0.001)
 
+		first_or_last_pulse_given = str(input('do you want to give first or last pulse? [f,l]'))
+		if first_or_last_pulse_given=='f':
+			first_pulse_given = int(input('insert index of first pulse'))
+		elif first_or_last_pulse_given=='l':
+			first_pulse_given = int(input('insert index of last pulse')) - int(number_of_pulses)+1+1
+		plt.plot(first_pulse_given,data_sum[int(first_pulse_given-1)],'o',markersize=20,fillstyle='none')
+		plt.plot(first_pulse_given+number_of_pulses-1,data_sum[int(first_pulse_given-1+number_of_pulses-1)],'o',markersize=20,fillstyle='none')
+		temp = []
+		check2 = 'n'
+		while check2!='y':
+			check = 0
+			while not isinstance(check,str):
+				try:
+					plt.pause(0.001)
+					temp2 = int(input('insert index of bad pixels. to stop type any non number text')) - first_pulse_given +1
+					plt.plot(temp2+first_pulse_given-1,data_sum[int(temp2+first_pulse_given-2)],'x',markersize=20)
+					plt.pause(0.001)
+					temp.append(temp2)
+				except:
+					check='stop'
+			if not(number_of_pulses in temp):
+				temp.append(int(number_of_pulses))
+				plt.plot(number_of_pulses+first_pulse_given-1,data_sum[int(number_of_pulses+first_pulse_given-2)],'x',markersize=20)
+			bad_pulses_indexes = np.array(cp.deepcopy(temp))
+			# first_pulse_at_this_frame = cp.deepcopy(first_pulse_given)
+			# bad_pulses_indexes = bad_pulses_indexes[bad_pulses_indexes+first_pulse_given<len(data_all)]
+			# plt.plot(bad_pulses_indexes+first_pulse_at_this_frame-1,data_sum[(bad_pulses_indexes+first_pulse_at_this_frame-2).astype(int)],'x',markersize=20)
+			# plt.plot(first_pulse_given,data_sum[int(first_pulse_at_this_frame-1)],'o',markersize=20,fillstyle='none')
+			# plt.plot(first_pulse_given+number_of_pulses-1,data_sum[int(first_pulse_at_this_frame-1+number_of_pulses-1)],'o',markersize=20,fillstyle='none')
+			plt.pause(0.001)
+			check2 = input('happy with this or do you want to add other bad pulses?[y=ok,r=redo]')
+			if check2=='r':
+				temp = []
+				plt.close()
+				plt.figure(j*10+2)
+				plt.plot(range(1,1+len(data_all)),data_sum)
+				plt.plot(range(1,1+len(data_all)),data_sum, 'o')
+				plt.plot(first_pulse_given,data_sum[int(first_pulse_given-1)],'o',markersize=20,fillstyle='none')
+				plt.plot(first_pulse_given+number_of_pulses-1,data_sum[int(first_pulse_given-1+number_of_pulses-1)],'o',markersize=20,fillstyle='none')
+				# plt.plot(bad_pulses_indexes+first_pulse_at_this_frame-1,data_sum[(bad_pulses_indexes+first_pulse_at_this_frame-2).astype(int)],'x',markersize=20)
+				for i in range(1,1+len(data_all)):
+					plt.plot([i, i], [np.min(data_sum), np.max(data_sum)])
+				plt.pause(0.001)
 
+		df_log = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/shots_3.csv',index_col=0)
+		df_log.loc[j,['first_pulse_at_this_frame','bad_pulses_indexes']] = first_pulse_given,str(np.unique(bad_pulses_indexes).tolist())[1:-1]
+		df_log.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/shots_3.csv')
+		plt.close()
 
 
 #	SECTION IF I HAVE THE RECORD OF THE CURRENT BUT DON'T KNOW HOW TO FIND THE FIRST CAMERA FRAME WITH A PULSE
@@ -173,10 +259,10 @@ all_j = find_index_of_file(merge_ID_target, df_settings, df_log, only_OES=True)
 for j in all_j:
 	(folder,date,sequence,untitled,fname_current_trace,first_pulse_at_this_frame,bad_pulses_indexes,SS_current) = df_log.loc[j,['folder','date','sequence','untitled','current_trace_file','first_pulse_at_this_frame','bad_pulses_indexes','I']]
 	type = '.tif'
-	filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0', type)
+	filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)
 	type = '.txt'
-	filename_metadata = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/Untitled_'+str(untitled)+'/Pos0', type)[0]
-	(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder, sequence,untitled,filename_metadata)
+	filename_metadata = all_file_names(fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)[0]
+	(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder, int(sequence),int(untitled),filename_metadata)
 	# data_sum = []
 	# for index, filename in enumerate(filenames):
 
@@ -187,7 +273,7 @@ for j in all_j:
 	# target_voltage_traces_total = current_traces['U_Tar_DC [V]']
 	# plt.figure();plt.plot(current_traces_time,current_traces_total);plt.plot(current_traces_time,voltage_traces_total);plt.plot(current_traces_time,target_voltage_traces_total);plt.plot(current_traces_time,-current_traces_total*voltage_traces_total);plt.xlabel('time [s]');plt.ylabel('current [A]');plt.pause(0.01)
 
-	bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses = examine_current_trace(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],SS_current=SS_current)
+	bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses = examine_current_trace(fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],SS_current=SS_current)
 	print([bad_pulses])
 	to_plot = []
 	for index in range(max(*miss_pulses,*double_pulses,*good_pulses)):
@@ -217,7 +303,7 @@ for j in all_j:
 	# plt.figure()
 	data_all = []
 	for index, filename in enumerate(filenames):
-		fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0/' + \
+		fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + \
 				filename
 		im = Image.open(fname)
 		data = np.array(im)
@@ -226,11 +312,11 @@ for j in all_j:
 	data_sum = np.sum(data_all[:, :, 1340 - 100:1340 + 100], axis=(-1, -2))
 	bad_pulses_indexes = bad_pulses_indexes[bad_pulses_indexes+first_pulse_at_this_frame<len(data_all)]
 	plt.figure(j*10+2)
-	plt.plot(range(1,1+len(data_all)),data_sum)
-	plt.plot(range(1,1+len(data_all)),data_sum, 'o')
-	plt.plot(bad_pulses_indexes+first_pulse_at_this_frame-1,data_sum[(bad_pulses_indexes+first_pulse_at_this_frame-2).astype(int)],'x',markersize=20)
+	plt.plot(range(1,1+len(data_all))-(first_pulse_at_this_frame-1),data_sum)
+	plt.plot(range(1,1+len(data_all))-(first_pulse_at_this_frame-1),data_sum, 'o')
+	plt.plot(bad_pulses_indexes,data_sum[(bad_pulses_indexes+first_pulse_at_this_frame-2).astype(int)],'x',markersize=20)
 	for i in range(1,1+len(data_all)):
-		plt.plot([i, i], [np.min(data_sum), np.max(data_sum)])
+		plt.plot([i, i]-(first_pulse_at_this_frame-1), [np.min(data_sum), np.max(data_sum)])
 	plt.pause(0.001)
 
 	print([bad_pulses])

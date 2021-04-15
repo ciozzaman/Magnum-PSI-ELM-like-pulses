@@ -1782,9 +1782,9 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 					coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
 					try:
 						if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
-							fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7)
+							fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7,maxfev=1e5)
 						else:
-							fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5)
+							fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5,maxfev=1e5)
 						return z,fit[0][-1],fit[1][-1,-1]**0.5,output(fit[0])
 					except:
 						print('main fast fit failed, z='+str(z)+', j='+str(j))
@@ -1884,9 +1884,9 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 								coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
 								try:
 									if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
-										fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7)
+										fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7,maxfev=1e5)
 									else:
-										fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5)
+										fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5,maxfev=1e5)
 									composed_array[j,z] = fit[0][-1]
 									composed_array_sigma[j,z] = fit[0][-1,-1]**0.5
 								except:

@@ -68,8 +68,9 @@ CB_busy['CapStPlasmaEnable_time'] = np.array([DOM52sec(time) for time in CB_busy
 global_dictionary = dict([])
 print_1 = False
 print_2 = True
+print_3 = True
 
-merge_id_all = [85,86,87,88,89,95]
+merge_id_all = [85,90,91,92,86,87,88,89,95]
 all_reference_time = []
 all_J_ext = []
 all_time_ref = []
@@ -91,8 +92,11 @@ global_dictionary['IR_CB_time_difference2_pulse'] = []
 global_dictionary['timestamp_OES_0']=[]
 global_dictionary['peaks_timestamp_plus_IR_0']=[]
 global_dictionary['time_difference_0'] = []
-global_dictionary['fit_SOURCE_IR'] = []
-global_dictionary['fit_SOURCE_IR_R2'] = []
+global_dictionary['fit_SOURCE_IR_absolute'] = []
+global_dictionary['fit_SOURCE_IR_absolute_R2'] = []
+global_dictionary['fit_SOURCE_IR_relative'] = []
+global_dictionary['fit_SOURCE_IR_relative_R2'] = []
+global_dictionary['IR_pulse_start'] = []
 # merge_ID_target=95
 for merge_ID_target in merge_id_all:
 	all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
@@ -156,7 +160,7 @@ for merge_ID_target in merge_id_all:
 		# guess_for_dt_OES = np.mean(np.diff(all_timestamp_OES[1:]))
 
 		bad_pulses,first_good_pulse,first_pulse,last_pulse,miss_pulses,double_pulses,good_pulses, time_of_pulses, energy_per_pulse,duration_per_pulse,median_energy_good_pulses,median_duration_good_pulses = examine_current_trace(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/', fname_current_trace, df_log.loc[j, ['number_of_pulses']][0],want_the_power_per_pulse=True)
-		all_time_of_pulses_DCsource = time_of_pulses['peak_of_the_peak']
+		all_time_of_pulses_DCsource = time_of_pulses['peak_of_the_peak']*1e3
 		global_dictionary['time_of_pulses_DCsource_0'].append(all_time_of_pulses_DCsource[0])
 		# guess_for_dt_DCsource = np.mean(np.diff(time_of_pulses))*1e3
 
@@ -167,6 +171,7 @@ for merge_ID_target in merge_id_all:
 		index_good_pulses_IR = np.load('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')['index_good_pulses']
 		index_good_pulses_refined_IR = np.load('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')['index_good_pulses_refined']
 		index_good_pulses_refined_plus_IR = np.load('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')['index_good_pulses_refined_plus']
+		global_dictionary['IR_pulse_start'].append(np.load('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target) +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_t0_semi_inf'])
 		interpolator = interp1d(np.arange(len(timestamp_IR)),timestamp_IR)
 		peaks_timestamp_IR = interpolator(index_good_pulses_refined_IR)
 		peaks_timestamp_plus_IR = interpolator(index_good_pulses_refined_plus_IR)
@@ -202,6 +207,11 @@ for merge_ID_target in merge_id_all:
 		# timestamp_CB = np.array(timestamp_CB)
 		index_good_pulses = np.array(index_good_pulses)
 		time_of_pulses_DCsource = np.array(time_of_pulses_DCsource)
+		if j in [280,275,393,394]:
+			time_of_pulses_DCsource = time_of_pulses_DCsource[:-1]
+			timestamp_OES = timestamp_OES[:-1]
+			elapsed_time_OES = elapsed_time_OES[:-1]
+			index_good_pulses = index_good_pulses[:-1]
 		# plt.plot(timestamp_OES,elapsed_time_OES,'+');plt.pause(0.01)
 
 		number_of_pulses = min(number_of_pulses,len(index_good_pulses))	# this to account for the cases in which I have less frames than all the pulses done
@@ -264,15 +274,33 @@ for merge_ID_target in merge_id_all:
 		# plt.title('merge='+str(merge_ID_target)+' j='+str(j)+'\nelapsed time offset=%.6g\nPVCAM TimeStampBOF offset=%.6g' %(elapsed_time_offset,PVCAM_TimeStampBOF_offset) +'\nfit '+str(fit))
 		# plt.pause(0.01)
 
+		temp = peaks_timestamp_plus_IR-60*60*1000 - time_of_pulses_DCsource
+		fit = np.polyfit(index_good_pulses,temp,1)
+		fit2 = np.polyfit(time_of_pulses_DCsource-time_of_pulses_DCsource[0],temp,1)
+		R2 = 1-np.sum((temp-np.polyval(fit,index_good_pulses))**2)/np.sum((temp-np.mean(temp))**2)
+		if print_3:
+			plt.figure(figsize=(10, 5))
+			plt.grid()
+			plt.plot(index_good_pulses,temp)
+			plt.plot(index_good_pulses,np.polyval(fit,index_good_pulses),'--')
+			plt.title('merge='+str(merge_ID_target)+' j='+str(j)+ ' P=%.3gPa' %(target_chamber_pressure)+'\ncomparison of SOURCE and IR time\nfit '+str(fit)+'\nfit2 '+str(fit2))
+			plt.xlabel('pulse index [au]')
+			plt.ylabel('time difference [ms]')
+			plt.pause(0.01)
+
+		global_dictionary['fit_SOURCE_IR_absolute'].append(fit2)
+		global_dictionary['fit_SOURCE_IR_absolute_R2'].append(R2)
+
 		temp = timestamp_CB - peaks_timestamp_plus_IR-60*60*1000
 		fit = np.polyfit(index_good_pulses,temp,1)
 		fit2 = np.polyfit(timestamp_CB-timestamp_CB[0],temp,1)
 		R2 = 1-np.sum((temp-np.polyval(fit,index_good_pulses))**2)/np.sum((temp-np.mean(temp))**2)
 		if print_1:
-			plt.figure(figsize=(10, 8))
+			plt.figure(figsize=(10, 5))
+			plt.grid()
 			plt.plot(index_good_pulses,temp)
 			plt.plot(index_good_pulses,np.polyval(fit,index_good_pulses),'--')
-			plt.title('merge='+str(merge_ID_target)+' j='+str(j) +'\ncomparison of OES and IR time\nfit '+str(fit)+'\nfit2 '+str(fit2))
+			plt.title('merge='+str(merge_ID_target)+' j='+str(j)+ ' P=%.3gPa' %(target_chamber_pressure) +'\ncomparison of OES and IR time\nfit '+str(fit)+'\nfit2 '+str(fit2))
 			plt.pause(0.01)
 		global_dictionary['fit_OES_IR_R2'].append(R2)
 		global_dictionary['fit_OES_IR'].append(fit2)
@@ -285,18 +313,19 @@ for merge_ID_target in merge_id_all:
 		global_dictionary['timestamp_OES_0'].append(timestamp_OES[0])
 		global_dictionary['peaks_timestamp_plus_IR_0'].append(peaks_timestamp_plus_IR[0]-60*60*1000)
 
-		temp = time_of_pulses_DCsource*1e3-peaks_relative_time_plus_IR
+		temp = time_of_pulses_DCsource-time_of_pulses_DCsource[0]-peaks_relative_time_plus_IR
 		fit = np.polyfit(index_good_pulses,temp,1)
-		fit2 = np.polyfit(time_of_pulses_DCsource*1e3-time_of_pulses_DCsource[0]*1e3,temp,1)
+		fit2 = np.polyfit(time_of_pulses_DCsource*1e3-time_of_pulses_DCsource[0],temp,1)
 		R2 = 1-np.sum((temp-np.polyval(fit,index_good_pulses))**2)/np.sum((temp-np.mean(temp))**2)
 		if print_1:
-			plt.figure(figsize=(10, 8))
+			plt.figure(figsize=(10, 5))
+			plt.grid()
 			plt.plot(index_good_pulses,temp)
 			plt.plot(index_good_pulses,np.polyval(fit,index_good_pulses),'--')
-			plt.title('merge='+str(merge_ID_target)+' j='+str(j) +'\ncomparison of SOURCE and IR time\nfit '+str(fit)+'\nfit2 '+str(fit2))
+			plt.title('merge='+str(merge_ID_target)+' j='+str(j)+ ' P=%.3gPa' %(target_chamber_pressure) +'\ncomparison of SOURCE and IR time\nfit '+str(fit)+'\nfit2 '+str(fit2))
 			plt.pause(0.01)
-		global_dictionary['fit_SOURCE_IR'].append(fit2)
-		global_dictionary['fit_SOURCE_IR_R2'].append(R2)
+		global_dictionary['fit_SOURCE_IR_relative'].append(fit2)
+		global_dictionary['fit_SOURCE_IR_relative_R2'].append(R2)
 
 
 		# all_reference_time.append(np.concatenate((fit,[R2,temp[0],elapsed_time_offset,elapsed_time_offset2,PVCAM_TimeStampBOF_offset,PVCAM_TimeStampBOF_offset2,time_of_pulses[0],index_good_pulses_refined_plus_IR[0]])))
@@ -308,8 +337,15 @@ for merge_ID_target in merge_id_all:
 # all_J_ext = np.array(all_J_ext)
 # all_time_ref = np.array(all_time_ref)
 global_dictionary['fit_OES_IR'] = np.array(global_dictionary['fit_OES_IR']).T
-global_dictionary['fit_SOURCE_IR'] = np.array(global_dictionary['fit_SOURCE_IR']).T
+global_dictionary['fit_SOURCE_IR_relative'] = np.array(global_dictionary['fit_SOURCE_IR_relative']).T
 if print_2:
+	plt.figure(figsize=(15, 7))
+	plt.title('Absolute time comparison IR vs ADC')
+	plt.plot(global_dictionary['pressure'],np.array(global_dictionary['fit_SOURCE_IR_absolute'])[:,1],'+')
+	plt.xlabel('pressure [Pa]')
+	plt.ylabel('time difference [ms]')
+	plt.grid()
+	plt.pause(0.01)
 	# plt.figure()
 	# plt.plot(global_dictionary['j'],global_dictionary['fit_OES_IR'][1]-global_dictionary['fit_OES_IR'][1,0])
 	# plt.pause(0.01)
