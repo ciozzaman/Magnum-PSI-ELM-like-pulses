@@ -4842,20 +4842,23 @@ else:
 
 
 	if collect_power_PDF:
-		print('Starting to look at Bayesian results')
 		try:
 			if 'H2_creation_RR' in power_balance_data_dict[0].keys():
 				latest_version=True
+				print('Starting to look at Bayesian results')
 			else:
 				latest_version=False
+				print('Starting to look at Bayesian results, OLD VERSION')
 		except:
 			i=0
 			while power_balance_data_dict[i]==0:
 				i+=1
 			if 'H2_creation_RR' in power_balance_data_dict[i].keys():
 				latest_version=True
+				print('Starting to look at Bayesian results')
 			else:
 				latest_version=False
+				print('Starting to look at Bayesian results, OLD VERSION')
 
 		intervals_power_rad_excit = np.zeros_like(Te_all).tolist()
 		prob_power_rad_excit = np.zeros_like(Te_all).tolist()
@@ -4981,6 +4984,12 @@ else:
 		intervals_nHm_ne_values = np.zeros_like(Te_all).tolist()
 		prob_nHm_ne_values = np.zeros_like(Te_all).tolist()
 		actual_values_nHm_ne_values = np.zeros_like(Te_all).tolist()
+		intervals_nH2p_nH2_values = np.zeros_like(Te_all).tolist()
+		prob_nH2p_nH2_values = np.zeros_like(Te_all).tolist()
+		actual_values_nH2p_nH2_values = np.zeros_like(Te_all).tolist()
+		intervals_nHm_nH2_values = np.zeros_like(Te_all).tolist()
+		prob_nHm_nH2_values = np.zeros_like(Te_all).tolist()
+		actual_values_nHm_nH2_values = np.zeros_like(Te_all).tolist()
 		if latest_version:
 			intervals_nH_values = np.zeros_like(Te_all).tolist()
 			prob_nH_values = np.zeros_like(Te_all).tolist()
@@ -5124,6 +5133,12 @@ else:
 					intervals_nHm_ne_values[i_t][i_r] = [0,0]
 					prob_nHm_ne_values[i_t][i_r] = [1]
 					actual_values_nHm_ne_values[i_t][i_r] = [0]
+					intervals_nH2p_nH2_values[i_t][i_r] = [0,0]
+					prob_nH2p_nH2_values[i_t][i_r] = [1]
+					actual_values_nH2p_nH2_values[i_t][i_r] = [0]
+					intervals_nHm_nH2_values[i_t][i_r] = [0,0]
+					prob_nHm_nH2_values[i_t][i_r] = [1]
+					actual_values_nHm_nH2_values[i_t][i_r] = [0]
 					if latest_version:
 						intervals_nH_values[i_t][i_r] = [0,0]
 						prob_nH_values[i_t][i_r] = [1]
@@ -5262,6 +5277,12 @@ else:
 					intervals_nHm_ne_values[i_t][i_r] = power_balance_data_dict[i]['nHm_ne_values']['intervals']
 					prob_nHm_ne_values[i_t][i_r] = power_balance_data_dict[i]['nHm_ne_values']['prob']
 					actual_values_nHm_ne_values[i_t][i_r] = power_balance_data_dict[i]['nHm_ne_values']['actual_values']
+					intervals_nH2p_nH2_values[i_t][i_r] = power_balance_data_dict[i]['nH2p_nH2_values']['intervals']
+					prob_nH2p_nH2_values[i_t][i_r] = power_balance_data_dict[i]['nH2p_nH2_values']['prob']
+					actual_values_nH2p_nH2_values[i_t][i_r] = power_balance_data_dict[i]['nH2p_nH2_values']['actual_values']
+					intervals_nHm_nH2_values[i_t][i_r] = power_balance_data_dict[i]['nHm_nH2_values']['intervals']
+					prob_nHm_nH2_values[i_t][i_r] = power_balance_data_dict[i]['nHm_nH2_values']['prob']
+					actual_values_nHm_nH2_values[i_t][i_r] = power_balance_data_dict[i]['nHm_nH2_values']['actual_values']
 					if latest_version:
 						intervals_nH_values[i_t][i_r] = power_balance_data_dict[i]['nH_values']['intervals']
 						prob_nH_values[i_t][i_r] = power_balance_data_dict[i]['nH_values']['prob']
@@ -5348,8 +5369,8 @@ else:
 			prob_nH2p_values,actual_values_nH2p_values,intervals_nH2p_values = PDF_2_terms_operation_MC(actual_values_nH2p_ne_values,prob_nH2p_ne_values,actual_values_ne_values,prob_ne_values,np.multiply)
 			prob_nHm_values,actual_values_nHm_values,intervals_nHm_values = PDF_2_terms_operation_MC(actual_values_nHm_ne_values,prob_nHm_ne_values,actual_values_ne_values,prob_ne_values,np.multiply)
 
-		prob_nH2p_nH2_values,actual_values_nH2p_nH2_values,intervals_nH2p_nH2_values = PDF_2_terms_operation_MC(actual_values_nH2p_ne_values,prob_nH2p_ne_values,actual_values_nH2_ne_values,prob_nH2_ne_values,np.divide)
-		prob_nHm_nH2_values,actual_values_nHm_nH2_values,intervals_nHm_nH2_values = PDF_2_terms_operation_MC(actual_values_nHm_ne_values,prob_nHm_ne_values,actual_values_nH2_ne_values,prob_nH2_ne_values,np.divide)
+			prob_nH2p_nH2_values,actual_values_nH2p_nH2_values,intervals_nH2p_nH2_values = PDF_2_terms_operation_MC(actual_values_nH2p_ne_values,prob_nH2p_ne_values,actual_values_nH2_ne_values,prob_nH2_ne_values,np.divide)
+			prob_nHm_nH2_values,actual_values_nHm_nH2_values,intervals_nHm_nH2_values = PDF_2_terms_operation_MC(actual_values_nHm_ne_values,prob_nHm_ne_values,actual_values_nH2_ne_values,prob_nH2_ne_values,np.divide)
 
 		most_likely_power_rad_excit,most_likely_power_rad_excit_sigma = calculate_most_likely(prob_power_rad_excit,actual_values_power_rad_excit,intervals_power_rad_excit)
 		figure_index = make_plot_type_1(most_likely_power_rad_excit,'power_rad_excit','power [W/m3]',figure_index)
@@ -5877,8 +5898,6 @@ else:
 
 			return P_HCX_intervals,P_HCX_prob,P_HCX_actual_values,E_HCX_intervals,E_HCX_prob,E_HCX_actual_values,n_HCX_intervals,n_HCX_prob,n_HCX_actual_values,n_H2CX_intervals,n_H2CX_prob,n_H2CX_actual_values,E_HCX_2_intervals,E_HCX_2_prob,E_HCX_2_actual_values,E_HCX_3_intervals,E_HCX_3_prob,E_HCX_3_actual_values,n_HCX_2_intervals,n_HCX_2_prob,n_HCX_2_actual_values,P_HCX_2_intervals,P_HCX_2_prob,P_HCX_2_actual_values,P_HCX_3_intervals,P_HCX_3_prob,P_HCX_3_actual_values,nH_rmax,nH2_rmax,nH2vH2_rmax
 
-		# print(blamba)
-
 		intervals_P_HCX,prob_P_HCX,actual_values_P_HCX,intervals_E_HCX,prob_E_HCX,actual_values_E_HCX,intervals_n_HCX,prob_n_HCX,actual_values_n_HCX,intervals_n_H2CX,prob_n_H2CX,actual_values_n_H2CX,intervals_E_HCX_2,prob_E_HCX_2,actual_values_E_HCX_2,intervals_E_HCX_3,prob_E_HCX_3,actual_values_E_HCX_3,intervals_n_HCX_2,prob_n_HCX_2,actual_values_n_HCX_2,intervals_P_HCX_2,prob_P_HCX_2,actual_values_P_HCX_2,intervals_P_HCX_3,prob_P_HCX_3,actual_values_P_HCX_3,nH_rmax,nH2_rmax,nH2vH2_rmax = PDF_CX_MC(actual_values_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_3,prob_CX_term_1_3,actual_values_CX_term_1_4,prob_CX_term_1_4,actual_values_CX_term_1_5,prob_CX_term_1_5,actual_values_CX_term_1_6,prob_CX_term_1_6,actual_values_CX_term_1_8,prob_CX_term_1_8,actual_values_CX_term_1_9,prob_CX_term_1_9,actual_values_CX_term_1_11,prob_CX_term_1_11,actual_values_H2_destruction_RR,prob_H2_destruction_RR)
 
 		most_likely_n_H2CX,most_likely_n_H2CX_sigma = calculate_most_likely(prob_n_H2CX,actual_values_n_H2CX,intervals_n_H2CX)
@@ -5994,38 +6013,49 @@ else:
 		most_likely_nHm_nH2_values,most_likely_nHm_nH2_values_sigma = calculate_most_likely(prob_nHm_nH2_values,actual_values_nHm_nH2_values,intervals_nHm_nH2_values)
 		figure_index = make_plot_type_1(most_likely_nHm_nH2_values,'nHm_nH2_values','density ratio [au]',figure_index,ext_vmin=1e-10)
 
+		most_likely_nH2_ne_values,most_likely_nH2_ne_values_sigma = calculate_most_likely(prob_nH2_ne_values,actual_values_nH2_ne_values,intervals_nH2_ne_values)
+		figure_index = make_plot_type_1(most_likely_nH2_ne_values,'nH2_ne_values','density ratio [au]',figure_index,ext_vmin=1e-9)
+
+		most_likely_nH_ne_values,most_likely_nH_ne_values_sigma = calculate_most_likely(prob_nH_ne_values,actual_values_nH_ne_values,intervals_nH_ne_values)
+		figure_index = make_plot_type_1(most_likely_nH_ne_values,'nH_ne_values','density ratio [au]',figure_index,ext_vmin=1e-10)
+
 		plt.figure(figsize=(8, 5));
 		ne_bands = [0,0.5e20,1e20,5e20,10e20,np.inf]
 		for index in range(len(ne_bands)-1):
 			select=np.logical_and(np.array(most_likely_ne_values)>ne_bands[index],np.array(most_likely_ne_values)<=ne_bands[index+1])
 			plt.errorbar(np.array(most_likely_Te_values)[select],np.array(most_likely_nH2p_nH2_values)[select],xerr=np.array(most_likely_Te_values_sigma)[select].T,yerr=np.array(most_likely_nH2p_nH2_values_sigma)[select].T,fmt='+',color=color[index],label='%.3g>ne>%.3g # *1e20' %(ne_bands[index]*1e-20,ne_bands[index+1]*1e-20))
 			temp_e = np.sort(np.array(most_likely_Te_values)[select])
-			temp = 1e-3*np.min([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e)],axis=0)
-			# temp = 1e-2*np.min([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e)],axis=0)
-			temp[temp<1e-8]=1e-8
-			plt.plot(temp_e,temp,'--',color=color[index])
-			plt.plot(np.array([temp_e]*2).T,np.array(nH2p_nH2_values_Te_ne(temp_e,[ne_bands[index]]*np.sum(select),2)).T,'o',color=color[index])
-			nH2p_nH2_values_Te_ne
-			temp_e = np.sort(np.array(most_likely_Te_values)[select])
-			temp = 1e3*np.max([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e)],axis=0)
-			# temp = 1e4*np.max([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e)],axis=0)
-			temp[temp<1e0]=1e0
-			plt.plot(temp_e,temp,'--',color=color[index])
-			temp = 1e-3*np.min([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),temp_e)],axis=0)
-			# temp = 1e-2*np.min([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),temp_e)],axis=0)
-			temp[temp<1e-8]=1e-8
-			plt.plot(temp_e,temp,':',color=color[index])
-			temp = 1e3*np.max([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),temp_e)],axis=0)
-			# temp = 1e4*np.max([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),temp_e)],axis=0)
-			temp[temp<1e0]=1e0
-			plt.plot(temp_e,temp,':',color=color[index])
+			# temp = 1e-3*np.min([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e)],axis=0)
+			# temp[temp<1e-8]=1e-8
+			# plt.plot(temp_e,temp,'--',color=color[index])
+			plt.plot(np.array([temp_e]*2).T,np.array(nH2p_nH2_values_Te_ne(temp_e,[ne_bands[index]]*np.sum(select),2)).T,'--',color=color[index])
+			plt.plot(np.array([temp_e]*2).T,np.array(nH2p_nH2_values_Te_ne(temp_e,[ne_bands[index+1]]*np.sum(select),2)).T,'--',color=color[index])
+			# temp_e = np.sort(np.array(most_likely_Te_values)[select])
+			# temp = 1e3*np.max([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e)],axis=0)
+			# temp[temp<1e0]=1e0
+			# plt.plot(temp_e,temp,'--',color=color[index])
+			# temp = 1e-3*np.min([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),temp_e)],axis=0)
+			# temp[temp<1e-8]=1e-8
+			# plt.plot(temp_e,temp,':',color=color[index])
+			# temp = 1e3*np.max([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),temp_e)],axis=0)
+			# temp[temp<1e0]=1e0
+			# plt.plot(temp_e,temp,':',color=color[index])
+			if index==0:
+				plt.plot(np.sort(temp_e),H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),np.sort(temp_e)),':',color=color[index],label='from equilibrium vn')
+				plt.plot(np.sort(temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),np.sort(temp_e)),'-.',color=color[index],label='from equilibrium v0')
+			else:
+				plt.plot(np.sort(temp_e),H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),np.sort(temp_e)),':',color=color[index])
+				plt.plot(np.sort(temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),np.sort(temp_e)),'-.',color=color[index])
+			plt.plot(np.sort(temp_e),H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),np.sort(temp_e)),':',color=color[index])
+			plt.plot(np.sort(temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),np.sort(temp_e)),'-.',color=color[index])
+		plt.ylim(bottom=1e-9)
 		plt.yscale('log')
 		plt.xscale('log')
 		plt.grid()
 		plt.ylabel('nH2p/nH2 [au]')
 		plt.legend(loc='best', fontsize='xx-small')
 		plt.xlabel('Te [eV]')
-		plt.title(pre_title+' H2+/H2 density ratio\n"o" old limits, "--" new limits')
+		plt.title(pre_title+' H2+/H2 density ratio, "--" limits')
 		figure_index += 1
 		plt.savefig(path_where_to_save_everything + mod4 + '/bayesian/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
 			figure_index+1) + '.eps', bbox_inches='tight')
@@ -6037,31 +6067,102 @@ else:
 			select=np.logical_and(np.array(most_likely_ne_values)>ne_bands[index],np.array(most_likely_ne_values)<=ne_bands[index+1])
 			plt.errorbar(np.array(most_likely_Te_values)[select],np.array(most_likely_nHm_nH2_values)[select],xerr=np.array(most_likely_Te_values_sigma)[select].T,yerr=np.array(most_likely_nHm_nH2_values_sigma)[select].T,fmt='+',color=color[index],label='%.3g>ne>%.3g # *1e20' %(ne_bands[index]*1e-20,ne_bands[index+1]*1e-20))
 			temp_e = np.sort(np.array(most_likely_Te_values)[select])
-			temp = 1e-3*np.min([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
-			# temp = 1e-2*np.min([Hm_H2_v_ratio_AMJUEL(temp_e)],axis=0)
-			temp[temp<1e-6]=1e-6
-			plt.plot(temp_e,temp,'--',color=color[index])
-			plt.plot(np.array([temp_e]*2).T,np.array(nHm_nH2_values_Te(temp_e,2)).T,'o',color=color[index])
-			temp_e = np.sort(np.array(most_likely_Te_values)[select])
-			temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
-			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e)],axis=0)
-			temp[temp<1e1]=1e1
-			plt.plot(temp_e,temp,'--',color=color[index])
-			temp = 1e-3*np.min([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
-			# temp = 1e-2*np.min([Hm_H2_v_ratio_AMJUEL(temp_e)],axis=0)
-			temp[temp<1e-6]=1e-6
-			plt.plot(temp_e,temp,':',color=color[index])
-			temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
-			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e)],axis=0)
-			temp[temp<1e1]=1e1
-			plt.plot(temp_e,temp,':',color=color[index])
+			# temp = 1e-3*np.min([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e-6]=1e-6
+			# plt.plot(temp_e,temp,'--',color=color[index])
+			plt.plot(np.array([temp_e]*2).T,np.array(nHm_nH2_values_Te(temp_e,2)).T,'--',color=color[index])
+			# temp_e = np.sort(np.array(most_likely_Te_values)[select])
+			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e1]=1e1
+			# plt.plot(temp_e,temp,'--',color=color[index])
+			# temp = 1e-3*np.min([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e-6]=1e-6
+			# plt.plot(temp_e,temp,':',color=color[index])
+			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e1]=1e1
+			# plt.plot(temp_e,temp,':',color=color[index])
+		plt.plot(np.sort(np.array(most_likely_Te_values).flatten()),Hm_H2_v_ratio_AMJUEL(np.sort(np.array(most_likely_Te_values).flatten())),':k',label='from equilibrium vn')
+		plt.plot(np.sort(np.array(most_likely_Te_values).flatten()),Hm_H2_v0_ratio_AMJUEL(np.sort(np.array(most_likely_Te_values).flatten())),'-.k',label='from equilibrium v0')
+		plt.ylim(bottom=1e-7)
 		plt.yscale('log')
 		plt.xscale('log')
 		plt.grid()
 		plt.ylabel('nHm/nH2 [au]')
 		plt.legend(loc='best', fontsize='xx-small')
 		plt.xlabel('Te [eV]')
-		plt.title(pre_title+' H-/H2 density ratio\n"o" old limits, "--" new limits')
+		plt.title(pre_title+' H-/H2 density ratio, "--" limits')
+		figure_index += 1
+		plt.savefig(path_where_to_save_everything + mod4 + '/bayesian/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+			figure_index+1) + '.eps', bbox_inches='tight')
+		plt.close()
+
+		plt.figure(figsize=(8, 5));
+		ne_bands = [0,0.5e20,1e20,5e20,10e20,np.inf]
+		for index in range(len(ne_bands)-1):
+			select=np.logical_and(np.array(most_likely_ne_values)>ne_bands[index],np.array(most_likely_ne_values)<=ne_bands[index+1])
+			plt.errorbar(np.array(most_likely_Te_values)[select],np.array(most_likely_nH2_ne_values)[select],xerr=np.array(most_likely_Te_values_sigma)[select].T,yerr=np.array(most_likely_nH2_ne_values_sigma)[select].T,fmt='+',color=color[index],label='%.3g>ne>%.3g # *1e20' %(ne_bands[index]*1e-20,ne_bands[index+1]*1e-20))
+			temp_e = np.sort(np.array(most_likely_Te_values)[select])
+			# temp = 1e-3*np.min([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e-6]=1e-6
+			# plt.plot(temp_e,temp,'--',color=color[index])
+			temp_H2 = []
+			for value in temp_e:
+				temp_H2.append(nH2_ne_values_Te(value,3)[[0,2]])
+			plt.plot(np.array([temp_e]*2).T,temp_H2,'--',color=color[index])
+			# temp_e = np.sort(np.array(most_likely_Te_values)[select])
+			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e1]=1e1
+			# plt.plot(temp_e,temp,'--',color=color[index])
+			# temp = 1e-3*np.min([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e-6]=1e-6
+			# plt.plot(temp_e,temp,':',color=color[index])
+			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e1]=1e1
+			# plt.plot(temp_e,temp,':',color=color[index])
+		plt.plot(np.sort(np.array(most_likely_Te_values).flatten()),nH2_ne_fit_from_simulations(np.sort(np.array(most_likely_Te_values).flatten())),'-k',label='from somulations')
+		plt.yscale('log')
+		plt.xscale('log')
+		plt.grid()
+		plt.ylabel('nH2/ne [au]')
+		plt.legend(loc='best', fontsize='xx-small')
+		plt.xlabel('Te [eV]')
+		plt.title(pre_title+' H2/e density ratio, "--" limits')
+		figure_index += 1
+		plt.savefig(path_where_to_save_everything + mod4 + '/bayesian/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+			figure_index+1) + '.eps', bbox_inches='tight')
+		plt.close()
+
+		plt.figure(figsize=(8, 5));
+		ne_bands = [0,0.5e20,1e20,5e20,10e20,np.inf]
+		for index in range(len(ne_bands)-1):
+			select=np.logical_and(np.array(most_likely_ne_values)>ne_bands[index],np.array(most_likely_ne_values)<=ne_bands[index+1])
+			plt.errorbar(np.array(most_likely_Te_values)[select],np.array(most_likely_nH_ne_values)[select],xerr=np.array(most_likely_Te_values_sigma)[select].T,yerr=np.array(most_likely_nH_ne_values_sigma)[select].T,fmt='+',color=color[index],label='%.3g>ne>%.3g # *1e20' %(ne_bands[index]*1e-20,ne_bands[index+1]*1e-20))
+			temp_e = np.sort(np.array(most_likely_Te_values)[select])
+			# temp = 1e-3*np.min([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e-6]=1e-6
+			# plt.plot(temp_e,temp,'--',color=color[index])
+			temp_H2 = []
+			for value in temp_e:
+				temp_H2.append(nH_ne_values_Te(value,3)[[0,2]])
+			plt.plot(np.array([temp_e]*2).T,temp_H2,'--',color=color[index])
+			# temp_e = np.sort(np.array(most_likely_Te_values)[select])
+			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e1]=1e1
+			# plt.plot(temp_e,temp,'--',color=color[index])
+			# temp = 1e-3*np.min([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e-6]=1e-6
+			# plt.plot(temp_e,temp,':',color=color[index])
+			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
+			# temp[temp<1e1]=1e1
+			# plt.plot(temp_e,temp,':',color=color[index])
+		plt.plot(np.sort(np.array(most_likely_Te_values).flatten()),nH_ne_fit_from_simulations(np.sort(np.array(most_likely_Te_values).flatten())),'-k',label='from somulations')
+		plt.yscale('log')
+		plt.xscale('log')
+		plt.grid()
+		plt.ylabel('nH2/ne [au]')
+		plt.legend(loc='best', fontsize='xx-small')
+		plt.xlabel('Te [eV]')
+		plt.title(pre_title+' H/e density ratio, "--" limits')
 		figure_index += 1
 		plt.savefig(path_where_to_save_everything + mod4 + '/bayesian/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
 			figure_index+1) + '.eps', bbox_inches='tight')
@@ -7284,172 +7385,188 @@ else:
 		bayesian_results_dict['input_power']['TS']['flow']['H2_target_inflow'] = feed_rate_SLM * 1000/60/60 * target_chamber_pressure/(300*boltzmann_constant_J)
 
 		bayesian_results_dict['power_rad_excit'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_rad_excit']['full'] = dict([('intervals',intervals_power_rad_excit),('prob',prob_power_rad_excit),('actual_values',actual_values_power_rad_excit),('most_likely',most_likely_power_rad_excit),('unit','W m^-3')])
-		bayesian_results_dict['power_rad_excit']['radial_sum'] = dict([('intervals',intervals_power_rad_excit_r),('prob',prob_power_rad_excit_r),('actual_values',actual_values_power_rad_excit_r),('most_likely',most_likely_power_rad_excit_r)])
-		bayesian_results_dict['power_rad_excit']['radial_time_sum'] = dict([('intervals',intervals_power_rad_excit_tr),('prob',prob_power_rad_excit_tr),('most_likely',ML_power_rad_excit),('most_likely_sigma',ML_power_rad_excit_sigma)])
+		bayesian_results_dict['power_rad_excit']['full'] = dict([('intervals',intervals_power_rad_excit),('prob',prob_power_rad_excit),('actual_values',actual_values_power_rad_excit),('most_likely',most_likely_power_rad_excit),('most_likely_sigma',most_likely_power_rad_excit_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_rad_excit']['radial_sum'] = dict([('intervals',intervals_power_rad_excit_r),('prob',prob_power_rad_excit_r),('actual_values',actual_values_power_rad_excit_r),('most_likely',most_likely_power_rad_excit_r),('unit','W')])
+		bayesian_results_dict['power_rad_excit']['radial_time_sum'] = dict([('intervals',intervals_power_rad_excit_tr),('prob',prob_power_rad_excit_tr),('most_likely',ML_power_rad_excit),('most_likely_sigma',ML_power_rad_excit_sigma),('unit','J')])
 
 		bayesian_results_dict['power_rad_rec_bremm'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_rad_rec_bremm']['full'] = dict([('intervals',intervals_power_rad_rec_bremm),('prob',prob_power_rad_rec_bremm),('actual_values',actual_values_power_rad_rec_bremm),('most_likely',most_likely_power_rad_rec_bremm),('unit','W m^-3')])
-		bayesian_results_dict['power_rad_rec_bremm']['radial_sum'] = dict([('intervals',intervals_power_rad_rec_bremm_r),('prob',prob_power_rad_rec_bremm_r),('actual_values',actual_values_power_rad_rec_bremm_r),('most_likely',most_likely_power_rad_rec_bremm_r)])
-		bayesian_results_dict['power_rad_rec_bremm']['radial_time_sum'] = dict([('intervals',intervals_power_rad_rec_bremm_tr),('prob',prob_power_rad_rec_bremm_tr),('most_likely',ML_power_rad_rec_bremm),('most_likely_sigma',ML_power_rad_rec_bremm_sigma)])
+		bayesian_results_dict['power_rad_rec_bremm']['full'] = dict([('intervals',intervals_power_rad_rec_bremm),('prob',prob_power_rad_rec_bremm),('actual_values',actual_values_power_rad_rec_bremm),('most_likely',most_likely_power_rad_rec_bremm),('most_likely_sigma',most_likely_power_rad_rec_bremm_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_rad_rec_bremm']['radial_sum'] = dict([('intervals',intervals_power_rad_rec_bremm_r),('prob',prob_power_rad_rec_bremm_r),('actual_values',actual_values_power_rad_rec_bremm_r),('most_likely',most_likely_power_rad_rec_bremm_r),('unit','W')])
+		bayesian_results_dict['power_rad_rec_bremm']['radial_time_sum'] = dict([('intervals',intervals_power_rad_rec_bremm_tr),('prob',prob_power_rad_rec_bremm_tr),('most_likely',ML_power_rad_rec_bremm),('most_likely_sigma',ML_power_rad_rec_bremm_sigma),('unit','J')])
 
 		bayesian_results_dict['power_rad_mol'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_rad_mol']['full'] = dict([('intervals',intervals_power_rad_mol),('prob',prob_power_rad_mol),('actual_values',actual_values_power_rad_mol),('most_likely',most_likely_power_rad_mol),('unit','W m^-3')])
-		bayesian_results_dict['power_rad_mol']['radial_sum'] = dict([('intervals',intervals_power_rad_mol_r),('prob',prob_power_rad_mol_r),('actual_values',actual_values_power_rad_mol_r),('most_likely',most_likely_power_rad_mol_r)])
-		bayesian_results_dict['power_rad_mol']['radial_time_sum'] = dict([('intervals',intervals_power_rad_mol_tr),('prob',prob_power_rad_mol_tr),('most_likely',ML_power_rad_mol),('most_likely_sigma',ML_power_rad_mol_sigma)])
+		bayesian_results_dict['power_rad_mol']['full'] = dict([('intervals',intervals_power_rad_mol),('prob',prob_power_rad_mol),('actual_values',actual_values_power_rad_mol),('most_likely',most_likely_power_rad_mol),('most_likely_sigma',most_likely_power_rad_mol_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_rad_mol']['radial_sum'] = dict([('intervals',intervals_power_rad_mol_r),('prob',prob_power_rad_mol_r),('actual_values',actual_values_power_rad_mol_r),('most_likely',most_likely_power_rad_mol_r),('unit','W')])
+		bayesian_results_dict['power_rad_mol']['radial_time_sum'] = dict([('intervals',intervals_power_rad_mol_tr),('prob',prob_power_rad_mol_tr),('most_likely',ML_power_rad_mol),('most_likely_sigma',ML_power_rad_mol_sigma),('unit','J')])
 
 		bayesian_results_dict['power_via_ionisation'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_via_ionisation']['full'] = dict([('intervals',intervals_power_via_ionisation),('prob',prob_power_via_ionisation),('actual_values',actual_values_power_via_ionisation),('most_likely',most_likely_power_via_ionisation),('unit','W m^-3')])
-		bayesian_results_dict['power_via_ionisation']['radial_sum'] = dict([('intervals',intervals_power_via_ionisation_r),('prob',prob_power_via_ionisation_r),('actual_values',actual_values_power_via_ionisation_r),('most_likely',most_likely_power_via_ionisation_r)])
-		bayesian_results_dict['power_via_ionisation']['radial_time_sum'] = dict([('intervals',intervals_power_via_ionisation_tr),('prob',prob_power_via_ionisation_tr),('most_likely',ML_power_via_ionisation),('most_likely_sigma',ML_power_via_ionisation_sigma)])
+		bayesian_results_dict['power_via_ionisation']['full'] = dict([('intervals',intervals_power_via_ionisation),('prob',prob_power_via_ionisation),('actual_values',actual_values_power_via_ionisation),('most_likely',most_likely_power_via_ionisation),('most_likely_sigma',most_likely_power_via_ionisation_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_via_ionisation']['radial_sum'] = dict([('intervals',intervals_power_via_ionisation_r),('prob',prob_power_via_ionisation_r),('actual_values',actual_values_power_via_ionisation_r),('most_likely',most_likely_power_via_ionisation_r),('unit','W')])
+		bayesian_results_dict['power_via_ionisation']['radial_time_sum'] = dict([('intervals',intervals_power_via_ionisation_tr),('prob',prob_power_via_ionisation_tr),('most_likely',ML_power_via_ionisation),('most_likely_sigma',ML_power_via_ionisation_sigma),('unit','J')])
 
 		bayesian_results_dict['power_via_recombination'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_via_recombination']['full'] = dict([('intervals',intervals_power_via_recombination),('prob',prob_power_via_recombination),('actual_values',actual_values_power_via_recombination),('most_likely',most_likely_power_via_recombination),('unit','W m^-3')])
-		bayesian_results_dict['power_via_recombination']['radial_sum'] = dict([('intervals',intervals_power_via_recombination_r),('prob',prob_power_via_recombination_r),('actual_values',actual_values_power_via_recombination_r),('most_likely',most_likely_power_via_recombination_r)])
-		bayesian_results_dict['power_via_recombination']['radial_time_sum'] = dict([('intervals',intervals_power_via_recombination_tr),('prob',prob_power_via_recombination_tr),('most_likely',ML_power_via_recombination),('most_likely_sigma',ML_power_via_recombination_sigma)])
+		bayesian_results_dict['power_via_recombination']['full'] = dict([('intervals',intervals_power_via_recombination),('prob',prob_power_via_recombination),('actual_values',actual_values_power_via_recombination),('most_likely',most_likely_power_via_recombination),('most_likely_sigma',most_likely_power_via_recombination_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_via_recombination']['radial_sum'] = dict([('intervals',intervals_power_via_recombination_r),('prob',prob_power_via_recombination_r),('actual_values',actual_values_power_via_recombination_r),('most_likely',most_likely_power_via_recombination_r),('unit','W')])
+		bayesian_results_dict['power_via_recombination']['radial_time_sum'] = dict([('intervals',intervals_power_via_recombination_tr),('prob',prob_power_via_recombination_tr),('most_likely',ML_power_via_recombination),('most_likely_sigma',ML_power_via_recombination_sigma),('unit','J')])
 
 		bayesian_results_dict['tot_rad_power'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['tot_rad_power']['full'] = dict([('intervals',intervals_tot_rad_power),('prob',prob_tot_rad_power),('actual_values',actual_values_tot_rad_power),('most_likely',most_likely_tot_rad_power),('unit','W m^-3')])
-		bayesian_results_dict['tot_rad_power']['radial_sum'] = dict([('intervals',intervals_tot_rad_power_r),('prob',prob_tot_rad_power_r),('actual_values',actual_values_tot_rad_power_r),('most_likely',most_likely_tot_rad_power_r)])
-		bayesian_results_dict['tot_rad_power']['radial_time_sum'] = dict([('intervals',intervals_tot_rad_power_tr),('prob',prob_tot_rad_power_tr),('most_likely',ML_tot_rad_power),('most_likely_sigma',ML_tot_rad_power_sigma)])
+		bayesian_results_dict['tot_rad_power']['full'] = dict([('intervals',intervals_tot_rad_power),('prob',prob_tot_rad_power),('actual_values',actual_values_tot_rad_power),('most_likely',most_likely_tot_rad_power),('most_likely_sigma',most_likely_tot_rad_power_sigma),('unit','W m^-3')])
+		bayesian_results_dict['tot_rad_power']['radial_sum'] = dict([('intervals',intervals_tot_rad_power_r),('prob',prob_tot_rad_power_r),('actual_values',actual_values_tot_rad_power_r),('most_likely',most_likely_tot_rad_power_r),('unit','W')])
+		bayesian_results_dict['tot_rad_power']['radial_time_sum'] = dict([('intervals',intervals_tot_rad_power_tr),('prob',prob_tot_rad_power_tr),('most_likely',ML_tot_rad_power),('most_likely_sigma',ML_tot_rad_power_sigma),('unit','J')])
 
 		bayesian_results_dict['power_rad_Hm'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_rad_Hm']['full'] = dict([('intervals',intervals_power_rad_Hm),('prob',prob_power_rad_Hm),('actual_values',actual_values_power_rad_Hm),('most_likely',most_likely_power_rad_Hm),('unit','W m^-3')])
-		bayesian_results_dict['power_rad_Hm']['radial_sum'] = dict([('intervals',intervals_power_rad_Hm_r),('prob',prob_power_rad_Hm_r),('actual_values',actual_values_power_rad_Hm_r),('most_likely',most_likely_power_rad_Hm_r)])
-		bayesian_results_dict['power_rad_Hm']['radial_time_sum'] = dict([('intervals',intervals_power_rad_Hm_tr),('prob',prob_power_rad_Hm_tr),('most_likely',ML_power_rad_Hm),('most_likely_sigma',ML_power_rad_Hm_sigma)])
+		bayesian_results_dict['power_rad_Hm']['full'] = dict([('intervals',intervals_power_rad_Hm),('prob',prob_power_rad_Hm),('actual_values',actual_values_power_rad_Hm),('most_likely',most_likely_power_rad_Hm),('most_likely_sigma',most_likely_power_rad_Hm_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_rad_Hm']['radial_sum'] = dict([('intervals',intervals_power_rad_Hm_r),('prob',prob_power_rad_Hm_r),('actual_values',actual_values_power_rad_Hm_r),('most_likely',most_likely_power_rad_Hm_r),('unit','W')])
+		bayesian_results_dict['power_rad_Hm']['radial_time_sum'] = dict([('intervals',intervals_power_rad_Hm_tr),('prob',prob_power_rad_Hm_tr),('most_likely',ML_power_rad_Hm),('most_likely_sigma',ML_power_rad_Hm_sigma),('unit','J')])
 
 		bayesian_results_dict['power_rad_Hm_H2p'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_rad_Hm_H2p']['full'] = dict([('intervals',intervals_power_rad_Hm_H2p),('prob',prob_power_rad_Hm_H2p),('actual_values',actual_values_power_rad_Hm_H2p),('most_likely',most_likely_power_rad_Hm_H2p),('unit','W m^-3')])
-		bayesian_results_dict['power_rad_Hm_H2p']['radial_sum'] = dict([('intervals',intervals_power_rad_Hm_H2p_r),('prob',prob_power_rad_Hm_H2p_r),('actual_values',actual_values_power_rad_Hm_H2p_r),('most_likely',most_likely_power_rad_Hm_H2p_r)])
-		bayesian_results_dict['power_rad_Hm_H2p']['radial_time_sum'] = dict([('intervals',intervals_power_rad_Hm_H2p_tr),('prob',prob_power_rad_Hm_H2p_tr),('most_likely',ML_power_rad_Hm_H2p),('most_likely_sigma',ML_power_rad_Hm_H2p_sigma)])
+		bayesian_results_dict['power_rad_Hm_H2p']['full'] = dict([('intervals',intervals_power_rad_Hm_H2p),('prob',prob_power_rad_Hm_H2p),('actual_values',actual_values_power_rad_Hm_H2p),('most_likely',most_likely_power_rad_Hm_H2p),('most_likely_sigma',most_likely_power_rad_Hm_H2p_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_rad_Hm_H2p']['radial_sum'] = dict([('intervals',intervals_power_rad_Hm_H2p_r),('prob',prob_power_rad_Hm_H2p_r),('actual_values',actual_values_power_rad_Hm_H2p_r),('most_likely',most_likely_power_rad_Hm_H2p_r),('unit','W')])
+		bayesian_results_dict['power_rad_Hm_H2p']['radial_time_sum'] = dict([('intervals',intervals_power_rad_Hm_H2p_tr),('prob',prob_power_rad_Hm_H2p_tr),('most_likely',ML_power_rad_Hm_H2p),('most_likely_sigma',ML_power_rad_Hm_H2p_sigma),('unit','J')])
 
 		bayesian_results_dict['power_rad_Hm_Hp'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_rad_Hm_Hp']['full'] = dict([('intervals',intervals_power_rad_Hm_Hp),('prob',prob_power_rad_Hm_Hp),('actual_values',actual_values_power_rad_Hm_Hp),('most_likely',most_likely_power_rad_Hm_Hp),('unit','W m^-3')])
-		bayesian_results_dict['power_rad_Hm_Hp']['radial_sum'] = dict([('intervals',intervals_power_rad_Hm_Hp_r),('prob',prob_power_rad_Hm_Hp_r),('actual_values',actual_values_power_rad_Hm_Hp_r),('most_likely',most_likely_power_rad_Hm_Hp_r)])
-		bayesian_results_dict['power_rad_Hm_Hp']['radial_time_sum'] = dict([('intervals',intervals_power_rad_Hm_Hp_tr),('prob',prob_power_rad_Hm_Hp_tr),('most_likely',ML_power_rad_Hm_Hp),('most_likely_sigma',ML_power_rad_Hm_Hp_sigma)])
+		bayesian_results_dict['power_rad_Hm_Hp']['full'] = dict([('intervals',intervals_power_rad_Hm_Hp),('prob',prob_power_rad_Hm_Hp),('actual_values',actual_values_power_rad_Hm_Hp),('most_likely',most_likely_power_rad_Hm_Hp),('most_likely_sigma',most_likely_power_rad_Hm_Hp_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_rad_Hm_Hp']['radial_sum'] = dict([('intervals',intervals_power_rad_Hm_Hp_r),('prob',prob_power_rad_Hm_Hp_r),('actual_values',actual_values_power_rad_Hm_Hp_r),('most_likely',most_likely_power_rad_Hm_Hp_r),('unit','W')])
+		bayesian_results_dict['power_rad_Hm_Hp']['radial_time_sum'] = dict([('intervals',intervals_power_rad_Hm_Hp_tr),('prob',prob_power_rad_Hm_Hp_tr),('most_likely',ML_power_rad_Hm_Hp),('most_likely_sigma',ML_power_rad_Hm_Hp_sigma),('unit','J')])
 
 		bayesian_results_dict['power_rad_H2'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_rad_H2']['full'] = dict([('intervals',intervals_power_rad_H2),('prob',prob_power_rad_H2),('actual_values',actual_values_power_rad_H2),('most_likely',most_likely_power_rad_H2),('unit','W m^-3')])
-		bayesian_results_dict['power_rad_H2']['radial_sum'] = dict([('intervals',intervals_power_rad_H2_r),('prob',prob_power_rad_H2_r),('actual_values',actual_values_power_rad_H2_r),('most_likely',most_likely_power_rad_H2_r)])
-		bayesian_results_dict['power_rad_H2']['radial_time_sum'] = dict([('intervals',intervals_power_rad_H2_tr),('prob',prob_power_rad_H2_tr),('most_likely',ML_power_rad_H2),('most_likely_sigma',ML_power_rad_H2_sigma)])
+		bayesian_results_dict['power_rad_H2']['full'] = dict([('intervals',intervals_power_rad_H2),('prob',prob_power_rad_H2),('actual_values',actual_values_power_rad_H2),('most_likely',most_likely_power_rad_H2),('most_likely_sigma',most_likely_power_rad_H2_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_rad_H2']['radial_sum'] = dict([('intervals',intervals_power_rad_H2_r),('prob',prob_power_rad_H2_r),('actual_values',actual_values_power_rad_H2_r),('most_likely',most_likely_power_rad_H2_r),('unit','W')])
+		bayesian_results_dict['power_rad_H2']['radial_time_sum'] = dict([('intervals',intervals_power_rad_H2_tr),('prob',prob_power_rad_H2_tr),('most_likely',ML_power_rad_H2),('most_likely_sigma',ML_power_rad_H2_sigma),('unit','J')])
 
 		bayesian_results_dict['power_rad_H2p'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_rad_H2p']['full'] = dict([('intervals',intervals_power_rad_H2p),('prob',prob_power_rad_H2p),('actual_values',actual_values_power_rad_H2p),('most_likely',most_likely_power_rad_H2p),('unit','W m^-3')])
-		bayesian_results_dict['power_rad_H2p']['radial_sum'] = dict([('intervals',intervals_power_rad_H2p_r),('prob',prob_power_rad_H2p_r),('actual_values',actual_values_power_rad_H2p_r),('most_likely',most_likely_power_rad_H2p_r)])
-		bayesian_results_dict['power_rad_H2p']['radial_time_sum'] = dict([('intervals',intervals_power_rad_H2p_tr),('prob',prob_power_rad_H2p_tr),('most_likely',ML_power_rad_H2p),('most_likely_sigma',ML_power_rad_H2p_sigma)])
+		bayesian_results_dict['power_rad_H2p']['full'] = dict([('intervals',intervals_power_rad_H2p),('prob',prob_power_rad_H2p),('actual_values',actual_values_power_rad_H2p),('most_likely',most_likely_power_rad_H2p),('most_likely_sigma',most_likely_power_rad_H2p_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_rad_H2p']['radial_sum'] = dict([('intervals',intervals_power_rad_H2p_r),('prob',prob_power_rad_H2p_r),('actual_values',actual_values_power_rad_H2p_r),('most_likely',most_likely_power_rad_H2p_r),('unit','W')])
+		bayesian_results_dict['power_rad_H2p']['radial_time_sum'] = dict([('intervals',intervals_power_rad_H2p_tr),('prob',prob_power_rad_H2p_tr),('most_likely',ML_power_rad_H2p),('most_likely_sigma',ML_power_rad_H2p_sigma),('unit','J')])
 
 		bayesian_results_dict['power_heating_rec'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_heating_rec']['full'] = dict([('intervals',intervals_power_heating_rec),('prob',prob_power_heating_rec),('actual_values',actual_values_power_heating_rec),('most_likely',most_likely_power_heating_rec),('unit','W m^-3')])
-		bayesian_results_dict['power_heating_rec']['radial_sum'] = dict([('intervals',intervals_power_heating_rec_r),('prob',prob_power_heating_rec_r),('actual_values',actual_values_power_heating_rec_r),('most_likely',most_likely_power_heating_rec_r)])
-		bayesian_results_dict['power_heating_rec']['radial_time_sum'] = dict([('intervals',intervals_power_heating_rec_tr),('prob',prob_power_heating_rec_tr),('most_likely',ML_power_heating_rec),('most_likely_sigma',ML_power_heating_rec_sigma)])
+		bayesian_results_dict['power_heating_rec']['full'] = dict([('intervals',intervals_power_heating_rec),('prob',prob_power_heating_rec),('actual_values',actual_values_power_heating_rec),('most_likely',most_likely_power_heating_rec),('most_likely_sigma',most_likely_power_heating_rec_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_heating_rec']['radial_sum'] = dict([('intervals',intervals_power_heating_rec_r),('prob',prob_power_heating_rec_r),('actual_values',actual_values_power_heating_rec_r),('most_likely',most_likely_power_heating_rec_r),('unit','W')])
+		bayesian_results_dict['power_heating_rec']['radial_time_sum'] = dict([('intervals',intervals_power_heating_rec_tr),('prob',prob_power_heating_rec_tr),('most_likely',ML_power_heating_rec),('most_likely_sigma',ML_power_heating_rec_sigma),('unit','J')])
 
 		bayesian_results_dict['power_rec_neutral'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_rec_neutral']['full'] = dict([('intervals',intervals_power_rec_neutral),('prob',prob_power_rec_neutral),('actual_values',actual_values_power_rec_neutral),('most_likely',most_likely_power_rec_neutral),('unit','W m^-3')])
-		bayesian_results_dict['power_rec_neutral']['radial_sum'] = dict([('intervals',intervals_power_rec_neutral_r),('prob',prob_power_rec_neutral_r),('actual_values',actual_values_power_rec_neutral_r),('most_likely',most_likely_power_rec_neutral_r)])
-		bayesian_results_dict['power_rec_neutral']['radial_time_sum'] = dict([('intervals',intervals_power_rec_neutral_tr),('prob',prob_power_rec_neutral_tr),('most_likely',ML_power_rec_neutral),('most_likely_sigma',ML_power_rec_neutral_sigma)])
+		bayesian_results_dict['power_rec_neutral']['full'] = dict([('intervals',intervals_power_rec_neutral),('prob',prob_power_rec_neutral),('actual_values',actual_values_power_rec_neutral),('most_likely',most_likely_power_rec_neutral),('most_likely_sigma',most_likely_power_rec_neutral_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_rec_neutral']['radial_sum'] = dict([('intervals',intervals_power_rec_neutral_r),('prob',prob_power_rec_neutral_r),('actual_values',actual_values_power_rec_neutral_r),('most_likely',most_likely_power_rec_neutral_r),('unit','W')])
+		bayesian_results_dict['power_rec_neutral']['radial_time_sum'] = dict([('intervals',intervals_power_rec_neutral_tr),('prob',prob_power_rec_neutral_tr),('most_likely',ML_power_rec_neutral),('most_likely_sigma',ML_power_rec_neutral_sigma),('unit','J')])
 
 		bayesian_results_dict['Te'] = dict([('original_TS',dict([])),('bayesian',dict([]))])
 		bayesian_results_dict['Te']['original_TS'] = dict([('full',dict([]))])
-		bayesian_results_dict['Te']['original_TS']['full'] = dict([('most_likely',merge_Te_prof_multipulse_interp_crop),('most_likely_sigma',merge_dTe_prof_multipulse_interp_crop)])
+		bayesian_results_dict['Te']['original_TS']['full'] = dict([('most_likely',merge_Te_prof_multipulse_interp_crop),('most_likely_sigma',merge_dTe_prof_multipulse_interp_crop),('unit','eV')])
 		bayesian_results_dict['Te']['bayesian'] = dict([('full',dict([]))])
-		bayesian_results_dict['Te']['bayesian']['full'] = dict([('intervals',intervals_Te_values),('prob',prob_Te_values),('actual_values',actual_values_Te_values),('most_likely',most_likely_Te_values)])
+		bayesian_results_dict['Te']['bayesian']['full'] = dict([('intervals',intervals_Te_values),('prob',prob_Te_values),('actual_values',actual_values_Te_values),('most_likely',most_likely_Te_values),('most_likely_sigma',most_likely_Te_values_sigma),('unit','eV')])
 
 		bayesian_results_dict['ne'] = dict([('original_TS',dict([])),('bayesian',dict([]))])
 		bayesian_results_dict['ne']['original_TS'] = dict([('full',dict([]))])
-		bayesian_results_dict['ne']['original_TS']['full'] = dict([('most_likely',merge_ne_prof_multipulse_interp_crop),('most_likely_sigma',merge_dne_prof_multipulse_interp_crop)])
+		bayesian_results_dict['ne']['original_TS']['full'] = dict([('most_likely',merge_ne_prof_multipulse_interp_crop),('most_likely_sigma',merge_dne_prof_multipulse_interp_crop),('unit','# 1e-20 m^-3')])
 		bayesian_results_dict['ne']['bayesian'] = dict([('full',dict([]))])
-		bayesian_results_dict['ne']['bayesian']['full'] = dict([('intervals',intervals_ne_values),('prob',prob_ne_values),('actual_values',actual_values_ne_values),('most_likely',most_likely_ne_values)])
+		bayesian_results_dict['ne']['bayesian']['full'] = dict([('intervals',intervals_ne_values),('prob',prob_ne_values),('actual_values',actual_values_ne_values),('most_likely',most_likely_ne_values),('most_likely_sigma',most_likely_ne_values_sigma),('unit','# m^-3')])
 
 		bayesian_results_dict['nH'] = dict([('bayesian',dict([]))])
 		bayesian_results_dict['nH']['bayesian'] = dict([('full',dict([]))])
-		bayesian_results_dict['nH']['bayesian']['full'] = dict([('intervals',intervals_nH_values),('prob',prob_nH_values),('actual_values',actual_values_nH_values),('most_likely',most_likely_nH_values)])
+		bayesian_results_dict['nH']['bayesian']['full'] = dict([('intervals',intervals_nH_values),('prob',prob_nH_values),('actual_values',actual_values_nH_values),('most_likely',most_likely_nH_values),('most_likely_sigma',most_likely_nH_values_sigma),('unit','# m^-3')])
 
 		bayesian_results_dict['nH2'] = dict([('bayesian',dict([]))])
 		bayesian_results_dict['nH2']['bayesian'] = dict([('full',dict([]))])
-		bayesian_results_dict['nH2']['bayesian']['full'] = dict([('intervals',intervals_nH2_values),('prob',prob_nH2_values),('actual_values',actual_values_nH2_values),('most_likely',most_likely_nH2_values)])
+		bayesian_results_dict['nH2']['bayesian']['full'] = dict([('intervals',intervals_nH2_values),('prob',prob_nH2_values),('actual_values',actual_values_nH2_values),('most_likely',most_likely_nH2_values),('most_likely_sigma',most_likely_nH2_values_sigma),('unit','# m^-3')])
 
 		bayesian_results_dict['nHm'] = dict([('bayesian',dict([]))])
 		bayesian_results_dict['nHm']['bayesian'] = dict([('full',dict([]))])
-		bayesian_results_dict['nHm']['bayesian']['full'] = dict([('intervals',intervals_nHm_values),('prob',prob_nHm_values),('actual_values',actual_values_nHm_values),('most_likely',most_likely_nHm_values)])
+		bayesian_results_dict['nHm']['bayesian']['full'] = dict([('intervals',intervals_nHm_values),('prob',prob_nHm_values),('actual_values',actual_values_nHm_values),('most_likely',most_likely_nHm_values),('most_likely_sigma',most_likely_nHm_values_sigma),('unit','# m^-3')])
 
 		bayesian_results_dict['nH2p'] = dict([('bayesian',dict([]))])
 		bayesian_results_dict['nH2p']['bayesian'] = dict([('full',dict([]))])
-		bayesian_results_dict['nH2p']['bayesian']['full'] = dict([('intervals',intervals_nH2p_values),('prob',prob_nH2p_values),('actual_values',actual_values_nH2p_values),('most_likely',most_likely_nH2p_values)])
+		bayesian_results_dict['nH2p']['bayesian']['full'] = dict([('intervals',intervals_nH2p_values),('prob',prob_nH2p_values),('actual_values',actual_values_nH2p_values),('most_likely',most_likely_nH2p_values),('most_likely_sigma',most_likely_nH2p_values_sigma),('unit','# m^-3')])
+
+		bayesian_results_dict['nH2p_nH2'] = dict([('bayesian',dict([]))])
+		bayesian_results_dict['nH2p_nH2']['bayesian'] = dict([('full',dict([]))])
+		bayesian_results_dict['nH2p_nH2']['bayesian']['full'] = dict([('intervals',intervals_nH2p_nH2_values),('prob',prob_nH2p_nH2_values),('actual_values',actual_values_nH2p_nH2_values),('most_likely',most_likely_nH2p_nH2_values),('most_likely_sigma',most_likely_nH2p_nH2_values_sigma),('unit','au')])
+
+		bayesian_results_dict['nHm_nH2'] = dict([('bayesian',dict([]))])
+		bayesian_results_dict['nHm_nH2']['bayesian'] = dict([('full',dict([]))])
+		bayesian_results_dict['nHm_nH2']['bayesian']['full'] = dict([('intervals',intervals_nHm_nH2_values),('prob',prob_nHm_nH2_values),('actual_values',actual_values_nHm_nH2_values),('most_likely',most_likely_nHm_nH2_values),('most_likely_sigma',most_likely_nHm_nH2_values_sigma),('unit','au')])
+
+		bayesian_results_dict['nH2_ne'] = dict([('bayesian',dict([]))])
+		bayesian_results_dict['nH2_ne']['bayesian'] = dict([('full',dict([]))])
+		bayesian_results_dict['nH2_ne']['bayesian']['full'] = dict([('intervals',intervals_nH2_ne_values),('prob',prob_nH2_ne_values),('actual_values',actual_values_nH2_ne_values),('most_likely',most_likely_nH2_ne_values),('most_likely_sigma',most_likely_nH2_ne_values_sigma),('unit','au')])
+
+		bayesian_results_dict['nH_ne'] = dict([('bayesian',dict([]))])
+		bayesian_results_dict['nH_ne']['bayesian'] = dict([('full',dict([]))])
+		bayesian_results_dict['nH_ne']['bayesian']['full'] = dict([('intervals',intervals_nH_ne_values),('prob',prob_nH_ne_values),('actual_values',actual_values_nH_ne_values),('most_likely',most_likely_nH_ne_values),('most_likely_sigma',most_likely_nH_ne_values_sigma),('unit','au')])
 
 		bayesian_results_dict['power_via_brem'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['power_via_brem']['full'] = dict([('intervals',intervals_power_via_brem),('prob',prob_power_via_brem),('actual_values',actual_values_power_via_brem),('most_likely',most_likely_power_via_brem),('unit','W m^-3')])
-		bayesian_results_dict['power_via_brem']['radial_sum'] = dict([('intervals',intervals_power_via_brem_r),('prob',prob_power_via_brem_r),('actual_values',actual_values_power_via_brem_r),('most_likely',most_likely_power_via_brem_r)])
-		bayesian_results_dict['power_via_brem']['radial_time_sum'] = dict([('intervals',intervals_power_via_brem_tr),('prob',prob_power_via_brem_tr),('most_likely',ML_power_via_brem),('most_likely_sigma',ML_power_via_brem_sigma)])
+		bayesian_results_dict['power_via_brem']['full'] = dict([('intervals',intervals_power_via_brem),('prob',prob_power_via_brem),('actual_values',actual_values_power_via_brem),('most_likely',most_likely_power_via_brem),('most_likely_sigma',most_likely_power_via_brem_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_via_brem']['radial_sum'] = dict([('intervals',intervals_power_via_brem_r),('prob',prob_power_via_brem_r),('actual_values',actual_values_power_via_brem_r),('most_likely',most_likely_power_via_brem_r),('unit','W')])
+		bayesian_results_dict['power_via_brem']['radial_time_sum'] = dict([('intervals',intervals_power_via_brem_tr),('prob',prob_power_via_brem_tr),('most_likely',ML_power_via_brem),('most_likely_sigma',ML_power_via_brem_sigma),('unit','J')])
 
 		bayesian_results_dict['total_removed_power'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['total_removed_power']['full'] = dict([('intervals',intervals_total_removed_power),('prob',prob_total_removed_power),('actual_values',actual_values_total_removed_power),('most_likely',most_likely_total_removed_power),('unit','W m^-3')])
-		bayesian_results_dict['total_removed_power']['radial_sum'] = dict([('intervals',intervals_total_removed_power_r),('prob',prob_total_removed_power_r),('actual_values',actual_values_total_removed_power_r),('most_likely',most_likely_total_removed_power_r)])
-		bayesian_results_dict['total_removed_power']['radial_time_sum'] = dict([('intervals',intervals_total_removed_power_tr),('prob',prob_total_removed_power_tr),('most_likely',ML_total_removed_power),('most_likely_sigma',ML_total_removed_power_sigma)])
+		bayesian_results_dict['total_removed_power']['full'] = dict([('intervals',intervals_total_removed_power),('prob',prob_total_removed_power),('actual_values',actual_values_total_removed_power),('most_likely',most_likely_total_removed_power),('most_likely_sigma',most_likely_total_removed_power_sigma),('unit','W m^-3')])
+		bayesian_results_dict['total_removed_power']['radial_sum'] = dict([('intervals',intervals_total_removed_power_r),('prob',prob_total_removed_power_r),('actual_values',actual_values_total_removed_power_r),('most_likely',most_likely_total_removed_power_r),('unit','W')])
+		bayesian_results_dict['total_removed_power']['radial_time_sum'] = dict([('intervals',intervals_total_removed_power_tr),('prob',prob_total_removed_power_tr),('most_likely',ML_total_removed_power),('most_likely_sigma',ML_total_removed_power_sigma),('unit','J')])
 
 		bayesian_results_dict['total_removed_power_visible'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([])),('brightness',dict([])),('average_brightness',dict([])),('long_average_brightness',dict([]))])
-		bayesian_results_dict['total_removed_power_visible']['full'] = dict([('intervals',intervals_total_removed_power_visible),('prob',prob_total_removed_power_visible),('actual_values',actual_values_total_removed_power_visible),('most_likely',most_likely_total_removed_power_visible),('unit','W m^-3')])
-		bayesian_results_dict['total_removed_power_visible']['radial_sum'] = dict([('intervals',intervals_total_removed_power_visible_r),('prob',prob_total_removed_power_visible_r),('actual_values',actual_values_total_removed_power_visible_r),('most_likely',most_likely_total_removed_power_visible_r)])
-		bayesian_results_dict['total_removed_power_visible']['radial_time_sum'] = dict([('intervals',intervals_total_removed_power_visible_tr),('prob',prob_total_removed_power_visible_tr),('most_likely',ML_total_removed_power_visible),('most_likely_sigma',ML_total_removed_power_visible_sigma)])
-		bayesian_results_dict['total_removed_power_visible']['brightness'] = dict([('most_likely',most_likely_total_removed_power_visible_brightness)])
-		bayesian_results_dict['total_removed_power_visible']['long_average_brightness'] = dict([('most_likely',averaged_most_likely_total_removed_power_visible_brightness)])
-		bayesian_results_dict['total_removed_power_visible']['average_brightness'] = dict([('most_likely',averaged_most_likely_total_removed_power_visible_brightness_OES)])
+		bayesian_results_dict['total_removed_power_visible']['full'] = dict([('intervals',intervals_total_removed_power_visible),('prob',prob_total_removed_power_visible),('actual_values',actual_values_total_removed_power_visible),('most_likely',most_likely_total_removed_power_visible),('most_likely_sigma',most_likely_total_removed_power_visible_sigma),('unit','W m^-3')])
+		bayesian_results_dict['total_removed_power_visible']['radial_sum'] = dict([('intervals',intervals_total_removed_power_visible_r),('prob',prob_total_removed_power_visible_r),('actual_values',actual_values_total_removed_power_visible_r),('most_likely',most_likely_total_removed_power_visible_r),('unit','W')])
+		bayesian_results_dict['total_removed_power_visible']['radial_time_sum'] = dict([('intervals',intervals_total_removed_power_visible_tr),('prob',prob_total_removed_power_visible_tr),('most_likely',ML_total_removed_power_visible),('most_likely_sigma',ML_total_removed_power_visible_sigma),('unit','J')])
+		bayesian_results_dict['total_removed_power_visible']['brightness'] = dict([('most_likely',most_likely_total_removed_power_visible_brightness),('unit','W m^-2')])
+		bayesian_results_dict['total_removed_power_visible']['long_average_brightness'] = dict([('most_likely',averaged_most_likely_total_removed_power_visible_brightness),('unit','W m^-2')])
+		bayesian_results_dict['total_removed_power_visible']['average_brightness'] = dict([('most_likely',averaged_most_likely_total_removed_power_visible_brightness_OES),('unit','W m^-2')])
 
 
 		bayesian_results_dict['local_CX'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['local_CX']['full'] = dict([('intervals',intervals_local_CX),('prob',prob_local_CX),('actual_values',actual_values_local_CX),('most_likely',most_likely_local_CX)])
-		bayesian_results_dict['local_CX']['radial_sum'] = dict([('intervals',intervals_local_CX_r),('prob',prob_local_CX_r),('actual_values',actual_values_local_CX_r),('most_likely',most_likely_local_CX_r)])
-		bayesian_results_dict['local_CX']['radial_time_sum'] = dict([('intervals',intervals_local_CX_tr),('prob',prob_local_CX_tr),('most_likely',ML_local_CX),('most_likely_sigma',ML_local_CX_sigma)])
+		bayesian_results_dict['local_CX']['full'] = dict([('intervals',intervals_local_CX),('prob',prob_local_CX),('actual_values',actual_values_local_CX),('most_likely',most_likely_local_CX),('unit','W m^-3')])
+		bayesian_results_dict['local_CX']['radial_sum'] = dict([('intervals',intervals_local_CX_r),('prob',prob_local_CX_r),('actual_values',actual_values_local_CX_r),('most_likely',most_likely_local_CX_r),('unit','W')])
+		bayesian_results_dict['local_CX']['radial_time_sum'] = dict([('intervals',intervals_local_CX_tr),('prob',prob_local_CX_tr),('most_likely',ML_local_CX),('most_likely_sigma',ML_local_CX_sigma),('unit','J')])
 
 		bayesian_results_dict['n_H2CX'] = dict([('full',dict([]))])
-		bayesian_results_dict['n_H2CX']['full'] = dict([('intervals',intervals_n_H2CX),('prob',prob_n_H2CX),('actual_values',actual_values_n_H2CX),('most_likely',most_likely_n_H2CX)])
+		bayesian_results_dict['n_H2CX']['full'] = dict([('intervals',intervals_n_H2CX),('prob',prob_n_H2CX),('actual_values',actual_values_n_H2CX),('most_likely',most_likely_n_H2CX),('most_likely_sigma',most_likely_n_H2CX_sigma),('unit','# m^-3')])
 		bayesian_results_dict['n_HCX'] = dict([('full',dict([]))])
-		bayesian_results_dict['n_HCX']['full'] = dict([('intervals',intervals_n_HCX),('prob',prob_n_HCX),('actual_values',actual_values_n_HCX),('most_likely',most_likely_n_HCX)])
+		bayesian_results_dict['n_HCX']['full'] = dict([('intervals',intervals_n_HCX),('prob',prob_n_HCX),('actual_values',actual_values_n_HCX),('most_likely',most_likely_n_HCX),('most_likely_sigma',most_likely_n_HCX_sigma),('unit','# m^-3')])
 		bayesian_results_dict['n_HCX_2'] = dict([('full',dict([]))])
-		bayesian_results_dict['n_HCX_2']['full'] = dict([('intervals',intervals_n_HCX_2),('prob',prob_n_HCX_2),('actual_values',actual_values_n_HCX_2),('most_likely',most_likely_n_HCX_2)])
+		bayesian_results_dict['n_HCX_2']['full'] = dict([('intervals',intervals_n_HCX_2),('prob',prob_n_HCX_2),('actual_values',actual_values_n_HCX_2),('most_likely',most_likely_n_HCX_2),('most_likely_sigma',most_likely_n_HCX_2_sigma),('unit','# m^-3')])
 
 		bayesian_results_dict['P_HCX'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([])),('total_energy',dict([]))])
-		bayesian_results_dict['P_HCX']['full'] = dict([('intervals',intervals_P_HCX),('prob',prob_P_HCX),('actual_values',actual_values_P_HCX),('most_likely',most_likely_P_HCX),('unit','W m^-3')])
-		bayesian_results_dict['P_HCX']['radial_sum'] = dict([('intervals',intervals_P_HCX_r),('prob',prob_P_HCX_r),('actual_values',actual_values_P_HCX_r),('most_likely',most_likely_P_HCX_r)])
-		bayesian_results_dict['P_HCX']['radial_time_sum'] = dict([('intervals',intervals_P_HCX_tr),('prob',prob_P_HCX_tr),('most_likely',ML_P_HCX),('most_likely_sigma',ML_P_HCX_sigma)])
-		bayesian_results_dict['P_HCX']['total_energy'] = dict([('intervals',intervals_E_HCX),('prob',prob_E_HCX),('most_likely',ML_E_HCX),('most_likely_sigma',ML_E_HCX_sigma)])
+		bayesian_results_dict['P_HCX']['full'] = dict([('intervals',intervals_P_HCX),('prob',prob_P_HCX),('actual_values',actual_values_P_HCX),('most_likely',most_likely_P_HCX),('most_likely_sigma',most_likely_P_HCX_sigma),('unit','W m^-3')])
+		bayesian_results_dict['P_HCX']['radial_sum'] = dict([('intervals',intervals_P_HCX_r),('prob',prob_P_HCX_r),('actual_values',actual_values_P_HCX_r),('most_likely',most_likely_P_HCX_r),('unit','W')])
+		bayesian_results_dict['P_HCX']['radial_time_sum'] = dict([('intervals',intervals_P_HCX_tr),('prob',prob_P_HCX_tr),('most_likely',ML_P_HCX),('most_likely_sigma',ML_P_HCX_sigma),('unit','J')])
+		bayesian_results_dict['P_HCX']['total_energy'] = dict([('intervals',intervals_E_HCX),('prob',prob_E_HCX),('most_likely',ML_E_HCX),('most_likely_sigma',ML_E_HCX_sigma),('unit','J')])
 
 		bayesian_results_dict['P_HCX_2'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([])),('total_energy',dict([]))])
-		bayesian_results_dict['P_HCX_2']['full'] = dict([('intervals',intervals_P_HCX_2),('prob',prob_P_HCX_2),('actual_values',actual_values_P_HCX_2),('most_likely',most_likely_P_HCX_2),('unit','W m^-3')])
-		bayesian_results_dict['P_HCX_2']['radial_sum'] = dict([('intervals',intervals_P_HCX_2_r),('prob',prob_P_HCX_2_r),('actual_values',actual_values_P_HCX_2_r),('most_likely',most_likely_P_HCX_2_r)])
-		bayesian_results_dict['P_HCX_2']['radial_time_sum'] = dict([('intervals',intervals_P_HCX_2_tr),('prob',prob_P_HCX_2_tr),('most_likely',ML_P_HCX_2),('most_likely_sigma',ML_P_HCX_2_sigma)])
-		bayesian_results_dict['P_HCX_2']['total_energy'] = dict([('intervals',intervals_E_HCX_2),('prob',prob_E_HCX_2),('most_likely',ML_E_HCX_2),('most_likely_sigma',ML_E_HCX_2_sigma)])
+		bayesian_results_dict['P_HCX_2']['full'] = dict([('intervals',intervals_P_HCX_2),('prob',prob_P_HCX_2),('actual_values',actual_values_P_HCX_2),('most_likely',most_likely_P_HCX_2),('most_likely_sigma',most_likely_P_HCX_2_sigma),('unit','W m^-3')])
+		bayesian_results_dict['P_HCX_2']['radial_sum'] = dict([('intervals',intervals_P_HCX_2_r),('prob',prob_P_HCX_2_r),('actual_values',actual_values_P_HCX_2_r),('most_likely',most_likely_P_HCX_2_r),('unit','W')])
+		bayesian_results_dict['P_HCX_2']['radial_time_sum'] = dict([('intervals',intervals_P_HCX_2_tr),('prob',prob_P_HCX_2_tr),('most_likely',ML_P_HCX_2),('most_likely_sigma',ML_P_HCX_2_sigma),('unit','J')])
+		bayesian_results_dict['P_HCX_2']['total_energy'] = dict([('intervals',intervals_E_HCX_2),('prob',prob_E_HCX_2),('most_likely',ML_E_HCX_2),('most_likely_sigma',ML_E_HCX_2_sigma),('unit','J')])
 
 		bayesian_results_dict['P_HCX_3'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([])),('total_energy',dict([]))])
-		bayesian_results_dict['P_HCX_3']['full'] = dict([('intervals',intervals_P_HCX_3),('prob',prob_P_HCX_3),('actual_values',actual_values_P_HCX_3),('most_likely',most_likely_P_HCX_3),('unit','W m^-3')])
-		bayesian_results_dict['P_HCX_3']['radial_sum'] = dict([('intervals',intervals_P_HCX_3_r),('prob',prob_P_HCX_3_r),('actual_values',actual_values_P_HCX_3_r),('most_likely',most_likely_P_HCX_3_r)])
-		bayesian_results_dict['P_HCX_3']['radial_time_sum'] = dict([('intervals',intervals_P_HCX_3_tr),('prob',prob_P_HCX_3_tr),('most_likely',ML_P_HCX_3),('most_likely_sigma',ML_P_HCX_3_sigma)])
-		bayesian_results_dict['P_HCX_3']['total_energy'] = dict([('intervals',intervals_E_HCX_3),('prob',prob_E_HCX_3),('most_likely',ML_E_HCX_3),('most_likely_sigma',ML_E_HCX_3_sigma)])
+		bayesian_results_dict['P_HCX_3']['full'] = dict([('intervals',intervals_P_HCX_3),('prob',prob_P_HCX_3),('actual_values',actual_values_P_HCX_3),('most_likely',most_likely_P_HCX_3),('most_likely_sigma',most_likely_P_HCX_3_sigma),('unit','W m^-3')])
+		bayesian_results_dict['P_HCX_3']['radial_sum'] = dict([('intervals',intervals_P_HCX_3_r),('prob',prob_P_HCX_3_r),('actual_values',actual_values_P_HCX_3_r),('most_likely',most_likely_P_HCX_3_r),('unit','W')])
+		bayesian_results_dict['P_HCX_3']['radial_time_sum'] = dict([('intervals',intervals_P_HCX_3_tr),('prob',prob_P_HCX_3_tr),('most_likely',ML_P_HCX_3),('most_likely_sigma',ML_P_HCX_3_sigma),('unit','J')])
+		bayesian_results_dict['P_HCX_3']['total_energy'] = dict([('intervals',intervals_E_HCX_3),('prob',prob_E_HCX_3),('most_likely',ML_E_HCX_3),('most_likely_sigma',ML_E_HCX_3_sigma),('unit','J')])
 
 		bayesian_results_dict['H_destruction_RR2'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['H_destruction_RR2']['full'] = dict([('intervals',intervals_H_destruction_RR2),('prob',prob_H_destruction_RR2),('actual_values',actual_values_H_destruction_RR2),('most_likely',most_likely_H_destruction_RR2)])
-		bayesian_results_dict['H_destruction_RR2']['radial_sum'] = dict([('intervals',intervals_H_destruction_RR2_r),('prob',prob_H_destruction_RR2_r),('actual_values',actual_values_H_destruction_RR2_r),('most_likely',most_likely_H_destruction_RR2_r)])
-		bayesian_results_dict['H_destruction_RR2']['radial_time_sum'] = dict([('intervals',intervals_H_destruction_RR2_tr),('prob',prob_H_destruction_RR2_tr),('most_likely',ML_H_destruction_RR2),('most_likely_sigma',ML_H_destruction_RR2_sigma)])
+		bayesian_results_dict['H_destruction_RR2']['full'] = dict([('intervals',intervals_H_destruction_RR2),('prob',prob_H_destruction_RR2),('actual_values',actual_values_H_destruction_RR2),('most_likely',most_likely_H_destruction_RR2),('most_likely_sigma',most_likely_H_destruction_RR2_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['H_destruction_RR2']['radial_sum'] = dict([('intervals',intervals_H_destruction_RR2_r),('prob',prob_H_destruction_RR2_r),('actual_values',actual_values_H_destruction_RR2_r),('most_likely',most_likely_H_destruction_RR2_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['H_destruction_RR2']['radial_time_sum'] = dict([('intervals',intervals_H_destruction_RR2_tr),('prob',prob_H_destruction_RR2_tr),('most_likely',ML_H_destruction_RR2),('most_likely_sigma',ML_H_destruction_RR2_sigma),('unit','# 1e-20')])
 
 		bayesian_results_dict['H2_destruction_RR2'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['H2_destruction_RR2']['full'] = dict([('intervals',intervals_H2_destruction_RR2),('prob',prob_H2_destruction_RR2),('actual_values',actual_values_H2_destruction_RR2),('most_likely',most_likely_H2_destruction_RR2)])
-		bayesian_results_dict['H2_destruction_RR2']['radial_sum'] = dict([('intervals',intervals_H2_destruction_RR2_r),('prob',prob_H2_destruction_RR2_r),('actual_values',actual_values_H2_destruction_RR2_r),('most_likely',most_likely_H2_destruction_RR2_r)])
-		bayesian_results_dict['H2_destruction_RR2']['radial_time_sum'] = dict([('intervals',intervals_H2_destruction_RR2_tr),('prob',prob_H2_destruction_RR2_tr),('most_likely',ML_H2_destruction_RR2),('most_likely_sigma',ML_H2_destruction_RR2_sigma)])
+		bayesian_results_dict['H2_destruction_RR2']['full'] = dict([('intervals',intervals_H2_destruction_RR2),('prob',prob_H2_destruction_RR2),('actual_values',actual_values_H2_destruction_RR2),('most_likely',most_likely_H2_destruction_RR2),('most_likely_sigma',most_likely_H2_destruction_RR2_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['H2_destruction_RR2']['radial_sum'] = dict([('intervals',intervals_H2_destruction_RR2_r),('prob',prob_H2_destruction_RR2_r),('actual_values',actual_values_H2_destruction_RR2_r),('most_likely',most_likely_H2_destruction_RR2_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['H2_destruction_RR2']['radial_time_sum'] = dict([('intervals',intervals_H2_destruction_RR2_tr),('prob',prob_H2_destruction_RR2_tr),('most_likely',ML_H2_destruction_RR2),('most_likely_sigma',ML_H2_destruction_RR2_sigma),('unit','# 1e-20')])
 
 		if latest_version:
 			bayesian_results_dict['H_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-			bayesian_results_dict['H_creation_RR']['full'] = dict([('intervals',intervals_H_creation_RR),('prob',prob_H_creation_RR),('actual_values',actual_values_H_creation_RR),('most_likely',most_likely_H_creation_RR)])
-			bayesian_results_dict['H_creation_RR']['radial_sum'] = dict([('intervals',intervals_H_creation_RR_r),('prob',prob_H_creation_RR_r),('actual_values',actual_values_H_creation_RR_r),('most_likely',most_likely_H_creation_RR_r)])
-			bayesian_results_dict['H_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_H_creation_RR_tr),('prob',prob_H_creation_RR_tr),('most_likely',ML_H_creation_RR),('most_likely_sigma',ML_H_creation_RR_sigma)])
+			bayesian_results_dict['H_creation_RR']['full'] = dict([('intervals',intervals_H_creation_RR),('prob',prob_H_creation_RR),('actual_values',actual_values_H_creation_RR),('most_likely',most_likely_H_creation_RR),('most_likely_sigma',most_likely_H_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['H_creation_RR']['radial_sum'] = dict([('intervals',intervals_H_creation_RR_r),('prob',prob_H_creation_RR_r),('actual_values',actual_values_H_creation_RR_r),('most_likely',most_likely_H_creation_RR_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['H_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_H_creation_RR_tr),('prob',prob_H_creation_RR_tr),('most_likely',ML_H_creation_RR),('most_likely_sigma',ML_H_creation_RR_sigma),('unit','# 1e-20')])
 
 			bayesian_results_dict['H2_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
-			bayesian_results_dict['H2_creation_RR']['full'] = dict([('intervals',intervals_H2_creation_RR),('prob',prob_H2_creation_RR),('actual_values',actual_values_H2_creation_RR),('most_likely',most_likely_H2_creation_RR)])
-			bayesian_results_dict['H2_creation_RR']['radial_sum'] = dict([('intervals',intervals_H2_creation_RR_r),('prob',prob_H2_creation_RR_r),('actual_values',actual_values_H2_creation_RR_r),('most_likely',most_likely_H2_creation_RR_r)])
-			bayesian_results_dict['H2_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_H2_creation_RR_tr),('prob',prob_H2_creation_RR_tr),('most_likely',ML_H2_creation_RR),('most_likely_sigma',ML_H2_creation_RR_sigma)])
+			bayesian_results_dict['H2_creation_RR']['full'] = dict([('intervals',intervals_H2_creation_RR),('prob',prob_H2_creation_RR),('actual_values',actual_values_H2_creation_RR),('most_likely',most_likely_H2_creation_RR),('most_likely_sigma',most_likely_H2_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['H2_creation_RR']['radial_sum'] = dict([('intervals',intervals_H2_creation_RR_r),('prob',prob_H2_creation_RR_r),('actual_values',actual_values_H2_creation_RR_r),('most_likely',most_likely_H2_creation_RR_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['H2_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_H2_creation_RR_tr),('prob',prob_H2_creation_RR_tr),('most_likely',ML_H2_creation_RR),('most_likely_sigma',ML_H2_creation_RR_sigma),('unit','# 1e-20')])
 
 
 		bayesian_results_dict['net_power_removed_plasma_column'] = dict([('radial_sum',dict([])),('radial_time_sum',dict([]))])
-		bayesian_results_dict['net_power_removed_plasma_column']['radial_sum'] = dict([('intervals',intervals_net_power_removed_plasma_column_r),('prob',prob_net_power_removed_plasma_column_r),('actual_values',actual_values_net_power_removed_plasma_column_r),('most_likely',most_likely_net_power_removed_plasma_column_r)])
-		bayesian_results_dict['net_power_removed_plasma_column']['radial_time_sum'] = dict([('intervals',intervals_net_power_removed_plasma_column_tr),('prob',prob_net_power_removed_plasma_column_tr),('most_likely',ML_net_power_removed_plasma_column),('most_likely_sigma',ML_net_power_removed_plasma_column_sigma)])
+		bayesian_results_dict['net_power_removed_plasma_column']['radial_sum'] = dict([('intervals',intervals_net_power_removed_plasma_column_r),('prob',prob_net_power_removed_plasma_column_r),('actual_values',actual_values_net_power_removed_plasma_column_r),('most_likely',most_likely_net_power_removed_plasma_column_r),('unit','W')])
+		bayesian_results_dict['net_power_removed_plasma_column']['radial_time_sum'] = dict([('intervals',intervals_net_power_removed_plasma_column_tr),('prob',prob_net_power_removed_plasma_column_tr),('most_likely',ML_net_power_removed_plasma_column),('most_likely_sigma',ML_net_power_removed_plasma_column_sigma),('unit','J')])
 
 		np.savez_compressed(path_where_to_save_everything + mod4 +'/bayesian_results'+str(global_pass), **bayesian_results_dict)
 

@@ -1668,7 +1668,8 @@ def RR_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,m
 		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
 		T_H=np.array([T_H])
 		T_Hm=np.array([T_Hm])
-	# reaction rate		H- +H(1s) →H2-(X2Σ+u ; B2Σ+g ) →H2(X1Σ+ g ; v) + e
+	# H- +H(1s) →H2-(X2Σ+u ; B2Σ+g ) →H2(X1Σ+ g ; v) + e
+	# reaction rate
 	# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
 	# chapter 3.3.2
 	def internal(*arg):
@@ -1962,8 +1963,9 @@ def RR_e_H2N13Λσ__e_H2pX2Σg_e__r(merge_Te_prof_multipulse_interp_crop_limited
 				e_H2N13Λσ__e_H2pX2Σg_e[v_index] += reaction_rate * merge_ne_prof_multipulse_interp_crop_limited * population_states_H2[v_index]
 		e_H2N13Λσ__e_H2pX2Σg_e = np.sum(e_H2N13Λσ__e_H2pX2Σg_e,axis=0)
 	elif True:
+		# e +H2 → 2e +H2+
 		# from AMJUEL
-		# 4.11 Reaction 2.2.9 e +H2 → 2e +H2+
+		# 4.11 Reaction 2.2.9
 		# I use this because the to calculate the cross section i use standard H2 vibrational states already in AMJUL, but this method is much faster
 		coefficients_all = [[-35.74773783577,0.3470247049909,-0.09683166540937,0.00195957627625,0.00247936111919,-0.0001196632952666,-0.00001862956119592,0.000001669867158509,-0.000000036737362782],[17.69208985507,-1.311169841222,0.4700486215943,-0.05521175478827,-0.002689651616933,0.0007308915874002,-0.00002920560755694,-0.0000003148831240316,0.00000002514856386324],[-8.291764008409,1.591701525694,-0.5814996025336,0.09160898084105,-0.004770789631868,0.00001994775632224,-0.000007511552245648,0.000001089689676313,-0.00000002920863498031],[2.55571234724,-0.8625268584825,0.2612076696684,-0.03686525285376,0.001945480608139,-0.00003690918356665,0.000004836340453567,-0.0000004165748666929,0.000000009265898224345],[-0.5370404654062,0.2375816996323,-0.0416590877817,0.001732469114063,0.0003693513203529,-0.00004931268184607,0.000002727501534044,-0.0000001081027384449,0.000000002420509440644],[0.07443307905391,-0.03322214182214,-0.002351235556666,0.001723053881691,-0.0002096625925098,0.00001358575558294,-0.000001041586202167,0.00000006928574330531,-0.000000001746656185835],[-0.006391785721973,0.00186255427819,0.001540632467396,-0.0003547150770477,0.00001392157055273,0.000001047463944093,0.00000001513510667993,-0.000000009915499708242,0.0000000003298173891188],[0.0003001729098239,0.00003497202259366,-0.0001742029226138,0.00002296551698214,0.000002357520372192,-0.000000530608551395,0.00000002223137028418,0.00000000033401693098,-0.00000000002560542889504],[-0.000005607182991432,-0.000005779550092391,0.000006495742927455,-0.0000003040011333889,-0.0000002361542565281,0.00000003655056080262,-0.000000001771478792301,0.00000000001334615260635,0.0000000000006831564719957]]
 		reaction_rate = np.exp(np.polynomial.polynomial.polyval2d(np.log(merge_Te_prof_multipulse_interp_crop_limited),np.log(merge_ne_prof_multipulse_interp_crop_limited*1e6),coefficients_all)) * (1e-6*1e20)	# m^3/s * 1e20
@@ -2015,8 +2017,9 @@ def RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merg
 				e_H2N13Λσ__Hp_H_2e[v_index] += reaction_rate * merge_ne_prof_multipulse_interp_crop_limited * population_states_H2[v_index]
 		e_H2N13Λσ__Hp_H_2e = np.sum(e_H2N13Λσ__Hp_H_2e,axis=0)
 	elif True:
+		# e +H2 → 2e +H +H+
 		# from AMJUEL
-		# 4.12 Reaction 2.2.10 e +H2 → 2e +H +H+
+		# 4.12 Reaction 2.2.10
 		# I use this because the to calculate the cross section i use standard H2 vibrational states already in AMJUL, but this method is much faster
 		coefficients_all = [[-37.93749300315,-0.3333162972531,0.1849601203843,-0.08803945197107,0.02205180180735,-0.002852568161901,0.0001942314738448,-0.000006597388255594,0.00000008798544848606],[12.80249398154,1.028969438485,-0.3271855492638,0.1305597441611,-0.0340843982191,0.004591924060066,-0.0003167471002157,0.00001070920193931,-0.0000001408139742113],[-3.77814855314,-1.415561059533,0.2928509524911,-0.07425165688158,0.02028424685287,-0.003042376564749,0.0002279124955373,-0.000008197224564797,0.0000001130682076163],[0.2499987501522,1.032922656537,-0.1580288004759,0.009934702707539,-0.002450845732158,0.0005716646876513,-0.00005339115778704,0.000002135848413694,-0.00000003072223247387],[0.2480574522949,-0.4372934216955,0.06448433196301,0.00122922293263,-0.0009281410519553,0.00005946235618034,-0.00000008758032156912,-0.00000007270955072707,0.000000001100087131523],[-0.09960628182831,0.1092652428162,-0.01782307798975,0.0001192181214757,0.0002310636556641,-0.00002492990725967,0.000001217600444191,-0.00000003624263301602,0.0000000006139167092128],[0.01709129400742,-0.01574889001363,0.002865310743302,-0.0001700396064727,-0.000001502644504654,0.0000003297869416435,0.0000000006572135289627,0.0000000004269190108005,-0.00000000003666090917669],[-0.001435304503973,0.001203823111704,-0.0002350465388313,0.00002507288189894,-0.000003077975735212,0.0000003748299687254,-0.00000002613600078122,0.0000000008263175463927,-0.000000000008509179497022],[0.00004808639828229,-0.00003761591649539,0.000007490531472388,-0.000001077314971617,0.0000001950247963978,-0.00000002569729600929,0.000000001804377780165,-0.00000000006031847199601,0.0000000000007416020205748]]
 		reaction_rate = np.exp(np.polynomial.polynomial.polyval2d(np.log(merge_Te_prof_multipulse_interp_crop_limited),np.log(merge_ne_prof_multipulse_interp_crop_limited*1e6),coefficients_all)) * (1e-6*1e20)	# m^3/s * 1e20
@@ -2154,7 +2157,8 @@ def RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,
 		T_Hp = np.array([T_Hp])
 		T_H2 = np.array([T_H2])
 	if False:
-		# reaction rate H+ +H2(X1Σ+g ; v) →H(1s) +H2+(X2Σ+ g ; v)
+		# H+ +H2(X1Σ+g ; v) →H(1s) +H2+(X2Σ+ g ; v)
+		# reaction rate
 		# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
 		# chapter 5.2.1a
 		Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
@@ -2228,7 +2232,8 @@ def RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_
 		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
 		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
 		T_Hp = np.array([T_Hp])
-	# reaction rate H+ +H2(X1Σ+ g ; v) → H+ +H(1s) +H(1s)
+	# H+ +H2(X1Σ+ g ; v) → H+ +H(1s) +H(1s)
+	# reaction rate
 	# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
 	# chapter 5.3
 	Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
@@ -2303,7 +2308,8 @@ def RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,mer
 		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
 		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
 		T_H = np.array([T_H])
-	# reaction rate H(1s) +H2(v) → H(1s) + 2H(1s)
+	# H(1s) +H2(v) → H(1s) + 2H(1s)
+	# reaction rate
 	# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
 	# chapter 6.2.2
 	H1s_H2v__H1s_2H1s = np.zeros((15,*np.shape(merge_ne_prof_multipulse_interp_crop_limited)))
@@ -2327,7 +2333,8 @@ def RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,
 		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
 		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
 		T_H2 = np.array([T_H2])
-	# reaction rate H2(v1 = 0) +H2(v) →H2(v1 = 0) + 2H(1s)
+	# H2(v1 = 0) +H2(v) →H2(v1 = 0) + 2H(1s)
+	# reaction rate
 	# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
 	# chapter 6.3.2
 	# valid up to 20000K
@@ -2585,7 +2592,8 @@ def RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,
 		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
 		T_H2p = np.array([T_H2p])
 		T_H2 = np.array([T_H2])
-	# reaction rate H2+(vi) +H2(v0) →H3+(v3) +H(1s)
+	# H2+(vi) +H2(v0) →H3+(v3) +H(1s)
+	# reaction rate
 	# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
 	# chapter 7.3.3
 	H2p_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/(2*hydrogen_mass))**0.5).T
@@ -2932,8 +2940,8 @@ def RR_rate_creation_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
-		out = nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0] + nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__Hp_H2__r(Te,np.unique(T_H),np.unique(T_Hp),ne)[0] + (nH_ne_all**3)*RR_H_H_H__H_H2__r(Te,np.unique(T_H),ne)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all) + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
-		out_sigma = ((molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__Hp_H2__r(Te,np.unique(T_H),np.unique(T_Hp),ne)[0])**2 + (molecular_precision*(nH_ne_all**3)*RR_H_H_H__H_H2__r(Te,np.unique(T_H),ne)[0])**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2)**0.5
+		out = nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0] + nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__Hp_H2__r(Te,np.unique(T_H),np.unique(T_Hp),ne)[0] + (nH_ne_all**3)*RR_H_H_H__H_H2__r(Te,np.unique(T_H),ne)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
+		out_sigma = ((molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__Hp_H2__r(Te,np.unique(T_H),np.unique(T_Hp),ne)[0])**2 + (molecular_precision*(nH_ne_all**3)*RR_H_H_H__H_H2__r(Te,np.unique(T_H),ne)[0])**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2)**0.5
 	else:
 		out = nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__Hp_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + (nH_ne_all**3)*RR_H_H_H__H_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
 		out_sigma = ((molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__Hp_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hp,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*(nH_ne_all**3)*RR_H_H_H__H_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2)**0.5
@@ -3422,16 +3430,16 @@ def nH_ne_log_probs_Te(Te,nH_ne_values):
 	return nH_ne_log_probs
 def nH2_ne_values_Te(Te,H2_steps):
 	H2_steps = H2_steps//2*2+1
-	max_nH2_ne = nH2_ne_fit_from_simulations(Te)*20
-	min_nH2_ne = nH2_ne_fit_from_simulations(Te)/5
+	max_nH2_ne = nH2_ne_fit_from_simulations(Te)*10
+	min_nH2_ne = nH2_ne_fit_from_simulations(Te)/20
 	centre_nH2_ne = nH2_ne_fit_from_simulations(Te)
 	H2_left_interval = np.logspace(np.log10(min_nH2_ne),np.log10(centre_nH2_ne),num=(H2_steps+1)/2)[:-1]
 	H2_right_interval = np.logspace(np.log10(centre_nH2_ne),np.log10(max_nH2_ne),num=(H2_steps+1)/2)[1:]
 	nH2_ne_values = np.array(H2_left_interval.tolist() + [centre_nH2_ne] + H2_right_interval.tolist())
 	return nH2_ne_values
 def nH2_ne_log_probs_Te(Te,nH2_ne_values):
-	max_nH2_ne = np.max(nH2_ne_fit_from_simulations(Te))*20
-	min_nH2_ne = np.min(nH2_ne_fit_from_simulations(Te))/5
+	max_nH2_ne = np.max(nH2_ne_fit_from_simulations(Te))*10
+	min_nH2_ne = np.min(nH2_ne_fit_from_simulations(Te))/20
 	centre_nH2_ne = nH2_ne_fit_from_simulations(Te)
 	H2_left_interval = nH2_ne_values[nH2_ne_values-centre_nH2_ne<=0]
 	H2_right_interval = nH2_ne_values[nH2_ne_values-centre_nH2_ne>0]
