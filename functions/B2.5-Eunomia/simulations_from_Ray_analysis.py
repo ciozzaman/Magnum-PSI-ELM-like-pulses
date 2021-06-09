@@ -182,6 +182,8 @@ plt.figure(figure_20)
 figure_index +=1
 figure_21 = figure_index
 plt.figure(figure_21)
+figure_22 = figure_index
+plt.figure(figure_22)
 collect_x = []
 collect_y = []
 collect_x1 = []
@@ -339,6 +341,11 @@ for index in range(len(file_array)):
 	temp3 = np.array([[temp2[0]+np.diff(temp2)[0]/2]+(np.diff(temp2)[:-1]/2+np.diff(temp2)[1:]/2).tolist()+[np.diff(temp2)[-1]]])
 	temp = np.sum(temp1*2*np.pi*temp2*temp3)
 	plt.plot(z_data,ratio,'x',color=color[index],label='pressure %.3gPa, Power %.3gW' %(pressure[index],temp))
+	plt.figure(figure_22)
+	ratio = (dens_H)/dens_H2
+	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))))
+	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	plt.plot(temp_e,ratio,',',color=color[index])
 
 # plt.plot([0.1,4],[1,1e-3],'k--')
 # plt.plot([0.1,4],[1000,1],'k--')
@@ -549,6 +556,13 @@ plt.pause(0.01)
 plt.figure(figure_21)
 plt.xlabel('z[mm]')
 plt.ylabel('power flow'+' [W/m2]')
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
+plt.legend(loc='best', fontsize='small')
+plt.grid()
+plt.pause(0.01)
+plt.figure(figure_22)
+plt.xlabel(r'$T_e * n_e$'+' [eV]')
+plt.ylabel(r'$n_{H} / n_{H_2}$')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
 plt.legend(loc='best', fontsize='small')
 plt.grid()

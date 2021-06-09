@@ -19,7 +19,7 @@ for i in range(2):
 
 figure_index = 0
 pre_title = 'merge %.3g, B=%.3gT, pos=%.3gmm, P=%.3gPa, ELMen=%.3gJ \n' %(merge_ID_target,magnetic_field,target_OES_distance,target_chamber_pressure,0.5*(capacitor_voltage**2)*150e-6)
-color = ['b', 'r', 'm', 'y', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
+# color = ['b', 'r', 'm', 'y', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
 
 if False:
 	T_Hp = np.min([np.max([1000*np.ones_like(Te_all),Te_all/eV_to_K],axis=0),12000*np.ones_like(Te_all)],axis=0)	# K
@@ -4869,6 +4869,15 @@ else:
 		intervals_power_rad_mol = np.zeros_like(Te_all).tolist()
 		prob_power_rad_mol = np.zeros_like(Te_all).tolist()
 		actual_values_power_rad_mol = np.zeros_like(Te_all).tolist()
+		intervals_power_potential_mol = np.zeros_like(Te_all).tolist()
+		prob_power_potential_mol = np.zeros_like(Te_all).tolist()
+		actual_values_power_potential_mol = np.zeros_like(Te_all).tolist()
+		intervals_power_potential_mol_plasma_heating = np.zeros_like(Te_all).tolist()
+		prob_power_potential_mol_plasma_heating = np.zeros_like(Te_all).tolist()
+		actual_values_power_potential_mol_plasma_heating = np.zeros_like(Te_all).tolist()
+		intervals_power_potential_mol_plasma_cooling = np.zeros_like(Te_all).tolist()
+		prob_power_potential_mol_plasma_cooling = np.zeros_like(Te_all).tolist()
+		actual_values_power_potential_mol_plasma_cooling = np.zeros_like(Te_all).tolist()
 		intervals_power_via_ionisation = np.zeros_like(Te_all).tolist()
 		prob_power_via_ionisation = np.zeros_like(Te_all).tolist()
 		actual_values_power_via_ionisation = np.zeros_like(Te_all).tolist()
@@ -5018,6 +5027,15 @@ else:
 					intervals_power_rad_mol[i_t][i_r] = [0,0]
 					prob_power_rad_mol[i_t][i_r] = [1]
 					actual_values_power_rad_mol[i_t][i_r] = [0]
+					intervals_power_potential_mol[i_t][i_r] = [0,0]
+					prob_power_potential_mol[i_t][i_r] = [1]
+					actual_values_power_potential_mol[i_t][i_r] = [0]
+					intervals_power_potential_mol_plasma_heating[i_t][i_r] = [0,0]
+					prob_power_potential_mol_plasma_heating[i_t][i_r] = [1]
+					actual_values_power_potential_mol_plasma_heating[i_t][i_r] = [0]
+					intervals_power_potential_mol_plasma_cooling[i_t][i_r] = [0,0]
+					prob_power_potential_mol_plasma_cooling[i_t][i_r] = [1]
+					actual_values_power_potential_mol_plasma_cooling[i_t][i_r] = [0]
 					intervals_power_via_ionisation[i_t][i_r] = [0,0]
 					prob_power_via_ionisation[i_t][i_r] = [1]
 					actual_values_power_via_ionisation[i_t][i_r] = [0]
@@ -5162,6 +5180,15 @@ else:
 					intervals_power_rad_mol[i_t][i_r] = power_balance_data_dict[i]['power_rad_mol']['intervals']
 					prob_power_rad_mol[i_t][i_r] = power_balance_data_dict[i]['power_rad_mol']['prob']
 					actual_values_power_rad_mol[i_t][i_r] = power_balance_data_dict[i]['power_rad_mol']['actual_values']
+					intervals_power_potential_mol[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol']['intervals']
+					prob_power_potential_mol[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol']['prob']
+					actual_values_power_potential_mol[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol']['actual_values']
+					intervals_power_potential_mol_plasma_heating[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol_plasma_heating']['intervals']
+					prob_power_potential_mol_plasma_heating[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol_plasma_heating']['prob']
+					actual_values_power_potential_mol_plasma_heating[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol_plasma_heating']['actual_values']
+					intervals_power_potential_mol_plasma_cooling[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol_plasma_cooling']['intervals']
+					prob_power_potential_mol_plasma_cooling[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol_plasma_cooling']['prob']
+					actual_values_power_potential_mol_plasma_cooling[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol_plasma_cooling']['actual_values']
 					intervals_power_via_ionisation[i_t][i_r] = power_balance_data_dict[i]['power_via_ionisation']['intervals']
 					prob_power_via_ionisation[i_t][i_r] = power_balance_data_dict[i]['power_via_ionisation']['prob']
 					actual_values_power_via_ionisation[i_t][i_r] = power_balance_data_dict[i]['power_via_ionisation']['actual_values']
@@ -5381,6 +5408,15 @@ else:
 		most_likely_power_rad_mol,most_likely_power_rad_mol_sigma = calculate_most_likely(prob_power_rad_mol,actual_values_power_rad_mol,intervals_power_rad_mol)
 		figure_index = make_plot_type_1(most_likely_power_rad_mol,'power_rad_mol','power [W/m3]',figure_index)
 
+		most_likely_power_potential_mol,most_likely_power_potential_mol_sigma = calculate_most_likely(prob_power_potential_mol,actual_values_power_potential_mol,intervals_power_potential_mol)
+		figure_index = make_plot_type_1(most_likely_power_potential_mol,'power_potential_mol','power [W/m3]',figure_index)
+
+		most_likely_power_potential_mol_plasma_heating,most_likely_power_potential_mol_plasma_heating_sigma = calculate_most_likely(prob_power_potential_mol_plasma_heating,actual_values_power_potential_mol_plasma_heating,intervals_power_potential_mol_plasma_heating)
+		figure_index = make_plot_type_1(most_likely_power_potential_mol_plasma_heating,'power_potential_mol_plasma_heating','power [W/m3]',figure_index)
+
+		most_likely_power_potential_mol_plasma_cooling,most_likely_power_potential_mol_plasma_cooling_sigma = calculate_most_likely(prob_power_potential_mol_plasma_cooling,actual_values_power_potential_mol_plasma_cooling,intervals_power_potential_mol_plasma_cooling)
+		figure_index = make_plot_type_1(most_likely_power_potential_mol_plasma_cooling,'power_potential_mol_plasma_cooling','power [W/m3]',figure_index)
+
 		most_likely_power_via_ionisation,most_likely_power_via_ionisation_sigma = calculate_most_likely(prob_power_via_ionisation,actual_values_power_via_ionisation,intervals_power_via_ionisation)
 		figure_index = make_plot_type_1(most_likely_power_via_ionisation,'power_via_ionisation','power [W/m3]',figure_index)
 
@@ -5558,7 +5594,7 @@ else:
 		figure_index = make_plot_type_1(most_likely_power_via_brem,'power_via_brem','power [W/m3]',figure_index)
 
 		most_likely_total_removed_power,most_likely_total_removed_power_sigma = calculate_most_likely(prob_total_removed_power,actual_values_total_removed_power,intervals_total_removed_power)
-		figure_index = make_plot_type_1(most_likely_total_removed_power,'total_removed_power\n(ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral)','power [W/m3]',figure_index)
+		figure_index = make_plot_type_1(most_likely_total_removed_power,'total_removed_power\n(ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral + potential_mol - recombination heating)','power [W/m3]',figure_index)
 
 		thermal_velocity_H = ( (T_H*boltzmann_constant_J)/ hydrogen_mass)**0.5
 		ionization_length_H = thermal_velocity_H/(most_likely_ionisation_rate / (ne_all * 1e20*nH_ne_all) )
@@ -6107,7 +6143,7 @@ else:
 			# plt.plot(temp_e,temp,'--',color=color[index])
 			temp_H2 = []
 			for value in temp_e:
-				temp_H2.append(nH2_ne_values_Te(value,3)[[0,2]])
+				temp_H2.append(nH2_ne_values_Te_2(value,3)[[0,2]])
 			plt.plot(np.array([temp_e]*2).T,temp_H2,'--',color=color[index])
 			# temp_e = np.sort(np.array(most_likely_Te_values)[select])
 			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
@@ -6300,6 +6336,9 @@ else:
 		intervals_power_rad_excit_r, prob_power_rad_excit_r, actual_values_power_rad_excit_r = radial_sum_PDF_MC(actual_values_power_rad_excit,prob_power_rad_excit)
 		intervals_power_rad_rec_bremm_r, prob_power_rad_rec_bremm_r, actual_values_power_rad_rec_bremm_r = radial_sum_PDF_MC(actual_values_power_rad_rec_bremm,prob_power_rad_rec_bremm)
 		intervals_power_rad_mol_r, prob_power_rad_mol_r, actual_values_power_rad_mol_r = radial_sum_PDF_MC(actual_values_power_rad_mol,prob_power_rad_mol)
+		intervals_power_potential_mol_r, prob_power_potential_mol_r, actual_values_power_potential_mol_r = radial_sum_PDF_MC(actual_values_power_potential_mol,prob_power_potential_mol)
+		intervals_power_potential_mol_plasma_heating_r, prob_power_potential_mol_plasma_heating_r, actual_values_power_potential_mol_plasma_heating_r = radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_heating,prob_power_potential_mol_plasma_heating)
+		intervals_power_potential_mol_plasma_cooling_r, prob_power_potential_mol_plasma_cooling_r, actual_values_power_potential_mol_plasma_cooling_r = radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_cooling,prob_power_potential_mol_plasma_cooling)
 		intervals_power_via_ionisation_r, prob_power_via_ionisation_r, actual_values_power_via_ionisation_r = radial_sum_PDF_MC(actual_values_power_via_ionisation,prob_power_via_ionisation)
 		intervals_power_via_recombination_r, prob_power_via_recombination_r, actual_values_power_via_recombination_r = radial_sum_PDF_MC(actual_values_power_via_recombination,prob_power_via_recombination)
 		intervals_tot_rad_power_r, prob_tot_rad_power_r, actual_values_tot_rad_power_r = radial_sum_PDF_MC(actual_values_tot_rad_power,prob_tot_rad_power)
@@ -6343,6 +6382,9 @@ else:
 		most_likely_power_rad_excit_r,actual_values_power_rad_excit_r_up,actual_values_power_rad_excit_r_down = find_DPF_range_temporal(actual_values_power_rad_excit_r,prob_power_rad_excit_r,intervals_power_rad_excit_r)
 		most_likely_power_rad_rec_bremm_r,actual_values_power_rad_rec_bremm_r_up,actual_values_power_rad_rec_bremm_r_down = find_DPF_range_temporal(actual_values_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r,intervals_power_rad_rec_bremm_r)
 		most_likely_power_rad_mol_r,actual_values_power_rad_mol_r_up,actual_values_power_rad_mol_r_down = find_DPF_range_temporal(actual_values_power_rad_mol_r,prob_power_rad_mol_r,intervals_power_rad_mol_r)
+		most_likely_power_potential_mol_r,actual_values_power_potential_mol_r_up,actual_values_power_potential_mol_r_down = find_DPF_range_temporal(actual_values_power_potential_mol_r,prob_power_potential_mol_r,intervals_power_potential_mol_r)
+		most_likely_power_potential_mol_plasma_heating_r,actual_values_power_potential_mol_plasma_heating_r_up,actual_values_power_potential_mol_plasma_heating_r_down = find_DPF_range_temporal(actual_values_power_potential_mol_plasma_heating_r,prob_power_potential_mol_plasma_heating_r,intervals_power_potential_mol_plasma_heating_r)
+		most_likely_power_potential_mol_plasma_cooling_r,actual_values_power_potential_mol_plasma_cooling_r_up,actual_values_power_potential_mol_plasma_cooling_r_down = find_DPF_range_temporal(actual_values_power_potential_mol_plasma_cooling_r,prob_power_potential_mol_plasma_cooling_r,intervals_power_potential_mol_plasma_cooling_r)
 		most_likely_power_via_ionisation_r,actual_values_power_via_ionisation_r_up,actual_values_power_via_ionisation_r_down = find_DPF_range_temporal(actual_values_power_via_ionisation_r,prob_power_via_ionisation_r,intervals_power_via_ionisation_r)
 		most_likely_power_via_recombination_r,actual_values_power_via_recombination_r_up,actual_values_power_via_recombination_r_down = find_DPF_range_temporal(actual_values_power_via_recombination_r,prob_power_via_recombination_r,intervals_power_via_recombination_r)
 		most_likely_tot_rad_power_r,actual_values_tot_rad_power_r_up,actual_values_tot_rad_power_r_down = find_DPF_range_temporal(actual_values_tot_rad_power_r,prob_tot_rad_power_r,intervals_tot_rad_power_r)
@@ -6635,6 +6677,9 @@ else:
 		figure_index = make_plot_type_2(intervals_power_rad_excit_r,prob_power_rad_excit_r,most_likely_power_rad_excit_r,actual_values_power_rad_excit_r_down,actual_values_power_rad_excit_r_up,'power_rad_excit','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r,most_likely_power_rad_rec_bremm_r,actual_values_power_rad_rec_bremm_r_down,actual_values_power_rad_rec_bremm_r_up,'power_rad_rec_bremm','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rad_mol_r,prob_power_rad_mol_r,most_likely_power_rad_mol_r,actual_values_power_rad_mol_r_down,actual_values_power_rad_mol_r_up,'power_rad_mol','Power loss [W]',figure_index)
+		figure_index = make_plot_type_2(intervals_power_potential_mol_r,prob_power_potential_mol_r,most_likely_power_potential_mol_r,actual_values_power_potential_mol_r_down,actual_values_power_potential_mol_r_up,'power_potential_mol','Power loss [W]',figure_index)
+		figure_index = make_plot_type_2(intervals_power_potential_mol_plasma_heating_r,prob_power_potential_mol_plasma_heating_r,most_likely_power_potential_mol_plasma_heating_r,actual_values_power_potential_mol_plasma_heating_r_down,actual_values_power_potential_mol_plasma_heating_r_up,'power_potential_mol_plasma_heating','Power loss [W]',figure_index)
+		figure_index = make_plot_type_2(intervals_power_potential_mol_plasma_cooling_r,prob_power_potential_mol_plasma_cooling_r,most_likely_power_potential_mol_plasma_cooling_r,actual_values_power_potential_mol_plasma_cooling_r_down,actual_values_power_potential_mol_plasma_cooling_r_up,'power_potential_mol_plasma_cooling','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_via_ionisation_r,prob_power_via_ionisation_r,most_likely_power_via_ionisation_r,actual_values_power_via_ionisation_r_down,actual_values_power_via_ionisation_r_up,'power_via_ionisation','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_via_recombination_r,prob_power_via_recombination_r,most_likely_power_via_recombination_r,actual_values_power_via_recombination_r_down,actual_values_power_via_recombination_r_up,'power_via_recombination','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_tot_rad_power_r,prob_tot_rad_power_r,most_likely_tot_rad_power_r,actual_values_tot_rad_power_r_down,actual_values_tot_rad_power_r_up,'tot_rad_power','Power loss [W]',figure_index)
@@ -6646,7 +6691,7 @@ else:
 		figure_index = make_plot_type_2(intervals_power_heating_rec_r,prob_power_heating_rec_r,most_likely_power_heating_rec_r,actual_values_power_heating_rec_r_down,actual_values_power_heating_rec_r_up,'power_heating_rec','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rec_neutral_r,prob_power_rec_neutral_r,most_likely_power_rec_neutral_r,actual_values_power_rec_neutral_r_down,actual_values_power_rec_neutral_r_up,'power_rec_neutral','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_via_brem_r,prob_power_via_brem_r,most_likely_power_via_brem_r,actual_values_power_via_brem_r_down,actual_values_power_via_brem_r_up,'power_via_brem','Power loss [W]',figure_index)
-		figure_index = make_plot_type_2(intervals_total_removed_power_r,prob_total_removed_power_r,most_likely_total_removed_power_r,actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up,'total_removed_power, --=from upstream\n(ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral)','Power loss [W]',figure_index)
+		figure_index = make_plot_type_2(intervals_total_removed_power_r,prob_total_removed_power_r,most_likely_total_removed_power_r,actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up,'total_removed_power, --=from upstream\n(ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral + potential_mol - recombination heating)','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_local_CX_r,prob_local_CX_r,most_likely_local_CX_r,actual_values_local_CX_r_down,actual_values_local_CX_r_up,'local_CX','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r,most_likely_net_power_removed_plasma_column_r,actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up,'net_power_removed_plasma_column, --=from upstream\n(net power removed from plasma column radiated + recombination neutral)','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_total_removed_power_visible_r,prob_total_removed_power_visible_r,most_likely_total_removed_power_visible_r,actual_values_total_removed_power_visible_r_down,actual_values_total_removed_power_visible_r_up,'total_removed_power_visible','Power loss [W]',figure_index)
@@ -6689,6 +6734,9 @@ else:
 		plt.plot(time_crop,most_likely_power_rad_excit_r,label='power_rad_excit')
 		plt.plot(time_crop,most_likely_power_rad_rec_bremm_r,label='power_rad_rec_bremm')
 		plt.plot(time_crop,most_likely_power_rad_mol_r,label='power_rad_mol')
+		plt.plot(time_crop,most_likely_power_potential_mol_r,label='power_potential_mol')
+		plt.plot(time_crop,most_likely_power_potential_mol_plasma_heating_r,label='power_potential_mol_plasma_heating')
+		plt.plot(time_crop,most_likely_power_potential_mol_plasma_cooling_r,label='power_potential_mol_plasma_cooling')
 		plt.errorbar(time_crop,most_likely_power_via_ionisation_r,yerr=[most_likely_power_via_ionisation_r-actual_values_power_via_ionisation_r_down,actual_values_power_via_ionisation_r_up-most_likely_power_via_ionisation_r],capsize=5,label='power_via_ionisation (only potential)')
 		plt.errorbar(time_crop,most_likely_power_via_recombination_r,yerr=[most_likely_power_via_recombination_r-actual_values_power_via_recombination_r_down,actual_values_power_via_recombination_r_up-most_likely_power_via_recombination_r],capsize=5,label='power_via_recombination (only potential)')
 		plt.errorbar(time_crop,most_likely_tot_rad_power_r,yerr=[most_likely_tot_rad_power_r-actual_values_tot_rad_power_r_down,actual_values_tot_rad_power_r_up-most_likely_tot_rad_power_r],capsize=5,label='tot_rad_power')
@@ -6708,7 +6756,7 @@ else:
 		plt.plot(time_crop,most_likely_P_HCX_2_r,label='P_HCX_2 MODE 2')
 		plt.plot(time_crop,most_likely_P_HCX_3_r,label='P_HCX_3 MODE 3')
 		# plt.plot(time_crop,most_likely_local_CX_r,label='local_CX')
-		plt.plot(time_crop,most_likely_total_removed_power_r,label='total_removed_power from plasma fliud\nionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral')
+		plt.plot(time_crop,most_likely_total_removed_power_r,label='total_removed_power from plasma fliud\nionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral + potential_mol - recombination heating')
 		plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		plt.plot(time_crop, heat_inflow_upstream_min,'--k');
 		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop+13.6+2.2)*merge_ne_prof_multipulse_interp_crop*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
@@ -6735,7 +6783,7 @@ else:
 		plt.errorbar(time_crop,most_likely_power_via_recombination_r,yerr=[most_likely_power_via_recombination_r-actual_values_power_via_recombination_r_down,actual_values_power_via_recombination_r_up-most_likely_power_via_recombination_r],capsize=5,label='power_via_recombination (only potential)')
 		# plt.errorbar(time_crop,most_likely_tot_rad_power_r,yerr=[most_likely_tot_rad_power_r-actual_values_tot_rad_power_r_down,actual_values_tot_rad_power_r_up-most_likely_tot_rad_power_r],capsize=5,label='tot_rad_power')
 		plt.errorbar(time_crop,most_likely_net_power_removed_plasma_column_r,yerr=[most_likely_net_power_removed_plasma_column_r-actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up-most_likely_net_power_removed_plasma_column_r],capsize=5,label='net power removed from plasma column\nradiated + recombination neutral')
-		plt.errorbar(time_crop,most_likely_total_removed_power_r,yerr=[most_likely_total_removed_power_r-actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up-most_likely_total_removed_power_r],capsize=5,label='total_removed_power from plasma fliud\nionisation + rad_mol + rad_excit + recombination*pot + brem + rec_neutral')
+		plt.errorbar(time_crop,most_likely_total_removed_power_r,yerr=[most_likely_total_removed_power_r-actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up-most_likely_total_removed_power_r],capsize=5,label='total_removed_power from plasma fliud\ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral + potential_mol - recombination heating')
 		plt.plot(time_crop, heat_inflow_upstream_max,'--k', label='Power inflow from upstream:\n'+label_ion_source_at_upstream);
 		plt.plot(time_crop, heat_inflow_upstream_min,'--k');
 		# plt.plot(time_crop, np.sum((merge_Te_prof_multipulse_interp_crop+13.6+2.2)*merge_ne_prof_multipulse_interp_crop*1e20/6.24e18*area,axis=1)*length/dt*1000,'--',label='stored in plasma');
@@ -7156,6 +7204,9 @@ else:
 		intervals_power_rad_excit_tr, prob_power_rad_excit_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_excit_r,prob_power_rad_excit_r)
 		intervals_power_rad_rec_bremm_tr, prob_power_rad_rec_bremm_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r)
 		intervals_power_rad_mol_tr, prob_power_rad_mol_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_mol_r,prob_power_rad_mol_r)
+		intervals_power_potential_mol_tr, prob_power_potential_mol_tr = temporal_radial_sum_PDF_MC(actual_values_power_potential_mol_r,prob_power_potential_mol_r)
+		intervals_power_potential_mol_plasma_heating_tr, prob_power_potential_mol_plasma_heating_tr = temporal_radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_heating_r,prob_power_potential_mol_plasma_heating_r)
+		intervals_power_potential_mol_plasma_cooling_tr, prob_power_potential_mol_plasma_cooling_tr = temporal_radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_cooling_r,prob_power_potential_mol_plasma_cooling_r)
 		intervals_power_via_ionisation_tr, prob_power_via_ionisation_tr = temporal_radial_sum_PDF_MC(actual_values_power_via_ionisation_r,prob_power_via_ionisation_r)
 		intervals_power_via_recombination_tr, prob_power_via_recombination_tr = temporal_radial_sum_PDF_MC(actual_values_power_via_recombination_r,prob_power_via_recombination_r)
 		intervals_tot_rad_power_tr, prob_tot_rad_power_tr = temporal_radial_sum_PDF_MC(actual_values_tot_rad_power_r, prob_tot_rad_power_r)
@@ -7192,6 +7243,15 @@ else:
 		ML_power_rad_mol = (np.add(intervals_power_rad_mol_tr[1:],intervals_power_rad_mol_tr[:-1])/2)[np.array(prob_power_rad_mol_tr).argmax()]
 		temp = np.cumsum(prob_power_rad_mol_tr)
 		ML_power_rad_mol_sigma = np.mean([ML_power_rad_mol-intervals_power_rad_mol_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_mol_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_mol])
+		ML_power_potential_mol = (np.add(intervals_power_potential_mol_tr[1:],intervals_power_potential_mol_tr[:-1])/2)[np.array(prob_power_potential_mol_tr).argmax()]
+		temp = np.cumsum(prob_power_potential_mol_tr)
+		ML_power_potential_mol_sigma = np.mean([ML_power_potential_mol-intervals_power_potential_mol_tr[np.abs(temp-0.159).argmin()+1],intervals_power_potential_mol_tr[np.abs(temp-1+0.159).argmin()]-ML_power_potential_mol])
+		ML_power_potential_mol_plasma_heating = (np.add(intervals_power_potential_mol_plasma_heating_tr[1:],intervals_power_potential_mol_plasma_heating_tr[:-1])/2)[np.array(prob_power_potential_mol_plasma_heating_tr).argmax()]
+		temp = np.cumsum(prob_power_potential_mol_plasma_heating_tr)
+		ML_power_potential_mol_plasma_heating_sigma = np.mean([ML_power_potential_mol_plasma_heating-intervals_power_potential_mol_plasma_heating_tr[np.abs(temp-0.159).argmin()+1],intervals_power_potential_mol_plasma_heating_tr[np.abs(temp-1+0.159).argmin()]-ML_power_potential_mol_plasma_heating])
+		ML_power_potential_mol_plasma_cooling = (np.add(intervals_power_potential_mol_plasma_cooling_tr[1:],intervals_power_potential_mol_plasma_cooling_tr[:-1])/2)[np.array(prob_power_potential_mol_plasma_cooling_tr).argmax()]
+		temp = np.cumsum(prob_power_potential_mol_plasma_cooling_tr)
+		ML_power_potential_mol_plasma_cooling_sigma = np.mean([ML_power_potential_mol_plasma_cooling-intervals_power_potential_mol_plasma_cooling_tr[np.abs(temp-0.159).argmin()+1],intervals_power_potential_mol_plasma_cooling_tr[np.abs(temp-1+0.159).argmin()]-ML_power_potential_mol_plasma_cooling])
 		ML_power_via_ionisation = (np.add(intervals_power_via_ionisation_tr[1:],intervals_power_via_ionisation_tr[:-1])/2)[np.array(prob_power_via_ionisation_tr).argmax()]
 		temp = np.cumsum(prob_power_via_ionisation_tr)
 		ML_power_via_ionisation_sigma = np.mean([ML_power_via_ionisation-intervals_power_via_ionisation_tr[np.abs(temp-0.159).argmin()+1],intervals_power_via_ionisation_tr[np.abs(temp-1+0.159).argmin()]-ML_power_via_ionisation])
@@ -7274,6 +7334,9 @@ else:
 		plt.plot(np.sort(intervals_power_rad_excit_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_excit_tr]*2).T.flatten(),label='power_rad_excit ML=%.3g+/-%.3gJ' %(ML_power_rad_excit,ML_power_rad_excit_sigma))
 		plt.plot(np.sort(intervals_power_rad_rec_bremm_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_rec_bremm_tr]*2).T.flatten(),label='power_rad_rec_bremm ML=%.3g+/-%.3gJ' %(ML_power_rad_rec_bremm,ML_power_rad_rec_bremm_sigma))
 		plt.plot(np.sort(intervals_power_rad_mol_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_mol_tr]*2).T.flatten(),label='power_rad_mol ML=%.3g+/-%.3gJ' %(ML_power_rad_mol,ML_power_rad_mol_sigma))
+		plt.plot(np.sort(intervals_power_potential_mol_tr.tolist()*2)[1:-1],100*np.array([prob_power_potential_mol_tr]*2).T.flatten(),label='power_potential_mol ML=%.3g+/-%.3gJ' %(ML_power_potential_mol,ML_power_potential_mol_sigma))
+		plt.plot(np.sort(intervals_power_potential_mol_plasma_heating_tr.tolist()*2)[1:-1],100*np.array([prob_power_potential_mol_plasma_heating_tr]*2).T.flatten(),label='power_potential_mol_plasma_heating ML=%.3g+/-%.3gJ' %(ML_power_potential_mol_plasma_heating,ML_power_potential_mol_plasma_heating_sigma))
+		plt.plot(np.sort(intervals_power_potential_mol_plasma_cooling_tr.tolist()*2)[1:-1],100*np.array([prob_power_potential_mol_plasma_cooling_tr]*2).T.flatten(),label='power_potential_mol_plasma_cooling ML=%.3g+/-%.3gJ' %(ML_power_potential_mol_plasma_cooling,ML_power_potential_mol_plasma_cooling_sigma))
 		plt.plot(np.sort(intervals_power_via_ionisation_tr.tolist()*2)[1:-1],100*np.array([prob_power_via_ionisation_tr]*2).T.flatten(),label='power_via_ionisation (only potential) ML=%.3g+/-%.3gJ' %(ML_power_via_ionisation,ML_power_via_ionisation_sigma))
 		plt.plot(np.sort(intervals_power_via_recombination_tr.tolist()*2)[1:-1],100*np.array([prob_power_via_recombination_tr]*2).T.flatten(),label='power_via_recombination (only potential) ML=%.3g+/-%.3gJ' %(ML_power_via_recombination,ML_power_via_recombination_sigma))
 		plt.plot(np.sort(intervals_tot_rad_power_tr.tolist()*2)[1:-1],100*np.array([prob_tot_rad_power_tr]*2).T.flatten(),label='tot_rad_power ML=%.3g+/-%.3gJ' %(ML_tot_rad_power,ML_tot_rad_power_sigma))
@@ -7291,7 +7354,7 @@ else:
 		plt.plot(np.sort(intervals_E_HCX.tolist()*2)[1:-1],100*np.array([prob_E_HCX]*2).T.flatten(),label='max CX ML MODE 1=%.3g+/-%.3gJ' %(ML_E_HCX,ML_E_HCX_sigma))
 		plt.plot(np.sort(intervals_E_HCX_2.tolist()*2)[1:-1],100*np.array([prob_E_HCX_2]*2).T.flatten(),label='max CX ML MODE 2=%.3g+/-%.3gJ' %(ML_E_HCX_2,ML_E_HCX_2_sigma))
 		plt.plot(np.sort(intervals_E_HCX_3.tolist()*2)[1:-1],100*np.array([prob_E_HCX_3]*2).T.flatten(),label='max CX ML MODE 3=%.3g+/-%.3gJ' %(ML_E_HCX_3,ML_E_HCX_3_sigma))
-		plt.plot(np.sort(intervals_total_removed_power_tr.tolist()*2)[1:-1],100*np.array([prob_total_removed_power_tr]*2).T.flatten(),label='total_removed_power from plasma fliud\nionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral ML=%.3g+/-%.3gJ' %(ML_total_removed_power,ML_total_removed_power_sigma))
+		plt.plot(np.sort(intervals_total_removed_power_tr.tolist()*2)[1:-1],100*np.array([prob_total_removed_power_tr]*2).T.flatten(),label='total_removed_power from plasma fliud\ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral\n+ potential_mol - recombination heating ML=%.3g+/-%.3gJ' %(ML_total_removed_power,ML_total_removed_power_sigma))
 		plt.plot(np.sort(intervals_net_power_removed_plasma_column_tr.tolist()*2)[1:-1],100*np.array([prob_net_power_removed_plasma_column_tr]*2).T.flatten(),label='net power removed from plasma column\nradiated + recombination neutral ML=%.3g+/-%.3gJ' %(ML_net_power_removed_plasma_column,ML_net_power_removed_plasma_column_sigma))
 		plt.plot(np.sort(intervals_total_removed_power_visible_tr.tolist()*2)[1:-1],100*np.array([prob_total_removed_power_visible_tr]*2).T.flatten(),label='total_removed_power_visible ML=%.3g+/-%.3gJ' %(ML_total_removed_power_visible,ML_total_removed_power_visible_sigma))
 		plt.plot(np.sort(intervals_power_rad_atomic_visible_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_atomic_visible_tr]*2).T.flatten(),label='power_rad_atomic_visible ML=%.3g+/-%.3gJ' %(ML_power_rad_atomic_visible,ML_power_rad_atomic_visible_sigma))
@@ -7398,6 +7461,21 @@ else:
 		bayesian_results_dict['power_rad_mol']['full'] = dict([('intervals',intervals_power_rad_mol),('prob',prob_power_rad_mol),('actual_values',actual_values_power_rad_mol),('most_likely',most_likely_power_rad_mol),('most_likely_sigma',most_likely_power_rad_mol_sigma),('unit','W m^-3')])
 		bayesian_results_dict['power_rad_mol']['radial_sum'] = dict([('intervals',intervals_power_rad_mol_r),('prob',prob_power_rad_mol_r),('actual_values',actual_values_power_rad_mol_r),('most_likely',most_likely_power_rad_mol_r),('unit','W')])
 		bayesian_results_dict['power_rad_mol']['radial_time_sum'] = dict([('intervals',intervals_power_rad_mol_tr),('prob',prob_power_rad_mol_tr),('most_likely',ML_power_rad_mol),('most_likely_sigma',ML_power_rad_mol_sigma),('unit','J')])
+
+		bayesian_results_dict['power_potential_mol'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['power_potential_mol']['full'] = dict([('intervals',intervals_power_potential_mol),('prob',prob_power_potential_mol),('actual_values',actual_values_power_potential_mol),('most_likely',most_likely_power_potential_mol),('most_likely_sigma',most_likely_power_potential_mol_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_potential_mol']['radial_sum'] = dict([('intervals',intervals_power_potential_mol_r),('prob',prob_power_potential_mol_r),('actual_values',actual_values_power_potential_mol_r),('most_likely',most_likely_power_potential_mol_r),('unit','W')])
+		bayesian_results_dict['power_potential_mol']['radial_time_sum'] = dict([('intervals',intervals_power_potential_mol_tr),('prob',prob_power_potential_mol_tr),('most_likely',ML_power_potential_mol),('most_likely_sigma',ML_power_potential_mol_sigma),('unit','J')])
+
+		bayesian_results_dict['power_potential_mol_plasma_heating'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['power_potential_mol_plasma_heating']['full'] = dict([('intervals',intervals_power_potential_mol_plasma_heating),('prob',prob_power_potential_mol_plasma_heating),('actual_values',actual_values_power_potential_mol_plasma_heating),('most_likely',most_likely_power_potential_mol_plasma_heating),('most_likely_sigma',most_likely_power_potential_mol_plasma_heating_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_potential_mol_plasma_heating']['radial_sum'] = dict([('intervals',intervals_power_potential_mol_plasma_heating_r),('prob',prob_power_potential_mol_plasma_heating_r),('actual_values',actual_values_power_potential_mol_plasma_heating_r),('most_likely',most_likely_power_potential_mol_plasma_heating_r),('unit','W')])
+		bayesian_results_dict['power_potential_mol_plasma_heating']['radial_time_sum'] = dict([('intervals',intervals_power_potential_mol_plasma_heating_tr),('prob',prob_power_potential_mol_plasma_heating_tr),('most_likely',ML_power_potential_mol_plasma_heating),('most_likely_sigma',ML_power_potential_mol_plasma_heating_sigma),('unit','J')])
+
+		bayesian_results_dict['power_potential_mol_plasma_cooling'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['power_potential_mol_plasma_cooling']['full'] = dict([('intervals',intervals_power_potential_mol_plasma_cooling),('prob',prob_power_potential_mol_plasma_cooling),('actual_values',actual_values_power_potential_mol_plasma_cooling),('most_likely',most_likely_power_potential_mol_plasma_cooling),('most_likely_sigma',most_likely_power_potential_mol_plasma_cooling_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_potential_mol_plasma_cooling']['radial_sum'] = dict([('intervals',intervals_power_potential_mol_plasma_cooling_r),('prob',prob_power_potential_mol_plasma_cooling_r),('actual_values',actual_values_power_potential_mol_plasma_cooling_r),('most_likely',most_likely_power_potential_mol_plasma_cooling_r),('unit','W')])
+		bayesian_results_dict['power_potential_mol_plasma_cooling']['radial_time_sum'] = dict([('intervals',intervals_power_potential_mol_plasma_cooling_tr),('prob',prob_power_potential_mol_plasma_cooling_tr),('most_likely',ML_power_potential_mol_plasma_cooling),('most_likely_sigma',ML_power_potential_mol_plasma_cooling_sigma),('unit','J')])
 
 		bayesian_results_dict['power_via_ionisation'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['power_via_ionisation']['full'] = dict([('intervals',intervals_power_via_ionisation),('prob',prob_power_via_ionisation),('actual_values',actual_values_power_via_ionisation),('most_likely',most_likely_power_via_ionisation),('most_likely_sigma',most_likely_power_via_ionisation_sigma),('unit','W m^-3')])

@@ -1361,12 +1361,21 @@ def RR_e_H__Hm__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_mul
 	# chapter 2.1.3
 	# info only on e +H(1s) → H- + hν
 	Eb = 0.754	# eV
-	beta = Eb/merge_Te_prof_multipulse_interp_crop_limited
-	temp = 1.17*( 2* np.pi**(1/2) * beta**(3/2) * np.exp(beta)+1 -2*beta* hyp1f1(1,0.5,beta) )
-	temp[np.logical_and(temp/(2*beta* hyp1f1(1,0.5,beta))<1e-5,beta>15)]=3/(2*beta[np.logical_and(temp/(2*beta* hyp1f1(1,0.5,beta))<1e-5,beta>15)])	# added to deal with numerical cancellation in subtraction
+	beta = np.float64(Eb/merge_Te_prof_multipulse_interp_crop_limited)	# converting to float64 I should have less issues with numerical cancellation
+	# temp = 1.17*( 2* (np.pi**(1/2)) * (beta**(3/2)) * np.exp(beta)+1 -2*beta* hyp1f1(1,0.5,beta) )
+	temp = np.float32(1.17*( 2*beta*( (np.pi**(1/2)) * (beta**(1/2)) * np.exp(beta) +1/(2*beta) -hyp1f1(1,0.5,beta)) ))
+	if np.shape(temp)==():
+		if np.isnan(temp):
+			temp=0
+		if temp<0:
+			temp=0
+	else:
+		temp[temp<0] = 0
+		temp[np.isnan(temp)] = 0
+	# temp[np.logical_and(temp/(2*beta* hyp1f1(1,0.5,beta))<1e-5,beta>15)]=3/(2*beta[np.logical_and(temp/(2*beta* hyp1f1(1,0.5,beta))<1e-5,beta>15)])	# added to deal with numerical cancellation in subtraction
 	# reaction_rate = 1.17*( 2* np.pi**(1/2) * beta**(3/2) * np.exp(beta)+1 -2*beta* hyp1f1(1,0.5,beta) )*(1e-10 * 1e-6* 1e20)		# m^3/s *1e20
 	reaction_rate = temp*(1e-10 * 1e-6* 1e20)		# m^3/s *1e20
-	reaction_rate[np.isnan(reaction_rate)] = 0
+	# reaction_rate[np.isnan(reaction_rate)] = 0
 	e_H__Hm = (merge_ne_prof_multipulse_interp_crop_limited**2) * reaction_rate
 	return e_H__Hm	# m^-3/s *1e-20 / (nH(1)/ne)
 
@@ -1530,7 +1539,7 @@ def RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge
 	# H+ + H- → H(v) + H
 	# Yacora, H+ Mutual neutralization
 	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
-	einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
+	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
 
 	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4:	# H, Hm, H2, H2p, ne, Te
 		Te = merge_Te_prof_multipulse_interp_crop_limited[0,:,0]
@@ -1539,12 +1548,45 @@ def RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge
 		T_Hm_temp = T_Hm[0,:,0]
 		nHp_ne_all_temp = nHp_ne_all[0,:,0]
 		population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te.flatten(),T_Hp_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nHp_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
-		reaction_rate = (ne.flatten()**2)*1e20*np.sum(population_coefficients*einstein_coeff_Lyman,axis=-1)	# 	#/s * 1e-20
+		reaction_rate = (ne.flatten()**2)*1e20*np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1)	# 	#/s * 1e-20
 		reaction_rate = reaction_rate.reshape(np.shape(T_Hp[0,:,0]))
 		reaction_rate = np.transpose([[reaction_rate.tolist()]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[2]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[0] ,(0,2,1,3))
 	else:
 		population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_Hp.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nHp_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
-		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_Lyman,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+	return reaction_rate	# m^-3/s *1e-20 / (nHm/ne) / (nHp/ne)
+
+def RR_Hp_Hm__Hn_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all):	# [eV, 10e20 #/m3]
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
+		print('error, Te and ne are different shapes')
+		exit()
+	flag_single_point=False
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)==():
+		flag_single_point=True
+		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
+		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
+		nHp_ne_all = np.array([nHp_ne_all])
+		T_Hp = np.array([T_Hp])
+		T_Hm = np.array([T_Hm])
+
+	# H+ + H- → H(v) + H
+	# Yacora, H+ Mutual neutralization
+	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
+	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
+
+	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4:	# H, Hm, H2, H2p, ne, Te
+		Te = merge_Te_prof_multipulse_interp_crop_limited[0,:,0]
+		ne = merge_ne_prof_multipulse_interp_crop_limited[0,:,0]
+		T_Hp_temp = T_Hp[0,:,0]
+		T_Hm_temp = T_Hm[0,:,0]
+		nHp_ne_all_temp = nHp_ne_all[0,:,0]
+		population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te.flatten(),T_Hp_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nHp_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		reaction_rate = (ne.flatten()**2)*1e20*(population_coefficients*einstein_coeff_full_cumulative).T	# 	#/s * 1e-20
+		reaction_rate = reaction_rate.reshape((len(einstein_coeff_full_cumulative),*np.shape(T_Hp[0,:,0])))
+		reaction_rate = np.transpose([[reaction_rate.tolist()]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[2]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[0] ,(2,0,3,1,4))
+	else:
+		population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_Hp.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nHp_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited**2)*1e20*np.transpose((population_coefficients*einstein_coeff_full_cumulative).reshape((*np.shape(merge_Te_prof_multipulse_interp_crop_limited),len(einstein_coeff_full_cumulative))),(-1,*np.arange(len(merge_Te_prof_multipulse_interp_crop_limited.shape))))	# 	#/s * 1e-20
 	return reaction_rate	# m^-3/s *1e-20 / (nHm/ne) / (nHp/ne)
 
 def RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all):	# [eV, 10e20 #/m3]
@@ -1564,7 +1606,7 @@ def RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H
 	# H2+ + H- → H(v) + H2
 	# Yacora, H2+ Mutual neutralization
 	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
-	einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
+	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
 
 	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4:	# H, Hm, H2, H2p, ne, Te
 		Te = merge_Te_prof_multipulse_interp_crop_limited[0,0,0]
@@ -1574,11 +1616,45 @@ def RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H
 		T_H2p_temp = T_H2p[0,0,0]
 		nH2p_ne_all_temp = nH2p_ne_all[0,0,0]
 		population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te.flatten(),T_H2p_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nH2p_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
-		reaction_rate = (ne.flatten()**2)*1e20*np.sum(population_coefficients*einstein_coeff_Lyman,axis=-1)	# 	#/s * 1e-20
+		reaction_rate = (ne.flatten()**2)*1e20*np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1)	# 	#/s * 1e-20
 		reaction_rate = np.array([[[reaction_rate.tolist()]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[2]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[1]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[0])
 	else:
 		population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_H2p.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nH2p_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
-		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_Lyman,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+	return reaction_rate	# m^-3/s *1e-20 / (nHm/ne)
+
+def RR_H2p_Hm__Hn_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all):	# [eV, 10e20 #/m3]
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
+		print('error, Te and ne are different shapes')
+		exit()
+	flag_single_point=False
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)==():
+		flag_single_point=True
+		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
+		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
+		nH2p_ne_all = np.array([nHp_ne_all])
+		T_Hp = np.array([T_Hp])
+		T_Hm = np.array([T_Hm])
+		T_H2p = np.array([T_Hm])
+
+	# H2+ + H- → H(v) + H2
+	# Yacora, H2+ Mutual neutralization
+	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
+	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
+
+	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4:	# H, Hm, H2, H2p, ne, Te
+		Te = merge_Te_prof_multipulse_interp_crop_limited[0,0,0]
+		ne = merge_ne_prof_multipulse_interp_crop_limited[0,0,0]
+		T_Hp_temp = T_Hp[0,0,0]
+		T_Hm_temp = T_Hm[0,0,0]
+		T_H2p_temp = T_H2p[0,0,0]
+		nH2p_ne_all_temp = nH2p_ne_all[0,0,0]
+		population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te.flatten(),T_H2p_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nH2p_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		reaction_rate = (ne.flatten()**2)*1e20*(population_coefficients*einstein_coeff_full_cumulative).T	# 	#/s * 1e-20
+		reaction_rate = np.transpose([[[reaction_rate.tolist()]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[2]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[1]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[0], (3,0,1,2,4))
+	else:
+		population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_H2p.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nH2p_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
 	return reaction_rate	# m^-3/s *1e-20 / (nHm/ne)
 
 def RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
@@ -1646,9 +1722,9 @@ def RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H
 		# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
 		cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(baricenter_impact_energy)))* (1e-4* 1e20)	# multiplied 1e20
 		cross_section[np.logical_not(np.isfinite(cross_section))]=0
-		cross_section_min = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-0.1)).argmin()]
-		cross_section_max = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-20000)).argmin()]
-		cross_section[baricenter_impact_energy<0.1]=cross_section_min
+		# cross_section_min = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-0.1)).argmin()]	# I dont think that this is necessary because the polinomial fit seems behaving well (going to ~0 quite rapidly) for decreasing energy
+		cross_section_max = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-20000)).argmin()]	# it becomes flattish for high energies, so this is not a big mistake
+		# cross_section[baricenter_impact_energy<0.1]=cross_section_min
 		cross_section[baricenter_impact_energy>20000]=cross_section_max
 		cross_section[cross_section<0] = 0
 		reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s * 1e20
@@ -1690,9 +1766,9 @@ def RR_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,m
 		# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
 		cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(baricenter_impact_energy)))* (1e-4* 1e20)	# multiplied 1e20
 		cross_section[np.logical_not(np.isfinite(cross_section))]=0
-		cross_section_min = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-0.1)).argmin()]
-		cross_section_max = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-20000)).argmin()]
-		cross_section[baricenter_impact_energy<0.1]=cross_section_min
+		cross_section_min = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-0.01)).argmin()]	# instead of 0.1 as limit I use 0.01, because I need to look at low energies, but still the fit starts to misbehave for too low energies
+		cross_section_max = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-20000)).argmin()]	# this can be used because the cross section is quite flat
+		cross_section[baricenter_impact_energy<0.01]=cross_section_min
 		cross_section[baricenter_impact_energy>20000]=cross_section_max
 		cross_section[cross_section<0] = 0
 		reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s * 1e20
@@ -1745,7 +1821,7 @@ def RR_H_H_H__H_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_
 	return H_H_H__H_H2	# m^-3/s *1e-20 / (nH/ne)
 
 
-def RR_e_H2_X1Σg_x__e_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+def RR_e_H2v__e_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
 	# NOTE: I stop using this one and I use the one from Yacora instead
 	if False:
 		if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
@@ -1889,8 +1965,7 @@ def RR_e_H2_X1Σg_x__e_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge
 	elif True:
 		# from AMJUEL
 		# 4.10 ReactionReaction 2.2.5g e +H2 → e +H +H
-		# this RR is computed for TH2=Te, that is very not true.
-		# BUT this calculation is much simpler so I use it.
+		# this RR is computed for TH2=0.1eV, THp=Te, H2(v) in vibrational equilibrioum with Te
 		coefficients_all = [[-2.702372540584e+01,-3.152103191633e-03,5.990692171729e-03,-3.151252835426e-03,7.457309144890e-04,-9.238664007853e-05,6.222557542845e-06,-2.160024578659e-07,3.028755759836e-09],[1.081756417479e+01,-1.487216964825e-02,1.417396532101e-02,-4.689911797083e-03,7.180338663163e-04,-5.502798587526e-05,1.983066081752e-06,-2.207639762507e-08,-2.116339335271e-10],[-5.368872027676e+00,5.419787589654e-03,-1.747268613395e-02,9.532963297450e-03,-2.196705622859e-03,2.611447288152e-04,-1.695536960581e-05,5.737375510694e-07,-7.940900078995e-09],[1.340684229143e+00,1.058157580038e-02,-3.446019122786e-03,-7.032769815599e-04,4.427959286553e-04,-7.370484189164e-05,5.746786010618e-06,-2.182085196303e-07,3.264045809897e-09],[-1.561644923145e-01,-3.847438570333e-03,3.571477356851e-03,-1.103305795473e-03,1.476712517858e-04,-8.461162952132e-06,9.757111870171e-08,8.130014050833e-09,-2.234996157750e-10],[-1.444731533894e-04,-3.194532513126e-04,-2.987368098475e-04,2.092094838648e-04,-4.339352509941e-05,4.009328699469e-06,-1.762651912129e-07,3.357860444624e-09,-1.857322587267e-11],[2.117693926546e-03,2.679309814780e-04,-1.037559373832e-04,7.297053580368e-06,1.454171585421e-06,-2.251616910293e-07,9.191700327811e-09,-2.052366968228e-11,-3.567738654108e-12],[-2.143738340207e-04,-3.539232757385e-05,1.909399233821e-05,-3.819368125069e-06,3.754063159414e-07,-2.441872829462e-08,1.437490161488e-09,-6.172308568891e-11,1.104905484620e-12],[6.979740947331e-06,1.462031952352e-06,-8.858634506391e-07,2.099830142707e-07,-2.606862169776e-08,2.039813579349e-09,-1.113483084607e-10,3.859777100010e-12,-5.909099891913e-14]]
 		reaction_rate = np.exp(np.polynomial.polynomial.polyval2d(np.log(merge_Te_prof_multipulse_interp_crop_limited),np.log(merge_ne_prof_multipulse_interp_crop_limited*1e6),coefficients_all)) * (1e-6*1e20)	# m^3/s * 1e20
 		if not np.shape(np.array(merge_Te_prof_multipulse_interp_crop_limited))==():
@@ -1900,10 +1975,11 @@ def RR_e_H2_X1Σg_x__e_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge
 		else:
 			if merge_Te_prof_multipulse_interp_crop_limited<0.1:
 				reaction_rate = 0
-		e_H2_X1Σg_x__e_H_H = reaction_rate * (merge_ne_prof_multipulse_interp_crop_limited**2)
-		return e_H2_X1Σg_x__e_H_H	# m^-3/s *1e-20 / (nH2/ne)
+		e_H2v__e_H_H = reaction_rate * (merge_ne_prof_multipulse_interp_crop_limited**2)
+		return e_H2v__e_H_H	# m^-3/s *1e-20 / (nH2/ne)
 
 def RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+	# using this plus the one from Janev that has only the ground state gives me the whole picture
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 		print('error, Te and ne are different shapes')
 		exit()
@@ -1916,20 +1992,46 @@ def RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_pr
 	# H2 + e- → H(v) + H(g) + e-
 	# Yacora, Dissociation of H2
 	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
-	einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
+	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
 
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
 		population_coefficients = From_H2_pop_coeff_full_extra(np.array([Te,ne*1e20]).T,np.unique(excited_states_From_H2))
-		reaction_rate = (ne**2)*1e20*np.sum(population_coefficients*einstein_coeff_Lyman,axis=-1)	# 	#/s * 1e-20
+		reaction_rate = (ne**2)*1e20*np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1)	# 	#/s * 1e-20
 	else:
 		population_coefficients = From_H2_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_H2))
-		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_Lyman,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+	return reaction_rate	# m^-3/s *1e-20 / (nH2/ne)
+
+def RR_e_H2__e_Hn_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+	# using this plus the one from Janev that has only the ground state gives me the whole picture
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
+		print('error, Te and ne are different shapes')
+		exit()
+	flag_single_point=False
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)==():
+		flag_single_point=True
+		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
+		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
+
+	# H2 + e- → H(v) + H(g) + e-
+	# Yacora, Dissociation of H2
+	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
+	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
+
+	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
+		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
+		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
+		population_coefficients = From_H2_pop_coeff_full_extra(np.array([Te,ne*1e20]).T,np.unique(excited_states_From_H2))
+		reaction_rate = (ne**2)*1e20*(population_coefficients*einstein_coeff_full_cumulative)	# 	#/s * 1e-20
+	else:
+		population_coefficients = From_H2_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_H2))
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited**2)*1e20*np.transpose((population_coefficients*einstein_coeff_full_cumulative).reshape((*np.shape(merge_Te_prof_multipulse_interp_crop_limited),len(einstein_coeff_full_cumulative))),(-1,*np.arange(len(merge_Te_prof_multipulse_interp_crop_limited.shape))))	# 	#/s * 1e-20
 	return reaction_rate	# m^-3/s *1e-20 / (nH2/ne)
 
 
-def RR_e_H2N13Λσ__e_H2pX2Σg_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+def RR_e_H2__e_H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
 	if False:
 		if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 			print('error, Te and ne are different shapes')
@@ -1976,13 +2078,13 @@ def RR_e_H2N13Λσ__e_H2pX2Σg_e__r(merge_Te_prof_multipulse_interp_crop_limited
 		else:
 			if merge_Te_prof_multipulse_interp_crop_limited<0.5:
 				reaction_rate = 0
-		e_H2N13Λσ__e_H2pX2Σg_e = reaction_rate * (merge_ne_prof_multipulse_interp_crop_limited**2)
+		e_H2__e_H2p_e = reaction_rate * (merge_ne_prof_multipulse_interp_crop_limited**2)
 
-	return e_H2N13Λσ__e_H2pX2Σg_e	# m^-3/s *1e-20 / (nH2/ne)
+	return e_H2__e_H2p_e	# m^-3/s *1e-20 / (nH2/ne)
 	# checked up to here
 
 
-def RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+def RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
 	if False:
 		if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 			print('error, Te and ne are different shapes')
@@ -2030,81 +2132,97 @@ def RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merg
 		else:
 			if merge_Te_prof_multipulse_interp_crop_limited<1:
 				reaction_rate = 0
-		e_H2N13Λσ__Hp_H_2e = reaction_rate * (merge_ne_prof_multipulse_interp_crop_limited**2)
-	return e_H2N13Λσ__Hp_H_2e	# m^-3/s *1e-20 / (nH2/ne)
+		e_H2__Hp_H_2e = reaction_rate * (merge_ne_prof_multipulse_interp_crop_limited**2)
+	return e_H2__Hp_H_2e	# m^-3/s *1e-20 / (nH2/ne)
 
 
-def RR_e_H2X1Σg__Hm_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2):	# [eV, 10e20 #/m3]
+def RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2):	# [eV, 10e20 #/m3]
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 		print('error, Te and ne are different shapes')
 		exit()
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)==():
 		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
 		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
-	# reaction rate:
-	# e +H2(X1Σ+g ; v) →H-2 (X2Σ+u ) → H- +H(1s)
-	# e +H2(X1Σ+g ; v) →H−2 (B2Σ+g ) → H− +H(1s)
-	if True:
-		# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
-		# chapter 4.4.1
-		# I neglect what happens for different intermediate excited states
-		# electronic partition function approximated by g0=1
-		# I think I need to consider only the electron energy and not H2
-		T_e_temp = merge_Te_prof_multipulse_interp_crop_limited/eV_to_K	# K
-		T_e_temp[T_e_temp==0]=300	# ambient temperature
-		e_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_e_temp),200))).T*(2*boltzmann_constant_J*T_e_temp.T/electron_mass)**0.5).T
-		e_velocity_PDF = (4*np.pi*(e_velocity.T)**2 * gauss( e_velocity.T, (electron_mass/(2*np.pi*boltzmann_constant_J*T_e_temp.T))**(3/2) , (T_e_temp.T*boltzmann_constant_J/electron_mass)**0.5 ,0)).T
-		e_energy = 0.5 * e_velocity**2 * electron_mass * J_to_eV
-		e_H2X1Σg__Hm_H1s = np.zeros((15,*np.shape(merge_ne_prof_multipulse_interp_crop_limited)))
-		# coefficients: E th,v (eV ), σ v (10 -16 cm 2 )
-		coefficients_all = np.array([[3.72,3.22e-5],[3.21,5.18e-4],[2.72,4.16e-3],[2.26,2.20e-2],[1.83,1.22e-1],[1.43,4.53e-1],[1.36,1.51],[0.713,4.48],[0.397,10.1],[0.113,13.9],[-0.139,11.8],[-0.354,8.87],[-0.529,7.11],[-0.659,5],[-0.736,3.35]])
-		for v_index,coefficients in enumerate(coefficients_all):
-			cross_section =  coefficients[1]*np.exp(-(e_energy-np.abs(coefficients[0]))/0.45) * (1e-16 * 1e-4 * 1e20)	# m^2 * 1e20
-			cross_section[np.logical_not(np.isfinite(cross_section))]=0
-			cross_section[cross_section<0] = 0
-			reaction_rate = np.sum(cross_section*e_velocity*e_velocity_PDF,axis=-1)* np.mean(np.diff(e_velocity))		# m^3 / s * 1e20
-			if v_index==0:
-				e_H2X1Σg__Hm_H1s[v_index] += reaction_rate * (merge_ne_prof_multipulse_interp_crop_limited**2) * fractional_population_states_H2[0]
-			else:
-				e_H2X1Σg__Hm_H1s[v_index] += reaction_rate * (merge_ne_prof_multipulse_interp_crop_limited**2) * fractional_population_states_H2[v_index]
-	elif False:
-		# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
-		# chapter 4.4.1
-		# I neglect what happens for different intermediate excited states
-		# electronic partition function approximated by g0=1
-		# I think I need to consider only the electron energy and not H2
-		T_e_temp = merge_Te_prof_multipulse_interp_crop_limited/eV_to_K	# K
-		T_e_temp[T_e_temp==0]=300	# ambient temperature
-		e_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_e_temp),200))).T*(2*boltzmann_constant_J*T_e_temp.T/electron_mass)**0.5).T
-		e_velocity_PDF = (4*np.pi*(e_velocity.T)**2 * gauss( e_velocity.T, (electron_mass/(2*np.pi*boltzmann_constant_J*T_e_temp.T))**(3/2) , (T_e_temp.T*boltzmann_constant_J/electron_mass)**0.5 ,0)).T
-		e_energy = 0.5 * e_velocity**2 * electron_mass * J_to_eV
-		e_H2X1Σg__Hm_H1s = np.zeros((15,*np.shape(merge_ne_prof_multipulse_interp_crop_limited)))
-		# coefficients: E th,v (eV ), σ v (10 -16 cm 2 )
-		coefficients_all = np.array([[3.72,3.22e-5],[3.21,5.18e-4],[2.72,4.16e-3],[2.26,2.20e-2],[1.83,1.22e-1],[1.43,4.53e-1],[1.36,1.51],[0.713,4.48],[0.397,10.1],[0.113,13.9],[-0.139,11.8],[-0.354,8.87],[-0.529,7.11],[-0.659,5],[-0.736,3.35]])
-		# data from https://www-amdis.iaea.org/ALADDIN/
-		# this is for v>3
-		interpolation_ev = np.array([1.0000E-01,1.1775E-01,1.3865E-01,1.6326E-01,1.9224E-01,2.2636E-01,2.6655E-01,3.1386E-01,3.6957E-01,4.3517E-01,5.1241E-01,6.0336E-01,7.1046E-01,8.3657E-01,9.8506E-01,1.1599E+00,1.3658E+00,1.6082E+00,1.8937E+00,2.2298E+00,2.6256E+00,3.0917E+00,3.6405E+00,4.2866E+00,5.0475E+00,5.9435E+00,6.9985E+00,8.2407E+00,9.7035E+00,1.1426E+01,1.3454E+01,1.5842E+01,1.8654E+01,2.1965E+01,2.5864E+01,3.0455E+01,3.5861E+01,4.2226E+01,4.9721E+01,5.8547E+01,6.8939E+01,8.1176E+01,9.5585E+01,1.1255E+02,1.3253E+02,1.5605E+02,1.8375E+02,2.1637E+02,2.5478E+02,3.0000E+02])
-		interpolation_reaction_rate = np.array([1.5800E-08,1.8056E-08,2.0202E-08,2.2169E-08,2.3891E-08,2.5299E-08,2.6336E-08,2.6954E-08,2.7125E-08,2.6839E-08,2.6113E-08,2.4986E-08,2.3516E-08,2.1779E-08,1.9857E-08,1.7834E-08,1.5789E-08,1.3790E-08,1.1893E-08,1.0137E-08,8.5487E-09,7.1395E-09,5.9110E-09,4.8562E-09,3.9627E-09,3.2146E-09,2.5945E-09,2.0848E-09,1.6691E-09,1.3321E-09,1.0602E-09,8.4191E-10,6.6722E-10,5.2786E-10,4.1696E-10,3.2890E-10,2.5912E-10,2.0391E-10,1.6031E-10,1.2592E-10,9.8839E-11,7.7541E-11,6.0811E-11,4.7682E-11,3.7388E-11,2.9318E-11,2.2991E-11,1.8026E-11,1.4124E-11,1.1050E-11]) * (1e-6*1e20)		# m^3/s * 1e20
-		interpolator_reaction_rate = interpolate.interp1d(np.log(interpolation_ev), np.log(interpolation_reaction_rate),fill_value='extrapolate')
-		for v_index in range(5):
-			if v_index<=3:
-				cross_section =  coefficients_all[v_index][1]*np.exp(-(e_energy-np.abs(coefficients_all[v_index][0]))/0.45) * (1e-16 * 1e-4 * 1e20)	# m^2*1e20
+	if False:
+		# reaction rate:
+		# e +H2(X1Σ+g ; v) →H-2 (X2Σ+u ) → H- +H(1s)
+		# e +H2(X1Σ+g ; v) →H−2 (B2Σ+g ) → H− +H(1s)
+		if True:
+			# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
+			# chapter 4.4.1
+			# I neglect what happens for different intermediate excited states
+			# electronic partition function approximated by g0=1
+			# I think I need to consider only the electron energy and not H2
+			T_e_temp = merge_Te_prof_multipulse_interp_crop_limited/eV_to_K	# K
+			T_e_temp[T_e_temp==0]=300	# ambient temperature
+			e_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_e_temp),200))).T*(2*boltzmann_constant_J*T_e_temp.T/electron_mass)**0.5).T
+			e_velocity_PDF = (4*np.pi*(e_velocity.T)**2 * gauss( e_velocity.T, (electron_mass/(2*np.pi*boltzmann_constant_J*T_e_temp.T))**(3/2) , (T_e_temp.T*boltzmann_constant_J/electron_mass)**0.5 ,0)).T
+			e_energy = 0.5 * e_velocity**2 * electron_mass * J_to_eV
+			e_H2X1Σg__Hm_H1s = np.zeros((15,*np.shape(merge_ne_prof_multipulse_interp_crop_limited)))
+			# coefficients: E th,v (eV ), σ v (10 -16 cm 2 )
+			coefficients_all = np.array([[3.72,3.22e-5],[3.21,5.18e-4],[2.72,4.16e-3],[2.26,2.20e-2],[1.83,1.22e-1],[1.43,4.53e-1],[1.36,1.51],[0.713,4.48],[0.397,10.1],[0.113,13.9],[-0.139,11.8],[-0.354,8.87],[-0.529,7.11],[-0.659,5],[-0.736,3.35]])
+			for v_index,coefficients in enumerate(coefficients_all):
+				cross_section =  coefficients[1]*np.exp(-(e_energy-np.abs(coefficients[0]))/0.45) * (1e-16 * 1e-4 * 1e20)	# m^2 * 1e20
 				cross_section[np.logical_not(np.isfinite(cross_section))]=0
 				cross_section[cross_section<0] = 0
-				reaction_rate = np.sum(cross_section*e_velocity*e_velocity_PDF,axis=-1)* np.mean(np.diff(e_velocity))		# m^3 / s
-			else:
-				reaction_rate = np.zeros_like(merge_Te_prof_multipulse_interp_crop_limited)
-				reaction_rate[merge_Te_prof_multipulse_interp_crop_limited>0] = np.exp(interpolator_reaction_rate(np.log(merge_Te_prof_multipulse_interp_crop_limited[merge_Te_prof_multipulse_interp_crop_limited>0])))
-				reaction_rate[reaction_rate<0] = 0
-			if v_index==0:
-				e_H2X1Σg__Hm_H1s[v_index] += reaction_rate * merge_ne_prof_multipulse_interp_crop_limited * population_states_H2[0]
-			else:
-				e_H2X1Σg__Hm_H1s[v_index] += reaction_rate * merge_ne_prof_multipulse_interp_crop_limited * population_states_H2[v_index]
-	e_H2X1Σg__Hm_H1s = np.sum(e_H2X1Σg__Hm_H1s,axis=0)
-	return e_H2X1Σg__Hm_H1s	# m^-3/s *1e-20 / (nH2/ne)
+				reaction_rate = np.sum(cross_section*e_velocity*e_velocity_PDF,axis=-1)* np.mean(np.diff(e_velocity))		# m^3 / s * 1e20
+				if v_index==0:
+					e_H2X1Σg__Hm_H1s[v_index] += reaction_rate * (merge_ne_prof_multipulse_interp_crop_limited**2) * fractional_population_states_H2[0]
+				else:
+					e_H2X1Σg__Hm_H1s[v_index] += reaction_rate * (merge_ne_prof_multipulse_interp_crop_limited**2) * fractional_population_states_H2[v_index]
+		elif False:
+			# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
+			# chapter 4.4.1
+			# I neglect what happens for different intermediate excited states
+			# electronic partition function approximated by g0=1
+			# I think I need to consider only the electron energy and not H2
+			T_e_temp = merge_Te_prof_multipulse_interp_crop_limited/eV_to_K	# K
+			T_e_temp[T_e_temp==0]=300	# ambient temperature
+			e_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_e_temp),200))).T*(2*boltzmann_constant_J*T_e_temp.T/electron_mass)**0.5).T
+			e_velocity_PDF = (4*np.pi*(e_velocity.T)**2 * gauss( e_velocity.T, (electron_mass/(2*np.pi*boltzmann_constant_J*T_e_temp.T))**(3/2) , (T_e_temp.T*boltzmann_constant_J/electron_mass)**0.5 ,0)).T
+			e_energy = 0.5 * e_velocity**2 * electron_mass * J_to_eV
+			e_H2X1Σg__Hm_H1s = np.zeros((15,*np.shape(merge_ne_prof_multipulse_interp_crop_limited)))
+			# coefficients: E th,v (eV ), σ v (10 -16 cm 2 )
+			coefficients_all = np.array([[3.72,3.22e-5],[3.21,5.18e-4],[2.72,4.16e-3],[2.26,2.20e-2],[1.83,1.22e-1],[1.43,4.53e-1],[1.36,1.51],[0.713,4.48],[0.397,10.1],[0.113,13.9],[-0.139,11.8],[-0.354,8.87],[-0.529,7.11],[-0.659,5],[-0.736,3.35]])
+			# data from https://www-amdis.iaea.org/ALADDIN/
+			# this is for v>3
+			interpolation_ev = np.array([1.0000E-01,1.1775E-01,1.3865E-01,1.6326E-01,1.9224E-01,2.2636E-01,2.6655E-01,3.1386E-01,3.6957E-01,4.3517E-01,5.1241E-01,6.0336E-01,7.1046E-01,8.3657E-01,9.8506E-01,1.1599E+00,1.3658E+00,1.6082E+00,1.8937E+00,2.2298E+00,2.6256E+00,3.0917E+00,3.6405E+00,4.2866E+00,5.0475E+00,5.9435E+00,6.9985E+00,8.2407E+00,9.7035E+00,1.1426E+01,1.3454E+01,1.5842E+01,1.8654E+01,2.1965E+01,2.5864E+01,3.0455E+01,3.5861E+01,4.2226E+01,4.9721E+01,5.8547E+01,6.8939E+01,8.1176E+01,9.5585E+01,1.1255E+02,1.3253E+02,1.5605E+02,1.8375E+02,2.1637E+02,2.5478E+02,3.0000E+02])
+			interpolation_reaction_rate = np.array([1.5800E-08,1.8056E-08,2.0202E-08,2.2169E-08,2.3891E-08,2.5299E-08,2.6336E-08,2.6954E-08,2.7125E-08,2.6839E-08,2.6113E-08,2.4986E-08,2.3516E-08,2.1779E-08,1.9857E-08,1.7834E-08,1.5789E-08,1.3790E-08,1.1893E-08,1.0137E-08,8.5487E-09,7.1395E-09,5.9110E-09,4.8562E-09,3.9627E-09,3.2146E-09,2.5945E-09,2.0848E-09,1.6691E-09,1.3321E-09,1.0602E-09,8.4191E-10,6.6722E-10,5.2786E-10,4.1696E-10,3.2890E-10,2.5912E-10,2.0391E-10,1.6031E-10,1.2592E-10,9.8839E-11,7.7541E-11,6.0811E-11,4.7682E-11,3.7388E-11,2.9318E-11,2.2991E-11,1.8026E-11,1.4124E-11,1.1050E-11]) * (1e-6*1e20)		# m^3/s * 1e20
+			interpolator_reaction_rate = interpolate.interp1d(np.log(interpolation_ev), np.log(interpolation_reaction_rate),fill_value='extrapolate')
+			for v_index in range(5):
+				if v_index<=3:
+					cross_section =  coefficients_all[v_index][1]*np.exp(-(e_energy-np.abs(coefficients_all[v_index][0]))/0.45) * (1e-16 * 1e-4 * 1e20)	# m^2*1e20
+					cross_section[np.logical_not(np.isfinite(cross_section))]=0
+					cross_section[cross_section<0] = 0
+					reaction_rate = np.sum(cross_section*e_velocity*e_velocity_PDF,axis=-1)* np.mean(np.diff(e_velocity))		# m^3 / s
+				else:
+					reaction_rate = np.zeros_like(merge_Te_prof_multipulse_interp_crop_limited)
+					reaction_rate[merge_Te_prof_multipulse_interp_crop_limited>0] = np.exp(interpolator_reaction_rate(np.log(merge_Te_prof_multipulse_interp_crop_limited[merge_Te_prof_multipulse_interp_crop_limited>0])))
+					reaction_rate[reaction_rate<0] = 0
+				if v_index==0:
+					e_H2X1Σg__Hm_H1s[v_index] += reaction_rate * merge_ne_prof_multipulse_interp_crop_limited * population_states_H2[0]
+				else:
+					e_H2X1Σg__Hm_H1s[v_index] += reaction_rate * merge_ne_prof_multipulse_interp_crop_limited * population_states_H2[v_index]
+		e_H2X1Σg__Hm_H1s = np.sum(e_H2X1Σg__Hm_H1s,axis=0)
+	else:
+		# reaction rate:
+		# e +H2 → e +H2(v) →H +H−
+		# from AMJUEL
+		# 2.23 Reaction 2.2.17
+		# Effective dissociative attachment rate.
+		# Vibrational distribution pH2(v, Te) (vs. Te) taken into account. Only coupling to H2(v) electronic ground state.
+		# No population of H2(v) from electronically excited H∗2 , no radiative transitions between vibrational levels.
+		# Assume: incident H2 particle with 0.1 eV (for the rate taken to be for H2 at rest) and Ti = Te, hence: density independent vibrational distribution and effective rate, as well as neutral molecule energy independent rate.
+		coefficients_all = np.array([-2.278396332892e+01,8.634828071751e-01,-1.686619409809e+00,4.392288378207e-01,-4.393128035945e-01,2.640299048385e-01,-6.748601049114e-02,7.753368735736e-03,-3.328288267126e-04])
+		reaction_rate = np.exp(np.polyval(np.flip(coefficients_all,axis=0),np.log(merge_Te_prof_multipulse_interp_crop_limited))) * (1e-6*1e20)	# m^3/s * 1e20
+		e_H2__Hm_H = (merge_ne_prof_multipulse_interp_crop_limited**2) * reaction_rate
+	return e_H2__Hm_H	# m^-3/s *1e-20 / (nH2/ne)
+
+
 
 
 def RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2):	# [eV, 10e20 #/m3]
+	# using this together with the rate from Yacora, that does not include H* as product, gives me the whole picture
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 		print('error, Te and ne are different shapes')
 		exit()
@@ -2147,7 +2265,7 @@ def RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merg
 	return e_H2X1Σg__e_H1s_H1s	# m^-3/s *1e-20 / (nH2/ne)
 
 
-def RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+def RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 		print('error, Te and ne are different shapes')
 		exit()
@@ -2201,9 +2319,9 @@ def RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,
 		coefficients_all = [[-2.133104980000e+1,2.961905900000e-1,-2.876892150000e-2,-3.323271590000e-2,7.234558340000e-3,2.940230100000e-4,-8.005031610000e-5,0.000000000000e+0,0.000000000000e+0],[2.308461720000e+0,-1.064800460000e+0,2.310120950000e-1,6.809382980000e-2,-4.241210420000e-2,8.271152020000e-3,-6.275988100000e-4,0.000000000000e+0,0.000000000000e+0],[-2.026151710000e+0,1.142806740000e+0,-2.621943460000e-1,-6.877694430000e-2,4.012716970000e-2,-6.143307540000e-3,3.233852920000e-4,0.000000000000e+0,0.000000000000e+0],[1.648000330000e-1,-4.675786500000e-1,1.242261910000e-1,1.774294860000e-2,-1.157658350000e-2,1.311061300000e-3,-1.125957730000e-5,0.000000000000e+0,0.000000000000e+0],[1.651993580000e-1,5.766584690000e-2,-3.659922760000e-2,7.083346120000e-3,3.403537010000e-4,-2.752152790000e-4,2.225165850000e-5,0.000000000000e+0,0.000000000000e+0],[-2.598458070000e-2,1.349144350000e-2,8.871659800000e-3,-5.231162040000e-3,3.324241650000e-4,1.985585660000e-4,-2.813630850000e-5,0.000000000000e+0,0.000000000000e+0],[-4.330453510000e-3,-5.246404340000e-3,-1.636107180000e-3,1.242023150000e-3,-4.524774630000e-5,-6.369415730000e-5,8.679231940000e-6,0.000000000000e+0,0.000000000000e+0],[1.187405610000e-3,6.281964210000e-4,1.740000360000e-4,-1.337853740000e-4,6.784609160000e-7,8.284840740000e-6,-1.075372230000e-6,0.000000000000e+0,0.000000000000e+0],[-6.897815380000e-5,-2.667160440000e-5,-7.528040300000e-6,5.516687380000e-6,1.140207820000e-7,-3.837975410000e-7,4.793672020000e-8,0.000000000000e+0,0.000000000000e+0]]
 		reaction_rate = np.exp(np.polynomial.polynomial.polyval2d(np.log(3/2*T_H2*eV_to_K),np.log(T_Hp*eV_to_K),coefficients_all)) * (1e-6 * 1e20)	# m^2 *1e20, T_H2 to en cin H2 must be multiplied by 3/2
 		reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
-		Hp_H2X1Σg__H1s_H2pX2Σg = reaction_rate*(merge_ne_prof_multipulse_interp_crop_limited**2)
+		Hp_H2v__H_H2p = reaction_rate*(merge_ne_prof_multipulse_interp_crop_limited**2)
 		reaction_rate[reaction_rate<0]=0
-	return Hp_H2X1Σg__H1s_H2pX2Σg	# m^-3/s *1e-20 / (nH2/ne) / (nHp/ne)
+	return Hp_H2v__H_H2p	# m^-3/s *1e-20 / (nH2/ne) / (nHp/ne)
 
 def RR_Hp_H1s__H1s_Hp__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hp,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
@@ -2289,15 +2407,16 @@ def RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merg
 		# data from https://www-amdis.iaea.org/ALADDIN/
 		# no info on the vibrational state, I assume it is valid for all
 		interpolation_ev = np.array([2.3183E+00,3.2014E+00,4.4210E+00,6.1052E+00,8.4309E+00,1.1643E+01,1.6078E+01,2.2203E+01,3.0661E+01,4.2341E+01,5.8471E+01,8.0746E+01,1.1151E+02,1.5398E+02,2.1264E+02,2.9365E+02,4.0552E+02,5.6000E+02,7.7333E+02,1.0679E+03,1.4748E+03,2.0366E+03,2.8124E+03,3.8838E+03,5.3633E+03,7.4065E+03,1.0228E+04,1.4124E+04,1.9505E+04,2.6935E+04,3.7197E+04,5.1367E+04,7.0935E+04,9.7957E+04,1.3527E+05,1.8681E+05,2.5797E+05,3.5624E+05,4.9196E+05,6.7937E+05,9.3817E+05,1.2956E+06,1.7891E+06,2.4707E+06,3.4119E+06,4.7116E+06,6.5065E+06,8.9852E+06,1.2408E+07,1.7135E+07])	# eV
-		interpolation_cross_section = np.array([9.5063E-17,1.5011E-16,2.1010E-16,2.6792E-16,3.1859E-16,3.6021E-16,3.9345E-16,4.2053E-16,4.4425E-16,4.6737E-16,4.9230E-16,5.2099E-16,5.5498E-16,5.9540E-16,6.4289E-16,6.9763E-16,7.5912E-16,8.2608E-16,8.9629E-16,9.6648E-16,1.0324E-15,1.0892E-15,1.1314E-15,1.1542E-15,1.1537E-15,1.1280E-15,1.0773E-15,1.0041E-15,9.1306E-16,8.1021E-16,7.0205E-16,5.9470E-16,4.9323E-16,4.0127E-16,3.2091E-16,2.5285E-16,1.9672E-16,1.5146E-16,1.1562E-16,8.7634E-17,6.6012E-17,4.9419E-17,3.6733E-17,2.7048E-17,1.9657E-17,1.4021E-17,9.7429E-18,6.5296E-18,4.1680E-18,2.4949E-18]) * (1e-4 * 1e20)		# m^2 * 1e20
+		interpolation_cross_section = np.array([9.5063E-17,1.5011E-16,2.1010E-16,2.6792E-16,3.1859E-16,3.6021E-16,3.9345E-16,4.2053E-16,4.4425E-16,4.6737E-16,4.9230E-16,5.2099E-16,5.5498E-16,5.9540E-16,6.4289E-16,6.9763E-16,7.5912E-16,8.2608E-16,8.9629E-16,9.6648E-16,1.0324E-15,1.0892E-15,1.1314E-15,1.1542E-15,1.1537E-15,1.1280E-15,1.0773E-15,1.0041E-15,9.1306E-16,8.1021E-16,7.0205E-16,5.9470E-16,4.9323E-16,4.0127E-16,3.2091E-16,2.5285E-16,1.9672E-16,1.5146E-16,1.1562E-16,8.7634E-17,6.6012E-17,4.9419E-17,3.6733E-17,2.7048E-17,1.9657E-17,1.4021E-17,9.7429E-18,6.5296E-18,4.1680E-18,2.4949E-18]) * (1e-4)		# m^2
 		interpolator_cross_section = interpolate.interp1d(np.log(interpolation_ev), np.log(interpolation_cross_section),fill_value='extrapolate')
 		cross_section=np.exp(interpolator_cross_section(np.log(Hm_energy)))
 		cross_section[np.logical_not(np.isfinite(cross_section))]=0
 		cross_section[cross_section<0] = 0
+		cross_section[Hm_energy<1] = 0	# added to avoid to use a cross section of which I have no idea on the reliability below 2.3eV
 		reaction_rate = np.sum(cross_section*Hm_velocity*Hm_velocity_PDF,axis=-1)* np.mean(np.diff(Hm_velocity))		# m^3 / s
 		if not np.shape(np.array(merge_Te_prof_multipulse_interp_crop_limited))==():
 			reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
-		Hm_H2v__H_H2v_e = reaction_rate*(merge_ne_prof_multipulse_interp_crop_limited**2)
+		Hm_H2v__H_H2v_e = reaction_rate*(merge_ne_prof_multipulse_interp_crop_limited**2) * 1e20	# m^-3/s *1e-20
 	return Hm_H2v__H_H2v_e	# m^-3/s *1e-20 / (nHm/ne) / (nH2/ne)
 
 def RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2):	# [eV, 10e20 #/m3]
@@ -2359,7 +2478,7 @@ def RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,
 	H2v0_H2v__H2v0_2H1s = np.sum(H2v0_H2v__H2v0_2H1s,axis=0)
 	return H2v0_H2v__H2v0_2H1s	# m^-3/s *1e-20 / (nH2/ne) / (nH2/ne)
 
-def RR_e_H2p__XXX__e_Hp_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+def RR_e_H2p__XXX__e_Hp_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
 	if False:
 		if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 			print('error, Te and ne are different shapes')
@@ -2397,10 +2516,10 @@ def RR_e_H2p__XXX__e_Hp_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merg
 		reaction_rate = np.exp(np.polynomial.polynomial.polyval2d(np.log(merge_Te_prof_multipulse_interp_crop_limited),np.log(merge_ne_prof_multipulse_interp_crop_limited*1e6),coefficients_all)) * (1e-6 * 1e20)	# m^3/s * 1e20
 		if not np.shape(merge_Te_prof_multipulse_interp_crop_limited)==():
 			reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
-		e_H2p__XXX__e_Hp_H1s = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
-	return e_H2p__XXX__e_Hp_H1s	# m^-3/s *1e-20 / (nH2p/ne)
+		e_H2p__XXX__e_Hp_H = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
+	return e_H2p__XXX__e_Hp_H	# m^-3/s *1e-20 / (nH2p/ne)
 
-def RR_e_H2p__H1s_Hn2__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+def RR_e_H2p__H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
 	if False:
 		if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 			print('error, Te and ne are different shapes')
@@ -2436,8 +2555,8 @@ def RR_e_H2p__H1s_Hn2__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_p
 		reaction_rate = np.exp(np.polynomial.polynomial.polyval2d(np.log(merge_Te_prof_multipulse_interp_crop_limited),np.log(merge_ne_prof_multipulse_interp_crop_limited*1e6),coefficients_all)) * (1e-6 * 1e20)	# m^3/s * 1e20
 		if not np.shape(merge_Te_prof_multipulse_interp_crop_limited)==():
 			reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
-		e_H2p__H1s_Hn2 = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
-	return e_H2p__H1s_Hn2	# m^-3/s *1e-20 / (nH2p/ne)
+		e_H2p__H_H = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
+	return e_H2p__H_H	# m^-3/s *1e-20 / (nH2p/ne)
 
 def RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
 	# I can use this ONLY for H2+
@@ -2460,16 +2579,48 @@ def RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limite
 	# H2+ + e- → H(v) + H(g)
 	# Yacora, Dissociative recombination of H2+
 	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
-	einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
+	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
 
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
 		population_coefficients = From_H2p_pop_coeff_full_extra(np.array([Te,ne*1e20]).T,np.unique(excited_states_From_H2p))
-		reaction_rate = (ne**2)*1e20*np.sum(population_coefficients*einstein_coeff_Lyman,axis=-1)	# 	#/s * 1e-20
+		reaction_rate = (ne**2)*1e20*np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1)	# 	#/s * 1e-20
 	else:
 		population_coefficients = From_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_H2p))
-		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_Lyman,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+	return reaction_rate	# m^-3/s *1e-20 / (nH2p/ne)
+
+def RR_e_H2p__Hex_H__or__Hn_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+	# used ONLY to calculate the controbution to the potential energy differenciated by hydrogen excider state
+	# H2p and e can do:
+	# H2+ + e- → H(p) + H+ + e-
+	# H2+ + e- → H(p) + H(1)
+	# that have different products based on the path
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
+		print('error, Te and ne are different shapes')
+		exit()
+	flag_single_point=False
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)==():
+		flag_single_point=True
+		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
+		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
+
+	# H2+ + e- → H(v) + H+ + e-
+	# Yacora, Dissociation of H2+
+	# H2+ + e- → H(v) + H(g)
+	# Yacora, Dissociative recombination of H2+
+	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
+	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
+
+	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
+		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
+		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
+		population_coefficients = From_H2p_pop_coeff_full_extra(np.array([Te,ne*1e20]).T,np.unique(excited_states_From_H2p))
+		reaction_rate = (ne**2)*1e20*(population_coefficients*einstein_coeff_full_cumulative)	# 	#/s * 1e-20
+	else:
+		population_coefficients = From_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_H2p))
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited**2)*1e20*np.transpose((population_coefficients*einstein_coeff_full_cumulative).reshape((*np.shape(merge_Te_prof_multipulse_interp_crop_limited),len(einstein_coeff_full_cumulative))),(-1,*np.arange(len(merge_Te_prof_multipulse_interp_crop_limited.shape))))	# 	#/s * 1e-20
 	return reaction_rate	# m^-3/s *1e-20 / (nH2p/ne)
 
 
@@ -2888,16 +3039,311 @@ def RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_pr
 	else:
 		return effective_recombination_rates	# m^-3/s *1e-20 / (nHp/ne)
 
+class MyException(Exception):
+    pass
+
+def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision,require_strongest=False):
+	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
+		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
+		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
+		e_H__Hm = nH_ne_all_ground_state*RR_e_H__Hm__r(Te,ne)[0]	# m^-3/s *1e-20
+		e_H2__Hm_H = nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0]
+		e_Hm__e_H_e = nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0]
+		Hp_Hm__Hex_H = nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all)
+		Hp_Hm__Hn_H = nHm_ne_all*RR_Hp_Hm__Hn_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all)
+		Hp_Hm__H2p_e = nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0]
+		Hm_H1s__H1s_H1s_e = nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0]
+		Hm_H1s__H2_v_e = nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0]
+		Hm_H2v__H_H2v_e = nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0]
+		H2p_Hm__Hex_H2 = nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
+		H2p_Hm__Hn_H2 = nHm_ne_all*RR_H2p_Hm__Hn_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
+		e_H2__e_H2p_e = nH2_ne_all*RR_e_H2__e_H2p_e__r(Te,ne)[0]
+		Hp_H2v__H_H2p = nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0]
+		Hp_H_H__H_H2p = nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(Te,np.unique(T_Hp),np.unique(T_H),ne)[0]
+		H1s_H_2__H2p_e = nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(Te,np.unique(T_H),ne)
+		H1s_H_3__H2p_e = nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(Te,np.unique(T_H),ne)
+		H1s_H_4__H2p_e = nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(Te,np.unique(T_H),ne)
+		e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0]
+		e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne)[0]
+		# e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0]
+		e_H2p__Hex_H__or__Hn_Hp_e = np.transpose(np.transpose(np.array([nH2p_ne_all.tolist()]*len(np.unique(excited_states_From_H2p))), (*np.arange(1,1+len(nH2p_ne_all.shape)),0))*RR_e_H2p__Hex_H__or__Hn_Hp_e__r(Te,ne)[0], (-1,*np.arange(len(nH2p_ne_all.shape))))	# split among hydrogen excited states
+		e_H2p__e_Hp_Hp_e = nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0]
+		H1s_H2pv__Hp_H_H = nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0]
+		H2pvi_H2v0__Hp_H_H2v1 = nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0]
+		H2pvi_H2v0__H3p_H1s = nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0]
+		H2p_Hm__H2N13Λσ_H1s = nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0]
+		H2p_Hm__H3p_e = nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0]
+		Hp_H_H__Hp_H2 = nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__Hp_H2__r(Te,np.unique(T_H),np.unique(T_Hp),ne)[0]
+		H_H_H__H_H2 = (nH_ne_all**3)*RR_H_H_H__H_H2__r(Te,np.unique(T_H),ne)[0]
+		e_H2__e_Hex_H = nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0]
+		e_H2__e_Hn_H = np.transpose(np.transpose(np.array([nH2_ne_all.tolist()]*len(np.unique(excited_states_From_H2p))), (*np.arange(1,1+len(nH2_ne_all.shape)),0))*RR_e_H2__e_Hn_H__r(Te,ne)[0], (-1,*np.arange(len(nH2_ne_all.shape))))	# split among hydrogen excited states
+		e_H2__Hp_H_2e = nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0]
+		e_H2X1Σg__e_H1s_H1s = nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0]
+		Hp_H2X1Σg__Hp_H1s_H1s = nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0]
+		H1s_H2v__H1s_2H1s = nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0]
+		H2v0_H2v__H2v0_2H1s = (nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0]
+		recombination = nHp_ne_all*RR_recombination__r(Te,ne)[0]
+		ionisation = nH_ne_all*RR_ionisation__r(Te,ne)[0]
+	else:
+		e_H__Hm = nH_ne_all_ground_state*RR_e_H__Hm__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		e_H2__Hm_H = nH2_ne_all*RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
+		e_Hm__e_H_e = nHm_ne_all*RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		Hp_Hm__Hex_H = nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all)
+		Hp_Hm__Hn_H = nHm_ne_all*RR_Hp_Hm__Hn_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all)
+		Hp_Hm__H2p_e = nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited)
+		Hm_H1s__H1s_H1s_e = nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited)
+		Hm_H1s__H2_v_e = nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited)
+		Hm_H2v__H_H2v_e = nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merge_ne_prof_multipulse_interp_crop_limited)
+		H2p_Hm__Hex_H2 = nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
+		H2p_Hm__Hn_H2 = nHm_ne_all*RR_H2p_Hm__Hn_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
+		e_H2__e_H2p_e = nH2_ne_all*RR_e_H2__e_H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		Hp_H2v__H_H2p = nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited)
+		Hp_H_H__H_H2p = nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,merge_ne_prof_multipulse_interp_crop_limited)
+		H1s_H_2__H2p_e = nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited)
+		H1s_H_3__H2p_e = nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited)
+		H1s_H_4__H2p_e = nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited)
+		e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		# e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		e_H2p__Hex_H__or__Hn_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hn_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)	# split among hydrogen excited states
+		e_H2p__e_Hp_Hp_e = nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		H1s_H2pv__Hp_H_H = nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited)
+		H2pvi_H2v0__Hp_H_H2v1 = nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited)
+		H2pvi_H2v0__H3p_H1s = nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
+		H2p_Hm__H2N13Λσ_H1s = nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited)
+		H2p_Hm__H3p_e = nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited)
+		Hp_H_H__Hp_H2 = nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__Hp_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hp,merge_ne_prof_multipulse_interp_crop_limited)
+		H_H_H__H_H2 = (nH_ne_all**3)*RR_H_H_H__H_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited)
+		e_H2__e_Hex_H = nH2_ne_all*RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		e_H2__e_Hn_H = nH2_ne_all*RR_e_H2__e_Hn_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)	# split among hydrogen excited states
+		e_H2__Hp_H_2e = nH2_ne_all*RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		e_H2X1Σg__e_H1s_H1s = nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
+		Hp_H2X1Σg__Hp_H1s_H1s = nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
+		H1s_H2v__H1s_2H1s = nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
+		H2v0_H2v__H2v0_2H1s = (nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
+		recombination = nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		ionisation = nH_ne_all*RR_ionisation__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+
+		# I get e_H2p__H_H from e_H2p__Hex_H__or__Hex_Hp_e - e_H2p__XXX__e_Hp_H
+		# the e_H2p__H_H rate is already calculate in AMJUEL subtracting e_H2p__H+H*__H_H1s from mthe total e_H2p__H+H
+		# NO
+		# in e_H2p__Hex_H__or__Hex_Hp_e I neglect the higher excited states of H, because I obtained the Yacora coefficients up to n=12 (I think).
+		# Therefore I think it's best to use AMJUEL coefficients, that consider all excitation states
+		# e_H2p__Hex_H__or__Hex_Hp_e it's important for the power balance, AMJUEL stuff it is for the particle one.
+
+	e_H__Hm_sigma = molecular_precision*e_H__Hm*1e-10	# *1e-10 is only to avoid numerical overflow
+	e_H2__Hm_H_sigma = molecular_precision*e_H2__Hm_H*1e-10
+	e_Hm__e_H_e_sigma = molecular_precision*e_Hm__e_H_e*1e-10
+	Hp_Hm__Hex_H_sigma = molecular_precision*Hp_Hm__Hex_H*1e-10
+	Hp_Hm__H2p_e_sigma = molecular_precision*Hp_Hm__H2p_e*1e-10
+	Hm_H1s__H1s_H1s_e_sigma = molecular_precision*Hm_H1s__H1s_H1s_e*1e-10
+	Hm_H1s__H2_v_e_sigma = molecular_precision*Hm_H1s__H2_v_e*1e-10
+	Hm_H2v__H_H2v_e_sigma = molecular_precision*Hm_H2v__H_H2v_e*1e-10
+	H2p_Hm__Hex_H2_sigma = molecular_precision*H2p_Hm__Hex_H2*1e-10
+	e_H2__e_H2p_e_sigma = molecular_precision*e_H2__e_H2p_e*1e-10
+	Hp_H2v__H_H2p_sigma = molecular_precision*Hp_H2v__H_H2p*1e-10
+	Hp_H_H__H_H2p_sigma = molecular_precision*Hp_H_H__H_H2p*1e-10
+	H1s_H_2__H2p_e_sigma = molecular_precision*H1s_H_2__H2p_e*1e-10
+	H1s_H_3__H2p_e_sigma = molecular_precision*H1s_H_3__H2p_e*1e-10
+	H1s_H_4__H2p_e_sigma = molecular_precision*H1s_H_4__H2p_e*1e-10
+	e_H2p__XXX__e_Hp_H_sigma = molecular_precision*e_H2p__XXX__e_Hp_H*1e-10
+	# e_H2p__Hex_H__or__Hex_Hp_e_sigma = molecular_precision*e_H2p__Hex_H__or__Hex_Hp_e
+	e_H2p__e_Hp_Hp_e_sigma = molecular_precision*e_H2p__e_Hp_Hp_e*1e-10
+	H1s_H2pv__Hp_H_H_sigma = molecular_precision*H1s_H2pv__Hp_H_H*1e-10
+	H2pvi_H2v0__Hp_H_H2v1_sigma = molecular_precision*H2pvi_H2v0__Hp_H_H2v1*1e-10
+	H2pvi_H2v0__H3p_H1s_sigma = molecular_precision*H2pvi_H2v0__H3p_H1s*1e-10
+	H2p_Hm__H2N13Λσ_H1s_sigma = molecular_precision*H2p_Hm__H2N13Λσ_H1s*1e-10
+	H2p_Hm__H3p_e_sigma = molecular_precision*H2p_Hm__H3p_e*1e-10
+	Hp_H_H__Hp_H2_sigma = molecular_precision*Hp_H_H__Hp_H2*1e-10
+	H_H_H__H_H2_sigma = molecular_precision*H_H_H__H_H2*1e-10
+	e_H2__e_Hex_H_sigma = molecular_precision*e_H2__e_Hex_H*1e-10
+	e_H2__Hp_H_2e_sigma = molecular_precision*e_H2__Hp_H_2e*1e-10
+	e_H2X1Σg__e_H1s_H1s_sigma = molecular_precision*e_H2X1Σg__e_H1s_H1s*1e-10
+	Hp_H2X1Σg__Hp_H1s_H1s_sigma = molecular_precision*Hp_H2X1Σg__Hp_H1s_H1s*1e-10
+	H1s_H2v__H1s_2H1s_sigma = molecular_precision*H1s_H2v__H1s_2H1s*1e-10
+	H2v0_H2v__H2v0_2H1s_sigma = molecular_precision*H2v0_H2v__H2v0_2H1s*1e-10
+	e_H2p__H_H_sigma = molecular_precision*e_H2p__H_H*1e-10
+	recombination_sigma = atomic_precision*recombination*1e-10
+	ionisation_sigma = atomic_precision*ionisation*1e-10
+
+	rate_creation_Hm = e_H__Hm + e_H2__Hm_H	# m^-3/s *1e-20
+	rate_creation_Hm_sigma = (e_H__Hm_sigma**2 + e_H2__Hm_H_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	rate_destruction_Hm = e_Hm__e_H_e + Hp_Hm__Hex_H + Hp_Hm__H2p_e + Hm_H1s__H1s_H1s_e + Hm_H1s__H2_v_e + Hm_H2v__H_H2v_e + H2p_Hm__Hex_H2	# m^-3/s *1e-20
+	rate_destruction_Hm_sigma = (e_Hm__e_H_e_sigma**2 + Hp_Hm__Hex_H_sigma**2 + Hp_Hm__H2p_e_sigma**2 + Hm_H1s__H1s_H1s_e_sigma**2 + Hm_H1s__H2_v_e_sigma**2 + Hm_H2v__H_H2v_e_sigma**2 + H2p_Hm__Hex_H2_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	rate_creation_H2p = Hp_Hm__H2p_e + e_H2__e_H2p_e + Hp_H2v__H_H2p + Hp_H_H__H_H2p + H1s_H_2__H2p_e + H1s_H_3__H2p_e + H1s_H_4__H2p_e	# m^-3/s *1e-20
+	rate_creation_H2p_sigma = (Hp_Hm__H2p_e_sigma**2 + e_H2__e_H2p_e_sigma**2 + Hp_H2v__H_H2p_sigma**2 + Hp_H_H__H_H2p_sigma**2 + H1s_H_2__H2p_e_sigma**2 + H1s_H_3__H2p_e_sigma**2 + H1s_H_4__H2p_e_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	rate_destruction_H2p = e_H2p__XXX__e_Hp_H + e_H2p__H_H + e_H2p__e_Hp_Hp_e + H1s_H2pv__Hp_H_H + H2pvi_H2v0__Hp_H_H2v1 + H2pvi_H2v0__H3p_H1s + H2p_Hm__H2N13Λσ_H1s + H2p_Hm__H3p_e + H2p_Hm__Hex_H2	# m^-3/s *1e-20
+	rate_destruction_H2p_sigma = (e_H2p__XXX__e_Hp_H_sigma**2 + e_H2p__H_H_sigma**2 + e_H2p__e_Hp_Hp_e_sigma**2 + H1s_H2pv__Hp_H_H_sigma**2 + H2pvi_H2v0__Hp_H_H2v1_sigma**2 + H2pvi_H2v0__H3p_H1s_sigma**2 + H2p_Hm__H2N13Λσ_H1s_sigma**2 + H2p_Hm__H3p_e_sigma**2 + H2p_Hm__Hex_H2_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	rate_creation_H2 = Hm_H1s__H2_v_e + Hp_H_H__Hp_H2 + H_H_H__H_H2 + H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2	# m^-3/s *1e-20
+	rate_creation_H2_sigma = (Hm_H1s__H2_v_e_sigma**2 + Hp_H_H__Hp_H2_sigma**2 + H_H_H__H_H2_sigma**2 + H2p_Hm__H2N13Λσ_H1s_sigma**2 + H2p_Hm__Hex_H2_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	rate_destruction_H2 = e_H2__e_Hex_H + e_H2__e_H2p_e + e_H2__Hp_H_2e + e_H2__Hm_H + e_H2X1Σg__e_H1s_H1s + Hp_H2v__H_H2p + Hp_H2X1Σg__Hp_H1s_H1s + H1s_H2v__H1s_2H1s + H2v0_H2v__H2v0_2H1s + H2pvi_H2v0__H3p_H1s	# m^-3/s *1e-20
+	rate_destruction_H2_sigma = (e_H2__e_Hex_H_sigma**2 + e_H2__e_H2p_e_sigma**2 + e_H2__Hp_H_2e_sigma**2 + e_H2__Hm_H_sigma**2 + e_H2X1Σg__e_H1s_H1s_sigma**2 + Hp_H2v__H_H2p_sigma**2 + Hp_H2X1Σg__Hp_H1s_H1s_sigma**2 + H1s_H2v__H1s_2H1s_sigma**2 + H2v0_H2v__H2v0_2H1s_sigma**2 + H2pvi_H2v0__H3p_H1s_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	rate_creation_H = e_Hm__e_H_e + 2*Hp_Hm__Hex_H + Hm_H1s__H1s_H1s_e + 2*e_H2__e_Hex_H + e_H2__Hp_H_2e + e_H2__Hm_H + 2*e_H2X1Σg__e_H1s_H1s + Hp_H2v__H_H2p + Hp_H2X1Σg__Hp_H1s_H1s + Hm_H2v__H_H2v_e + 2*H1s_H2v__H1s_2H1s + 2*H2v0_H2v__H2v0_2H1s + e_H2p__XXX__e_Hp_H + H1s_H2pv__Hp_H_H + 2*e_H2p__H_H + H1s_H2pv__Hp_H_H + H2pvi_H2v0__Hp_H_H2v1 + H2pvi_H2v0__H3p_H1s + H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2 + recombination	# m^-3/s *1e-20
+	rate_creation_H_sigma = (e_Hm__e_H_e_sigma**2 + (2*Hp_Hm__Hex_H_sigma)**2 + Hm_H1s__H1s_H1s_e_sigma**2 + (2*e_H2__e_Hex_H_sigma)**2 + e_H2__Hp_H_2e_sigma**2 + e_H2__Hm_H_sigma**2 + (2*e_H2X1Σg__e_H1s_H1s_sigma)**2 + Hp_H2v__H_H2p_sigma**2 + Hp_H2X1Σg__Hp_H1s_H1s_sigma**2 + Hm_H2v__H_H2v_e_sigma**2 + (2*H1s_H2v__H1s_2H1s_sigma)**2 + (2*H2v0_H2v__H2v0_2H1s_sigma)**2 + e_H2p__XXX__e_Hp_H_sigma**2 + H1s_H2pv__Hp_H_H_sigma**2 + (2*e_H2p__H_H_sigma)**2 + H1s_H2pv__Hp_H_H_sigma**2 + H2pvi_H2v0__Hp_H_H2v1_sigma**2 + H2pvi_H2v0__H3p_H1s_sigma**2 + H2p_Hm__H2N13Λσ_H1s_sigma**2 + H2p_Hm__Hex_H2_sigma**2 + recombination_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	rate_destruction_H = Hm_H1s__H2_v_e + 2*Hp_H_H__Hp_H2 + 2*H_H_H__H_H2 + Hp_H_H__H_H2p + H1s_H_2__H2p_e + H1s_H_3__H2p_e + H1s_H_4__H2p_e + e_H__Hm + ionisation	# m^-3/s *1e-20
+	rate_destruction_H_sigma = (Hm_H1s__H2_v_e_sigma**2 + (2*Hp_H_H__Hp_H2_sigma)**2 + (2*H_H_H__H_H2_sigma)**2 + Hp_H_H__H_H2p_sigma**2 + H1s_H_2__H2p_e_sigma**2 + H1s_H_3__H2p_e_sigma**2 + H1s_H_4__H2p_e_sigma**2 + e_H__Hm_sigma**2 + ionisation_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	rate_creation_Hp = e_H2__Hp_H_2e + e_H2p__XXX__e_Hp_H + 2*e_H2p__e_Hp_Hp_e + H1s_H2pv__Hp_H_H + H2pvi_H2v0__Hp_H_H2v1 + ionisation	# m^-3/s *1e-20
+	rate_creation_Hp_sigma = (e_H2__Hp_H_2e_sigma**2 + e_H2p__XXX__e_Hp_H_sigma**2 + (2*e_H2p__e_Hp_Hp_e_sigma)**2 + H1s_H2pv__Hp_H_H_sigma**2 + H2pvi_H2v0__Hp_H_H2v1_sigma**2 + ionisation_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	rate_destruction_Hp = Hp_Hm__Hex_H + Hp_Hm__H2p_e + Hp_H2v__H_H2p + Hp_H_H__H_H2p + recombination	# m^-3/s *1e-20
+	rate_destruction_Hp_sigma = (Hp_Hm__Hex_H_sigma**2 + Hp_Hm__H2p_e_sigma**2 + Hp_H2v__H_H2p_sigma**2 + Hp_H_H__H_H2p_sigma**2 + recombination_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	rate_creation_e = e_Hm__e_H_e + Hp_Hm__H2p_e + Hm_H1s__H1s_H1s_e + Hm_H1s__H2_v_e + e_H2__e_H2p_e + e_H2__Hp_H_2e + Hm_H2v__H_H2v_e + e_H2p__e_Hp_Hp_e + H2p_Hm__H3p_e + H1s_H_2__H2p_e + H1s_H_3__H2p_e + H1s_H_4__H2p_e + ionisation	# m^-3/s *1e-20
+	rate_creation_e_sigma = (e_Hm__e_H_e_sigma**2 + Hp_Hm__H2p_e_sigma**2 + Hm_H1s__H1s_H1s_e_sigma**2 + Hm_H1s__H2_v_e_sigma**2 + e_H2__e_H2p_e_sigma**2 + e_H2__Hp_H_2e_sigma**2 + Hm_H2v__H_H2v_e_sigma**2 + e_H2p__e_Hp_Hp_e_sigma**2 + H2p_Hm__H3p_e_sigma**2 + H1s_H_2__H2p_e_sigma**2 + H1s_H_3__H2p_e_sigma**2 + H1s_H_4__H2p_e_sigma**2 + ionisation_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	rate_destruction_e = e_H__Hm + e_H2__Hm_H + e_H2p__H_H + recombination	# m^-3/s *1e-20
+	rate_destruction_e_sigma = (e_H__Hm_sigma**2 + e_H2__Hm_H_sigma**2 + e_H2p__H_H_sigma**2 + recombination_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+
+	# from Potential-energy curves for molecular hydrogen and its ions, Sharp, T. E., 1970
+	# positive energy is energy freed by the reaction of making the element.
+	H_potential_n1 = 13.6	# eV
+	H_potential_n2_x = H_potential_n1/(np.unique(excited_states_From_H2p)**2)	# eV
+	H_potential_n2 = H_potential_n2_x[0]	# eV
+	H_potential_n3 = H_potential_n2_x[1]	# eV
+	H_potential_n4 = H_potential_n2_x[2]	# eV
+	Hm_potential = H_potential_n1 + 0.754	# eV	 # H- is at a LOWER energetic level than H
+	H2_potential = 31.673	# eV
+	H2p_potential = H2_potential - 15.425	# eV
+	H3p_potential = H2_potential - 15.425 + H_potential_n1	# eV	# only guessed, I couldn't find a source
+	e_potential = 0
+	Hp_potential = 0
+	J_to_eV = 6.242e18
+
+
+	# this is energy PAID by the plasma
+	# plasma heating
+	e_H__Hm_energy = e_H__Hm * ((H_potential_n1 + e_potential) - (Hm_potential))	# eV m^-3/s *1e-20		# 1
+	# Hp_Hm__Hex_H_energy = Hp_Hm__Hex_H * ((Hm_potential + Hp_potential) - (2*H_potential_n1))		# 2
+	Hp_Hm__Hex_H_energy = np.sum(Hp_Hm__Hn_H.T * ((Hm_potential + Hp_potential) - (H_potential_n1 + H_potential_n2_x)),axis=-1).T		# 2
+	Hp_Hm__H2p_e_energy = Hp_Hm__H2p_e * ((Hm_potential + Hp_potential) - (H2p_potential + e_potential))		# 3
+	Hm_H1s__H2_v_e_energy = Hm_H1s__H2_v_e * ((H_potential_n1 + Hm_potential) - (H2_potential + e_potential))		# 4
+	# H2p_Hm__Hex_H2_energy = H2p_Hm__Hex_H2 * ((Hm_potential + H2p_potential) - (H_potential_n1 + H2_potential))		# 5
+	H2p_Hm__Hex_H2_energy = np.sum(H2p_Hm__Hn_H2.T * ((Hm_potential + H2p_potential) - (H_potential_n2_x + H2_potential)),axis=-1).T		# 5
+	Hp_H_H__H_H2p_energy = Hp_H_H__H_H2p * ((2*H_potential_n1 + Hp_potential) - (H_potential_n1 + H2p_potential))		# 6
+	H1s_H_3__H2p_e_energy = H1s_H_3__H2p_e * ((H_potential_n1 + H_potential_n3) - (H2p_potential + e_potential))		# 7
+	H1s_H_4__H2p_e_energy = H1s_H_4__H2p_e * ((H_potential_n1 + H_potential_n4) - (H2p_potential + e_potential))		# 8
+	H2pvi_H2v0__Hp_H_H2v1_energy = H2pvi_H2v0__Hp_H_H2v1 * ((H2_potential + H2p_potential) - (H_potential_n1 + H2_potential + H2p_potential))		# 9
+	H2p_Hm__H2N13Λσ_H1s_energy = H2p_Hm__H2N13Λσ_H1s * ((Hm_potential + H2p_potential) - (H_potential_n1 + H2_potential))		# 10
+	Hp_H_H__Hp_H2_energy = Hp_H_H__Hp_H2 * ((2*H_potential_n1 + Hp_potential) - (H2_potential + Hp_potential))		# 11
+	H_H_H__H_H2_energy = H_H_H__H_H2 * ((3*H_potential_n1) - (H_potential_n1 + H2_potential))		# 12
+	# e_H2p__H_H_energy = e_H2p__H_H * ((H2p_potential + e_potential) - (2*H_potential_n1))
+	recombination_energy = recombination * ((e_potential + Hp_potential) - (H_potential_n1))		# 13
+	# plasma cooling
+	e_H2__Hm_H_energy = e_H2__Hm_H * ((H2_potential + e_potential) - (H_potential_n1 + Hm_potential))		# 21
+	e_Hm__e_H_e_energy = e_Hm__e_H_e * ((Hm_potential + e_potential) - (H_potential_n1 + 2*e_potential))		# 22
+	Hm_H1s__H1s_H1s_e_energy = Hm_H1s__H1s_H1s_e * ((H_potential_n1 + Hm_potential) - (2*H_potential_n1 + e_potential))		# 23
+	Hm_H2v__H_H2v_e_energy = Hm_H2v__H_H2v_e * ((Hm_potential + H2_potential) - (H_potential_n1 + H2_potential + e_potential))		# 24
+	e_H2__e_H2p_e_energy = e_H2__e_H2p_e * ((H2_potential + e_potential) - (H2p_potential + 2*e_potential))		# 25
+	Hp_H2v__H_H2p_energy = Hp_H2v__H_H2p * ((H2_potential + Hp_potential) - (H_potential_n1 + H2p_potential))		# 26
+	H1s_H_2__H2p_e_energy = H1s_H_2__H2p_e * ((H_potential_n1 + H_potential_n2) - (H2p_potential + e_potential))		# 27
+	# e_H2p__XXX__e_Hp_H_energy = e_H2p__XXX__e_Hp_H * ((H2p_potential + e_potential) - (H_potential_n1 + e_potential + Hp_potential))
+	e_H2p__e_Hp_Hp_e_energy = e_H2p__e_Hp_Hp_e * ((H2p_potential + e_potential) - (2*e_potential + 2*Hp_potential))		# 28
+	H1s_H2pv__Hp_H_H_energy = H1s_H2pv__Hp_H_H * ((H_potential_n1 + H2p_potential) - (2*H_potential_n1 + Hp_potential))		# 29
+	H2pvi_H2v0__H3p_H1s_energy = H2pvi_H2v0__H3p_H1s * ((H2_potential + H2p_potential) - (H_potential_n1 + H3p_potential))		# 30
+	H2p_Hm__H3p_e_energy = H2p_Hm__H3p_e * ((Hm_potential + H2p_potential) - (H3p_potential + e_potential))		# 31
+	# e_H2__e_Hex_H_energy = e_H2__e_Hex_H * ((H2_potential + e_potential) - (2*H_potential_n1 + e_potential))		# 32
+	e_H2__e_Hex_H_energy = np.sum(e_H2__e_Hn_H.T * ((H2_potential + e_potential) - (H_potential_n1 + H_potential_n2_x + e_potential)),axis=-1).T		# 32
+	e_H2__Hp_H_2e_energy = e_H2__Hp_H_2e * ((H2_potential + e_potential) - (H_potential_n1 + 2*e_potential + Hp_potential))		# 33
+	e_H2X1Σg__e_H1s_H1s_energy = e_H2X1Σg__e_H1s_H1s * ((H2_potential + e_potential) - (2*H_potential_n1 + e_potential))		# 34
+	Hp_H2X1Σg__Hp_H1s_H1s_energy = Hp_H2X1Σg__Hp_H1s_H1s * ((H2_potential + Hp_potential) - (2*H_potential_n1 + Hp_potential))		# 35
+	H1s_H2v__H1s_2H1s_energy = H1s_H2v__H1s_2H1s * ((H_potential_n1 + H2_potential) - (3*H_potential_n1))		# 36
+	H2v0_H2v__H2v0_2H1s_energy = H2v0_H2v__H2v0_2H1s * ((2*H2_potential) - (2*H_potential_n1 + H2_potential))		# 37
+	ionisation_energy = ionisation * ((e_potential + H_potential_n1) - (2*e_potential + Hp_potential))		# 38
+
+	# part added to evaluate the potential energy difference from e_H2p__Hex_H__or__Hn_Hp_e divided by excitation state
+	e_H2__potential_consumed = np.min([e_H2p__XXX__e_Hp_H + e_H2p__H_H , np.sum(e_H2p__Hex_H__or__Hn_Hp_e,axis=0)],axis=0) * (H2p_potential + e_potential)
+	e__potential_created = e_H2p__XXX__e_Hp_H * (e_potential)
+	Hp__potential_created = e_H2p__XXX__e_Hp_H * (Hp_potential)
+	H_1__potential_created = e_H2p__H_H + np.max([e_H2p__XXX__e_Hp_H + e_H2p__H_H - np.sum(e_H2p__Hex_H__or__Hn_Hp_e,axis=0) , np.zeros_like(e_H2p__XXX__e_Hp_H)],axis=0) * (H_potential_n1)
+	H_2_n__potential_created = np.sum((e_H2p__Hex_H__or__Hn_Hp_e.T * H_potential_n2_x).T , axis=0)
+	e_H2p__Hex_H__or__Hex_Hp_e_energy = e_H2__potential_consumed - (e__potential_created + Hp__potential_created + H_1__potential_created + H_2_n__potential_created)
+	e_H2p__Hex_H__or__Hex_Hp_e_energy_heating = np.zeros_like(e_H2p__Hex_H__or__Hex_Hp_e_energy)
+	e_H2p__Hex_H__or__Hex_Hp_e_energy_heating[e_H2p__Hex_H__or__Hex_Hp_e_energy<0] = e_H2p__Hex_H__or__Hex_Hp_e_energy[e_H2p__Hex_H__or__Hex_Hp_e_energy<0]		# 14
+	e_H2p__Hex_H__or__Hex_Hp_e_energy_cooling = np.zeros_like(e_H2p__Hex_H__or__Hex_Hp_e_energy)
+	e_H2p__Hex_H__or__Hex_Hp_e_energy_cooling[e_H2p__Hex_H__or__Hex_Hp_e_energy>0] = e_H2p__Hex_H__or__Hex_Hp_e_energy[e_H2p__Hex_H__or__Hex_Hp_e_energy>0]		# 39
+
+	e_H__Hm_energy_sigma = molecular_precision*e_H__Hm_energy*1e-10	# *1e-10 is only to avoid numerical overflow
+	e_H2__Hm_H_energy_sigma = molecular_precision*e_H2__Hm_H_energy*1e-10
+	e_Hm__e_H_e_energy_sigma = molecular_precision*e_Hm__e_H_e_energy*1e-10
+	Hp_Hm__Hex_H_energy_sigma = molecular_precision*Hp_Hm__Hex_H_energy*1e-10
+	Hp_Hm__H2p_e_energy_sigma = molecular_precision*Hp_Hm__H2p_e_energy*1e-10
+	Hm_H1s__H1s_H1s_e_energy_sigma = molecular_precision*Hm_H1s__H1s_H1s_e_energy*1e-10
+	Hm_H1s__H2_v_e_energy_sigma = molecular_precision*Hm_H1s__H2_v_e_energy*1e-10
+	Hm_H2v__H_H2v_e_energy_sigma = molecular_precision*Hm_H2v__H_H2v_e_energy*1e-10
+	H2p_Hm__Hex_H2_energy_sigma = molecular_precision*H2p_Hm__Hex_H2_energy*1e-10
+	e_H2__e_H2p_e_energy_sigma = molecular_precision*e_H2__e_H2p_e_energy*1e-10
+	Hp_H2v__H_H2p_energy_sigma = molecular_precision*Hp_H2v__H_H2p_energy*1e-10
+	Hp_H_H__H_H2p_energy_sigma = molecular_precision*Hp_H_H__H_H2p_energy*1e-10
+	H1s_H_2__H2p_e_energy_sigma = molecular_precision*H1s_H_2__H2p_e_energy*1e-10
+	H1s_H_3__H2p_e_energy_sigma = molecular_precision*H1s_H_3__H2p_e_energy*1e-10
+	H1s_H_4__H2p_e_energy_sigma = molecular_precision*H1s_H_4__H2p_e_energy*1e-10
+	# e_H2p__XXX__e_Hp_H_energy_sigma = molecular_precision*e_H2p__XXX__e_Hp_H_energy*1e-10
+	e_H2p__e_Hp_Hp_e_energy_sigma = molecular_precision*e_H2p__e_Hp_Hp_e_energy*1e-10
+	H1s_H2pv__Hp_H_H_energy_sigma = molecular_precision*H1s_H2pv__Hp_H_H_energy*1e-10
+	H2pvi_H2v0__Hp_H_H2v1_energy_sigma = molecular_precision*H2pvi_H2v0__Hp_H_H2v1_energy*1e-10
+	H2pvi_H2v0__H3p_H1s_energy_sigma = molecular_precision*H2pvi_H2v0__H3p_H1s_energy*1e-10
+	H2p_Hm__H2N13Λσ_H1s_energy_sigma = molecular_precision*H2p_Hm__H2N13Λσ_H1s_energy*1e-10
+	H2p_Hm__H3p_e_energy_sigma = molecular_precision*H2p_Hm__H3p_e_energy*1e-10
+	Hp_H_H__Hp_H2_energy_sigma = molecular_precision*Hp_H_H__Hp_H2_energy*1e-10
+	H_H_H__H_H2_energy_sigma = molecular_precision*H_H_H__H_H2_energy*1e-10
+	e_H2__e_Hex_H_energy_sigma = molecular_precision*e_H2__e_Hex_H_energy*1e-10
+	e_H2__Hp_H_2e_energy_sigma = molecular_precision*e_H2__Hp_H_2e_energy*1e-10
+	e_H2X1Σg__e_H1s_H1s_energy_sigma = molecular_precision*e_H2X1Σg__e_H1s_H1s_energy*1e-10
+	Hp_H2X1Σg__Hp_H1s_H1s_energy_sigma = molecular_precision*Hp_H2X1Σg__Hp_H1s_H1s_energy*1e-10
+	H1s_H2v__H1s_2H1s_energy_sigma = molecular_precision*H1s_H2v__H1s_2H1s_energy*1e-10
+	H2v0_H2v__H2v0_2H1s_energy_sigma = molecular_precision*H2v0_H2v__H2v0_2H1s_energy*1e-10
+	# e_H2p__H_H_energy_sigma = molecular_precision*e_H2p__H_H_energy*1e-10
+	# recombination_energy_sigma = atomic_precision*recombination_energy
+	# ionisation_energy_sigma = atomic_precision*ionisation_energy
+	e_H2p__Hex_H__or__Hex_Hp_e_energy_heating_sigma = molecular_precision*e_H2p__Hex_H__or__Hex_Hp_e_energy_heating*1e-10
+	e_H2p__Hex_H__or__Hex_Hp_e_energy_cooling_sigma = molecular_precision*e_H2p__Hex_H__or__Hex_Hp_e_energy_cooling*1e-10
+
+	# power_potential_mol = (e_H__Hm_energy + e_H2__Hm_H_energy + e_Hm__e_H_e_energy + Hp_Hm__Hex_H_energy + Hp_Hm__H2p_e_energy + Hm_H1s__H1s_H1s_e_energy + Hm_H1s__H2_v_e_energy + Hm_H2v__H_H2v_e_energy + H2p_Hm__Hex_H2_energy + e_H2__e_H2p_e_energy + Hp_H2v__H_H2p_energy + Hp_H_H__H_H2p_energy + H1s_H_2__H2p_e_energy + H1s_H_3__H2p_e_energy + H1s_H_4__H2p_e_energy + e_H2p__XXX__e_Hp_H_energy + e_H2p__e_Hp_Hp_e_energy + H1s_H2pv__Hp_H_H_energy + H2pvi_H2v0__Hp_H_H2v1_energy + H2pvi_H2v0__H3p_H1s_energy + H2p_Hm__H2N13Λσ_H1s_energy + H2p_Hm__H3p_e_energy + Hp_H_H__Hp_H2_energy + H_H_H__H_H2_energy + e_H2__e_Hex_H_energy + e_H2__Hp_H_2e_energy + e_H2X1Σg__e_H1s_H1s_energy + Hp_H2X1Σg__Hp_H1s_H1s_energy + H1s_H2v__H1s_2H1s_energy + H2v0_H2v__H2v0_2H1s_energy + e_H2p__H_H_energy)	# eV m^-3/s *1e-20
+	power_potential_mol_plasma_heating = -(e_H__Hm_energy + Hp_Hm__Hex_H_energy + Hp_Hm__H2p_e_energy + Hm_H1s__H2_v_e_energy + H2p_Hm__Hex_H2_energy + Hp_H_H__H_H2p_energy + H1s_H_3__H2p_e_energy + H1s_H_4__H2p_e_energy + H2pvi_H2v0__Hp_H_H2v1_energy + H2p_Hm__H2N13Λσ_H1s_energy + Hp_H_H__Hp_H2_energy + H_H_H__H_H2_energy + e_H2p__Hex_H__or__Hex_Hp_e_energy_heating)	# eV m^-3/s *1e-20
+	power_potential_mol_plasma_cooling = e_H2__Hm_H_energy + e_Hm__e_H_e_energy + Hm_H1s__H1s_H1s_e_energy + Hm_H2v__H_H2v_e_energy + e_H2__e_H2p_e_energy + Hp_H2v__H_H2p_energy + H1s_H_2__H2p_e_energy + e_H2p__e_Hp_Hp_e_energy + H1s_H2pv__Hp_H_H_energy + H2pvi_H2v0__H3p_H1s_energy + H2p_Hm__H3p_e_energy + e_H2__e_Hex_H_energy + e_H2__Hp_H_2e_energy + e_H2X1Σg__e_H1s_H1s_energy + Hp_H2X1Σg__Hp_H1s_H1s_energy + H1s_H2v__H1s_2H1s_energy + H2v0_H2v__H2v0_2H1s_energy + e_H2p__Hex_H__or__Hex_Hp_e_energy_cooling	# eV m^-3/s *1e-20
+	power_potential_mol = power_potential_mol_plasma_cooling - power_potential_mol_plasma_heating	# eV m^-3/s *1e-20
+	power_potential_mol_sigma = (e_H__Hm_energy_sigma**2 + e_H2__Hm_H_energy_sigma**2 + e_Hm__e_H_e_energy_sigma**2 + Hp_Hm__Hex_H_energy_sigma**2 + Hp_Hm__H2p_e_energy_sigma**2 + Hm_H1s__H1s_H1s_e_energy_sigma**2 + Hm_H1s__H2_v_e_energy_sigma**2 + Hm_H2v__H_H2v_e_energy_sigma**2 + H2p_Hm__Hex_H2_energy_sigma**2 + e_H2__e_H2p_e_energy_sigma**2 + Hp_H2v__H_H2p_energy_sigma**2 + Hp_H_H__H_H2p_energy_sigma**2 + H1s_H_2__H2p_e_energy_sigma**2 + H1s_H_3__H2p_e_energy_sigma**2 + H1s_H_4__H2p_e_energy_sigma**2 + e_H2p__e_Hp_Hp_e_energy_sigma**2 + H1s_H2pv__Hp_H_H_energy_sigma**2 + H2pvi_H2v0__Hp_H_H2v1_energy_sigma**2 + H2pvi_H2v0__H3p_H1s_energy_sigma**2 + H2p_Hm__H2N13Λσ_H1s_energy_sigma**2 + H2p_Hm__H3p_e_energy_sigma**2 + Hp_H_H__Hp_H2_energy_sigma**2 + H_H_H__H_H2_energy_sigma**2 + e_H2__e_Hex_H_energy_sigma**2 + e_H2__Hp_H_2e_energy_sigma**2 + e_H2X1Σg__e_H1s_H1s_energy_sigma**2 + Hp_H2X1Σg__Hp_H1s_H1s_energy_sigma**2 + H1s_H2v__H1s_2H1s_energy_sigma**2 + H2v0_H2v__H2v0_2H1s_energy_sigma**2 + e_H2p__Hex_H__or__Hex_Hp_e_energy_heating_sigma**2 + e_H2p__Hex_H__or__Hex_Hp_e_energy_cooling_sigma**2)**0.5 *1e10	# eV m^-3/s *1e-20
+	power_potential_mol = power_potential_mol*(1e20/J_to_eV)	# J m^-3/s
+	power_potential_mol_plasma_heating = power_potential_mol_plasma_heating*(1e20/J_to_eV)	# J m^-3/s
+	power_potential_mol_plasma_cooling = power_potential_mol_plasma_cooling*(1e20/J_to_eV)	# J m^-3/s
+	power_potential_mol_sigma = power_potential_mol_sigma*(1e20/J_to_eV)	# J m^-3/s
+
+	if require_strongest:
+		strongest_potential_mol_plasma_heating = (np.array([e_H__Hm_energy , Hp_Hm__Hex_H_energy , Hp_Hm__H2p_e_energy , Hm_H1s__H2_v_e_energy , H2p_Hm__Hex_H2_energy , Hp_H_H__H_H2p_energy , H1s_H_3__H2p_e_energy , H1s_H_4__H2p_e_energy , H2pvi_H2v0__Hp_H_H2v1_energy , H2p_Hm__H2N13Λσ_H1s_energy , Hp_H_H__Hp_H2_energy , H_H_H__H_H2_energy , recombination_energy , e_H2p__Hex_H__or__Hex_Hp_e_energy_heating]).argmin(axis=0) + 1).astype(int)
+		strongest_potential_mol_plasma_cooling = (np.array([e_H2__Hm_H_energy , e_Hm__e_H_e_energy , Hm_H1s__H1s_H1s_e_energy , Hm_H2v__H_H2v_e_energy , e_H2__e_H2p_e_energy , Hp_H2v__H_H2p_energy , H1s_H_2__H2p_e_energy , e_H2p__e_Hp_Hp_e_energy , H1s_H2pv__Hp_H_H_energy , H2pvi_H2v0__H3p_H1s_energy , H2p_Hm__H3p_e_energy , e_H2__e_Hex_H_energy , e_H2__Hp_H_2e_energy , e_H2X1Σg__e_H1s_H1s_energy , Hp_H2X1Σg__Hp_H1s_H1s_energy , H1s_H2v__H1s_2H1s_energy , H2v0_H2v__H2v0_2H1s_energy , ionisation_energy , e_H2p__Hex_H__or__Hex_Hp_e_energy_cooling]).argmax(axis=0) + 21).astype(int)
+
+
+		temp = np.array([e_H__Hm , Hp_Hm__Hex_H , Hp_Hm__H2p_e , Hm_H1s__H2_v_e , H2p_Hm__Hex_H2 , Hp_H_H__H_H2p , H1s_H_3__H2p_e , H1s_H_4__H2p_e , H2pvi_H2v0__Hp_H_H2v1 , H2p_Hm__H2N13Λσ_H1s , Hp_H_H__Hp_H2 , H_H_H__H_H2 , recombination , e_H2p__XXX__e_Hp_H + e_H2p__H_H , e_H2__Hm_H , e_Hm__e_H_e , Hm_H1s__H1s_H1s_e , Hm_H2v__H_H2v_e , e_H2__e_H2p_e , Hp_H2v__H_H2p , H1s_H_2__H2p_e , e_H2p__e_Hp_Hp_e , H1s_H2pv__Hp_H_H , H2pvi_H2v0__H3p_H1s , H2p_Hm__H3p_e , e_H2__e_Hex_H , e_H2__Hp_H_2e , e_H2X1Σg__e_H1s_H1s , Hp_H2X1Σg__Hp_H1s_H1s , H1s_H2v__H1s_2H1s , H2v0_H2v__H2v0_2H1s , ionisation , e_H2p__XXX__e_Hp_H + e_H2p__H_H])
+		if np.nanmin(temp)<0:
+			raise MyException("there is a problem in the particle balance, some reaction rate is negative!")
+		strongest_rate = temp.argmax(axis=0).astype(int)
+		strongest_rate[strongest_rate>=14]+=7
+		strongest_rate[strongest_rate<14]+=1
+
+		strongest_rate_description = 'plasma HEATING index: ' + '1 '+'e_H__Hm' + ', 2'+' Hp_Hm__Hex_H' + ', 3'+' Hp_Hm__H2p_e' + ', 4'+' Hm_H1s__H2_v_e' + '\n5'+' H2p_Hm__Hex_H2' + ', 6'+' Hp_H_H__H_H2p' + ', 7'+' H1s_H_3__H2p_e' + ', 8'+' H1s_H_4__H2p_e' + ', 9'+' H2pvi_H2v0__Hp_H_H2v1' + '\n10'+' H2p_Hm__H2N13Λσ_H1s' + ', 11'+' Hp_H_H__Hp_H2' + ', 12'+' H_H_H__H_H2' + ', 13'+' recombination' + ', 14'+' e_H2p__XXX__e_Hp_H + e_H2p__H_H' + ', \n' + 'plasma COOLING index: ' + ', 21'+' e_H2__Hm_H' + ', 22'+' e_Hm__e_H_e' + ', 23'+' Hm_H1s__H1s_H1s_e' + ', 24'+' Hm_H2v__H_H2v_e' + '\n25'+' e_H2__e_H2p_e' + ', 26'+' Hp_H2v__H_H2p' + ', 27'+' H1s_H_2__H2p_e' + ', 28'+' e_H2p__e_Hp_Hp_e' + ', 29'+' H1s_H2pv__Hp_H_H' + '\n30'+' H2pvi_H2v0__H3p_H1s' + ', 31'+' H2p_Hm__H3p_e' + ', 32'+' e_H2__e_Hn_H' + ', 33'+' e_H2__Hp_H_2e' + ', 34'+' e_H2X1Σg__e_H1s_H1s' + '\n35'+' Hp_H2X1Σg__Hp_H1s_H1s' + ', 36'+' H1s_H2v__H1s_2H1s' + ', 37'+' H2v0_H2v__H2v0_2H1s' + ', 38'+' ionisation' + ', 39'+' e_H2p__XXX__e_Hp_H + e_H2p__H_H'
+
+		return rate_creation_Hm,rate_creation_Hm_sigma,rate_destruction_Hm,rate_destruction_Hm_sigma,rate_creation_H2p,rate_creation_H2p_sigma,rate_destruction_H2p,rate_destruction_H2p_sigma,rate_creation_H2,rate_creation_H2_sigma,rate_destruction_H2,rate_destruction_H2_sigma,rate_creation_H,rate_creation_H_sigma,rate_destruction_H,rate_destruction_H_sigma,rate_creation_Hp,rate_creation_Hp_sigma,rate_destruction_Hp,rate_destruction_Hp_sigma,rate_creation_e,rate_creation_e_sigma,rate_destruction_e,rate_destruction_e_sigma,power_potential_mol,power_potential_mol_sigma,power_potential_mol_plasma_heating,power_potential_mol_plasma_cooling,strongest_potential_mol_plasma_heating,strongest_potential_mol_plasma_cooling,strongest_rate,strongest_rate_description
+	else:
+		return rate_creation_Hm,rate_creation_Hm_sigma,rate_destruction_Hm,rate_destruction_Hm_sigma,rate_creation_H2p,rate_creation_H2p_sigma,rate_destruction_H2p,rate_destruction_H2p_sigma,rate_creation_H2,rate_creation_H2_sigma,rate_destruction_H2,rate_destruction_H2_sigma,rate_creation_H,rate_creation_H_sigma,rate_destruction_H,rate_destruction_H_sigma,rate_creation_Hp,rate_creation_Hp_sigma,rate_destruction_Hp,rate_destruction_Hp_sigma,rate_creation_e,rate_creation_e_sigma,rate_destruction_e,rate_destruction_e_sigma,power_potential_mol,power_potential_mol_sigma,power_potential_mol_plasma_heating,power_potential_mol_plasma_cooling
+
 
 def RR_rate_creation_Hm(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision):
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
-		out = nH_ne_all_ground_state*RR_e_H__Hm__r(Te,ne)[0] + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(Te,ne,fractional_population_states_H2)[0]
-		out_sigma = ((molecular_precision*nH_ne_all_ground_state*RR_e_H__Hm__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(Te,ne,fractional_population_states_H2)[0])**2)**0.5
+		out = nH_ne_all_ground_state*RR_e_H__Hm__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0]
+		out_sigma = ((molecular_precision*nH_ne_all_ground_state*RR_e_H__Hm__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0])**2)**0.5
 	else:
-		out = nH_ne_all_ground_state*RR_e_H__Hm__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
-		out_sigma = ((molecular_precision*nH_ne_all_ground_state*RR_e_H__Hm__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2)**0.5
+		out = nH_ne_all_ground_state*RR_e_H__Hm__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
+		out_sigma = ((molecular_precision*nH_ne_all_ground_state*RR_e_H__Hm__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2)**0.5
 	return out,out_sigma	# m^-3/s *1e-20
 
 def RR_rate_destruction_Hm(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision):
@@ -2917,23 +3363,23 @@ def RR_rate_creation_H2p(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
-		out = nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(Te,ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(Te,np.unique(T_Hp),np.unique(T_H),ne)[0] + nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(Te,np.unique(T_H),ne) + nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(Te,np.unique(T_H),ne) + nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(Te,np.unique(T_H),ne)
-		out_sigma = ((molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(Te,ne)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0])**2 + (molecular_precision*nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(Te,np.unique(T_Hp),np.unique(T_H),ne)[0])**2 + (molecular_precision*nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(Te,np.unique(T_H),ne))**2 + (molecular_precision*nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(Te,np.unique(T_H),ne))**2 + (molecular_precision*nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(Te,np.unique(T_H),ne))**2)**0.5
+		out = nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nH2_ne_all*RR_e_H2__e_H2p_e__r(Te,ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(Te,np.unique(T_Hp),np.unique(T_H),ne)[0] + nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(Te,np.unique(T_H),ne) + nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(Te,np.unique(T_H),ne) + nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(Te,np.unique(T_H),ne)
+		out_sigma = ((molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2__e_H2p_e__r(Te,ne)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0])**2 + (molecular_precision*nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(Te,np.unique(T_Hp),np.unique(T_H),ne)[0])**2 + (molecular_precision*nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(Te,np.unique(T_H),ne))**2 + (molecular_precision*nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(Te,np.unique(T_H),ne))**2 + (molecular_precision*nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(Te,np.unique(T_H),ne))**2)**0.5
 	else:
-		out = nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited)
-		out_sigma = ((molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
+		out = nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__e_H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited)
+		out_sigma = ((molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2__e_H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
 	return out,out_sigma	# m^-3/s *1e-20
 
 def RR_rate_destruction_H2p(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision):
-	# return nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(Te,ne)[0] + nH2p_ne_all*RR_e_H2p__H1s_Hn2__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0] + nH_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0] + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
+	# return nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0] + nH2p_ne_all*RR_e_H2p__H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0] + nH_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0] + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
-		out = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(Te,ne)[0] + nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0] + nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0] + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0] + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
-		out_sigma = ((molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(Te,ne)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0])**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2)**0.5
+		out = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0] + nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0] + nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0] + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0] + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
+		out_sigma = ((molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0])**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2)**0.5
 	else:
-		out = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
-		out_sigma = ((molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2)**0.5
+		out = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
+		out_sigma = ((molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2)**0.5
 	return out,out_sigma	# m^-3/s *1e-20
 
 def RR_rate_creation_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision):
@@ -2951,13 +3397,13 @@ def RR_rate_destruction_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
-		# return nH2_ne_all*RR_e_H2_X1Σg_x__e_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(Te,ne,fractional_population_states_H2)[0] + nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0] + nH_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0] + (nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0]
-		out = nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0] + nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(Te,ne,fractional_population_states_H2)[0] + nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0] + nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0] + (nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0]
-		out_sigma = ((molecular_precision*nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(Te,ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0])**2)**0.5
+		# return nH2_ne_all*RR_e_H2v__e_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__e_H2p_e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0] + nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0] + nH_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0] + (nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0]
+		out = nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__e_H2p_e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0] + nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0] + nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0] + (nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0]
+		out_sigma = ((molecular_precision*nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2__e_H2p_e__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0])**2)**0.5
 	else:
-		# return nH2_ne_all*RR_e_H2_X1Σg_x__e_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + (nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
-		out = nH2_ne_all*RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + (nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
-		out_sigma = ((molecular_precision*nH2_ne_all*RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2)**0.5
+		# return nH2_ne_all*RR_e_H2v__e_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__e_H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + (nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
+		out = nH2_ne_all*RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__e_H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + (nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2)
+		out_sigma = ((molecular_precision*nH2_ne_all*RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2__e_H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2)**0.5
 	return out,out_sigma	# m^-3/s *1e-20
 
 def RR_rate_creation_H3p(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision):
@@ -2967,13 +3413,13 @@ def RR_rate_creation_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
-		# return nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0] + 2*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_2_H__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + 2*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_3_H__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHm_ne_all*nH_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0] + 2*nH2_ne_all*RR_e_H2_X1Σg_x__e_H_H__r(Te,ne)[0] + nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(Te,ne,fractional_population_states_H2)[0] + 2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0] + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0] + 2*nH_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0] + 2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0] + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(Te,ne)[0] + 2*nH2p_ne_all*RR_e_H2p__H1s_Hn2__r(Te,ne)[0] + nH_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0] + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all) + nHp_ne_all*RR_recombination__r(Te,ne)[0]
-		out = nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0] + 2*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all) + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0] + 2*nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0] + nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(Te,ne,fractional_population_states_H2)[0] + 2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0] + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0] + 2*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0] + 2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0] + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(Te,ne)[0] + 2*nH2p_ne_all*RR_e_H2p__H1s_Hn2__r(Te,ne)[0] + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0] + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all) + nHp_ne_all*RR_recombination__r(Te,ne)[0]
-		out_sigma = ((molecular_precision*nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0])**2 + (molecular_precision*2*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all))**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*2*nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(Te,ne,fractional_population_states_H2)[0])**2 + (molecular_precision*2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0])**2 + (molecular_precision*2*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(Te,ne)[0])**2 + (molecular_precision*2*nH2p_ne_all*RR_e_H2p__H1s_Hn2__r(Te,ne)[0])**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(Te,ne)[0])**2)**0.5
+		# return nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0] + 2*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_2_H__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + 2*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_3_H__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHm_ne_all*nH_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0] + 2*nH2_ne_all*RR_e_H2v__e_H_H__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0] + 2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0] + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0] + 2*nH_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0] + 2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0] + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0] + 2*nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne)[0] + nH_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0] + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all) + nHp_ne_all*RR_recombination__r(Te,ne)[0]
+		out = nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0] + 2*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all) + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0] + 2*nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0] + 2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0] + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0] + 2*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0] + 2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0] + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0] + 2*nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne)[0] + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0] + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0] + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all) + nHp_ne_all*RR_recombination__r(Te,ne)[0]
+		out_sigma = ((molecular_precision*nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0])**2 + (molecular_precision*2*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all))**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*2*nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0])**2 + (molecular_precision*2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(Te,np.unique(T_Hp),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0])**2 + (molecular_precision*2*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(Te,np.unique(T_H),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(Te,np.unique(T_H2),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0])**2 + (molecular_precision*2*nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne)[0])**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(Te,ne)[0])**2)**0.5
 	else:
-		# return nHm_ne_all*RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + 2*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_2_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + 2*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_3_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nH_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH2_ne_all*RR_e_H2_X1Σg_x__e_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + 2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + 2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH2p_ne_all*RR_e_H2p__H1s_Hn2__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all) + nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
-		out = nHm_ne_all*RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + 2*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all) + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH2_ne_all*RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + 2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + 2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH2p_ne_all*RR_e_H2p__H1s_Hn2__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all) + nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
-		out_sigma = ((molecular_precision*nHm_ne_all*RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*2*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all))**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*2*nH2_ne_all*RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*2*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*2*nH2p_ne_all*RR_e_H2p__H1s_Hn2__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
+		# return nHm_ne_all*RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + 2*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_2_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + 2*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_3_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nH_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH2_ne_all*RR_e_H2v__e_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + 2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + 2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH2p_ne_all*RR_e_H2p__H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all) + nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		out = nHm_ne_all*RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + 2*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all) + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH2_ne_all*RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + 2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + 2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH2p_ne_all*RR_e_H2p__H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all) + nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		out_sigma = ((molecular_precision*nHm_ne_all*RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*2*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all))**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*2*nH2_ne_all*RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*2*nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*2*nH_ne_all_ground_state*nH2_ne_all*RR_H1s_H2v__H1s_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*2*(nH2_ne_all**2)*RR_H2v0_H2v__H2v0_2H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*2*nH2p_ne_all*RR_e_H2p__H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all))**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
 	return out,out_sigma	# m^-3/s *1e-20
 
 def RR_rate_destruction_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision):
@@ -2991,46 +3437,46 @@ def RR_rate_creation_Hp(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
-		out = nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(Te,ne)[0] + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(Te,ne)[0] + 2*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0] + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne) + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0] + nH_ne_all*RR_ionisation__r(Te,ne)[0]
-		out_sigma = ((molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(Te,ne)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(Te,ne)[0])**2 + (molecular_precision*2*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0])**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne))**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0])**2 + (atomic_precision*nH_ne_all*RR_ionisation__r(Te,ne)[0])**2)**0.5
+		out = nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0] + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0] + 2*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0] + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne) + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0] + nH_ne_all*RR_ionisation__r(Te,ne)[0]
+		out_sigma = ((molecular_precision*nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0])**2 + (molecular_precision*2*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0])**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne))**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0])**2 + (atomic_precision*nH_ne_all*RR_ionisation__r(Te,ne)[0])**2)**0.5
 	else:
-		out = nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all*RR_ionisation__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
-		out_sigma = ((molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*2*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (atomic_precision*nH_ne_all*RR_ionisation__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
+		out = nH2_ne_all*RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + 2*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all*RR_ionisation__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		out_sigma = ((molecular_precision*nH2_ne_all*RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*2*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (atomic_precision*nH_ne_all*RR_ionisation__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
 	return out,out_sigma	# m^-3/s *1e-20
 
 def RR_rate_destruction_Hp(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision):
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
-		# return nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_2_H__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_3_H__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*(nH_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(Te,np.unique(T_Hp),np.unique(T_H),ne)[0] + nHp_ne_all*RR_recombination__r(Te,ne)[0]
-		out = nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all) + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(Te,np.unique(T_Hp),np.unique(T_H),ne)[0] + nHp_ne_all*RR_recombination__r(Te,ne)[0]
-		out_sigma = ((molecular_precision*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all))**2 + (molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0])**2 + (molecular_precision*nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(Te,np.unique(T_Hp),np.unique(T_H),ne)[0])**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(Te,ne)[0])**2)**0.5
+		# return nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_2_H__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_3_H__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*(nH_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(Te,np.unique(T_Hp),np.unique(T_H),ne)[0] + nHp_ne_all*RR_recombination__r(Te,ne)[0]
+		out = nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all) + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0] + nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(Te,np.unique(T_Hp),np.unique(T_H),ne)[0] + nHp_ne_all*RR_recombination__r(Te,ne)[0]
+		out_sigma = ((molecular_precision*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all))**2 + (molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0])**2 + (molecular_precision*nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(Te,np.unique(T_Hp),np.unique(T_H),ne)[0])**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(Te,ne)[0])**2)**0.5
 	else:
-		# return nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_2_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_3_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*(nH_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
-		out = nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all) + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
-		out_sigma = ((molecular_precision*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all))**2 + (molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2X1Σg__H1s_H2pX2Σg__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
+		# return nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_2_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_3_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*(nH_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		out = nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all) + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		out_sigma = ((molecular_precision*nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all))**2 + (molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,T_Hp,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHp_ne_all*(nH_ne_all_ground_state**2)*RR_Hp_H_H__H_H2p__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
 	return out,out_sigma	# m^-3/s *1e-20
 
 def RR_rate_creation_e(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision):
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
-		out = nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0] + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0] + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0] + nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(Te,ne)[0] + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0] + nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(Te,np.unique(T_H),ne) + nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(Te,np.unique(T_H),ne) + nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(Te,np.unique(T_H),ne) + nH_ne_all*RR_ionisation__r(Te,ne)[0]
-		out_sigma = ((molecular_precision*nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0])**2 + (molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(Te,ne)[0])**2 + (molecular_precision*nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0])**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(Te,np.unique(T_H),ne))**2 + (molecular_precision*nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(Te,np.unique(T_H),ne))**2 + (molecular_precision*nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(Te,np.unique(T_H),ne))**2 + (atomic_precision*nH_ne_all*RR_ionisation__r(Te,ne)[0])**2)**0.5
+		out = nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0] + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0] + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0] + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0] + nH2_ne_all*RR_e_H2__e_H2p_e__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0] + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0] + nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0] + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0] + nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(Te,np.unique(T_H),ne) + nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(Te,np.unique(T_H),ne) + nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(Te,np.unique(T_H),ne) + nH_ne_all*RR_ionisation__r(Te,ne)[0]
+		out_sigma = ((molecular_precision*nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0])**2 + (molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2__e_H2p_e__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0])**2 + (molecular_precision*nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0])**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0])**2 + (molecular_precision*nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(Te,np.unique(T_H),ne))**2 + (molecular_precision*nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(Te,np.unique(T_H),ne))**2 + (molecular_precision*nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(Te,np.unique(T_H),ne))**2 + (atomic_precision*nH_ne_all*RR_ionisation__r(Te,ne)[0])**2)**0.5
 	else:
-		out = nHm_ne_all*RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all*RR_ionisation__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
-		out_sigma = ((molecular_precision*nHm_ne_all*RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__e_H2pX2Σg_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2N13Λσ__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (atomic_precision*nH_ne_all*RR_ionisation__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
+		out = nHm_ne_all*RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__e_H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited) + nH_ne_all*RR_ionisation__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		out_sigma = ((molecular_precision*nHm_ne_all*RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2__e_H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hp_H_2e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_2*nH_ne_all_ground_state*RR_H1s_H_2__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_3*nH_ne_all_ground_state*RR_H1s_H_3__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited))**2 + (atomic_precision*nH_ne_all*RR_ionisation__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
 	return out,out_sigma	# m^-3/s *1e-20
 
 def RR_rate_destruction_e(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision):
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
-		out = nH_ne_all_ground_state*RR_e_H__Hm__r(Te,ne)[0] + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(Te,ne,fractional_population_states_H2)[0] + nH2p_ne_all*RR_e_H2p__H1s_Hn2__r(Te,ne) + nHp_ne_all*RR_recombination__r(Te,ne)[0]
-		out_sigma = ((molecular_precision*nH_ne_all_ground_state*RR_e_H__Hm__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(Te,ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__H1s_Hn2__r(Te,ne))**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(Te,ne)[0])**2)**0.5
+		out = nH_ne_all_ground_state*RR_e_H__Hm__r(Te,ne)[0] + nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0] + nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne) + nHp_ne_all*RR_recombination__r(Te,ne)[0]
+		out_sigma = ((molecular_precision*nH_ne_all_ground_state*RR_e_H__Hm__r(Te,ne)[0])**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0])**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne))**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(Te,ne)[0])**2)**0.5
 	else:
-		out = nH_ne_all_ground_state*RR_e_H__Hm__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*RR_e_H2p__H1s_Hn2__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
-		out_sigma = ((molecular_precision*nH_ne_all_ground_state*RR_e_H__Hm__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2X1Σg__Hm_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__H1s_Hn2__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
+		out = nH_ne_all_ground_state*RR_e_H__Hm__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nH2_ne_all*RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2) + nH2p_ne_all*RR_e_H2p__H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited) + nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		out_sigma = ((molecular_precision*nH_ne_all_ground_state*RR_e_H__Hm__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (molecular_precision*nH2_ne_all*RR_e_H2__Hm_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited,fractional_population_states_H2))**2 + (molecular_precision*nH2p_ne_all*RR_e_H2p__H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2 + (atomic_precision*nHp_ne_all*RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited))**2)**0.5
 	return out,out_sigma	# m^-3/s *1e-20
 
 def calc_H_population_states(merge_ne_prof_multipulse_interp_crop_limited,merge_Te_prof_multipulse_interp_crop_limited,nH_ne_all,nHp_ne_all,T_Hp,T_Hm,T_H2p,nH2p_ne_all,nHm_ne_all,nH2_ne_all,nH3p_ne_all):
@@ -3206,22 +3652,6 @@ def calc_H2_fractional_population_states(T_H2):
 
 
 
-
-# # from AMJUEL
-# # Reaction 2.0c e +H2(v) →H2+ + ... , Ratio H2+ /H2
-# coefficients_all = [[-5.179118614571e+00,1.286086917362e-02,-1.247224025136e-02,4.533679343348e-03,-8.361635510932e-04,8.553044625491e-05,-4.999715093023e-06,1.571098567732e-07,-2.060813085997e-09],
-# [2.724390078109e+00,2.834163745797e-02,-3.864050364482e-02,1.706652099436e-02,-3.663038423578e-03,4.202564138138e-04,-2.662584829521e-05,8.795062121815e-07,-1.182222955604e-08],
-# [-4.386686018740e+00,-2.926061072808e-02,2.894878695435e-02,-9.446648200804e-03,1.518996106179e-03,-1.265997327758e-04,5.854399926391e-06,-1.486122653306e-07,1.689012430939e-09],
-# [2.264569877939e+00,1.815438259403e-02,-1.085596419844e-02,3.413100865417e-03,-5.414461499166e-04,5.583904028460e-05,-3.494312204501e-06,1.176151828469e-07,-1.631239647294e-09],
-# [7.274238145138e-02,-8.711469240181e-03,1.228482582919e-03,-2.783712092681e-04,4.118527168273e-05,-1.416596336268e-05,1.434270108351e-06,-5.449461807998e-08,6.856555143001e-10],
-# [-3.332379782334e-01,3.737790746246e-03,-2.689540529741e-04,-7.626065770945e-05,3.568228589947e-05,-1.406315371249e-06,-3.197342970575e-08,-4.539301068809e-10,9.975543797298e-11],
-# [9.526327139861e-02,-1.046333532366e-03,2.549358736065e-04,-3.059560467433e-05,-3.460893323989e-06,4.064186524949e-07,-3.342848157445e-08,2.469622408760e-09,-6.675572336239e-11],
-# [-1.096455316607e-02,1.457992401832e-04,-5.912048929304e-05,1.303239138604e-05,-1.086383020673e-06,6.161003040376e-08,2.239916154599e-10,-2.455363614572e-10,7.954115052237e-12],
-# [4.636081955869e-04,-7.621573981592e-06,3.973565261183e-06,-1.046764002685e-06,1.291713097220e-07,-9.932517910526e-09,3.412487324650e-10,1.748563436447e-12,-2.514652180013e-13]]
-# e_H2v__H2p_any___n_H2p_n_H2 = np.exp(np.polynomial.polynomial.polyval2d(np.log(merge_ne_prof_multipulse_interp_crop_limited*1e6),np.log(merge_Te_prof_multipulse_interp_crop_limited),coefficients_all)) * 1e-6	# m^2
-# reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
-# e_H2_X1Σg_x__e_H_H = reaction_rate * merge_ne_prof_multipulse_interp_crop_limited*1e20 * merge_ne_prof_multipulse_interp_crop_limited*nH2_ne_all
-
 def H2p_H2_v_ratio_AMJUEL(ne,Te):
 	# from AMJUEL
 	# 12.59 Reaction 2.0c e +H2(v) →H+ 2 + ... , Ratio H+ 2 /H2
@@ -3264,7 +3694,8 @@ elif True:
 	# temp_max = np.exp(-fit[1]/(2*fit[0]))	# this is to avoid the density to decrease with decrease temperature passed the peak
 	# temp2[temp<temp_max]=temp2.max()
 	nH2_ne_fit_from_simulations = interpolate.interp1d(temp,temp2,fill_value='extrapolate')
-	limit_H_up = interpolate.interp1d(np.log([0.1,4]),np.log([20,20]),fill_value='extrapolate')
+	limit_H_up = interpolate.interp1d(np.log([0.1,4]),np.log([1e5,1e5]),fill_value='extrapolate')
+	# limit_H_up = interpolate.interp1d(np.log([0.1,4]),np.log([1000,1000]),fill_value='extrapolate')
 	limit_H_down = interpolate.interp1d(np.log([1e-5,0.1,0.5,2,4]),np.log([0.2,0.2,0.006,0.003,0.003]),fill_value='extrapolate')
 	nH_ne_fit_from_simulations = lambda Te: np.nanmax([np.exp(np.polyval([-0.15109974,-0.98294073,-2.03131663],np.log(Te))),np.exp(limit_H_down(np.log(Te)))*5],axis=0)
 TH_fit_from_simulations = interpolate.interp1d(np.log([1e-5,0.1,3]),np.log([0.99e-5,0.099,1.4]),fill_value='extrapolate')
@@ -3382,15 +3813,21 @@ if False:	# this seems very bad, in the sense that for low Te the concentration 
 	# nH2_ne_fit_from_simulations = lambda Te: np.exp(np.polyval([0.22332556,-1.33762069,-1.11738361],np.log(Te)))
 	nH2_ne_fit_from_simulations = lambda Te: np.exp(np.polyval([-0.38781087,-1.48232135,0.23416186],np.log(Te)))
 
+# 2021/04/23 lowering the lower bound to avoid the best point being the lowest
 def nH2_ne_values_Te_2(Te,H2_steps):
 	H2_steps = H2_steps//2*2+1
-	max_nH2_ne = nH2_ne_fit_from_simulations(Te)*40
-	min_nH2_ne = nH2_ne_fit_from_simulations(Te)/10
-	centre_nH2_ne = nH2_ne_fit_from_simulations(Te)
-	H2_left_interval = np.logspace(np.log10(min_nH2_ne),np.log10(centre_nH2_ne),num=(H2_steps+1)/2)[:-1]
-	H2_right_interval = np.logspace(np.log10(centre_nH2_ne),np.log10(max_nH2_ne),num=(H2_steps+1)/2)[1:]
-	nH2_ne_values = np.array(H2_left_interval.tolist() + [centre_nH2_ne] + H2_right_interval.tolist())
+	max_nH2_ne = nH2_ne_fit_from_simulations(Te)*1e-3
+	min_nH2_ne = nH2_ne_fit_from_simulations(Te)*1e-12
+	nH2_ne_values = np.logspace(np.log10(min_nH2_ne),np.log10(max_nH2_ne),num=(H2_steps))
 	return nH2_ne_values
+
+# 2021/04/23 my regime is very far from SS, so I maybe should use a flat probability
+def nH2_ne_log_probs_Te_2(Te,nH2_ne_values):
+	nH2_ne_log_probs = np.ones_like(nH2_ne_values)
+	return nH2_ne_log_probs
+def nH_ne_log_probs_Te_2(Te,nH_ne_values):
+	nH_ne_log_probs = np.ones_like(nH_ne_values)
+	return nH_ne_log_probs
 
 
 # 2020/07/13 at the moment these are not used	# 2020/07/15 let's try to
@@ -3456,12 +3893,12 @@ def nH2p_nH2_values_Te_ne(Te,ne,to_find_steps,H2_suppression=False):
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
 		# nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te))))),num=to_find_steps)
-		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-8,1e-3*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e0,1e3*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
+		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-3,1e-1*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e3,1e7*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
 	else:
 		temp=[]
 		for i in range(len(Te)):
 			# temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i]))))),num=to_find_steps))
-			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-8,1e-3*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e0,1e3*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps))
+			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-3,1e-1*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e3,1e7*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps))
 		nH2p_nH2_values = np.array(temp).T
 	return nH2p_nH2_values
 def nH2p_nH2_values_Te_ne_expanded(Te,ne,to_find_steps,how_expand_nH2p_nH2_indexes,H2_suppression=False):
@@ -3470,7 +3907,7 @@ def nH2p_nH2_values_Te_ne_expanded(Te,ne,to_find_steps,how_expand_nH2p_nH2_index
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
 		# nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te))))),num=to_find_steps)
-		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-8,1e-3*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e0,1e3*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
+		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-3,1e-1*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e3,1e7*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
 		nH2p_nH2_additional_values=[]
 		for i in range(to_find_steps-1):
 			if how_expand_nH2p_nH2_indexes[i]!=0:
@@ -3480,7 +3917,7 @@ def nH2p_nH2_values_Te_ne_expanded(Te,ne,to_find_steps,how_expand_nH2p_nH2_index
 		temp=[]
 		for i in range(len(Te)):
 			# nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i]))))),num=to_find_steps)
-			nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-8,1e-3*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e0,1e3*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps)
+			nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-3,1e-1*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e3,1e7*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps)
 			nH2p_nH2_additional_values=[]
 			for i in range(to_find_steps-1):
 				if how_expand_nH2p_nH2_indexes[i]!=0:
@@ -3493,11 +3930,11 @@ def nHm_nH2_values_Te(Te,to_find_steps,H2_suppression=False):
 	if H2_suppression:
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
-		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-6,1e-3*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
+		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-5,1e-3*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e2,1e7*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
 	else:
 		temp=[]
 		for i in range(len(Te)):
-			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-6,1e-3*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps))
+			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-5,1e-3*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e2,1e7*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps))
 		nHm_nH2_values = np.array(temp).T
 	return nHm_nH2_values
 def nHm_nH2_values_Te_expanded(Te,to_find_steps,how_expand_nHm_nH2_indexes,H2_suppression=False):
@@ -3505,7 +3942,7 @@ def nHm_nH2_values_Te_expanded(Te,to_find_steps,how_expand_nHm_nH2_indexes,H2_su
 	if H2_suppression:
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
-		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-6,1e-3*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
+		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-5,1e-3*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e2,1e7*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
 		nHm_nH2_additional_values = []
 		for i in range(to_find_steps-1):
 			if how_expand_nHm_nH2_indexes[i]!=0:
@@ -3514,7 +3951,7 @@ def nHm_nH2_values_Te_expanded(Te,to_find_steps,how_expand_nHm_nH2_indexes,H2_su
 	else:
 		temp=[]
 		for i in range(len(Te)):
-			nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-6,1e-3*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps)
+			nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-5,1e-3*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e2,1e7*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps)
 			nHm_nH2_additional_values=[]
 			for i in range(to_find_steps-1):
 				if how_expand_nHm_nH2_indexes[i]!=0:
