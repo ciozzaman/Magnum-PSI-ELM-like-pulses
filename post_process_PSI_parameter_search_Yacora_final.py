@@ -143,7 +143,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 	do_only_one_loop = False
 	include_particles_limitation = True
 	H2_suppression = False
-	molecular_particle_balance_enabled = False
+	molecular_particle_balance_enabled = True	# when the proper bounds for the density priors are used there is not much difference with or without this
 
 	externally_provided_TS_Te_steps = 11
 	externally_provided_TS_Te_steps_increase = 5
@@ -158,7 +158,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 		externally_provided_H2p_steps = 11
 		externally_provided_Hn_steps = 9
 		externally_provided_H_steps = 11
-		externally_provided_H2_steps = 15
+		externally_provided_H2_steps = 13
 
 	# merge_ID_target = 85
 
@@ -340,7 +340,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 			print('minimum molecular fraction to give significant effect on emission taken as '+str(min_mol_fraction_ext))
 			collect_power_PDF = True
 			print('Will power PDF be collected? '+str(collect_power_PDF))
-			print('Will particles banace be included? '+str(include_particles_limitation))
+			print('Will particles balance be included? '+str(include_particles_limitation))
 			timeout_bayesian_search = 60*60	# time in seconds
 			print('Timeout for bayesian search of a single point %.3g min' %(timeout_bayesian_search/60))
 			power_molecular_precision,power_atomic_precision,power_budget_precision = 0.5,0.2,0.5
@@ -1532,6 +1532,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								steps_left = np.ceil((TS_Te_steps)/2)
 								steps_right = np.ceil(TS_Te_steps/2)
 								Te_values = [*np.linspace(min_Te,merge_Te_prof_multipulse_interp_crop_limited_restrict,num=steps_left)[:-1],*np.linspace(merge_Te_prof_multipulse_interp_crop_limited_restrict,max_Te,num=steps_right)]
+								if np.diff(np.sort(Te_values))[0]>0.3:
+									Te_values = list(Te_values) + [np.mean(np.sort(Te_values)[:2])]
 							# if pass_index<=1:
 							# 	Te_values[Te_values<0.1]=0.1
 							# else:
@@ -1679,17 +1681,22 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								record_nH_ne_values = []
 								record_nH_ne_log_prob = []
 								for i_Te_for_nH_ne,Te_for_nH_ne in enumerate(Te_values_array):
-									nH_ne_values = nH_ne_values_Te(Te_for_nH_ne,H_steps)
+									# nH_ne_values = nH_ne_values_Te(Te_for_nH_ne,H_steps)
+									nH_ne_values = nH_ne_values_Te_3(Te_for_nH_ne,H_steps,ne_values_array,max_H2_density_available)
 									record_nH_ne_values.append(nH_ne_values)
 									# nH_ne_log_probs = nH_ne_log_probs_Te(Te_for_nH_ne,nH_ne_values)
-									nH_ne_log_probs = nH_ne_log_probs_Te_2(Te_for_nH_ne,nH_ne_values)
+									# nH_ne_log_probs = nH_ne_log_probs_Te_2(Te_for_nH_ne,nH_ne_values)
+									nH_ne_log_probs = nH_ne_log_probs_Te_3(Te_for_nH_ne,nH_ne_values)
 									record_nH_ne_log_prob.append(nH_ne_log_probs)
-								total_nH_ne_value = multiplicative_factor*np.array([[record_nH_ne_values]*TS_ne_steps]*len(n_list_all)).T	# H, Te, ne, lines
+								# total_nH_ne_value = multiplicative_factor*np.array([[record_nH_ne_values]*TS_ne_steps]*len(n_list_all)).T	# H, Te, ne, lines
+								total_nH_ne_value = multiplicative_factor*np.array([np.transpose(record_nH_ne_values,(1,0,2))]*len(n_list_all)).T	# H, Te, ne, lines
 								total_nH_ne_value = np.transpose(total_nH_ne_value, (0,1,3,2))*(ne_values_array ** 2)	# H, Te, lines, ne
 								total_nH_ne_value = excitation_internal*(np.transpose(total_nH_ne_value, (0,3,1,2))).reshape((H_steps,TS_ne_steps*TS_Te_steps,len(n_list_all)))	# H, ne*Te, lines
 								total_nH_ne_value = np.float32(np.transpose(np.array([total_nH_ne_value.tolist()]*H2_steps),(1,0,2,3)))	# H, H2, ne*Te, lines
-								record_nH_ne_values = (np.array([record_nH_ne_values]*TS_ne_steps).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
-								record_nH_ne_log_prob = (np.array([record_nH_ne_log_prob]*TS_ne_steps).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
+								# record_nH_ne_values = (np.array([record_nH_ne_values]*TS_ne_steps).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
+								record_nH_ne_values = (np.array(np.transpose(record_nH_ne_values,(1,0,2))).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
+								# record_nH_ne_log_prob = (np.array([record_nH_ne_log_prob]*TS_ne_steps).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
+								record_nH_ne_log_prob = (np.array(np.transpose(record_nH_ne_log_prob,(1,0,2))).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
 								nH_ne_excited_states_atomic = [[[np.float32(record_nH_ne_values*np.sum(excitation_full,axis=-1)*ne_values.flatten()).tolist()]*H2p_to_find_steps]*H2_steps]*Hm_to_find_steps
 								nH_ne_excited_states_atomic = np.transpose(nH_ne_excited_states_atomic, (3,0,1,2,4))	# H, Hm, H2, H2p, ne, Te
 								nH_ne_excited_state_atomic_2 = [[[np.float32(record_nH_ne_values*excitation_full[:,0]*ne_values.flatten()).tolist()]*H2p_to_find_steps]*H2_steps]*Hm_to_find_steps
@@ -1713,7 +1720,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								for i_Te_for_nH2_ne,Te_for_nH2_ne in enumerate(Te_values_array):
 									nH2_ne_values = nH2_ne_values_Te_2(Te_for_nH2_ne,H2_steps)
 									record_nH2_ne_values.append(nH2_ne_values)
-									nH2_ne_log_probs = nH2_ne_log_probs_Te_2(Te_for_nH2_ne,nH2_ne_values)
+									# nH2_ne_log_probs = nH2_ne_log_probs_Te_2(Te_for_nH2_ne,nH2_ne_values)
+									nH2_ne_log_probs = nH2_ne_log_probs_Te_3(Te_for_nH2_ne,nH2_ne_values)
 									record_nH2_ne_log_prob.append(nH2_ne_log_probs)
 								total_nH2_ne_value = multiplicative_factor*np.array([[record_nH2_ne_values]*TS_ne_steps]*len(n_list_all)).T	# H2, Te, ne, lines
 								total_nH2_ne_value = np.transpose(total_nH2_ne_value, (0,1,3,2))*(ne_values_array ** 2)	# H2, Te, lines, ne
@@ -1816,11 +1824,11 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 
 								power_rad_H2p,power_rad_H2,power_rad_excit,power_via_ionisation,power_rad_rec_bremm,power_via_recombination,power_via_brem,power_rec_neutral,power_rad_Hm_H2p,power_rad_Hm_Hp,power_rad_Hm,power_rad_mol,power_heating_rec,tot_rad_power,total_removed_power_atomic,nH_ne_excited_states_mol,nH_ne_excited_state_mol_2,nH_ne_excited_state_mol_3,nH_ne_excited_state_mol_4,power_rad_mol_visible = calc_power_balance_elements_simplified2(H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps,TS_Te_steps,Te_values,ne_values,multiplicative_factor_full_full,multiplicative_factor_visible_light_full_full,record_nH_ne_values,record_nHm_ne_values,record_nH2_ne_values,record_nH2p_ne_values,record_nHp_ne_values,T_Hp_values,T_H2p_values,T_Hm_values,coeff_1_record,coeff_2_record,coeff_3_record,coeff_4_record)
 
-								nH_ne_excited_states = nH_ne_excited_states_atomic + nH_ne_excited_states_mol.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps*TS_Te_steps))
-								nH_ne_excited_state_2 = nH_ne_excited_state_atomic_2 + nH_ne_excited_state_mol_2.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps*TS_Te_steps))
-								nH_ne_excited_state_3 = nH_ne_excited_state_atomic_3 + nH_ne_excited_state_mol_3.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps*TS_Te_steps))
-								nH_ne_excited_state_4 = nH_ne_excited_state_atomic_4 + nH_ne_excited_state_mol_4.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps*TS_Te_steps))
-								nH_ne_ground_state = np.transpose(record_nH_ne_values - np.transpose(nH_ne_excited_states, (1,2,3,0,4)), (3,0,1,2,4))
+								nH_ne_excited_states = np.float32(nH_ne_excited_states_atomic + nH_ne_excited_states_mol.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps*TS_Te_steps)))
+								nH_ne_excited_state_2 = np.float32(nH_ne_excited_state_atomic_2 + nH_ne_excited_state_mol_2.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps*TS_Te_steps)))
+								nH_ne_excited_state_3 = np.float32(nH_ne_excited_state_atomic_3 + nH_ne_excited_state_mol_3.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps*TS_Te_steps)))
+								nH_ne_excited_state_4 = np.float32(nH_ne_excited_state_atomic_4 + nH_ne_excited_state_mol_4.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps*TS_Te_steps)))
+								nH_ne_ground_state = np.float32(np.transpose(record_nH_ne_values - np.transpose(nH_ne_excited_states, (1,2,3,0,4)), (3,0,1,2,4)))
 								# temp = np.transpose(np.transpose(nH_ne_excited_states, (1,2,3,0,4)) > record_nH_ne_values, (3,0,1,2,4))
 								nH_ne_penalty = np.zeros_like(nH_ne_excited_states,dtype=np.float16)
 								# nH_ne_penalty[temp==True] = -np.inf
@@ -2573,17 +2581,22 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							record_nH_ne_values = []
 							record_nH_ne_log_prob = []
 							for i_Te_for_nH_ne,Te_for_nH_ne in enumerate(Te_values_array):
-								nH_ne_values = nH_ne_values_Te_expanded(Te_for_nH_ne,H_steps,how_expand_nH_ne_indexes)
+								# nH_ne_values = nH_ne_values_Te_expanded(Te_for_nH_ne,H_steps,how_expand_nH_ne_indexes)
+								nH_ne_values = nH_ne_values_Te_expanded_3(Te_for_nH_ne,H_steps,how_expand_nH_ne_indexes,ne_values_array,max_H2_density_available)
 								record_nH_ne_values.append(nH_ne_values)
 								# nH_ne_log_probs = nH_ne_log_probs_Te(Te_for_nH_ne,nH_ne_values)
-								nH_ne_log_probs = nH_ne_log_probs_Te_2(Te_for_nH_ne,nH_ne_values)
+								# nH_ne_log_probs = nH_ne_log_probs_Te_2(Te_for_nH_ne,nH_ne_values)
+								nH_ne_log_probs = nH_ne_log_probs_Te_3(Te_for_nH_ne,nH_ne_values)
 								record_nH_ne_log_prob.append(nH_ne_log_probs)
-							total_nH_ne_value = multiplicative_factor*np.array([[record_nH_ne_values]*TS_ne_steps]*len(n_list_all)).T	# H, Te, ne, lines
+							# total_nH_ne_value = multiplicative_factor*np.array([[record_nH_ne_values]*TS_ne_steps]*len(n_list_all)).T	# H, Te, ne, lines
+							total_nH_ne_value = multiplicative_factor*np.array([np.transpose(record_nH_ne_values,(1,0,2))]*len(n_list_all)).T	# H, Te, ne, lines
 							total_nH_ne_value = np.transpose(total_nH_ne_value, (0,1,3,2))*(ne_values_array ** 2)	# H, Te, lines, ne
 							total_nH_ne_value = excitation_internal*(np.transpose(total_nH_ne_value, (0,3,1,2))).reshape((H_steps+how_much_expand_nH_ne_indexes,TS_ne_steps*TS_Te_steps,len(n_list_all)))	# H, ne*Te, lines
 							total_nH_ne_value = np.float32(np.transpose(np.array([total_nH_ne_value.tolist()]*H2_steps),(1,0,2,3)))	# H, H2, ne*Te, lines
-							record_nH_ne_values = (np.array([record_nH_ne_values]*TS_ne_steps).reshape((TS_ne_steps*TS_Te_steps,H_steps+how_much_expand_nH_ne_indexes))).T
-							record_nH_ne_log_prob = (np.array([record_nH_ne_log_prob]*TS_ne_steps).reshape((TS_ne_steps*TS_Te_steps,H_steps+how_much_expand_nH_ne_indexes))).T
+							# record_nH_ne_values = (np.array([record_nH_ne_values]*TS_ne_steps).reshape((TS_ne_steps*TS_Te_steps,H_steps+how_much_expand_nH_ne_indexes))).T
+							record_nH_ne_values = (np.array(np.transpose(record_nH_ne_values,(1,0,2))).reshape((TS_ne_steps*TS_Te_steps,H_steps+how_much_expand_nH_ne_indexes))).T
+							# record_nH_ne_log_prob = (np.array([record_nH_ne_log_prob]*TS_ne_steps).reshape((TS_ne_steps*TS_Te_steps,H_steps+how_much_expand_nH_ne_indexes))).T
+							record_nH_ne_log_prob = (np.array(np.transpose(record_nH_ne_log_prob,(1,0,2))).reshape((TS_ne_steps*TS_Te_steps,H_steps+how_much_expand_nH_ne_indexes))).T
 							nH_ne_excited_states_atomic = [[[np.float32(record_nH_ne_values*np.sum(excitation_full,axis=-1)*ne_values.flatten()).tolist()]*(H2p_to_find_steps+how_much_expand_nH2p_nH2_indexes)]*H2_steps]*(Hm_to_find_steps+how_much_expand_nHm_nH2_indexes)
 							nH_ne_excited_states_atomic = np.transpose(nH_ne_excited_states_atomic, (3,0,1,2,4))
 							nH_ne_excited_state_atomic_2 = [[[np.float32(record_nH_ne_values*excitation_full[:,0]*ne_values.flatten()).tolist()]*(H2p_to_find_steps+how_much_expand_nH2p_nH2_indexes)]*H2_steps]*(Hm_to_find_steps+how_much_expand_nHm_nH2_indexes)
@@ -2775,13 +2788,13 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							# area = np.array([temp[0]]+np.diff(temp).tolist())[my_r_pos]
 							# length = 0.351+target_OES_distance/1000	# mm distance skimmer to OES/TS + OES/TS to target
 
-							nH_ne_excited_states = nH_ne_excited_states_atomic + nH_ne_excited_states_mol.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps*TS_Te_steps))
-							nH_ne_excited_state_2 = nH_ne_excited_state_atomic_2 + nH_ne_excited_state_mol_2.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps*TS_Te_steps))
-							nH_ne_excited_state_3 = nH_ne_excited_state_atomic_3 + nH_ne_excited_state_mol_3.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps*TS_Te_steps))
-							nH_ne_excited_state_4 = nH_ne_excited_state_atomic_4 + nH_ne_excited_state_mol_4.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps*TS_Te_steps))
-							power_rad_atomic_visible = power_rad_atomic_visible.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps))
-							total_removed_power_visible = power_rad_atomic_visible + power_rad_mol_visible
-							nH_ne_ground_state = np.transpose(record_nH_ne_values - np.transpose(nH_ne_excited_states, (1,2,3,0,4)), (3,0,1,2,4))
+							nH_ne_excited_states = np.float32(nH_ne_excited_states_atomic + nH_ne_excited_states_mol.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps*TS_Te_steps)))
+							nH_ne_excited_state_2 = np.float32(nH_ne_excited_state_atomic_2 + nH_ne_excited_state_mol_2.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps*TS_Te_steps)))
+							nH_ne_excited_state_3 = np.float32(nH_ne_excited_state_atomic_3 + nH_ne_excited_state_mol_3.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps*TS_Te_steps)))
+							nH_ne_excited_state_4 = np.float32(nH_ne_excited_state_atomic_4 + nH_ne_excited_state_mol_4.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps*TS_Te_steps)))
+							power_rad_atomic_visible = np.float32(power_rad_atomic_visible.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))
+							total_removed_power_visible = np.float32(power_rad_atomic_visible + power_rad_mol_visible)
+							nH_ne_ground_state = np.float32(np.transpose(record_nH_ne_values - np.transpose(nH_ne_excited_states, (1,2,3,0,4)), (3,0,1,2,4)))
 							# temp = np.transpose(np.transpose(nH_ne_excited_states, (1,2,3,0,4)) > record_nH_ne_values, (3,0,1,2,4))
 							nH_ne_penalty = np.zeros_like(nH_ne_excited_states,dtype=np.float16)
 							# nH_ne_penalty[temp==True] = -np.inf
@@ -2967,8 +2980,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								del all_nHp_ne_values
 								# del particles_penalty
 
-							total_removed_power = total_removed_power_atomic + power_rad_mol + all_power_potential_mol
-							total_removed_power_times_volume = total_removed_power * area*length
+							total_removed_power = np.float32(total_removed_power_atomic + power_rad_mol + all_power_potential_mol)
+							total_removed_power_times_volume = np.float32((total_removed_power_atomic + power_rad_mol + all_power_potential_mol) * area*length)
 							# power_penalty = np.zeros_like((total_removed_power_times_volume),dtype=np.float32)
 							if False:	# here I do not use any info on the shape of the plasma upstream
 								select = total_removed_power_times_volume>interpolated_power_pulse_shape(time_crop[my_time_pos])/source_power_spread
@@ -6011,7 +6024,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										ax[plot_index,0].set_xscale('log')
 										ax[plot_index,0].legend(loc='best', fontsize='x-small')
 										# ax[plot_index,0].set_xlim(left=1e-1*np.min([most_likely_power_rad_excit,most_likely_power_rad_rec_bremm,most_likely_power_rad_mol,most_likely_power_via_ionisation,most_likely_power_via_recombination,most_likely_tot_rad_power]))
-										ax[plot_index,0].set_xlim(left=max(1,1e-1*np.min([most_likely_total_removed_power,most_likely_power_potential_mol_plasma_heating,most_likely_power_potential_mol_plasma_cooling,most_likely_power_potential_mol,most_likely_power_rad_excit,most_likely_power_rad_rec_bremm,most_likely_power_rad_mol,most_likely_power_via_ionisation,most_likely_power_via_recombination,most_likely_tot_rad_power,most_likely_power_heating_rec,most_likely_power_rec_neutral,most_likely_power_via_brem,most_likely_total_removed_power])),right=1e2*np.max([most_likely_total_removed_power,most_likely_power_rad_excit,most_likely_power_rad_rec_bremm,most_likely_power_rad_mol,most_likely_power_via_ionisation,most_likely_power_via_recombination,most_likely_tot_rad_power,most_likely_power_potential_mol_plasma_heating,most_likely_power_potential_mol_plasma_cooling,most_likely_power_potential_mol]))
+										temp = [most_likely_total_removed_power,most_likely_power_potential_mol_plasma_heating,most_likely_power_potential_mol_plasma_cooling,most_likely_power_potential_mol,most_likely_power_rad_excit,most_likely_power_rad_rec_bremm,most_likely_power_rad_mol,most_likely_power_via_ionisation,most_likely_power_via_recombination,most_likely_tot_rad_power,most_likely_power_heating_rec,most_likely_power_rec_neutral,most_likely_power_via_brem,most_likely_total_removed_power]
+										ax[plot_index,0].set_xlim(left=np.max([1,1e-1*np.min(temp),1e2*np.max(temp)*1e-5]),right=1e2*np.max(temp))
 										ax[plot_index,0].grid()
 
 										temp_2 = likelihood_log_probs[most_likely_nH_ne_index,most_likely_nHm_nH2_index,most_likely_nH2_ne_index,most_likely_nH2p_nH2_index,most_likely_ne_index,:]
@@ -6084,7 +6098,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										im = ax[plot_index,0].plot(actual_values_nH2p_ne_values,100*prob_nH2p_ne_values,'+',color=color[3],markersize=5);
 										ax[plot_index,0].set_title('Relative densities at highest likelihood with precision\n :=prior, "--"=ML+sigma, "-."=central')
 										ax[plot_index,0].set_ylabel('normalised likelihood')
-										ax[plot_index,0].set_xlabel('[au]')
+										ax[plot_index,0].set_xlabel('n_x/ne')
 										ax[plot_index,0].set_xscale('log')
 										ax[plot_index,0].legend(loc='best', fontsize='x-small')
 										ax[plot_index,0].grid()

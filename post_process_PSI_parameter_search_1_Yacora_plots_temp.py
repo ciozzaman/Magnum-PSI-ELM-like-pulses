@@ -46,6 +46,7 @@ elif True:
 	temp = np.pi*((r_crop + np.median(np.diff(r_crop))/2)**2)
 	area = np.array([temp[0]]+np.diff(temp).tolist())
 	length = 0.351+target_OES_distance/1000	# mm distance skimmer to OES/TS + OES/TS to target
+	target_chamber_length = 0.351+0.4	# mm distance skimmer to OES/TS + OES/TS to target
 
 
 if initial_conditions:
@@ -1272,8 +1273,8 @@ if initial_conditions:
 	plt.plot(time_crop, np.sum(Bohm_adiabatic_flow*area,axis=1),'--',label='Bohm flow TS location');
 	plt.plot(time_crop, np.array(plasma_inflow_upstream_max),'k--',label='upstrem inflow fixed velocity range')
 	plt.plot(time_crop, np.array(plasma_inflow_upstream_min),'k--')
-	plt.plot(np.sort(time_crop)[[0,-1]],[source_flow_rate * 1000/60/60 * target_chamber_pressure/(300*boltzmann_constant_J)]*2,'--',label='H2 flow to the source')
-	plt.plot(np.sort(time_crop)[[0,-1]],[feed_rate_SLM * 1000/60/60 * target_chamber_pressure/(300*boltzmann_constant_J)]*2,'--',label='H2 flow to the target chamber')
+	plt.plot(np.sort(time_crop)[[0,-1]],[source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J)]*2,'--',label='H2 flow to the source')
+	plt.plot(np.sort(time_crop)[[0,-1]],[feed_rate_SLM /60/1000 * 101325/(273*boltzmann_constant_J)]*2,'--',label='H2 flow to the target chamber')
 	plt.legend(loc='best', fontsize='xx-small')
 	# plt.semilogy()
 	plt.xlabel('time from beginning of pulse [ms]')
@@ -1399,7 +1400,8 @@ if initial_conditions:
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
 
-
+	max_H2_available = (source_flow_rate + feed_rate_SLM) /60/1000 * 101325/(273*boltzmann_constant_J) * 0.001 + np.pi*(0.25**2)*target_chamber_length*target_chamber_pressure/(273*boltzmann_constant_J)	# #
+	max_H2_density_available = max_H2_available/(np.pi*(0.02**2)*length)	# #/m3
 
 else:
 
@@ -5409,7 +5411,8 @@ else:
 		figure_index = make_plot_type_1(most_likely_power_rad_mol,'power_rad_mol','power [W/m3]',figure_index)
 
 		most_likely_power_potential_mol,most_likely_power_potential_mol_sigma = calculate_most_likely(prob_power_potential_mol,actual_values_power_potential_mol,intervals_power_potential_mol)
-		figure_index = make_plot_type_1(most_likely_power_potential_mol,'power_potential_mol','power [W/m3]',figure_index)
+		if np.sum(np.array(most_likely_power_potential_mol)>0)>0:
+			figure_index = make_plot_type_1(most_likely_power_potential_mol,'power_potential_mol','power [W/m3]',figure_index)
 
 		most_likely_power_potential_mol_plasma_heating,most_likely_power_potential_mol_plasma_heating_sigma = calculate_most_likely(prob_power_potential_mol_plasma_heating,actual_values_power_potential_mol_plasma_heating,intervals_power_potential_mol_plasma_heating)
 		figure_index = make_plot_type_1(most_likely_power_potential_mol_plasma_heating,'power_potential_mol_plasma_heating','power [W/m3]',figure_index)
@@ -5594,7 +5597,8 @@ else:
 		figure_index = make_plot_type_1(most_likely_power_via_brem,'power_via_brem','power [W/m3]',figure_index)
 
 		most_likely_total_removed_power,most_likely_total_removed_power_sigma = calculate_most_likely(prob_total_removed_power,actual_values_total_removed_power,intervals_total_removed_power)
-		figure_index = make_plot_type_1(most_likely_total_removed_power,'total_removed_power\n(ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral + potential_mol - recombination heating)','power [W/m3]',figure_index)
+		if np.sum(np.array(most_likely_total_removed_power)>0)>0:
+			figure_index = make_plot_type_1(most_likely_total_removed_power,'total_removed_power\n(ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral + potential_mol - recombination heating)','power [W/m3]',figure_index)
 
 		thermal_velocity_H = ( (T_H*boltzmann_constant_J)/ hydrogen_mass)**0.5
 		ionization_length_H = thermal_velocity_H/(most_likely_ionisation_rate / (ne_all * 1e20*nH_ne_all) )
@@ -6659,8 +6663,9 @@ else:
 				plt.plot(time_crop, dt/1000*np.sum(upstream_Bohm_adiabatic_flow*area,axis=1),label='Bohm flow upstream')
 				plt.plot(np.sort(time_crop)[[0,-1]],[H2_pre_ELMlike_pulse]*2,'--',label='H2 in the plasma volume before the pulse')
 				plt.plot(np.sort(time_crop)[[0,-1]],[H2_inflow_sides_plasma_column]*2,'--',label='H2 incoming from sides during pulse (fixed SS pressure)')
-				plt.plot(np.sort(time_crop)[[0,-1]],[source_flow_rate * 1000/60/60 * target_chamber_pressure/(300*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,'--',label='H2 flow to the source')
-				plt.plot(np.sort(time_crop)[[0,-1]],[feed_rate_SLM * 1000/60/60 * target_chamber_pressure/(300*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,'--',label='H2 flow to the target chamber')
+				plt.plot(np.sort(time_crop)[[0,-1]],[source_flow_rate * 1000/60/60 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,'--',label='H2 flow to the source')
+				plt.plot(np.sort(time_crop)[[0,-1]],[feed_rate_SLM * 1000/60/60 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,'--',label='H2 flow to the target chamber')
+				plt.plot(np.sort(time_crop)[[0,-1]],[np.pi*(0.25**2)*target_chamber_length*target_chamber_pressure/(273*boltzmann_constant_J)]*2,label='H2 in the target chamber before the pulse')
 				plt.legend(loc='best', fontsize='xx-small')
 			plt.errorbar(time_crop,multiplier*(most_likely_something_r),yerr=[multiplier*(most_likely_something_r-actual_values_something_r_down),multiplier*(actual_values_something_r_up-most_likely_something_r)],color='r',capsize=5)
 			plt.semilogy()
@@ -6677,7 +6682,8 @@ else:
 		figure_index = make_plot_type_2(intervals_power_rad_excit_r,prob_power_rad_excit_r,most_likely_power_rad_excit_r,actual_values_power_rad_excit_r_down,actual_values_power_rad_excit_r_up,'power_rad_excit','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r,most_likely_power_rad_rec_bremm_r,actual_values_power_rad_rec_bremm_r_down,actual_values_power_rad_rec_bremm_r_up,'power_rad_rec_bremm','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rad_mol_r,prob_power_rad_mol_r,most_likely_power_rad_mol_r,actual_values_power_rad_mol_r_down,actual_values_power_rad_mol_r_up,'power_rad_mol','Power loss [W]',figure_index)
-		figure_index = make_plot_type_2(intervals_power_potential_mol_r,prob_power_potential_mol_r,most_likely_power_potential_mol_r,actual_values_power_potential_mol_r_down,actual_values_power_potential_mol_r_up,'power_potential_mol','Power loss [W]',figure_index)
+		if np.sum(np.array(most_likely_power_potential_mol_r)>0)>0:
+			figure_index = make_plot_type_2(intervals_power_potential_mol_r,prob_power_potential_mol_r,most_likely_power_potential_mol_r,actual_values_power_potential_mol_r_down,actual_values_power_potential_mol_r_up,'power_potential_mol','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_potential_mol_plasma_heating_r,prob_power_potential_mol_plasma_heating_r,most_likely_power_potential_mol_plasma_heating_r,actual_values_power_potential_mol_plasma_heating_r_down,actual_values_power_potential_mol_plasma_heating_r_up,'power_potential_mol_plasma_heating','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_potential_mol_plasma_cooling_r,prob_power_potential_mol_plasma_cooling_r,most_likely_power_potential_mol_plasma_cooling_r,actual_values_power_potential_mol_plasma_cooling_r_down,actual_values_power_potential_mol_plasma_cooling_r_up,'power_potential_mol_plasma_cooling','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_via_ionisation_r,prob_power_via_ionisation_r,most_likely_power_via_ionisation_r,actual_values_power_via_ionisation_r_down,actual_values_power_via_ionisation_r_up,'power_via_ionisation','Power loss [W]',figure_index)
@@ -6691,7 +6697,8 @@ else:
 		figure_index = make_plot_type_2(intervals_power_heating_rec_r,prob_power_heating_rec_r,most_likely_power_heating_rec_r,actual_values_power_heating_rec_r_down,actual_values_power_heating_rec_r_up,'power_heating_rec','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rec_neutral_r,prob_power_rec_neutral_r,most_likely_power_rec_neutral_r,actual_values_power_rec_neutral_r_down,actual_values_power_rec_neutral_r_up,'power_rec_neutral','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_via_brem_r,prob_power_via_brem_r,most_likely_power_via_brem_r,actual_values_power_via_brem_r_down,actual_values_power_via_brem_r_up,'power_via_brem','Power loss [W]',figure_index)
-		figure_index = make_plot_type_2(intervals_total_removed_power_r,prob_total_removed_power_r,most_likely_total_removed_power_r,actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up,'total_removed_power, --=from upstream\n(ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral + potential_mol - recombination heating)','Power loss [W]',figure_index)
+		if np.sum(np.array(most_likely_total_removed_power_r)>0)>0:
+			figure_index = make_plot_type_2(intervals_total_removed_power_r,prob_total_removed_power_r,most_likely_total_removed_power_r,actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up,'total_removed_power, --=from upstream\n(ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral + potential_mol - recombination heating)','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_local_CX_r,prob_local_CX_r,most_likely_local_CX_r,actual_values_local_CX_r_down,actual_values_local_CX_r_up,'local_CX','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r,most_likely_net_power_removed_plasma_column_r,actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up,'net_power_removed_plasma_column, --=from upstream\n(net power removed from plasma column radiated + recombination neutral)','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_total_removed_power_visible_r,prob_total_removed_power_visible_r,most_likely_total_removed_power_visible_r,actual_values_total_removed_power_visible_r_down,actual_values_total_removed_power_visible_r_up,'total_removed_power_visible','Power loss [W]',figure_index)
@@ -7388,8 +7395,9 @@ else:
 			plt.plot(np.sort((1e20*intervals_H2_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2_creation_RR_tr]*2).T.flatten(),label='H2_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2_creation_RR),(1e20*ML_H2_creation_RR_sigma)))
 		plt.plot([H2_pre_ELMlike_pulse]*2,[0,100],'--',label='H2 in the plasma volume before the pulse = %.3g#' %(H2_pre_ELMlike_pulse));
 		plt.plot([H2_inflow_sides_plasma_column]*2,[0,100],'--',label='H2 incoming from sides during pulse (fixed pressure=%.3gPa) = %.3g#' %(target_chamber_pressure,H2_inflow_sides_plasma_column));
-		plt.plot([source_flow_rate * 1000/60/60 * target_chamber_pressure/(300*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,[0,100],'--',label='H2 flow to the source = %.3g#' %(source_flow_rate * 1000/60/60 * target_chamber_pressure/(300*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000));
-		plt.plot([feed_rate_SLM * 1000/60/60 * target_chamber_pressure/(300*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,[0,100],'--',label='H2 flow to the target chamber = %.3g#' %(feed_rate_SLM * 1000/60/60 * target_chamber_pressure/(300*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000));
+		plt.plot([source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,[0,100],'--',label='H2 flow to the source = %.3g#' %(source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000));
+		plt.plot([feed_rate_SLM /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,[0,100],'--',label='H2 flow to the target chamber = %.3g#' %(feed_rate_SLM /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000));
+		plt.plot([np.pi*(0.25**2)*target_chamber_length*target_chamber_pressure/(273*boltzmann_constant_J)]*2,[0,100],label='H2 in the target chamber before the pulse = %.3g#' %(np.pi*(0.25**2)*target_chamber_length*target_chamber_pressure/(273*boltzmann_constant_J)))
 		plt.plot([np.sum(plasma_inflow_upstream_max[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'k--',label='upstrem inflow fixed velocity range')
 		plt.plot([np.sum(plasma_inflow_upstream_min[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'k--')
 		plt.plot([np.sum(np.sum(Bohm_adiabatic_flow*area,axis=1)[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'--',label='Bohm flow TS location')
@@ -7444,8 +7452,8 @@ else:
 		bayesian_results_dict['input_power']['TS']['flow']['plasma_inflow_TS_location_sonic'] = plasma_inflow_TS_location_sonic
 		bayesian_results_dict['input_power']['TS']['flow']['plasma_inflow_upstream_max'] = plasma_inflow_upstream_max
 		bayesian_results_dict['input_power']['TS']['flow']['plasma_inflow_upstream_min'] = plasma_inflow_upstream_min
-		bayesian_results_dict['input_power']['TS']['flow']['H2_source_inflow'] = source_flow_rate * 1000/60/60 * target_chamber_pressure/(300*boltzmann_constant_J)
-		bayesian_results_dict['input_power']['TS']['flow']['H2_target_inflow'] = feed_rate_SLM * 1000/60/60 * target_chamber_pressure/(300*boltzmann_constant_J)
+		bayesian_results_dict['input_power']['TS']['flow']['H2_source_inflow'] = source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J)
+		bayesian_results_dict['input_power']['TS']['flow']['H2_target_inflow'] = feed_rate_SLM /60/1000 * 101325/(273*boltzmann_constant_J)
 
 		bayesian_results_dict['power_rad_excit'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['power_rad_excit']['full'] = dict([('intervals',intervals_power_rad_excit),('prob',prob_power_rad_excit),('actual_values',actual_values_power_rad_excit),('most_likely',most_likely_power_rad_excit),('most_likely_sigma',most_likely_power_rad_excit_sigma),('unit','W m^-3')])
