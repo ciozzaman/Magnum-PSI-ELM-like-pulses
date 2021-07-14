@@ -3694,10 +3694,10 @@ elif True:
 	# temp_max = np.exp(-fit[1]/(2*fit[0]))	# this is to avoid the density to decrease with decrease temperature passed the peak
 	# temp2[temp<temp_max]=temp2.max()
 	nH2_ne_fit_from_simulations = interpolate.interp1d(temp,temp2,fill_value='extrapolate')
-	limit_H_up = interpolate.interp1d(np.log([0.1,4]),np.log([1e5,1e5]),fill_value='extrapolate')
+	limit_H_up = interpolate.interp1d(np.log([0.1,4]),np.log([1e2,1e2]),fill_value='extrapolate')
 	limit_H_up_prob = interpolate.interp1d(np.log([0.1,4]),np.log([20,20]),fill_value='extrapolate')
 	# limit_H_up = interpolate.interp1d(np.log([0.1,4]),np.log([1000,1000]),fill_value='extrapolate')
-	limit_H_down = interpolate.interp1d(np.log([1e-5,0.1,0.5,2,4]),np.log([0.2,0.2,0.006,0.003,0.003]),fill_value='extrapolate')
+	limit_H_down = interpolate.interp1d(np.log([1e-5,0.1,0.5,2,4]),np.log([0.2,0.2,0.006,0.001,0.001]),fill_value='extrapolate')
 	limit_H_down_prob = interpolate.interp1d(np.log([1e-5,0.1,0.5,2,4]),np.log([0.2,0.2,0.006,0.003,0.003]),fill_value='extrapolate')
 	nH_ne_fit_from_simulations = lambda Te: np.nanmax([np.exp(np.polyval([-0.15109974,-0.98294073,-2.03131663],np.log(Te))),np.exp(limit_H_down(np.log(Te)))*5],axis=0)
 TH_fit_from_simulations = interpolate.interp1d(np.log([1e-5,0.1,3]),np.log([0.99e-5,0.099,1.4]),fill_value='extrapolate')
@@ -3819,7 +3819,7 @@ if False:	# this seems very bad, in the sense that for low Te the concentration 
 def nH2_ne_values_Te_2(Te,H2_steps):
 	H2_steps = H2_steps//2*2+1
 	max_nH2_ne = nH2_ne_fit_from_simulations(Te)*1e2
-	min_nH2_ne = nH2_ne_fit_from_simulations(Te)*1e-6
+	min_nH2_ne = nH2_ne_fit_from_simulations(Te)*1e-4
 	nH2_ne_values = np.logspace(np.log10(min_nH2_ne),np.log10(max_nH2_ne),num=(H2_steps))
 	return nH2_ne_values
 
@@ -3857,11 +3857,11 @@ def nH_ne_values_Te_expanded(Te,H_steps,how_expand_nH_ne_indexes):
 		if how_expand_nH_ne_indexes[i]!=0:
 			nH_ne_additional_values.extend(np.logspace(np.log10(nH_ne_values[i]),np.log10(nH_ne_values[i+1]),num=how_expand_nH_ne_indexes[i]+2)[1:-1])
 	return np.sort(np.concatenate((nH_ne_values,nH_ne_additional_values)))
-def nH_ne_values_Te_3(Te,H_steps,ne_values_array,max_H2_density_available):
+def nH_ne_values_Te_3(Te,H_steps,ne_values_array,max_H_density_available):
 	H_steps = H_steps//2*2+1
 	nH_ne_values_all = []
 	for ne in ne_values_array:
-		max_nH_ne = min(np.exp(limit_H_up(np.log(Te))),max_H2_density_available/ne)
+		max_nH_ne = min(np.exp(limit_H_up(np.log(Te))),max_H_density_available/ne)
 		min_nH_ne = np.exp(limit_H_down(np.log(Te)))
 		centre_nH_ne = nH_ne_fit_from_simulations(Te)
 		nH_ne_values = np.logspace(np.log10(min_nH_ne),np.log10(max_nH_ne),num=(H_steps-1))
@@ -3869,11 +3869,11 @@ def nH_ne_values_Te_3(Te,H_steps,ne_values_array,max_H2_density_available):
 		H_right_interval = nH_ne_values[nH_ne_values-centre_nH_ne>0]
 		nH_ne_values_all.append(np.array(H_left_interval.tolist() + [centre_nH_ne] + H_right_interval.tolist()))
 	return np.array(nH_ne_values_all)
-def nH_ne_values_Te_expanded_3(Te,H_steps,how_expand_nH_ne_indexes,ne_values_array,max_H2_density_available):
+def nH_ne_values_Te_expanded_3(Te,H_steps,how_expand_nH_ne_indexes,ne_values_array,max_H_density_available):
 	H_steps = H_steps//2*2+1
 	nH_ne_values_all = []
 	for ne in ne_values_array:
-		max_nH_ne = min(np.exp(limit_H_up(np.log(Te))),max_H2_density_available/ne)
+		max_nH_ne = min(np.exp(limit_H_up(np.log(Te))),max_H_density_available/ne)
 		min_nH_ne = np.exp(limit_H_down(np.log(Te)))
 		centre_nH_ne = nH_ne_fit_from_simulations(Te)
 		nH_ne_values = np.logspace(np.log10(min_nH_ne),np.log10(max_nH_ne),num=(H_steps-1))
@@ -3940,12 +3940,12 @@ def nH2p_nH2_values_Te_ne(Te,ne,to_find_steps,H2_suppression=False):
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
 		# nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te))))),num=to_find_steps)
-		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-7,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e2,1e7*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
+		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
 	else:
 		temp=[]
 		for i in range(len(Te)):
 			# temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i]))))),num=to_find_steps))
-			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-7,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e2,1e7*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps))
+			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps))
 		nH2p_nH2_values = np.array(temp).T
 	return nH2p_nH2_values
 def nH2p_nH2_values_Te_ne_expanded(Te,ne,to_find_steps,how_expand_nH2p_nH2_indexes,H2_suppression=False):
@@ -3954,7 +3954,7 @@ def nH2p_nH2_values_Te_ne_expanded(Te,ne,to_find_steps,how_expand_nH2p_nH2_index
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
 		# nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te))))),num=to_find_steps)
-		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-7,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e2,1e7*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
+		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
 		nH2p_nH2_additional_values=[]
 		for i in range(to_find_steps-1):
 			if how_expand_nH2p_nH2_indexes[i]!=0:
@@ -3964,7 +3964,7 @@ def nH2p_nH2_values_Te_ne_expanded(Te,ne,to_find_steps,how_expand_nH2p_nH2_index
 		temp=[]
 		for i in range(len(Te)):
 			# nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i]))))),num=to_find_steps)
-			nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-7,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e2,1e7*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps)
+			nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps)
 			nH2p_nH2_additional_values=[]
 			for i in range(to_find_steps-1):
 				if how_expand_nH2p_nH2_indexes[i]!=0:
@@ -3977,11 +3977,11 @@ def nHm_nH2_values_Te(Te,to_find_steps,H2_suppression=False):
 	if H2_suppression:
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
-		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-7,1e-6*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e3,1e7*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
+		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-11,1e-10*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
 	else:
 		temp=[]
 		for i in range(len(Te)):
-			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-7,1e-6*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e3,1e7*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps))
+			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-11,1e-10*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps))
 		nHm_nH2_values = np.array(temp).T
 	return nHm_nH2_values
 def nHm_nH2_values_Te_expanded(Te,to_find_steps,how_expand_nHm_nH2_indexes,H2_suppression=False):
@@ -3989,7 +3989,7 @@ def nHm_nH2_values_Te_expanded(Te,to_find_steps,how_expand_nHm_nH2_indexes,H2_su
 	if H2_suppression:
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
-		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-7,1e-6*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e3,1e7*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
+		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-11,1e-10*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
 		nHm_nH2_additional_values = []
 		for i in range(to_find_steps-1):
 			if how_expand_nHm_nH2_indexes[i]!=0:
@@ -3998,7 +3998,7 @@ def nHm_nH2_values_Te_expanded(Te,to_find_steps,how_expand_nHm_nH2_indexes,H2_su
 	else:
 		temp=[]
 		for i in range(len(Te)):
-			nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-7,1e-6*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e3,1e7*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps)
+			nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-11,1e-10*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps)
 			nHm_nH2_additional_values=[]
 			for i in range(to_find_steps-1):
 				if how_expand_nHm_nH2_indexes[i]!=0:

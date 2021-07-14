@@ -1402,6 +1402,7 @@ if initial_conditions:
 
 	max_H2_available = (source_flow_rate + feed_rate_SLM) /60/1000 * 101325/(273*boltzmann_constant_J) * 0.001 + np.pi*(0.25**2)*target_chamber_length*target_chamber_pressure/(273*boltzmann_constant_J)	# #
 	max_H2_density_available = max_H2_available/(np.pi*(0.02**2)*length)	# #/m3
+	max_H_density_available = 2*max_H2_density_available	# #/m3
 
 else:
 
@@ -5329,6 +5330,36 @@ else:
 		if not os.path.exists(path_where_to_save_everything + mod4 + '/bayesian'):
 			os.makedirs(path_where_to_save_everything + mod4 + '/bayesian')
 
+		def improved_log_histogram(values,intervals):
+			if ((0 in values) or (values.max()>0 and values.min()<0)):
+				bins_zero = [0]
+				intervals -=1
+			else:
+				bins_zero = []
+			if values.max()>0:
+				temp = np.sort(np.log10(values))
+				high = np.nanmax(temp)
+				low = np.nanmin(temp[np.isfinite(temp)])
+				if values.min()<0:
+					bins_pos = np.logspace(low,high,int(intervals/2)+1)
+					intervals -= len(bins_pos)
+				else:
+					bins_pos = np.logspace(low,high,intervals+1)
+			else:
+				bins_pos = []
+			if values.min()<0:
+				temp = np.sort(np.log10(-values))
+				high = np.nanmax(temp)
+				low = np.nanmin(temp[np.isfinite(temp)])
+				bins_neg = np.sort(-np.logspace(low,high,intervals+1))
+			else:
+				bins_neg = []
+			bins = np.concatenate([bins_neg,bins_zero,bins_pos])
+			histogram = np.histogram(values,bins)[0]
+			# if temp.min() == -np.inf:
+			# 	histogram[0] += np.sum(temp == -np.inf)
+			return histogram,bins
+
 		def make_plot_type_1(most_likely_something,label,label_units,figure_index,ext_vmin=0.1):
 			plt.figure(figsize=(8, 5));
 			plt.pcolor(temp_t, temp_r, most_likely_something,cmap='rainbow',vmin=max(max(ext_vmin,np.nanmin(most_likely_something)),np.nanmax(most_likely_something)*1e-6), norm=LogNorm());
@@ -5374,7 +5405,7 @@ else:
 			product_intervals = np.zeros((len(actual_values_item_1),len(actual_values_item_1[0]),intervals+1))
 			for i_t in range(len(actual_values_item_1)):
 				for i_r in range(len(actual_values_item_1[0])):
-					product_prob[i_t][i_r],product_intervals[i_t][i_r] = np.histogram(product[i_t][i_r],bins=np.logspace(max(-6+np.log10(product[i_t][i_r].max()),np.log10(product[i_t][i_r].min())),np.log10(product[i_t][i_r].max()),intervals+1))
+					product_prob[i_t][i_r],product_intervals[i_t][i_r] = improved_log_histogram(product[i_t][i_r],intervals)
 					if np.sum(product_prob[i_t][i_r])==0:
 						product_prob[i_t][i_r]=np.ones_like(product_prob[i_t][i_r])
 					product_prob[i_t][i_r] = product_prob[i_t][i_r]/np.sum(product_prob[i_t][i_r])
@@ -5787,156 +5818,156 @@ else:
 			nv_HCX_2 = n_HCX_2 / CX_term_1_9
 			P_HCX_2 = CX_term_1_3*nv_HCX_2 * np.exp(-np.flip(np.cumsum(np.flip(CX_term_1_2,axis=1),axis=1),axis=1)*CX_term_1_9)
 			P_HCX_3 = CX_term_1_11*nv_HCX_2 * np.exp(-np.flip(np.cumsum(np.flip(CX_term_1_2,axis=1),axis=1),axis=1)*CX_term_1_9)
-			P_HCX_prob = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			P_HCX_actual_values = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			P_HCX_intervals = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
-			n_HCX_prob = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			n_HCX_actual_values = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			n_HCX_intervals = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
-			n_H2CX_prob = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			n_H2CX_actual_values = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			n_H2CX_intervals = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
+			prob_P_HCX = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			actual_values_P_HCX = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			intervals_P_HCX = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
+			prob_n_HCX = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			actual_values_n_HCX = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			intervals_n_HCX = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
+			prob_n_H2CX = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			actual_values_n_H2CX = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			intervals_n_H2CX = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
 			# n_H2CX_2_prob = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
 			# n_H2CX_2_actual_values = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
 			# n_H2CX_2_intervals = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
-			n_HCX_2_prob = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			n_HCX_2_actual_values = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			n_HCX_2_intervals = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
-			P_HCX_2_prob = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			P_HCX_2_actual_values = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			P_HCX_2_intervals = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
-			P_HCX_3_prob = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			P_HCX_3_actual_values = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
-			P_HCX_3_intervals = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
+			prob_n_HCX_2 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			actual_values_n_HCX_2 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			intervals_n_HCX_2 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
+			prob_P_HCX_2 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			actual_values_P_HCX_2 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			intervals_P_HCX_2 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
+			prob_P_HCX_3 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			actual_values_P_HCX_3 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals))
+			intervals_P_HCX_3 = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],intervals+1))
 			for i_t in range(np.shape(Te_all)[0]):
 				for i_r in range(np.shape(Te_all)[1]):
-					n_HCX_prob[i_t][i_r],n_HCX_intervals[i_t][i_r] = np.histogram(n_HCX[i_t][i_r],bins=np.logspace(max(-6+np.log10(n_HCX[i_t][i_r].max()),np.log10(n_HCX[i_t][i_r].min())),np.log10(n_HCX[i_t][i_r].max()),intervals+1))
-					if np.sum(n_HCX_prob[i_t][i_r])==0:
-						n_HCX_prob[i_t][i_r]=np.ones_like(n_HCX_prob[i_t][i_r])
-					n_HCX_prob[i_t][i_r] = n_HCX_prob[i_t][i_r]/np.sum(n_HCX_prob[i_t][i_r])
-					n_H2CX_prob[i_t][i_r],n_H2CX_intervals[i_t][i_r] = np.histogram(n_H2CX[i_t][i_r],bins=np.logspace(max(-6+np.log10(n_H2CX[i_t][i_r].max()),np.log10(n_H2CX[i_t][i_r].min())),np.log10(n_H2CX[i_t][i_r].max()),intervals+1))
-					if np.sum(n_H2CX_prob[i_t][i_r])==0:
-						n_H2CX_prob[i_t][i_r]=np.ones_like(n_H2CX_prob[i_t][i_r])
-					n_H2CX_prob[i_t][i_r] = n_H2CX_prob[i_t][i_r]/np.sum(n_H2CX_prob[i_t][i_r])
+					prob_n_HCX[i_t][i_r],intervals_n_HCX[i_t][i_r] = improved_log_histogram(n_HCX[i_t][i_r],intervals)
+					if np.sum(prob_n_HCX[i_t][i_r])==0:
+						prob_n_HCX[i_t][i_r]=np.ones_like(prob_n_HCX[i_t][i_r])
+					prob_n_HCX[i_t][i_r] = prob_n_HCX[i_t][i_r]/np.sum(prob_n_HCX[i_t][i_r])
+					prob_n_H2CX[i_t][i_r],intervals_n_H2CX[i_t][i_r] = improved_log_histogram(n_H2CX[i_t][i_r],intervals)
+					if np.sum(prob_n_H2CX[i_t][i_r])==0:
+						prob_n_H2CX[i_t][i_r]=np.ones_like(prob_n_H2CX[i_t][i_r])
+					prob_n_H2CX[i_t][i_r] = prob_n_H2CX[i_t][i_r]/np.sum(prob_n_H2CX[i_t][i_r])
 					# n_H2CX_2_prob[i_t][i_r],n_H2CX_2_intervals[i_t][i_r] = np.histogram(n_H2CX_2[i_t][i_r],bins=np.logspace(max(-6+np.log10(n_H2CX_2[i_t][i_r].max()),np.log10(n_H2CX_2[i_t][i_r].min())),np.log10(n_H2CX_2[i_t][i_r].max()),intervals+1))
 					# n_H2CX_2_prob[i_t][i_r] = n_H2CX_2_prob[i_t][i_r]/np.sum(n_H2CX_2_prob[i_t][i_r])
-					n_HCX_2_prob[i_t][i_r],n_HCX_2_intervals[i_t][i_r] = np.histogram(n_HCX_2[i_t][i_r],bins=np.logspace(max(-6+np.log10(n_HCX_2[i_t][i_r].max()),np.log10(n_HCX_2[i_t][i_r].min())),np.log10(n_HCX_2[i_t][i_r].max()),intervals+1))
-					if np.sum(n_HCX_2_prob[i_t][i_r])==0:
-						n_HCX_2_prob[i_t][i_r]=np.ones_like(n_HCX_2_prob[i_t][i_r])
-					n_HCX_2_prob[i_t][i_r] = n_HCX_2_prob[i_t][i_r]/np.sum(n_HCX_2_prob[i_t][i_r])
+					prob_n_HCX_2[i_t][i_r],intervals_n_HCX_2[i_t][i_r] = improved_log_histogram(n_HCX_2[i_t][i_r],intervals)
+					if np.sum(prob_n_HCX_2[i_t][i_r])==0:
+						prob_n_HCX_2[i_t][i_r]=np.ones_like(prob_n_HCX_2[i_t][i_r])
+					prob_n_HCX_2[i_t][i_r] = prob_n_HCX_2[i_t][i_r]/np.sum(prob_n_HCX_2[i_t][i_r])
 					temp_actual_values2 = []
 					temp_actual_values3 = []
 					# temp_actual_values4 = []
 					temp_actual_values5 = []
 					for i in range(intervals):
 						if i!=intervals-1:
-							temp_actual_values2.append(np.nanmax([n_HCX_intervals[i_t][i_r][i],np.mean(n_HCX[i_t][i_r][np.logical_and(n_HCX[i_t][i_r]>=n_HCX_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_HCX[i_t][i_r]<n_HCX_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
-							temp_actual_values3.append(np.nanmax([n_H2CX_intervals[i_t][i_r][i],np.mean(n_H2CX[i_t][i_r][np.logical_and(n_H2CX[i_t][i_r]>=n_H2CX_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_H2CX[i_t][i_r]<n_H2CX_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+							temp_actual_values2.append(np.nanmax([intervals_n_HCX[i_t][i_r][i],np.mean(n_HCX[i_t][i_r][np.logical_and(n_HCX[i_t][i_r]>=intervals_n_HCX[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_HCX[i_t][i_r]<intervals_n_HCX[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+							temp_actual_values3.append(np.nanmax([intervals_n_H2CX[i_t][i_r][i],np.mean(n_H2CX[i_t][i_r][np.logical_and(n_H2CX[i_t][i_r]>=intervals_n_H2CX[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_H2CX[i_t][i_r]<intervals_n_H2CX[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
 							# temp_actual_values4.append(np.nanmax([n_H2CX_2_intervals[i_t][i_r][i],np.mean(n_H2CX_2[i_t][i_r][np.logical_and(n_H2CX_2[i_t][i_r]>=n_H2CX_2_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_H2CX_2[i_t][i_r]<n_H2CX_2_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
-							temp_actual_values5.append(np.nanmax([n_HCX_2_intervals[i_t][i_r][i],np.mean(n_HCX_2[i_t][i_r][np.logical_and(n_HCX_2[i_t][i_r]>=n_HCX_2_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_HCX_2[i_t][i_r]<n_HCX_2_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+							temp_actual_values5.append(np.nanmax([intervals_n_HCX_2[i_t][i_r][i],np.mean(n_HCX_2[i_t][i_r][np.logical_and(n_HCX_2[i_t][i_r]>=intervals_n_HCX_2[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_HCX_2[i_t][i_r]<intervals_n_HCX_2[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
 						else:
-							temp_actual_values2.append(np.nanmax([n_HCX_intervals[i_t][i_r][i],np.mean(n_HCX[i_t][i_r][np.logical_and(n_HCX[i_t][i_r]>=n_HCX_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_HCX[i_t][i_r]<=n_HCX_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
-							temp_actual_values3.append(np.nanmax([n_H2CX_intervals[i_t][i_r][i],np.mean(n_H2CX[i_t][i_r][np.logical_and(n_H2CX[i_t][i_r]>=n_H2CX_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_H2CX[i_t][i_r]<=n_H2CX_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+							temp_actual_values2.append(np.nanmax([intervals_n_HCX[i_t][i_r][i],np.mean(n_HCX[i_t][i_r][np.logical_and(n_HCX[i_t][i_r]>=intervals_n_HCX[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_HCX[i_t][i_r]<=intervals_n_HCX[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+							temp_actual_values3.append(np.nanmax([intervals_n_H2CX[i_t][i_r][i],np.mean(n_H2CX[i_t][i_r][np.logical_and(n_H2CX[i_t][i_r]>=intervals_n_H2CX[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_H2CX[i_t][i_r]<=intervals_n_H2CX[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
 							# temp_actual_values4.append(np.nanmax([n_H2CX_2_intervals[i_t][i_r][i],np.mean(n_H2CX_2[i_t][i_r][np.logical_and(n_H2CX_2[i_t][i_r]>=n_H2CX_2_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_H2CX_2[i_t][i_r]<=n_H2CX_2_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
-							temp_actual_values5.append(np.nanmax([n_HCX_2_intervals[i_t][i_r][i],np.mean(n_HCX_2[i_t][i_r][np.logical_and(n_HCX_2[i_t][i_r]>=n_HCX_2_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_HCX_2[i_t][i_r]<=n_HCX_2_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
-					n_HCX_actual_values[i_t][i_r] = np.array(temp_actual_values2)
-					n_H2CX_actual_values[i_t][i_r] = np.array(temp_actual_values3)
+							temp_actual_values5.append(np.nanmax([intervals_n_HCX_2[i_t][i_r][i],np.mean(n_HCX_2[i_t][i_r][np.logical_and(n_HCX_2[i_t][i_r]>=intervals_n_HCX_2[i_t][i_r][i]/(1+10*np.finfo(float).eps),n_HCX_2[i_t][i_r]<=intervals_n_HCX_2[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+					actual_values_n_HCX[i_t][i_r] = np.array(temp_actual_values2)
+					actual_values_n_H2CX[i_t][i_r] = np.array(temp_actual_values3)
 					# n_H2CX_2_actual_values[i_t][i_r] = np.array(temp_actual_values4)
-					n_HCX_2_actual_values[i_t][i_r] = np.array(temp_actual_values5)
+					actual_values_n_HCX_2[i_t][i_r] = np.array(temp_actual_values5)
 					if (len(actual_values_CX_term_1_1[i_t][i_r])>1 and np.nanmax(P_HCX[i_t][i_r])>0):
-						P_HCX_prob[i_t][i_r],P_HCX_intervals[i_t][i_r] = np.histogram(P_HCX[i_t][i_r],bins=np.logspace(max(-6+np.log10(P_HCX[i_t][i_r].max()),np.log10(P_HCX[i_t][i_r].min())),np.log10(P_HCX[i_t][i_r].max()),intervals+1))
-						P_HCX_prob[i_t][i_r] = P_HCX_prob[i_t][i_r]/np.sum(P_HCX_prob[i_t][i_r])
-						P_HCX_2_prob[i_t][i_r],P_HCX_2_intervals[i_t][i_r] = np.histogram(P_HCX_2[i_t][i_r],bins=np.logspace(max(-6+np.log10(P_HCX_2[i_t][i_r].max()),np.log10(P_HCX_2[i_t][i_r].min())),np.log10(P_HCX_2[i_t][i_r].max()),intervals+1))
-						P_HCX_2_prob[i_t][i_r] = P_HCX_2_prob[i_t][i_r]/np.sum(P_HCX_2_prob[i_t][i_r])
-						P_HCX_3_prob[i_t][i_r],P_HCX_3_intervals[i_t][i_r] = np.histogram(P_HCX_3[i_t][i_r],bins=np.logspace(max(-6+np.log10(P_HCX_3[i_t][i_r].max()),np.log10(P_HCX_3[i_t][i_r].min())),np.log10(P_HCX_3[i_t][i_r].max()),intervals+1))
-						P_HCX_3_prob[i_t][i_r] = P_HCX_3_prob[i_t][i_r]/np.sum(P_HCX_3_prob[i_t][i_r])
+						prob_P_HCX[i_t][i_r],intervals_P_HCX[i_t][i_r] = improved_log_histogram(P_HCX[i_t][i_r],intervals)
+						prob_P_HCX[i_t][i_r] = prob_P_HCX[i_t][i_r]/np.sum(prob_P_HCX[i_t][i_r])
+						prob_P_HCX_2[i_t][i_r],intervals_P_HCX_2[i_t][i_r] = improved_log_histogram(P_HCX_2[i_t][i_r],intervals)
+						prob_P_HCX_2[i_t][i_r] = prob_P_HCX_2[i_t][i_r]/np.sum(prob_P_HCX_2[i_t][i_r])
+						prob_P_HCX_3[i_t][i_r],intervals_P_HCX_3[i_t][i_r] = improved_log_histogram(P_HCX_3[i_t][i_r],intervals)
+						prob_P_HCX_3[i_t][i_r] = prob_P_HCX_3[i_t][i_r]/np.sum(prob_P_HCX_3[i_t][i_r])
 						temp_actual_values = []
 						temp_actual_values6 = []
 						temp_actual_values7 = []
 						for i in range(intervals):
 							if i!=intervals-1:
-								temp_actual_values.append(np.nanmax([P_HCX_intervals[i_t][i_r][i],np.mean(P_HCX[i_t][i_r][np.logical_and(P_HCX[i_t][i_r]>=P_HCX_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX[i_t][i_r]<P_HCX_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
-								temp_actual_values6.append(np.nanmax([P_HCX_2_intervals[i_t][i_r][i],np.mean(P_HCX_2[i_t][i_r][np.logical_and(P_HCX_2[i_t][i_r]>=P_HCX_2_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX_2[i_t][i_r]<P_HCX_2_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
-								temp_actual_values7.append(np.nanmax([P_HCX_3_intervals[i_t][i_r][i],np.mean(P_HCX_3[i_t][i_r][np.logical_and(P_HCX_3[i_t][i_r]>=P_HCX_3_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX_3[i_t][i_r]<P_HCX_3_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+								temp_actual_values.append(np.nanmax([intervals_P_HCX[i_t][i_r][i],np.mean(P_HCX[i_t][i_r][np.logical_and(P_HCX[i_t][i_r]>=intervals_P_HCX[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX[i_t][i_r]<intervals_P_HCX[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+								temp_actual_values6.append(np.nanmax([intervals_P_HCX_2[i_t][i_r][i],np.mean(P_HCX_2[i_t][i_r][np.logical_and(P_HCX_2[i_t][i_r]>=intervals_P_HCX_2[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX_2[i_t][i_r]<intervals_P_HCX_2[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+								temp_actual_values7.append(np.nanmax([intervals_P_HCX_3[i_t][i_r][i],np.mean(P_HCX_3[i_t][i_r][np.logical_and(P_HCX_3[i_t][i_r]>=intervals_P_HCX_3[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX_3[i_t][i_r]<intervals_P_HCX_3[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
 							else:
-								temp_actual_values.append(np.nanmax([P_HCX_intervals[i_t][i_r][i],np.mean(P_HCX[i_t][i_r][np.logical_and(P_HCX[i_t][i_r]>=P_HCX_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX[i_t][i_r]<=P_HCX_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
-								temp_actual_values6.append(np.nanmax([P_HCX_2_intervals[i_t][i_r][i],np.mean(P_HCX_2[i_t][i_r][np.logical_and(P_HCX_2[i_t][i_r]>=P_HCX_2_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX_2[i_t][i_r]<=P_HCX_2_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
-								temp_actual_values7.append(np.nanmax([P_HCX_3_intervals[i_t][i_r][i],np.mean(P_HCX_3[i_t][i_r][np.logical_and(P_HCX_3[i_t][i_r]>=P_HCX_3_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX_3[i_t][i_r]<=P_HCX_3_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
-						P_HCX_actual_values[i_t][i_r] = np.array(temp_actual_values)
-						P_HCX_2_actual_values[i_t][i_r] = np.array(temp_actual_values6)
-						P_HCX_3_actual_values[i_t][i_r] = np.array(temp_actual_values7)
+								temp_actual_values.append(np.nanmax([intervals_P_HCX[i_t][i_r][i],np.mean(P_HCX[i_t][i_r][np.logical_and(P_HCX[i_t][i_r]>=intervals_P_HCX[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX[i_t][i_r]<=intervals_P_HCX[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+								temp_actual_values6.append(np.nanmax([intervals_P_HCX_2[i_t][i_r][i],np.mean(P_HCX_2[i_t][i_r][np.logical_and(P_HCX_2[i_t][i_r]>=intervals_P_HCX_2[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX_2[i_t][i_r]<=intervals_P_HCX_2[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+								temp_actual_values7.append(np.nanmax([intervals_P_HCX_3[i_t][i_r][i],np.mean(P_HCX_3[i_t][i_r][np.logical_and(P_HCX_3[i_t][i_r]>=intervals_P_HCX_3[i_t][i_r][i]/(1+10*np.finfo(float).eps),P_HCX_3[i_t][i_r]<=intervals_P_HCX_3[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+						actual_values_P_HCX[i_t][i_r] = np.array(temp_actual_values)
+						actual_values_P_HCX_2[i_t][i_r] = np.array(temp_actual_values6)
+						actual_values_P_HCX_3[i_t][i_r] = np.array(temp_actual_values7)
 			E_HCX = np.sum(2*np.pi*np.transpose(r_crop*np.transpose(P_HCX,(0,2,1)),(0,2,1))* dr,axis=(0,1))*dt/1000*length
-			E_HCX_prob,E_HCX_intervals = np.histogram(E_HCX,bins=np.logspace(np.log10(E_HCX.min()),np.log10(E_HCX.max()),intervals+1))
-			E_HCX_prob = E_HCX_prob/np.sum(E_HCX_prob)
+			prob_E_HCX,intervals_E_HCX = improved_log_histogram(E_HCX,intervals)
+			prob_E_HCX = prob_E_HCX/np.sum(prob_E_HCX)
 			E_HCX_2 = np.sum(2*np.pi*np.transpose(r_crop*np.transpose(P_HCX_2,(0,2,1)),(0,2,1))* dr,axis=(0,1))*dt/1000*length
-			E_HCX_2_prob,E_HCX_2_intervals = np.histogram(E_HCX_2,bins=np.logspace(np.log10(E_HCX_2.min()),np.log10(E_HCX_2.max()),intervals+1))
-			E_HCX_2_prob = E_HCX_2_prob/np.sum(E_HCX_2_prob)
+			prob_E_HCX_2,intervals_E_HCX_2 = improved_log_histogram(E_HCX_2,intervals)
+			prob_E_HCX_2 = prob_E_HCX_2/np.sum(prob_E_HCX_2)
 			E_HCX_3 = np.sum(2*np.pi*np.transpose(r_crop*np.transpose(P_HCX_3,(0,2,1)),(0,2,1))* dr,axis=(0,1))*dt/1000*length
-			E_HCX_3_prob,E_HCX_3_intervals = np.histogram(E_HCX_3,bins=np.logspace(np.log10(E_HCX_3.min()),np.log10(E_HCX_3.max()),intervals+1))
-			E_HCX_3_prob = E_HCX_3_prob/np.sum(E_HCX_3_prob)
+			prob_E_HCX_3,intervals_E_HCX_3 = improved_log_histogram(E_HCX_3,intervals)
+			prob_E_HCX_3 = prob_E_HCX_3/np.sum(prob_E_HCX_3)
 			temp_actual_values = []
 			temp_actual_values_2 = []
 			temp_actual_values_3 = []
 			for i in range(intervals):
 				if i!=intervals-1:
-					temp_actual_values.append(np.nanmax([E_HCX_intervals[i],np.mean(E_HCX[np.logical_and(E_HCX>=E_HCX_intervals[i]/(1+10*np.finfo(float).eps),E_HCX<E_HCX_intervals[i+1]*(1+10*np.finfo(float).eps))])]))
-					temp_actual_values_2.append(np.nanmax([E_HCX_2_intervals[i],np.mean(E_HCX_2[np.logical_and(E_HCX_2>=E_HCX_2_intervals[i]/(1+10*np.finfo(float).eps),E_HCX_2<E_HCX_2_intervals[i+1]*(1+10*np.finfo(float).eps))])]))
-					temp_actual_values_3.append(np.nanmax([E_HCX_3_intervals[i],np.mean(E_HCX_3[np.logical_and(E_HCX_3>=E_HCX_3_intervals[i]/(1+10*np.finfo(float).eps),E_HCX_3<E_HCX_3_intervals[i+1]*(1+10*np.finfo(float).eps))])]))
+					temp_actual_values.append(np.nanmax([intervals_E_HCX[i],np.mean(E_HCX[np.logical_and(E_HCX>=intervals_E_HCX[i]/(1+10*np.finfo(float).eps),E_HCX<intervals_E_HCX[i+1]*(1+10*np.finfo(float).eps))])]))
+					temp_actual_values_2.append(np.nanmax([intervals_E_HCX_2[i],np.mean(E_HCX_2[np.logical_and(E_HCX_2>=intervals_E_HCX_2[i]/(1+10*np.finfo(float).eps),E_HCX_2<intervals_E_HCX_2[i+1]*(1+10*np.finfo(float).eps))])]))
+					temp_actual_values_3.append(np.nanmax([intervals_E_HCX_3[i],np.mean(E_HCX_3[np.logical_and(E_HCX_3>=intervals_E_HCX_3[i]/(1+10*np.finfo(float).eps),E_HCX_3<intervals_E_HCX_3[i+1]*(1+10*np.finfo(float).eps))])]))
 				else:
-					temp_actual_values.append(np.nanmax([E_HCX_intervals[i],np.mean(E_HCX[np.logical_and(E_HCX>=E_HCX_intervals[i]/(1+10*np.finfo(float).eps),E_HCX<=E_HCX_intervals[i+1]*(1+10*np.finfo(float).eps))])]))
-					temp_actual_values_2.append(np.nanmax([E_HCX_2_intervals[i],np.mean(E_HCX_2[np.logical_and(E_HCX_2>=E_HCX_2_intervals[i]/(1+10*np.finfo(float).eps),E_HCX_2<=E_HCX_2_intervals[i+1]*(1+10*np.finfo(float).eps))])]))
-					temp_actual_values_3.append(np.nanmax([E_HCX_3_intervals[i],np.mean(E_HCX_3[np.logical_and(E_HCX_3>=E_HCX_3_intervals[i]/(1+10*np.finfo(float).eps),E_HCX_3<=E_HCX_3_intervals[i+1]*(1+10*np.finfo(float).eps))])]))
-			E_HCX_actual_values = np.array(temp_actual_values)
-			E_HCX_2_actual_values = np.array(temp_actual_values_2)
-			E_HCX_3_actual_values = np.array(temp_actual_values_3)
+					temp_actual_values.append(np.nanmax([intervals_E_HCX[i],np.mean(E_HCX[np.logical_and(E_HCX>=intervals_E_HCX[i]/(1+10*np.finfo(float).eps),E_HCX<=intervals_E_HCX[i+1]*(1+10*np.finfo(float).eps))])]))
+					temp_actual_values_2.append(np.nanmax([intervals_E_HCX_2[i],np.mean(E_HCX_2[np.logical_and(E_HCX_2>=intervals_E_HCX_2[i]/(1+10*np.finfo(float).eps),E_HCX_2<=intervals_E_HCX_2[i+1]*(1+10*np.finfo(float).eps))])]))
+					temp_actual_values_3.append(np.nanmax([intervals_E_HCX_3[i],np.mean(E_HCX_3[np.logical_and(E_HCX_3>=intervals_E_HCX_3[i]/(1+10*np.finfo(float).eps),E_HCX_3<=intervals_E_HCX_3[i+1]*(1+10*np.finfo(float).eps))])]))
+			actual_values_E_HCX = np.array(temp_actual_values)
+			actual_values_E_HCX_2 = np.array(temp_actual_values_2)
+			actual_values_E_HCX_3 = np.array(temp_actual_values_3)
 
-			P_HCX_prob = P_HCX_prob.tolist()
-			P_HCX_actual_values = P_HCX_actual_values.tolist()
-			P_HCX_intervals = P_HCX_intervals.tolist()
-			n_HCX_prob = n_HCX_prob.tolist()
-			n_HCX_actual_values = n_HCX_actual_values.tolist()
-			n_HCX_intervals = n_HCX_intervals.tolist()
-			n_H2CX_prob = n_H2CX_prob.tolist()
-			n_H2CX_actual_values = n_H2CX_actual_values.tolist()
-			n_H2CX_intervals = n_H2CX_intervals.tolist()
+			prob_P_HCX = prob_P_HCX.tolist()
+			actual_values_P_HCX = actual_values_P_HCX.tolist()
+			intervals_P_HCX = intervals_P_HCX.tolist()
+			prob_n_HCX = prob_n_HCX.tolist()
+			actual_values_n_HCX = actual_values_n_HCX.tolist()
+			intervals_n_HCX = intervals_n_HCX.tolist()
+			prob_n_H2CX = prob_n_H2CX.tolist()
+			actual_values_n_H2CX = actual_values_n_H2CX.tolist()
+			intervals_n_H2CX = intervals_n_H2CX.tolist()
 			# n_H2CX_2_prob = n_H2CX_2_prob.tolist()
 			# n_H2CX_2_actual_values = n_H2CX_2_actual_values.tolist()
 			# n_H2CX_2_intervals = n_H2CX_2_intervals.tolist()
-			n_HCX_2_prob = n_HCX_2_prob.tolist()
-			n_HCX_2_actual_values = n_HCX_2_actual_values.tolist()
-			n_HCX_2_intervals = n_HCX_2_intervals.tolist()
-			P_HCX_2_prob = P_HCX_2_prob.tolist()
-			P_HCX_2_actual_values = P_HCX_2_actual_values.tolist()
-			P_HCX_2_intervals = P_HCX_2_intervals.tolist()
-			P_HCX_3_prob = P_HCX_3_prob.tolist()
-			P_HCX_3_actual_values = P_HCX_3_actual_values.tolist()
-			P_HCX_3_intervals = P_HCX_3_intervals.tolist()
+			prob_n_HCX_2 = prob_n_HCX_2.tolist()
+			actual_values_n_HCX_2 = actual_values_n_HCX_2.tolist()
+			intervals_n_HCX_2 = intervals_n_HCX_2.tolist()
+			prob_P_HCX_2 = prob_P_HCX_2.tolist()
+			actual_values_P_HCX_2 = actual_values_P_HCX_2.tolist()
+			intervals_P_HCX_2 = intervals_P_HCX_2.tolist()
+			prob_P_HCX_3 = prob_P_HCX_3.tolist()
+			actual_values_P_HCX_3 = actual_values_P_HCX_3.tolist()
+			intervals_P_HCX_3 = intervals_P_HCX_3.tolist()
 			for i_t in range(np.shape(Te_all)[0]):
 				for i_r in range(np.shape(Te_all)[1]):
 					if len(actual_values_CX_term_1_1[i_t][i_r])<=1:
-						P_HCX_prob[i_t][i_r] = [1]
-						P_HCX_actual_values[i_t][i_r] = [0]
-						P_HCX_intervals[i_t][i_r] = [0]
-						# n_HCX_prob[i_t][i_r] = [1]
-						# n_HCX_actual_values[i_t][i_r] = [nH_rmax]
-						# n_HCX_intervals[i_t][i_r] = [nH_rmax]
-						# n_H2CX_prob[i_t][i_r] = [1]
-						# n_H2CX_actual_values[i_t][i_r] = [nH2_rmax]
-						# n_H2CX_intervals[i_t][i_r] = [nH2_rmax]
+						prob_P_HCX[i_t][i_r] = [1]
+						actual_values_P_HCX[i_t][i_r] = [0]
+						intervals_P_HCX[i_t][i_r] = [0]
+						# prob_n_HCX[i_t][i_r] = [1]
+						# actual_values_n_HCX[i_t][i_r] = [nH_rmax]
+						# intervals_n_HCX[i_t][i_r] = [nH_rmax]
+						# prob_n_H2CX[i_t][i_r] = [1]
+						# actual_values_n_H2CX[i_t][i_r] = [nH2_rmax]
+						# intervals_n_H2CX[i_t][i_r] = [nH2_rmax]
 						# n_H2CX_2_intervals[i_t][i_r] = [0]
 						# n_H2CX_2_prob[i_t][i_r] = [1]
 						# n_H2CX_2_actual_values[i_t][i_r] = [0]
-						# n_HCX_2_prob[i_t][i_r] = [1]
-						# n_HCX_2_actual_values[i_t][i_r] = [1e19]	# 1e19 comes from looking at the simulation data for very low temperature: ne~1e19, ne/nH~1
-						# n_HCX_2_intervals[i_t][i_r] = [1e19]	# 1e19 comes from looking at the simulation data for very low temperature: ne~1e19, ne/nH~1
-						P_HCX_2_prob[i_t][i_r] = [1]
-						P_HCX_2_actual_values[i_t][i_r] = [0]
-						P_HCX_2_intervals[i_t][i_r] = [0]
-						P_HCX_3_prob[i_t][i_r] = [1]
-						P_HCX_3_actual_values[i_t][i_r] = [0]
-						P_HCX_3_intervals[i_t][i_r] = [0]
+						# prob_n_HCX_2[i_t][i_r] = [1]
+						# actual_values_n_HCX_2[i_t][i_r] = [1e19]	# 1e19 comes from looking at the simulation data for very low temperature: ne~1e19, ne/nH~1
+						# intervals_n_HCX_2[i_t][i_r] = [1e19]	# 1e19 comes from looking at the simulation data for very low temperature: ne~1e19, ne/nH~1
+						prob_P_HCX_2[i_t][i_r] = [1]
+						actual_values_P_HCX_2[i_t][i_r] = [0]
+						intervals_P_HCX_2[i_t][i_r] = [0]
+						prob_P_HCX_3[i_t][i_r] = [1]
+						actual_values_P_HCX_3[i_t][i_r] = [0]
+						intervals_P_HCX_3[i_t][i_r] = [0]
 
-			return P_HCX_intervals,P_HCX_prob,P_HCX_actual_values,E_HCX_intervals,E_HCX_prob,E_HCX_actual_values,n_HCX_intervals,n_HCX_prob,n_HCX_actual_values,n_H2CX_intervals,n_H2CX_prob,n_H2CX_actual_values,E_HCX_2_intervals,E_HCX_2_prob,E_HCX_2_actual_values,E_HCX_3_intervals,E_HCX_3_prob,E_HCX_3_actual_values,n_HCX_2_intervals,n_HCX_2_prob,n_HCX_2_actual_values,P_HCX_2_intervals,P_HCX_2_prob,P_HCX_2_actual_values,P_HCX_3_intervals,P_HCX_3_prob,P_HCX_3_actual_values,nH_rmax,nH2_rmax,nH2vH2_rmax
+			return intervals_P_HCX,prob_P_HCX,actual_values_P_HCX,intervals_E_HCX,prob_E_HCX,actual_values_E_HCX,intervals_n_HCX,prob_n_HCX,actual_values_n_HCX,intervals_n_H2CX,prob_n_H2CX,actual_values_n_H2CX,intervals_E_HCX_2,prob_E_HCX_2,actual_values_E_HCX_2,intervals_E_HCX_3,prob_E_HCX_3,actual_values_E_HCX_3,intervals_n_HCX_2,prob_n_HCX_2,actual_values_n_HCX_2,intervals_P_HCX_2,prob_P_HCX_2,actual_values_P_HCX_2,intervals_P_HCX_3,prob_P_HCX_3,actual_values_P_HCX_3,nH_rmax,nH2_rmax,nH2vH2_rmax
 
 		intervals_P_HCX,prob_P_HCX,actual_values_P_HCX,intervals_E_HCX,prob_E_HCX,actual_values_E_HCX,intervals_n_HCX,prob_n_HCX,actual_values_n_HCX,intervals_n_H2CX,prob_n_H2CX,actual_values_n_H2CX,intervals_E_HCX_2,prob_E_HCX_2,actual_values_E_HCX_2,intervals_E_HCX_3,prob_E_HCX_3,actual_values_E_HCX_3,intervals_n_HCX_2,prob_n_HCX_2,actual_values_n_HCX_2,intervals_P_HCX_2,prob_P_HCX_2,actual_values_P_HCX_2,intervals_P_HCX_3,prob_P_HCX_3,actual_values_P_HCX_3,nH_rmax,nH2_rmax,nH2vH2_rmax = PDF_CX_MC(actual_values_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_3,prob_CX_term_1_3,actual_values_CX_term_1_4,prob_CX_term_1_4,actual_values_CX_term_1_5,prob_CX_term_1_5,actual_values_CX_term_1_6,prob_CX_term_1_6,actual_values_CX_term_1_8,prob_CX_term_1_8,actual_values_CX_term_1_9,prob_CX_term_1_9,actual_values_CX_term_1_11,prob_CX_term_1_11,actual_values_H2_destruction_RR,prob_H2_destruction_RR)
 
@@ -6199,7 +6230,7 @@ else:
 		plt.yscale('log')
 		plt.xscale('log')
 		plt.grid()
-		plt.ylabel('nH2/ne [au]')
+		plt.ylabel('nH/ne [au]')
 		plt.legend(loc='best', fontsize='xx-small')
 		plt.xlabel('Te [eV]')
 		plt.title(pre_title+' H/e density ratio, "--" limits')
@@ -6308,7 +6339,7 @@ else:
 					out_prob_sum.append(np.array([1]))
 					out_actual_values.append(np.array([0]))
 				else:
-					temp_prob,temp_intervals = np.histogram(temp_values,bins=np.logspace(np.log10(temp_values.min()),np.log10(temp_values.max()),intervals+1))
+					temp_prob,temp_intervals = improved_log_histogram(temp_values,intervals)# np.histogram(temp_values,bins=np.logspace(np.log10(temp_values.min()),np.log10(temp_values.max()),intervals+1))
 					temp_actual_values = []
 					for i in range(intervals):
 						if i!=intervals-1:

@@ -25,6 +25,7 @@ import copy
 from scipy.optimize import curve_fit,least_squares
 from scipy import interpolate
 from scipy.signal import find_peaks, peak_prominences as get_proms
+from scipy.special import erf
 from sklearn.linear_model import LinearRegression
 import time as tm
 import pickle
@@ -345,7 +346,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 			print('Timeout for bayesian search of a single point %.3g min' %(timeout_bayesian_search/60))
 			power_molecular_precision,power_atomic_precision,power_budget_precision = 0.5,0.2,0.5
 			print('precision (sigma) for molecular elements of power balance %.3g%%, for atomic elements %.3g%%, for the budget %.3g%%' %(power_molecular_precision*100,power_atomic_precision*100,power_budget_precision*100))
-			particle_molecular_precision,particle_atomic_precision,particle_molecular_budget_precision,particle_atomic_budget_precision = 1,0.5,1,0.5
+			particle_molecular_precision,particle_atomic_precision,particle_molecular_budget_precision,particle_atomic_budget_precision = 0.5,0.5,1,0.5	# 1,0.5,1,0.5
 			if include_particles_limitation:
 				print('precision (sigma) for molecular elements of particle balance %.3g%%, for atomic elements %.3g%%, for the molecular budget %.3g%%, for the atomic budget %.3g%%' %(particle_molecular_precision*100,particle_atomic_precision*100,particle_molecular_budget_precision*100,particle_atomic_budget_precision*100))
 			print('externally_provided_H2p_steps = '+str(externally_provided_H2p_steps))
@@ -1529,8 +1530,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							else:
 								min_Te = max(merge_Te_prof_multipulse_interp_crop_limited_restrict-4*merge_dTe_prof_multipulse_interp_crop_limited_restrict,min(0.1,merge_Te_prof_multipulse_interp_crop_limited_restrict/2))
 								max_Te = merge_Te_prof_multipulse_interp_crop_limited_restrict+3*merge_dTe_prof_multipulse_interp_crop_limited_restrict
-								steps_left = np.ceil((TS_Te_steps)/2)
-								steps_right = np.ceil(TS_Te_steps/2)
+								steps_left = int(np.ceil((TS_Te_steps)/2))
+								steps_right = int(np.ceil(TS_Te_steps/2))
 								Te_values = [*np.linspace(min_Te,merge_Te_prof_multipulse_interp_crop_limited_restrict,num=steps_left)[:-1],*np.linspace(merge_Te_prof_multipulse_interp_crop_limited_restrict,max_Te,num=steps_right)]
 								if np.diff(np.sort(Te_values))[0]>0.3:
 									Te_values = list(Te_values) + [np.mean(np.sort(Te_values)[:2])]
@@ -1554,8 +1555,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								steps_right = np.ceil(1/1.5*(TS_ne_steps-1)*(max_ne-ne)/(max_ne-min_ne))
 								ne_values = [*np.logspace(np.log10(min_ne),np.log10(ne),num=steps_left+1),*np.logspace(np.log10(ne),np.log10(max_ne),num=steps_right+1)]
 							else:
-								steps_left = np.ceil((TS_ne_steps)/2)
-								steps_right = np.ceil(TS_ne_steps/2)	# the right range is always larger so 1 point more is fair
+								steps_left = int(np.ceil((TS_ne_steps)/2))
+								steps_right = int(np.ceil(TS_ne_steps/2))	# the right range is always larger so 1 point more is fair
 								ne_values = [*np.linspace(min_ne,ne,num=steps_left)[:-1],*np.logspace(np.log10(ne),np.log10(max_ne),num=steps_right)]	# I try linear spacing on the left to not have too many points away from the centre of the gaussian
 							# ne_values = np.logspace(np.log10(max(ne-2*merge_dne_prof_multipulse_interp_crop_limited_restrict*1e20,min(0.05*1e20,ne/2))),np.log10(ne+8*merge_dne_prof_multipulse_interp_crop_limited_restrict*1e20),num=TS_ne_steps)
 							ne_values = np.unique(ne_values)
@@ -1682,7 +1683,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								record_nH_ne_log_prob = []
 								for i_Te_for_nH_ne,Te_for_nH_ne in enumerate(Te_values_array):
 									# nH_ne_values = nH_ne_values_Te(Te_for_nH_ne,H_steps)
-									nH_ne_values = nH_ne_values_Te_3(Te_for_nH_ne,H_steps,ne_values_array,max_H2_density_available)
+									nH_ne_values = nH_ne_values_Te_3(Te_for_nH_ne,H_steps,ne_values_array,max_H_density_available)
 									record_nH_ne_values.append(nH_ne_values)
 									# nH_ne_log_probs = nH_ne_log_probs_Te(Te_for_nH_ne,nH_ne_values)
 									# nH_ne_log_probs = nH_ne_log_probs_Te_2(Te_for_nH_ne,nH_ne_values)
@@ -1981,10 +1982,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										select = all_net_e_destruction>total_removable_e
 										particles_penalty[select] += np.float32(-0.5*((all_net_e_destruction[select] - total_removable_e[select])/total_removable_e[select])**2)	# 100% uncertanty
 									elif True:
-										particles_penalty += np.log( 1 + np.erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
-										particles_penalty_Hp += np.log( 1 + np.erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
-										particles_penalty += np.log( 1 + np.erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
-										particles_penalty_e += np.log( 1 + np.erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
+										particles_penalty += np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
+										particles_penalty_Hp += np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
+										particles_penalty += np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
+										particles_penalty_e += np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
 
 									total_removable_Hm = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nHm_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ downstream
 									total_removable_H2p = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nH2p_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ downstream
@@ -1995,10 +1996,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										particles_penalty[select] += np.float32(-0.5*((all_net_H2p_destruction[select] - total_removable_H2p[select])/(total_removable_H2p[select]*2))**2)	# 200% uncertanty
 									elif True:
 										if molecular_particle_balance_enabled:
-											particles_penalty += np.log( 1 + np.erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
-											particles_penalty += np.log( 1 + np.erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
-										particles_penalty_Hm += np.log( 1 + np.erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
-										particles_penalty_H2p += np.log( 1 + np.erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
+											particles_penalty += np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
+											particles_penalty += np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
+										particles_penalty_Hm += np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
+										particles_penalty_H2p += np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
 									particles_penalty -= np.nanmax(particles_penalty)
 									# particles_penalty[np.isnan(particles_penalty)]=-np.inf
 
@@ -2025,20 +2026,20 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# total_removed_power_times_volume_sigma = (0.2*total_removed_power_atomic + 0.5*power_rad_mol) * area*length
 										total_removed_power_times_volume_sigma = (( (power_atomic_precision**2)*((power_via_ionisation*1e-10)**2 + (power_rad_excit*1e-10)**2 + (power_via_recombination*1e-10)**2 + (power_rec_neutral*1e-10)**2 + (power_via_brem*1e-10)**2 + (power_heating_rec*1e-10)**2) + (power_molecular_precision**2)*((power_rad_Hm*1e-10)**2 + (power_rad_H2*1e-10)**2 + (power_rad_H2p*1e-10)**2) + (all_power_potential_mol_sigma*1e-10)**2)**0.5) *1e10 * area*length	#this properly adds in quadrature all the uncertanties
 										total_removable_power_times_volume_sigma = (total_removable_power_times_volume*power_budget_precision)
-										# power_penalty = np.log( 1 + np.erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removed_power_times_volume_sigma**2 + (total_removable_power_times_volume*0.5)**2)**0.5)) )
+										# power_penalty = np.log( 1 + erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removed_power_times_volume_sigma**2 + (total_removable_power_times_volume*0.5)**2)**0.5)) )
 										if False:	# this is for only positive values of power dissipated
-											power_penalty = np.float32(np.erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ))
-											power_penalty += np.float32(np.erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removed_power_times_volume_sigma**2 + total_removable_power_times_volume_sigma**2)**0.5)))
-											power_penalty = power_penalty/np.float32(0.5 + np.erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ))
-											power_penalty = power_penalty/np.float32(0.5 + np.erf( total_removable_power_times_volume/( 2**0.5 * total_removable_power_times_volume_sigma ) ))
+											power_penalty = np.float32(erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ))
+											power_penalty += np.float32(erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removed_power_times_volume_sigma**2 + total_removable_power_times_volume_sigma**2)**0.5)))
+											power_penalty = power_penalty/np.float32(0.5 + erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ))
+											power_penalty = power_penalty/np.float32(0.5 + erf( total_removable_power_times_volume/( 2**0.5 * total_removable_power_times_volume_sigma ) ))
 										else:	# this is for +/- values
-											power_penalty =  1 + np.erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removable_power_times_volume_sigma**2 + total_removed_power_times_volume_sigma**2)**0.5))
+											power_penalty =  1 + erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removable_power_times_volume_sigma**2 + total_removed_power_times_volume_sigma**2)**0.5))
 										time_lapsed = tm.time()-start_time
 										print('worker '+str(current_process())+' Initial loop nr '+str(loop_index)+'-2 done '+str(domain_index)+' in %.3gmin %.3gsec' %(int(time_lapsed/60),int(time_lapsed%60)) +', power penalty - good=%.3g, nan=%.3g, -inf=%.3g, -<0 =%.3g, min=%.3g' %( np.sum(np.isfinite(power_penalty)),np.sum(np.isnan(power_penalty)),np.sum(np.isinf(power_penalty)),np.sum(power_penalty<0) ,np.nanmin(power_penalty)) )
 										power_penalty[power_penalty<0]=0
 										power_penalty[np.logical_not(np.isfinite(power_penalty))]=0
 										power_penalty = np.log(power_penalty)
-										# power_penalty += -np.log( 1+ np.erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ) ) - np.log( 1+ np.erf( total_removable_power_times_volume/( 2**0.5 * total_removable_power_times_volume*0.5 ) ) )
+										# power_penalty += -np.log( 1+ erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ) ) - np.log( 1+ erf( total_removable_power_times_volume/( 2**0.5 * total_removable_power_times_volume*0.5 ) ) )
 										power_penalty -= power_penalty.max()
 										# del total_removed_power_times_volume_sigma
 
@@ -2582,7 +2583,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							record_nH_ne_log_prob = []
 							for i_Te_for_nH_ne,Te_for_nH_ne in enumerate(Te_values_array):
 								# nH_ne_values = nH_ne_values_Te_expanded(Te_for_nH_ne,H_steps,how_expand_nH_ne_indexes)
-								nH_ne_values = nH_ne_values_Te_expanded_3(Te_for_nH_ne,H_steps,how_expand_nH_ne_indexes,ne_values_array,max_H2_density_available)
+								nH_ne_values = nH_ne_values_Te_expanded_3(Te_for_nH_ne,H_steps,how_expand_nH_ne_indexes,ne_values_array,max_H_density_available)
 								record_nH_ne_values.append(nH_ne_values)
 								# nH_ne_log_probs = nH_ne_log_probs_Te(Te_for_nH_ne,nH_ne_values)
 								# nH_ne_log_probs = nH_ne_log_probs_Te_2(Te_for_nH_ne,nH_ne_values)
@@ -2948,14 +2949,14 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									particles_penalty[select] += np.float32(-0.5*((all_net_e_destruction[select] - total_removable_e[select])/total_removable_e[select])**2)	# 100% uncertanty
 									# particles_penalty[np.isnan(particles_penalty)]=-np.inf
 								elif True:
-									particles_penalty += np.log( 1 + np.erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
-									particles_penalty_Hp += np.log( 1 + np.erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
-									particles_penalty += np.log( 1 + np.erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
-									particles_penalty_e += np.log( 1 + np.erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
+									particles_penalty += np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
+									particles_penalty_Hp += np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
+									particles_penalty += np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
+									particles_penalty_e += np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
 									del all_net_Hp_destruction_sigma,all_net_e_destruction_sigma
 
-								total_removable_Hm = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nHm_ne_values*max_local_flow_vel + area*length*all_nHm_ne_values*all_ne_values*1e-20)	# I assume molecules upstream ~ downstream
-								total_removable_H2p = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nH2p_ne_values*max_local_flow_vel + area*length*all_nH2p_ne_values*all_ne_values*1e-20)	# I assume molecules upstream ~ downstream
+								total_removable_Hm = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nHm_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ downstream
+								total_removable_H2p = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nH2p_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ downstream
 								if False:
 									select = all_net_Hm_destruction>total_removable_Hm
 									particles_penalty[select] += np.float32(-0.5*((all_net_Hm_destruction[select] - total_removable_Hm[select])/(total_removable_Hm[select]*2))**2)	# 200% uncertanty
@@ -2965,10 +2966,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									particles_penalty[np.isnan(particles_penalty)]=-np.inf
 								elif True:
 									if molecular_particle_balance_enabled:
-										particles_penalty += np.log( 1 + np.erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
-										particles_penalty += np.log( 1 + np.erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
-									particles_penalty_Hm += np.log( 1 + np.erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
-									particles_penalty_H2p += np.log( 1 + np.erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
+										particles_penalty += np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
+										particles_penalty += np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
+									particles_penalty_Hm += np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
+									particles_penalty_H2p += np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
 									del all_net_Hm_destruction_sigma,all_net_H2p_destruction_sigma
 								particles_penalty -= np.nanmax(particles_penalty)
 								# particles_penalty[np.isnan(particles_penalty)] = -np.inf
@@ -3000,20 +3001,20 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									# total_removed_power_times_volume_sigma = (0.2*total_removed_power_atomic + 0.5*power_rad_mol) * area*length
 									total_removed_power_times_volume_sigma = (( (power_atomic_precision**2)*((power_via_ionisation*1e-10)**2 + (power_rad_excit*1e-10)**2 + (power_via_recombination*1e-10)**2 + (power_rec_neutral*1e-10)**2 + (power_via_brem*1e-10)**2 + (power_heating_rec*1e-10)**2) + (power_molecular_precision**2)*((power_rad_Hm*1e-10)**2 + (power_rad_H2*1e-10)**2 + (power_rad_H2p*1e-10)**2) + (all_power_potential_mol_sigma*1e-10)**2)**0.5) *1e10 * area*length	#this properly adds in quadrature all the uncertanties
 									total_removable_power_times_volume_sigma = (total_removable_power_times_volume*power_budget_precision)
-									# power_penalty = np.log( 1 + np.erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removed_power_times_volume_sigma**2 + (total_removable_power_times_volume*0.5)**2)**0.5)) )
+									# power_penalty = np.log( 1 + erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removed_power_times_volume_sigma**2 + (total_removable_power_times_volume*0.5)**2)**0.5)) )
 									if False:	# this is for only positive values of power dissipated
-										power_penalty = np.float32(np.erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ))
-										power_penalty += np.float32(np.erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removed_power_times_volume_sigma**2 + total_removable_power_times_volume_sigma**2)**0.5)))
-										power_penalty = power_penalty/np.float32(0.5 + np.erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ))
-										power_penalty = power_penalty/np.float32(0.5 + np.erf( total_removable_power_times_volume/( 2**0.5 * total_removable_power_times_volume_sigma ) ))
+										power_penalty = np.float32(erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ))
+										power_penalty += np.float32(erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removed_power_times_volume_sigma**2 + total_removable_power_times_volume_sigma**2)**0.5)))
+										power_penalty = power_penalty/np.float32(0.5 + erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ))
+										power_penalty = power_penalty/np.float32(0.5 + erf( total_removable_power_times_volume/( 2**0.5 * total_removable_power_times_volume_sigma ) ))
 									else:	# this is for +/- values
-										power_penalty =  1 + np.erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removable_power_times_volume_sigma**2 + total_removed_power_times_volume_sigma**2)**0.5))
+										power_penalty =  1 + erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removable_power_times_volume_sigma**2 + total_removed_power_times_volume_sigma**2)**0.5))
 									time_lapsed = tm.time()-start_time
 									print('worker '+str(current_process())+' marker 1-1 '+str(domain_index)+' in %.3gmin %.3gsec' %(int(time_lapsed/60),int(time_lapsed%60)) +', power penalty - good=%.3g, nan=%.3g, -inf=%.3g, -<0 =%.3g, min=%.3g' %( np.sum(np.isfinite(power_penalty)),np.sum(np.isnan(power_penalty)),np.sum(np.isinf(power_penalty)),np.sum(power_penalty<0) ,np.nanmin(power_penalty)) )
 									power_penalty[power_penalty<0]=0
 									power_penalty[np.logical_not(np.isfinite(power_penalty))]=0
 									power_penalty = np.log(power_penalty)
-									# power_penalty += -np.log( 1+ np.erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ) ) - np.log( 1+ np.erf( total_removable_power_times_volume/( 2**0.5 * total_removable_power_times_volume*0.5 ) ) )
+									# power_penalty += -np.log( 1+ erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ) ) - np.log( 1+ erf( total_removable_power_times_volume/( 2**0.5 * total_removable_power_times_volume*0.5 ) ) )
 									del total_removed_power_times_volume_sigma
 								power_penalty -= power_penalty.max()
 							#
