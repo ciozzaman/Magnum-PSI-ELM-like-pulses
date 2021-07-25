@@ -3042,7 +3042,7 @@ def RR_recombination__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_pr
 class MyException(Exception):
     pass
 
-def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision,require_strongest=False):
+def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_H,T_H2,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,molecular_precision,atomic_precision,require_strongest=False,only_Yacora_as_molecule=False):
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
 		Te = np.unique(merge_Te_prof_multipulse_interp_crop_limited)
 		ne = np.unique(merge_ne_prof_multipulse_interp_crop_limited)
@@ -3065,7 +3065,7 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 		H1s_H_4__H2p_e = nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(Te,np.unique(T_H),ne)
 		e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0]
 		e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne)[0]
-		# e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0]
+		e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0]
 		e_H2p__Hex_H__or__Hn_Hp_e = np.transpose(np.transpose(np.array([nH2p_ne_all.tolist()]*len(np.unique(excited_states_From_H2p))), (*np.arange(1,1+len(nH2p_ne_all.shape)),0))*RR_e_H2p__Hex_H__or__Hn_Hp_e__r(Te,ne)[0], (-1,*np.arange(len(nH2p_ne_all.shape))))	# split among hydrogen excited states
 		e_H2p__e_Hp_Hp_e = nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0]
 		H1s_H2pv__Hp_H_H = nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0]
@@ -3104,7 +3104,7 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 		H1s_H_4__H2p_e = nH_ne_all_excited_state_4*nH_ne_all_ground_state*RR_H1s_H_4__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_ne_prof_multipulse_interp_crop_limited)
 		e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
 		e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
-		# e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
+		e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
 		e_H2p__Hex_H__or__Hn_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hn_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)	# split among hydrogen excited states
 		e_H2p__e_Hp_Hp_e = nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
 		H1s_H2pv__Hp_H_H = nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited)
@@ -3131,6 +3131,47 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 		# Therefore I think it's best to use AMJUEL coefficients, that consider all excitation states
 		# e_H2p__Hex_H__or__Hex_Hp_e it's important for the power balance, AMJUEL stuff it is for the particle one.
 
+	# who knows how good or applicable the molecular rates are, beside Yacora ones, so I add the possibility to neglect all but those
+	if only_Yacora_as_molecule:
+		e_H__Hm[:] = 0	# m^-3/s *1e-20
+		e_H2__Hm_H[:] = 0
+		e_Hm__e_H_e[:] = 0
+		# Hp_Hm__Hex_H = nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all)
+		# Hp_Hm__Hn_H = nHm_ne_all*RR_Hp_Hm__Hn_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all)
+		Hp_Hm__H2p_e[:] = 0
+		Hm_H1s__H1s_H1s_e[:] = 0
+		Hm_H1s__H2_v_e[:] = 0
+		Hm_H2v__H_H2v_e[:] = 0
+		# H2p_Hm__Hex_H2 = nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
+		# H2p_Hm__Hn_H2 = nHm_ne_all*RR_H2p_Hm__Hn_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
+		e_H2__e_H2p_e[:] = 0
+		Hp_H2v__H_H2p[:] = 0
+		Hp_H_H__H_H2p[:] = 0
+		H1s_H_2__H2p_e[:] = 0
+		H1s_H_3__H2p_e[:] = 0
+		H1s_H_4__H2p_e[:] = 0
+		# I cannot erase the next 2 here because I use them to calculate in a fine way the potential energy contribution of e_H2p__Hex_H__or__Hn_Hp_e
+		# also because they contribute to  different parts of the particle balance
+		# e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0]
+		# e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne)[0]
+		# e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0]
+		# e_H2p__Hex_H__or__Hn_Hp_e = np.transpose(np.transpose(np.array([nH2p_ne_all.tolist()]*len(np.unique(excited_states_From_H2p))), (*np.arange(1,1+len(nH2p_ne_all.shape)),0))*RR_e_H2p__Hex_H__or__Hn_Hp_e__r(Te,ne)[0], (-1,*np.arange(len(nH2p_ne_all.shape))))	# split among hydrogen excited states
+		e_H2p__e_Hp_Hp_e[:] = 0
+		H1s_H2pv__Hp_H_H[:] = 0
+		H2pvi_H2v0__Hp_H_H2v1[:] = 0
+		H2pvi_H2v0__H3p_H1s[:] = 0
+		H2p_Hm__H2N13Λσ_H1s[:] = 0
+		H2p_Hm__H3p_e[:] = 0
+		Hp_H_H__Hp_H2[:] = 0
+		H_H_H__H_H2[:] = 0
+		# e_H2__e_Hex_H = nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0]
+		# e_H2__e_Hn_H = nH2_ne_all*RR_e_H2__e_Hn_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)	# split among hydrogen excited states
+		e_H2__Hp_H_2e[:] = 0
+		e_H2X1Σg__e_H1s_H1s[:] = 0
+		Hp_H2X1Σg__Hp_H1s_H1s[:] = 0
+		H1s_H2v__H1s_2H1s[:] = 0
+		H2v0_H2v__H2v0_2H1s[:] = 0
+
 	e_H__Hm_sigma = molecular_precision*e_H__Hm*1e-10	# *1e-10 is only to avoid numerical overflow
 	e_H2__Hm_H_sigma = molecular_precision*e_H2__Hm_H*1e-10
 	e_Hm__e_H_e_sigma = molecular_precision*e_Hm__e_H_e*1e-10
@@ -3147,7 +3188,7 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 	H1s_H_3__H2p_e_sigma = molecular_precision*H1s_H_3__H2p_e*1e-10
 	H1s_H_4__H2p_e_sigma = molecular_precision*H1s_H_4__H2p_e*1e-10
 	e_H2p__XXX__e_Hp_H_sigma = molecular_precision*e_H2p__XXX__e_Hp_H*1e-10
-	# e_H2p__Hex_H__or__Hex_Hp_e_sigma = molecular_precision*e_H2p__Hex_H__or__Hex_Hp_e
+	e_H2p__Hex_H__or__Hex_Hp_e_sigma = molecular_precision*e_H2p__Hex_H__or__Hex_Hp_e
 	e_H2p__e_Hp_Hp_e_sigma = molecular_precision*e_H2p__e_Hp_Hp_e*1e-10
 	H1s_H2pv__Hp_H_H_sigma = molecular_precision*H1s_H2pv__Hp_H_H*1e-10
 	H2pvi_H2v0__Hp_H_H2v1_sigma = molecular_precision*H2pvi_H2v0__Hp_H_H2v1*1e-10
@@ -3175,8 +3216,8 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 	rate_creation_H2p = Hp_Hm__H2p_e + e_H2__e_H2p_e + Hp_H2v__H_H2p + Hp_H_H__H_H2p + H1s_H_2__H2p_e + H1s_H_3__H2p_e + H1s_H_4__H2p_e	# m^-3/s *1e-20
 	rate_creation_H2p_sigma = (Hp_Hm__H2p_e_sigma**2 + e_H2__e_H2p_e_sigma**2 + Hp_H2v__H_H2p_sigma**2 + Hp_H_H__H_H2p_sigma**2 + H1s_H_2__H2p_e_sigma**2 + H1s_H_3__H2p_e_sigma**2 + H1s_H_4__H2p_e_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
 
-	rate_destruction_H2p = e_H2p__XXX__e_Hp_H + e_H2p__H_H + e_H2p__e_Hp_Hp_e + H1s_H2pv__Hp_H_H + H2pvi_H2v0__Hp_H_H2v1 + H2pvi_H2v0__H3p_H1s + H2p_Hm__H2N13Λσ_H1s + H2p_Hm__H3p_e + H2p_Hm__Hex_H2	# m^-3/s *1e-20
-	rate_destruction_H2p_sigma = (e_H2p__XXX__e_Hp_H_sigma**2 + e_H2p__H_H_sigma**2 + e_H2p__e_Hp_Hp_e_sigma**2 + H1s_H2pv__Hp_H_H_sigma**2 + H2pvi_H2v0__Hp_H_H2v1_sigma**2 + H2pvi_H2v0__H3p_H1s_sigma**2 + H2p_Hm__H2N13Λσ_H1s_sigma**2 + H2p_Hm__H3p_e_sigma**2 + H2p_Hm__Hex_H2_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
+	rate_destruction_H2p = np.max([e_H2p__Hex_H__or__Hex_Hp_e,e_H2p__XXX__e_Hp_H + e_H2p__H_H],axis=0) + e_H2p__e_Hp_Hp_e + H1s_H2pv__Hp_H_H + H2pvi_H2v0__Hp_H_H2v1 + H2pvi_H2v0__H3p_H1s + H2p_Hm__H2N13Λσ_H1s + H2p_Hm__H3p_e + H2p_Hm__Hex_H2	# m^-3/s *1e-20
+	rate_destruction_H2p_sigma = (np.max([e_H2p__Hex_H__or__Hex_Hp_e_sigma**2,e_H2p__XXX__e_Hp_H_sigma**2 + e_H2p__H_H_sigma**2],axis=0) + e_H2p__e_Hp_Hp_e_sigma**2 + H1s_H2pv__Hp_H_H_sigma**2 + H2pvi_H2v0__Hp_H_H2v1_sigma**2 + H2pvi_H2v0__H3p_H1s_sigma**2 + H2p_Hm__H2N13Λσ_H1s_sigma**2 + H2p_Hm__H3p_e_sigma**2 + H2p_Hm__Hex_H2_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
 
 	rate_creation_H2 = Hm_H1s__H2_v_e + Hp_H_H__Hp_H2 + H_H_H__H_H2 + H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2	# m^-3/s *1e-20
 	rate_creation_H2_sigma = (Hm_H1s__H2_v_e_sigma**2 + Hp_H_H__Hp_H2_sigma**2 + H_H_H__H_H2_sigma**2 + H2p_Hm__H2N13Λσ_H1s_sigma**2 + H2p_Hm__Hex_H2_sigma**2)**0.5 *1e10	# m^-3/s *1e-20
@@ -3940,12 +3981,12 @@ def nH2p_nH2_values_Te_ne(Te,ne,to_find_steps,H2_suppression=False):
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
 		# nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te))))),num=to_find_steps)
-		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
+		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-8*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
 	else:
 		temp=[]
 		for i in range(len(Te)):
 			# temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i]))))),num=to_find_steps))
-			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps))
+			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-8*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps))
 		nH2p_nH2_values = np.array(temp).T
 	return nH2p_nH2_values
 def nH2p_nH2_values_Te_ne_expanded(Te,ne,to_find_steps,how_expand_nH2p_nH2_indexes,H2_suppression=False):
@@ -3954,7 +3995,7 @@ def nH2p_nH2_values_Te_ne_expanded(Te,ne,to_find_steps,how_expand_nH2p_nH2_index
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
 		# nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te))))),num=to_find_steps)
-		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
+		nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-8*min(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne,Te),H2p_H2_v0_ratio_AMJUEL(ne,Te)))),num=to_find_steps)
 		nH2p_nH2_additional_values=[]
 		for i in range(to_find_steps-1):
 			if how_expand_nH2p_nH2_indexes[i]!=0:
@@ -3964,7 +4005,7 @@ def nH2p_nH2_values_Te_ne_expanded(Te,ne,to_find_steps,how_expand_nH2p_nH2_index
 		temp=[]
 		for i in range(len(Te)):
 			# nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-2*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1,min(1,1e4*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i]))))),num=to_find_steps)
-			nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-7*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps)
+			nH2p_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-8*min(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),np.log10(1/additional_low_multiplier*max(1e2,1e5*max(H2p_H2_v_ratio_AMJUEL(ne[i],Te[i]),H2p_H2_v0_ratio_AMJUEL(ne[i],Te[i])))),num=to_find_steps)
 			nH2p_nH2_additional_values=[]
 			for i in range(to_find_steps-1):
 				if how_expand_nH2p_nH2_indexes[i]!=0:
@@ -3977,11 +4018,11 @@ def nHm_nH2_values_Te(Te,to_find_steps,H2_suppression=False):
 	if H2_suppression:
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
-		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-11,1e-10*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
+		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-4*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e1,1e5*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
 	else:
 		temp=[]
 		for i in range(len(Te)):
-			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-11,1e-10*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps))
+			temp.append(np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-4*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e1,1e5*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps))
 		nHm_nH2_values = np.array(temp).T
 	return nHm_nH2_values
 def nHm_nH2_values_Te_expanded(Te,to_find_steps,how_expand_nHm_nH2_indexes,H2_suppression=False):
@@ -3989,7 +4030,7 @@ def nHm_nH2_values_Te_expanded(Te,to_find_steps,how_expand_nHm_nH2_indexes,H2_su
 	if H2_suppression:
 		additional_low_multiplier = 0.1
 	if np.shape(Te)==():
-		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-11,1e-10*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
+		nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-5*min(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),np.log10(1/additional_low_multiplier*max(1e1,1e5*max(Hm_H2_v_ratio_AMJUEL(Te),Hm_H2_v0_ratio_AMJUEL(Te)))),num=to_find_steps)
 		nHm_nH2_additional_values = []
 		for i in range(to_find_steps-1):
 			if how_expand_nHm_nH2_indexes[i]!=0:
@@ -3998,7 +4039,7 @@ def nHm_nH2_values_Te_expanded(Te,to_find_steps,how_expand_nHm_nH2_indexes,H2_su
 	else:
 		temp=[]
 		for i in range(len(Te)):
-			nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-11,1e-10*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e1,1e4*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps)
+			nHm_nH2_values = np.logspace(np.log10(additional_low_multiplier*max(1e-9,1e-5*min(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),np.log10(1/additional_low_multiplier*max(1e1,1e5*max(Hm_H2_v_ratio_AMJUEL(Te[i]),Hm_H2_v0_ratio_AMJUEL(Te[i])))),num=to_find_steps)
 			nHm_nH2_additional_values=[]
 			for i in range(to_find_steps-1):
 				if how_expand_nHm_nH2_indexes[i]!=0:
