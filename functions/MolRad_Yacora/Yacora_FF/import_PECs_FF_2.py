@@ -1424,7 +1424,6 @@ def RR_e_Hm__e_H_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof
 	e_Hm__e_H_e = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
 	return e_Hm__e_H_e	# m^-3/s *1e-20 / (nHm/ne)
 
-
 def RR_Hp_Hm__H_2_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 		print('error, Te and ne are different shapes')
@@ -1443,31 +1442,86 @@ def RR_Hp_Hm__H_2_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,me
 		T_Hp,T_Hm = arg[0]
 		T_Hp = np.array([T_Hp])
 		T_Hm = np.array([T_Hm])
-		# Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
-		# Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		# Hp_energy = 0.5 * Hp_velocity**2 * hydrogen_mass * J_to_eV
-		# Hp_energy = np.array(([Hp_energy.tolist()])*9)
-		Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
-		Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		Hp_energy = 0.5 * Hp_velocity**2 * hydrogen_mass * J_to_eV
-		Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
-		Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
-		baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
-		baricenter_impact_energy[baricenter_impact_energy<0.1]=0.1
-		baricenter_impact_energy[baricenter_impact_energy>20000]=20000
-		# baricenter_impact_energy = np.array(([baricenter_impact_energy.tolist()])*9)
-		coefficients = np.array([-3.49880888*1e1, 2.15245051*1e-1, -2.35628664*1e-2, 5.49471553*1e-2, 5.37932888*1e-3, -6.05507021*1e-3, 9.99168329*1e-4, -6.63625564*1e-5,1.61228385*1e-6])
-		# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
-		cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(baricenter_impact_energy)))* (1e-4 * 1e20)	# multiplied 1e20
-		cross_section[np.logical_not(np.isfinite(cross_section))]=0
-		cross_section_min = cross_section.flatten()[(np.abs(Hp_energy[0]-0.1)).argmin()]
-		cross_section_max = cross_section.flatten()[(np.abs(Hp_energy[0]-20000)).argmin()]
-		cross_section[baricenter_impact_energy<0.1]=cross_section_min
-		cross_section[baricenter_impact_energy>20000]=cross_section_max
-		cross_section[cross_section<0] = 0
-		reaction_rate = np.sum((cross_section*Hp_velocity*Hp_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(Hp_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s * 1e20
-		# reaction_rate = np.sum(cross_section*Hp_velocity*Hp_velocity_PDF,axis=-1)* np.mean(np.diff(Hp_velocity))		# m^3 / s
+		if len(T_Hp)==1 and len(T_Hm)==1:
+			reduced_mass = hydrogen_mass*hydrogen_mass/(hydrogen_mass+hydrogen_mass)
+			Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hp),50))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
+			Hp_velocity_x = np.sort(Hp_velocity.flatten().tolist() + (-Hp_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hp_velocity_PF = Hp_velocity_PDF.flatten()*np.array([(Hp_velocity.flatten()[1]-Hp_velocity.flatten()[0]),*np.diff(Hp_velocity.flatten())[1:]/2+np.diff(Hp_velocity.flatten())[:-1]/2,(Hp_velocity.flatten()[-1]-Hp_velocity.flatten()[-2])])
+			Hp_velocity_PF_x = np.array(np.flip(Hp_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hm.T),50))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+			Hm_velocity_x = np.sort(Hm_velocity.flatten().tolist() + (-Hm_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hm_velocity_PF = Hm_velocity_PDF.flatten()*np.array([(Hm_velocity.flatten()[1]-Hm_velocity.flatten()[0]),*np.diff(Hm_velocity.flatten())[1:]/2+np.diff(Hm_velocity.flatten())[:-1]/2,(Hm_velocity.flatten()[-1]-Hm_velocity.flatten()[-2])])
+			Hm_velocity_PF_x = np.array(np.flip(Hm_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
+			relative_velocity_x = np.array([Hp_velocity_x.tolist()]*100) - np.array([Hm_velocity_x.tolist()]*100).T
+			relative_velocity_x = np.log(np.abs(relative_velocity_x).flatten()).astype(np.float32)
+			relative_velocity_x_log_max = relative_velocity_x.max()
+			relative_velocity_x = (relative_velocity_x/relative_velocity_x_log_max*(2**8-1)).astype(np.uint8)
+			# relative_velocity_x = (np.log(relative_velocity_x/(relative_velocity_x.max()))*(2**8-1)).astype(np.uint8)
+			relative_velocity_PF_x = (np.array([Hp_velocity_PF_x.tolist()]*100) * np.array([Hm_velocity_PF_x.tolist()]*100).T).flatten()
+			relative_velocity_PF_x2 = []
+			for value in np.unique(relative_velocity_x):
+				relative_velocity_PF_x2.append(np.sum(relative_velocity_PF_x[relative_velocity_x==value]))
+			relative_velocity_PF_x2 = np.array(relative_velocity_PF_x2)
+			relative_velocity_x2 = np.exp(np.unique(relative_velocity_x).astype(float)/(2**8-1)*relative_velocity_x_log_max)**2
+			relative_velocity = (np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)) + np.array([np.array([relative_velocity_x2.tolist()]*len(relative_velocity_x2)).T.tolist()]*len(relative_velocity_x2)) + np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)).T).flatten()**0.5
+			relative_velocity_PF = (np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)) * np.array([np.array([relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)).T.tolist()]*len(relative_velocity_PF_x2)) * np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)).T).flatten()
+			relative_velocity = np.log(relative_velocity)
+			relative_velocity_log_max = relative_velocity.max()
+			relative_velocity = (relative_velocity/relative_velocity_log_max*(2**8-1)).astype(np.uint8)
+			relative_velocity_PF2 = []
+			for value in np.unique(relative_velocity):
+				relative_velocity_PF2.append(np.sum(relative_velocity_PF[relative_velocity==value]))
+			relative_velocity_PF2 = np.array(relative_velocity_PF2)
+			relative_velocity_2 = np.exp(np.unique(relative_velocity/(2**8-1)).astype(float)*relative_velocity_log_max)
+			relative_velocity_PDF2 = relative_velocity_PF2/np.array([(relative_velocity_2.flatten()[1]-relative_velocity_2.flatten()[0]),*np.diff(relative_velocity_2.flatten())[1:]/2+np.diff(relative_velocity_2.flatten())[:-1]/2,(relative_velocity_2.flatten()[-1]-relative_velocity_2.flatten()[-2])])
+			relative_energy = 1/2*reduced_mass*(relative_velocity_2**2) * J_to_eV
+			coefficients = np.array([-3.49880888*1e1, 2.15245051*1e-1, -2.35628664*1e-2, 5.49471553*1e-2, 5.37932888*1e-3, -6.05507021*1e-3, 9.99168329*1e-4, -6.63625564*1e-5,1.61228385*1e-6])
+			# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+			cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(relative_energy)))* (1e-4 * 1e20)	# multiplied 1e20
+			cross_section[np.logical_not(np.isfinite(cross_section))]=0
+			cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.1)).argmin()]
+			cross_section_max = cross_section.flatten()[(np.abs(relative_energy-20000)).argmin()]
+			cross_section[relative_energy<0.1]=cross_section_min
+			cross_section[relative_energy>20000]=cross_section_max
+			cross_section[cross_section<0] = 0
+			reaction_rate = np.array([np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)])		# m^3 / s
+		else:
+			print('wrong calculation used')
+			# Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
+			# Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			# Hp_energy = 0.5 * Hp_velocity**2 * hydrogen_mass * J_to_eV
+			# Hp_energy = np.array(([Hp_energy.tolist()])*9)
+			Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
+			Hp_velocity_x = np.sort(Hp_velocity.flatten().tolist() + (-Hp_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hp_velocity_PDF_x = np.array(np.flip(Hp_velocity_PDF.flatten(),axis=0).tolist() + Hp_velocity_PDF.flatten().tolist())
+			Hp_energy = 0.5 * Hp_velocity**2 * hydrogen_mass * J_to_eV
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+			Hm_velocity_x = np.sort(Hm_velocity.flatten().tolist() + (-Hm_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hm_velocity_PDF_x = np.array(np.flip(Hm_velocity_PDF.flatten(),axis=0).tolist() + Hm_velocity_PDF.flatten().tolist())
+			relative_velocity_x = np.array([Hp_velocity_x.tolist()]*400) - np.array([Hm_velocity_x.tolist()]*400).T
+			relative_velocity_PDF_x = np.array([Hp_velocity_PDF_x.tolist()]*400) * np.array([Hm_velocity_PDF_x.tolist()]*400).T
+			Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
+			# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
+			baricenter_impact_energy = (1/4)*((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T	# changed because in the centre of mass, for particles of same mass, the speed is half
+			baricenter_impact_energy[baricenter_impact_energy<0.1]=0.1
+			baricenter_impact_energy[baricenter_impact_energy>20000]=20000
+			# baricenter_impact_energy = np.array(([baricenter_impact_energy.tolist()])*9)
+			coefficients = np.array([-3.49880888*1e1, 2.15245051*1e-1, -2.35628664*1e-2, 5.49471553*1e-2, 5.37932888*1e-3, -6.05507021*1e-3, 9.99168329*1e-4, -6.63625564*1e-5,1.61228385*1e-6])
+			# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+			cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(baricenter_impact_energy)))* (1e-4 * 1e20)	# multiplied 1e20
+			cross_section[np.logical_not(np.isfinite(cross_section))]=0
+			cross_section_min = cross_section.flatten()[(np.abs(Hp_energy[0]-0.1)).argmin()]
+			cross_section_max = cross_section.flatten()[(np.abs(Hp_energy[0]-20000)).argmin()]
+			cross_section[baricenter_impact_energy<0.1]=cross_section_min
+			cross_section[baricenter_impact_energy>20000]=cross_section_max
+			cross_section[cross_section<0] = 0
+			# reaction_rate = np.sum((cross_section*Hp_velocity*Hp_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(Hp_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s * 1e20
+			# the previous formula is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+			reaction_rate = np.trapz(np.trapz(((cross_section*np.abs(np.array([Hp_velocity.tolist()]*200) - np.array([Hm_velocity.tolist()]*200).T)*Hp_velocity_PDF).T*Hm_velocity_PDF).T,x=Hp_velocity,axis=-1).T ,x=Hm_velocity,axis=-1)		# m^3 / s
 		return reaction_rate
 	reaction_rate = list(map(internal,(np.array([T_Hp.flatten(),T_Hm.flatten()]).T)))
 	reaction_rate = np.reshape(reaction_rate,np.shape(T_Hp))[0]
@@ -1492,31 +1546,80 @@ def RR_Hp_Hm__H_3_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,me
 		T_Hp,T_Hm = arg[0]
 		T_Hp = np.array([T_Hp])
 		T_Hm = np.array([T_Hm])
-		# Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
-		# Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		# Hp_energy = 0.5 * Hp_velocity**2 * hydrogen_mass * J_to_eV
-		# Hp_energy = np.array(([Hp_energy.tolist()])*9)
-		Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
-		Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		Hp_energy = 0.5 * Hp_velocity**2 * hydrogen_mass * J_to_eV
-		Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
-		Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
-		baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
-		baricenter_impact_energy[baricenter_impact_energy<0.1]=0.1
-		baricenter_impact_energy[baricenter_impact_energy>20000]=20000
-		# baricenter_impact_energy = np.array(([baricenter_impact_energy.tolist()])*9)
-		coefficients = np.array([-3.11479336*1e+1, -7.73020527*1e-1, 5.49204378*1e-2, -2.73324984*1e-3, -1.22831288*1e-3, 4.35049828*1e-4, -6.21659501*1e-5, 4.12046807*1e-6, -1.039784996*1e-7])
-		# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
-		cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(baricenter_impact_energy)))* (1e-4 * 1e20)	# multiplied 1e20
-		cross_section[np.logical_not(np.isfinite(cross_section))]=0
-		cross_section_min = cross_section.flatten()[(np.abs(Hp_energy[0]-0.1)).argmin()]
-		cross_section_max = cross_section.flatten()[(np.abs(Hp_energy[0]-20000)).argmin()]
-		cross_section[baricenter_impact_energy<0.1]=cross_section_min
-		cross_section[baricenter_impact_energy>20000]=cross_section_max
-		cross_section[cross_section<0] = 0
-		reaction_rate = np.sum((cross_section*Hp_velocity*Hp_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(Hp_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s
-		# reaction_rate = np.sum(cross_section*Hp_velocity*Hp_velocity_PDF,axis=-1)* np.mean(np.diff(Hp_velocity))		# m^3 / s * 1e20
+		if len(T_Hp)==1 and len(T_Hm)==1:
+			reduced_mass = hydrogen_mass*hydrogen_mass/(hydrogen_mass+hydrogen_mass)
+			Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hp),50))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
+			Hp_velocity_x = np.sort(Hp_velocity.flatten().tolist() + (-Hp_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hp_velocity_PF = Hp_velocity_PDF.flatten()*np.array([(Hp_velocity.flatten()[1]-Hp_velocity.flatten()[0]),*np.diff(Hp_velocity.flatten())[1:]/2+np.diff(Hp_velocity.flatten())[:-1]/2,(Hp_velocity.flatten()[-1]-Hp_velocity.flatten()[-2])])
+			Hp_velocity_PF_x = np.array(np.flip(Hp_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hm.T),50))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+			Hm_velocity_x = np.sort(Hm_velocity.flatten().tolist() + (-Hm_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hm_velocity_PF = Hm_velocity_PDF.flatten()*np.array([(Hm_velocity.flatten()[1]-Hm_velocity.flatten()[0]),*np.diff(Hm_velocity.flatten())[1:]/2+np.diff(Hm_velocity.flatten())[:-1]/2,(Hm_velocity.flatten()[-1]-Hm_velocity.flatten()[-2])])
+			Hm_velocity_PF_x = np.array(np.flip(Hm_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
+			relative_velocity_x = np.array([Hp_velocity_x.tolist()]*100) - np.array([Hm_velocity_x.tolist()]*100).T
+			relative_velocity_x = np.log(np.abs(relative_velocity_x).flatten()).astype(np.float32)
+			relative_velocity_x_log_max = relative_velocity_x.max()
+			relative_velocity_x = (relative_velocity_x/relative_velocity_x_log_max*(2**8-1)).astype(np.uint8)
+			# relative_velocity_x = (np.log(relative_velocity_x/(relative_velocity_x.max()))*(2**8-1)).astype(np.uint8)
+			relative_velocity_PF_x = (np.array([Hp_velocity_PF_x.tolist()]*100) * np.array([Hm_velocity_PF_x.tolist()]*100).T).flatten()
+			relative_velocity_PF_x2 = []
+			for value in np.unique(relative_velocity_x):
+				relative_velocity_PF_x2.append(np.sum(relative_velocity_PF_x[relative_velocity_x==value]))
+			relative_velocity_PF_x2 = np.array(relative_velocity_PF_x2)
+			relative_velocity_x2 = np.exp(np.unique(relative_velocity_x).astype(float)/(2**8-1)*relative_velocity_x_log_max)**2
+			relative_velocity = (np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)) + np.array([np.array([relative_velocity_x2.tolist()]*len(relative_velocity_x2)).T.tolist()]*len(relative_velocity_x2)) + np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)).T).flatten()**0.5
+			relative_velocity_PF = (np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)) * np.array([np.array([relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)).T.tolist()]*len(relative_velocity_PF_x2)) * np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)).T).flatten()
+			relative_velocity = np.log(relative_velocity)
+			relative_velocity_log_max = relative_velocity.max()
+			relative_velocity = (relative_velocity/relative_velocity_log_max*(2**8-1)).astype(np.uint8)
+			relative_velocity_PF2 = []
+			for value in np.unique(relative_velocity):
+				relative_velocity_PF2.append(np.sum(relative_velocity_PF[relative_velocity==value]))
+			relative_velocity_PF2 = np.array(relative_velocity_PF2)
+			relative_velocity_2 = np.exp(np.unique(relative_velocity/(2**8-1)).astype(float)*relative_velocity_log_max)
+			relative_velocity_PDF2 = relative_velocity_PF2/np.array([(relative_velocity_2.flatten()[1]-relative_velocity_2.flatten()[0]),*np.diff(relative_velocity_2.flatten())[1:]/2+np.diff(relative_velocity_2.flatten())[:-1]/2,(relative_velocity_2.flatten()[-1]-relative_velocity_2.flatten()[-2])])
+			relative_energy = 1/2*reduced_mass*(relative_velocity_2**2) * J_to_eV
+			coefficients = np.array([-3.11479336*1e+1, -7.73020527*1e-1, 5.49204378*1e-2, -2.73324984*1e-3, -1.22831288*1e-3, 4.35049828*1e-4, -6.21659501*1e-5, 4.12046807*1e-6, -1.039784996*1e-7])
+			# cross_section = (np.exp(np.sum(((np.log(relative_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+			cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(relative_energy)))* (1e-4 * 1e20)	# multiplied 1e20
+			cross_section[np.logical_not(np.isfinite(cross_section))]=0
+			cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.1)).argmin()]
+			cross_section_max = cross_section.flatten()[(np.abs(relative_energy-20000)).argmin()]
+			cross_section[relative_energy<0.1]=cross_section_min
+			cross_section[relative_energy>20000]=cross_section_max
+			cross_section[cross_section<0] = 0
+			reaction_rate = np.array([np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)])		# m^3 / s
+		else:
+			print('wrong calculation used')
+			# Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
+			# Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			# Hp_energy = 0.5 * Hp_velocity**2 * hydrogen_mass * J_to_eV
+			# Hp_energy = np.array(([Hp_energy.tolist()])*9)
+			Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
+			Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hp_energy = 0.5 * Hp_velocity**2 * hydrogen_mass * J_to_eV
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
+			# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
+			baricenter_impact_energy = (1/4)*((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T	# changed because in the centre of mass, for particles of same mass, the speed is half
+			baricenter_impact_energy[baricenter_impact_energy<0.1]=0.1
+			baricenter_impact_energy[baricenter_impact_energy>20000]=20000
+			# baricenter_impact_energy = np.array(([baricenter_impact_energy.tolist()])*9)
+			coefficients = np.array([-3.11479336*1e+1, -7.73020527*1e-1, 5.49204378*1e-2, -2.73324984*1e-3, -1.22831288*1e-3, 4.35049828*1e-4, -6.21659501*1e-5, 4.12046807*1e-6, -1.039784996*1e-7])
+			# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+			cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(baricenter_impact_energy)))* (1e-4 * 1e20)	# multiplied 1e20
+			cross_section[np.logical_not(np.isfinite(cross_section))]=0
+			cross_section_min = cross_section.flatten()[(np.abs(Hp_energy[0]-0.1)).argmin()]
+			cross_section_max = cross_section.flatten()[(np.abs(Hp_energy[0]-20000)).argmin()]
+			cross_section[baricenter_impact_energy<0.1]=cross_section_min
+			cross_section[baricenter_impact_energy>20000]=cross_section_max
+			cross_section[cross_section<0] = 0
+			# reaction_rate = np.sum((cross_section*Hp_velocity*Hp_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(Hp_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s
+			# the previous formula is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+			reaction_rate = np.trapz(np.trapz(((cross_section*np.abs(np.array([Hp_velocity.tolist()]*200) - np.array([Hm_velocity.tolist()]*200).T)*Hp_velocity_PDF).T*Hm_velocity_PDF).T,x=Hp_velocity,axis=-1).T ,x=Hm_velocity,axis=-1)		# m^3 / s
 		return reaction_rate
 	reaction_rate = list(map(internal,(np.array([T_Hp.flatten(),T_Hm.flatten()]).T)))
 	reaction_rate = np.reshape(reaction_rate,np.shape(T_Hp))[0]
@@ -1658,6 +1761,7 @@ def RR_H2p_Hm__Hn_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2
 	return reaction_rate	# m^-3/s *1e-20 / (nHm/ne)
 
 def RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+	print('RR_Hp_Hm__H2p_e__r should not be used in favour of RR_Hp_Hm__H2p_e__r2')
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 		print('error, Te and ne are different shapes')
 		exit()
@@ -1674,25 +1778,225 @@ def RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,me
 		T_Hp,T_Hm = arg[0]
 		T_Hp = np.array([T_Hp])
 		T_Hm = np.array([T_Hm])
-		Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
-		Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		Hp_energy = 0.5 * Hp_velocity**2 * hydrogen_mass * J_to_eV
-		Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
-		Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
-		baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
-		cross_section = (1.38 / ((baricenter_impact_energy**0.85) * (1+0.065 * baricenter_impact_energy**2.7))) * (1e-16 *1e-4* 1e20)	# multiplied 1e20
-		cross_section_min = cross_section.flatten()[(np.abs(baricenter_impact_energy-0.001)).argmin()]
-		cross_section[baricenter_impact_energy<0.001]=cross_section_min
-		cross_section[cross_section<0] = 0
-		reaction_rate = np.sum((cross_section*Hp_velocity*Hp_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(Hp_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s * 1e20
+		if len(T_Hp)==1 and len(T_Hm)==1:
+			reduced_mass = hydrogen_mass*hydrogen_mass/(hydrogen_mass+hydrogen_mass)
+			Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hp),50))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
+			Hp_velocity_x = np.sort(Hp_velocity.flatten().tolist() + (-Hp_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hp_velocity_PF = Hp_velocity_PDF.flatten()*np.array([(Hp_velocity.flatten()[1]-Hp_velocity.flatten()[0]),*np.diff(Hp_velocity.flatten())[1:]/2+np.diff(Hp_velocity.flatten())[:-1]/2,(Hp_velocity.flatten()[-1]-Hp_velocity.flatten()[-2])])
+			Hp_velocity_PF_x = np.array(np.flip(Hp_velocity_PF.flatten(),axis=0).tolist() + Hp_velocity_PF.flatten().tolist())/2
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hm.T),50))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+			Hm_velocity_x = np.sort(Hm_velocity.flatten().tolist() + (-Hm_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hm_velocity_PF = Hm_velocity_PDF.flatten()*np.array([(Hm_velocity.flatten()[1]-Hm_velocity.flatten()[0]),*np.diff(Hm_velocity.flatten())[1:]/2+np.diff(Hm_velocity.flatten())[:-1]/2,(Hm_velocity.flatten()[-1]-Hm_velocity.flatten()[-2])])
+			Hm_velocity_PF_x = np.array(np.flip(Hm_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
+			relative_velocity_x = np.array([Hp_velocity_x.tolist()]*100) - np.array([Hm_velocity_x.tolist()]*100).T
+			relative_velocity_x = np.log(np.abs(relative_velocity_x).flatten()).astype(np.float32)
+			relative_velocity_x_log_max = relative_velocity_x.max()
+			relative_velocity_x = (relative_velocity_x/relative_velocity_x_log_max*(2**8-1)).astype(np.uint8)
+			# relative_velocity_x = (np.log(relative_velocity_x/(relative_velocity_x.max()))*(2**8-1)).astype(np.uint8)
+			relative_velocity_PF_x = (np.array([Hp_velocity_PF_x.tolist()]*100) * np.array([Hm_velocity_PF_x.tolist()]*100).T).flatten()
+			relative_velocity_PF_x2 = []
+			for value in np.unique(relative_velocity_x):
+				relative_velocity_PF_x2.append(np.sum(relative_velocity_PF_x[relative_velocity_x==value]))
+			relative_velocity_PF_x2 = np.array(relative_velocity_PF_x2)
+			relative_velocity_x2 = np.exp(np.unique(relative_velocity_x).astype(float)/(2**8-1)*relative_velocity_x_log_max)**2
+			relative_velocity = (np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)) + np.array([np.array([relative_velocity_x2.tolist()]*len(relative_velocity_x2)).T.tolist()]*len(relative_velocity_x2)) + np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)).T).flatten()**0.5
+			relative_velocity_PF = (np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)) * np.array([np.array([relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)).T.tolist()]*len(relative_velocity_PF_x2)) * np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)).T).flatten()
+			relative_velocity = np.log(relative_velocity)
+			relative_velocity_log_max = relative_velocity.max()
+			relative_velocity = (relative_velocity/relative_velocity_log_max*(2**8-1)).astype(np.uint8)
+			relative_velocity_PF2 = []
+			for value in np.unique(relative_velocity):
+				relative_velocity_PF2.append(np.sum(relative_velocity_PF[relative_velocity==value]))
+			relative_velocity_PF2 = np.array(relative_velocity_PF2)
+			relative_velocity_2 = np.exp(np.unique(relative_velocity/(2**8-1)).astype(float)*relative_velocity_log_max)
+			relative_velocity_PDF2 = relative_velocity_PF2/np.array([(relative_velocity_2.flatten()[1]-relative_velocity_2.flatten()[0]),*np.diff(relative_velocity_2.flatten())[1:]/2+np.diff(relative_velocity_2.flatten())[:-1]/2,(relative_velocity_2.flatten()[-1]-relative_velocity_2.flatten()[-2])])
+			relative_energy = 1/2*reduced_mass*(relative_velocity_2**2) * J_to_eV
+			cross_section = (1.38 / ((relative_energy**0.85) * (1+0.065 * relative_energy**2.7))) * (1e-16 *1e-4* 1e20)	# multiplied 1e20
+			cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.001)).argmin()]
+			cross_section[relative_energy<0.001]=cross_section_min
+			cross_section[cross_section<0] = 0
+			reaction_rate = np.array([np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)])		# m^3 / s
+		else:
+			print('wrong calculation used')
+			Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hp),200))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
+			Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hp_energy = 0.5 * Hp_velocity**2 * hydrogen_mass * J_to_eV
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
+			# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
+			baricenter_impact_energy = (1/4)*((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T	# changed because in the centre of mass, for particles of same mass, the speed is half
+			cross_section = (1.38 / ((baricenter_impact_energy**0.85) * (1+0.065 * baricenter_impact_energy**2.7))) * (1e-16 *1e-4* 1e20)	# multiplied 1e20
+			cross_section_min = cross_section.flatten()[(np.abs(baricenter_impact_energy-0.001)).argmin()]
+			cross_section[baricenter_impact_energy<0.001]=cross_section_min
+			cross_section[cross_section<0] = 0
+			# reaction_rate = np.sum((cross_section*Hp_velocity*Hp_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(Hp_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s * 1e20
+			# the previous formula is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+			reaction_rate = np.trapz(np.trapz(((cross_section*np.abs(np.array([Hp_velocity.tolist()]*200) - np.array([Hm_velocity.tolist()]*200).T)*Hp_velocity_PDF).T*Hm_velocity_PDF).T,x=Hp_velocity,axis=-1).T ,x=Hm_velocity,axis=-1)		# m^3 / s
 		return reaction_rate
 	reaction_rate = list(map(internal,(np.array([T_Hp.flatten(),T_Hm.flatten()]).T)))
 	reaction_rate = np.reshape(reaction_rate,np.shape(T_Hp))[0]
 	Hp_Hm__H2p_e = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
 	return Hp_Hm__H2p_e	# m^-3/s *1e-20 / (nHm/ne) / (nHp/ne)
 
+def RR_Hp_Hm__H2p_e__r2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
+		print('error, Te and ne are different shapes')
+		exit()
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)==():
+		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
+		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
+		T_Hp=np.array([T_Hp])
+		T_Hm=np.array([T_Hm])
+	# reaction rate		H+ +H- → H2+(v) + e
+	# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
+	# chapter 3.2.2
+	# valid from at least 1e-3eV
+	reduced_mass = hydrogen_mass*hydrogen_mass/(hydrogen_mass+hydrogen_mass)
+	resolution = 30
+	Hp_velocity = (np.logspace(np.log10(0.01),np.log10(5),resolution)*(2*boltzmann_constant_J*T_Hp[0]/hydrogen_mass)**0.5)
+	Hp_velocity_x = np.sort(Hp_velocity.tolist() + (-Hp_velocity).tolist())/(3**0.5)	# in only one direction
+	Hp_velocity_PDF = (4*np.pi*(Hp_velocity)**2 * gauss( Hp_velocity, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp[0]))**(3/2) , (T_Hp[0]*boltzmann_constant_J/hydrogen_mass)**0.5 ,0))
+	Hp_velocity_PF = Hp_velocity_PDF*np.array([(Hp_velocity[1]-Hp_velocity[0]),*np.diff(Hp_velocity)[1:]/2+np.diff(Hp_velocity)[:-1]/2,(Hp_velocity[-1]-Hp_velocity[-2])])
+	Hp_velocity_PF_x = np.array(np.flip(Hp_velocity_PF,axis=0).tolist() + Hp_velocity_PF.tolist())/2
+	Hm_velocity = (np.logspace(np.log10(0.01),np.log10(5),resolution)*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5)
+	Hm_velocity_x = np.sort(Hm_velocity.tolist() + (-Hm_velocity).tolist())/(3**0.5)	# in only one direction
+	Hm_velocity_PDF = (4*np.pi*(Hm_velocity)**2 * gauss( Hm_velocity, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm[0]))**(3/2) , (T_Hm[0]*boltzmann_constant_J/hydrogen_mass)**0.5 ,0))
+	Hm_velocity_PF = Hm_velocity_PDF*np.array([(Hm_velocity[1]-Hm_velocity[0]),*np.diff(Hm_velocity)[1:]/2+np.diff(Hm_velocity)[:-1]/2,(Hm_velocity[-1]-Hm_velocity[-2])])
+	Hm_velocity_PF_x = np.array(np.flip(Hm_velocity_PF,axis=0).tolist() + Hm_velocity_PF.tolist())/2
+	relative_velocity_x = np.array([Hp_velocity_x.tolist()]*(resolution*2)) - np.array([Hm_velocity_x.tolist()]*(resolution*2)).T
+	relative_velocity_x = np.log(np.abs(relative_velocity_x).flatten()).astype(np.float32)
+	relative_velocity_x_log_max = relative_velocity_x.max()
+	relative_velocity_x = (relative_velocity_x/relative_velocity_x_log_max*(2**8-1)).astype(np.uint8)
+	# relative_velocity_x = (np.log(relative_velocity_x/(relative_velocity_x.max()))*(2**8-1)).astype(np.uint8)
+	relative_velocity_PF_x = (np.array([Hp_velocity_PF_x.tolist()]*(resolution*2)) * np.array([Hm_velocity_PF_x.tolist()]*(resolution*2)).T).flatten()
+	relative_velocity_PF_x2 = np.array([np.sum(relative_velocity_PF_x[relative_velocity_x==value]) for value in np.unique(relative_velocity_x)])
+	# relative_velocity_PF_x2 = []
+	# for value in np.unique(relative_velocity_x):
+	# 	relative_velocity_PF_x2.append(np.sum(relative_velocity_PF_x[relative_velocity_x==value]))
+	# relative_velocity_PF_x2 = np.array(relative_velocity_PF_x2)
+	relative_velocity_x2 = np.exp(np.unique(relative_velocity_x).astype(float)/(2**8-1)*relative_velocity_x_log_max)**2
+	# relative_velocity = (np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)) + np.array([np.array([relative_velocity_x2.tolist()]*len(relative_velocity_x2)).T.tolist()]*len(relative_velocity_x2)) + np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)).T).flatten()**0.5
+	# this is the same but faster
+	temp = np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2))
+	relative_velocity = cp.deepcopy(temp)
+	relative_velocity += np.transpose(temp,(0,2,1))
+	relative_velocity += np.transpose(temp,(2,0,1))
+	relative_velocity = relative_velocity.flatten()**0.5
+	# relative_velocity_PF = (np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)) * np.array([np.array([relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)).T.tolist()]*len(relative_velocity_PF_x2)) * np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)).T).flatten()
+	# this is the same but faster
+	temp = np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2))
+	relative_velocity_PF = cp.deepcopy(temp)
+	relative_velocity_PF *= np.transpose(temp,(0,2,1))
+	relative_velocity_PF *= np.transpose(temp,(2,0,1))
+	relative_velocity_PF = relative_velocity_PF.flatten()
+	relative_velocity = np.log(relative_velocity)
+	relative_velocity_log_max = relative_velocity.max()
+	relative_velocity = (relative_velocity/relative_velocity_log_max*(2**8-1)).astype(np.uint8)
+	relative_velocity_PF2 = np.array([np.sum(relative_velocity_PF[relative_velocity==value]) for value in np.unique(relative_velocity)])
+	# relative_velocity_PF2 = []
+	# for value in np.unique(relative_velocity):
+	# 	relative_velocity_PF2.append(np.sum(relative_velocity_PF[relative_velocity==value]))
+	# relative_velocity_PF2 = np.array(relative_velocity_PF2)
+	relative_velocity_PF2 = relative_velocity_PF2/np.sum(relative_velocity_PF2)	# reset the normalisation
+	relative_velocity_2 = np.exp(np.unique(relative_velocity).astype(float)/(2**8-1)*relative_velocity_log_max)
+	relative_velocity_PDF2 = relative_velocity_PF2/np.array([(relative_velocity_2[1]-relative_velocity_2[0]),*np.diff(relative_velocity_2)[1:]/2+np.diff(relative_velocity_2)[:-1]/2,(relative_velocity_2[-1]-relative_velocity_2[-2])])
+	relative_energy = 1/2*reduced_mass*(relative_velocity_2**2) * J_to_eV
+	cross_section = (1.38 / ((relative_energy**0.85) * (1+0.065 * relative_energy**2.7))) * (1e-16 *1e-4* 1e20)	# multiplied 1e20
+	cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.001)).argmin()]
+	cross_section[relative_energy<0.001]=cross_section_min
+	cross_section[cross_section<0] = 0
+	reaction_rate = np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)		# m^3 / s
+	Hp_Hm__H2p_e = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
+	return Hp_Hm__H2p_e	# m^-3/s *1e-20 / (nHm/ne) / (nHp/ne)
+
+def RR_Hp_Hm__H_2_H_plus_Hp_Hm__H_3_H_plus_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+	print('RR_Hp_Hm__H_2_H_plus_Hp_Hm__H_3_H_plus_Hp_Hm__H2p_e__r in reality should not be used')
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
+		print('error, Te and ne are different shapes')
+		exit()
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)==():
+		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
+		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
+		T_Hp=np.array([T_Hp])
+		T_Hm=np.array([T_Hm])
+	# reaction rate		H+ +H- →H(2) +H(1s)
+	# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
+	# chapter 3.2.1
+	# I'm not sure if only H+ energy or also H-
+	# I'll assume it is H+ energy because usually it is the highest
+	reduced_mass = hydrogen_mass*hydrogen_mass/(hydrogen_mass+hydrogen_mass)
+	Hp_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hp),50))).T*(2*boltzmann_constant_J*T_Hp.T/hydrogen_mass)**0.5).T
+	Hp_velocity_x = np.sort(Hp_velocity.flatten().tolist() + (-Hp_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+	Hp_velocity_PDF = (4*np.pi*(Hp_velocity.T)**2 * gauss( Hp_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hp.T))**(3/2) , (T_Hp.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+	Hp_velocity_PF = Hp_velocity_PDF.flatten()*np.array([(Hp_velocity.flatten()[1]-Hp_velocity.flatten()[0]),*np.diff(Hp_velocity.flatten())[1:]/2+np.diff(Hp_velocity.flatten())[:-1]/2,(Hp_velocity.flatten()[-1]-Hp_velocity.flatten()[-2])])
+	Hp_velocity_PF_x = np.array(np.flip(Hp_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
+	Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hm.T),50))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+	Hm_velocity_x = np.sort(Hm_velocity.flatten().tolist() + (-Hm_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+	Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+	Hm_velocity_PF = Hm_velocity_PDF.flatten()*np.array([(Hm_velocity.flatten()[1]-Hm_velocity.flatten()[0]),*np.diff(Hm_velocity.flatten())[1:]/2+np.diff(Hm_velocity.flatten())[:-1]/2,(Hm_velocity.flatten()[-1]-Hm_velocity.flatten()[-2])])
+	Hm_velocity_PF_x = np.array(np.flip(Hm_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
+	relative_velocity_x = np.array([Hp_velocity_x.tolist()]*100) - np.array([Hm_velocity_x.tolist()]*100).T
+	relative_velocity_x = np.log(np.abs(relative_velocity_x).flatten()).astype(np.float32)
+	relative_velocity_x_log_max = relative_velocity_x.max()
+	relative_velocity_x = (relative_velocity_x/relative_velocity_x_log_max*(2**8-1)).astype(np.uint8)
+	# relative_velocity_x = (np.log(relative_velocity_x/(relative_velocity_x.max()))*(2**8-1)).astype(np.uint8)
+	relative_velocity_PF_x = (np.array([Hp_velocity_PF_x.tolist()]*100) * np.array([Hm_velocity_PF_x.tolist()]*100).T).flatten()
+	relative_velocity_PF_x2 = []
+	for value in np.unique(relative_velocity_x):
+		relative_velocity_PF_x2.append(np.sum(relative_velocity_PF_x[relative_velocity_x==value]))
+	relative_velocity_PF_x2 = np.array(relative_velocity_PF_x2)
+	relative_velocity_x2 = np.exp(np.unique(relative_velocity_x).astype(float)/(2**8-1)*relative_velocity_x_log_max)**2
+	relative_velocity = (np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)) + np.array([np.array([relative_velocity_x2.tolist()]*len(relative_velocity_x2)).T.tolist()]*len(relative_velocity_x2)) + np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)).T).flatten()**0.5
+	relative_velocity_PF = (np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)) * np.array([np.array([relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)).T.tolist()]*len(relative_velocity_PF_x2)) * np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)).T).flatten()
+	relative_velocity = np.log(relative_velocity)
+	relative_velocity_log_max = relative_velocity.max()
+	relative_velocity = (relative_velocity/relative_velocity_log_max*(2**8-1)).astype(np.uint8)
+	relative_velocity_PF2 = []
+	for value in np.unique(relative_velocity):
+		relative_velocity_PF2.append(np.sum(relative_velocity_PF[relative_velocity==value]))
+	relative_velocity_PF2 = np.array(relative_velocity_PF2)
+	relative_velocity_2 = np.exp(np.unique(relative_velocity/(2**8-1)).astype(float)*relative_velocity_log_max)
+	relative_velocity_PDF2 = relative_velocity_PF2/np.array([(relative_velocity_2.flatten()[1]-relative_velocity_2.flatten()[0]),*np.diff(relative_velocity_2.flatten())[1:]/2+np.diff(relative_velocity_2.flatten())[:-1]/2,(relative_velocity_2.flatten()[-1]-relative_velocity_2.flatten()[-2])])
+	relative_energy = 1/2*reduced_mass*(relative_velocity_2**2) * J_to_eV
+
+	coefficients = np.array([-3.49880888*1e1, 2.15245051*1e-1, -2.35628664*1e-2, 5.49471553*1e-2, 5.37932888*1e-3, -6.05507021*1e-3, 9.99168329*1e-4, -6.63625564*1e-5,1.61228385*1e-6])
+	# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+	cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(relative_energy)))* (1e-4 * 1e20)	# multiplied 1e20
+	cross_section[np.logical_not(np.isfinite(cross_section))]=0
+	cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.1)).argmin()]
+	cross_section_max = cross_section.flatten()[(np.abs(relative_energy-20000)).argmin()]
+	cross_section[relative_energy<0.1]=cross_section_min
+	cross_section[relative_energy>20000]=cross_section_max
+	cross_section[cross_section<0] = 0
+	reaction_rate = np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)		# m^3 / s
+	Hp_Hm__H_2_H = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
+
+	coefficients = np.array([-3.11479336*1e+1, -7.73020527*1e-1, 5.49204378*1e-2, -2.73324984*1e-3, -1.22831288*1e-3, 4.35049828*1e-4, -6.21659501*1e-5, 4.12046807*1e-6, -1.039784996*1e-7])
+	# cross_section = (np.exp(np.sum(((np.log(relative_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+	cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(relative_energy)))* (1e-4 * 1e20)	# multiplied 1e20
+	cross_section[np.logical_not(np.isfinite(cross_section))]=0
+	cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.1)).argmin()]
+	cross_section_max = cross_section.flatten()[(np.abs(relative_energy-20000)).argmin()]
+	cross_section[relative_energy<0.1]=cross_section_min
+	cross_section[relative_energy>20000]=cross_section_max
+	cross_section[cross_section<0] = 0
+	reaction_rate = np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)		# m^3 / s
+	Hp_Hm__H_3_H = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
+
+	cross_section = (1.38 / ((relative_energy**0.85) * (1+0.065 * relative_energy**2.7))) * (1e-16 *1e-4* 1e20)	# multiplied 1e20
+	cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.001)).argmin()]
+	cross_section[relative_energy<0.001]=cross_section_min
+	cross_section[cross_section<0] = 0
+	reaction_rate = np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)		# m^3 / s
+	Hp_Hm__H2p_e = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
+
+	return Hp_Hm__H_2_H,Hp_Hm__H_3_H,Hp_Hm__H2p_e	# m^-3/s *1e-20 / (nHm/ne) / (nHp/ne)
+
 def RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+	print('RR_Hm_H1s__H1s_H1s_e__r should not have been used in favour of RR_Hm_H1s__H1s_H1s_e_plus_Hm_H1s__H2_v_e__r')
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 		print('error, Te and ne are different shapes')
 		exit()
@@ -1708,34 +2012,84 @@ def RR_Hm_H1s__H1s_H1s_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H
 		T_H,T_Hm = arg[0]
 		T_H = np.array([T_H])
 		T_Hm = np.array([T_Hm])
-		H_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/hydrogen_mass)**0.5).T
-		H_velocity_PDF = (4*np.pi*(H_velocity.T)**2 * gauss( H_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		H_energy = 0.5 * H_velocity**2 * hydrogen_mass * J_to_eV
-		Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
-		Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
-		baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hm),200))+H_energy).T + Hm_energy).T
-		# baricenter_impact_energy = np.array(([baricenter_impact_energy.tolist()])*9)
-		baricenter_impact_energy[baricenter_impact_energy<0.1]=0.1
-		baricenter_impact_energy[baricenter_impact_energy>20000]=20000
-		coefficients = np.array([-3.61799082*1e+1, 1.16615172, -1.41928602*1e-1, -1.11195959*1e-2, -1.72505995*1e-3, 1.59040356*1e-3, -2.53196144*1e-4, 1.66978235*1e-5, -4.09725797*1e-7])
-		# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
-		cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(baricenter_impact_energy)))* (1e-4* 1e20)	# multiplied 1e20
-		cross_section[np.logical_not(np.isfinite(cross_section))]=0
-		# cross_section_min = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-0.1)).argmin()]	# I dont think that this is necessary because the polinomial fit seems behaving well (going to ~0 quite rapidly) for decreasing energy
-		cross_section_max = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-20000)).argmin()]	# it becomes flattish for high energies, so this is not a big mistake
-		# cross_section[baricenter_impact_energy<0.1]=cross_section_min
-		cross_section[baricenter_impact_energy>20000]=cross_section_max
-		cross_section[cross_section<0] = 0
-		reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s * 1e20
+		if len(T_H)==1 and len(T_Hm)==1:
+			reduced_mass = hydrogen_mass*hydrogen_mass/(hydrogen_mass+hydrogen_mass)
+			H_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_H),50))).T*(2*boltzmann_constant_J*T_H.T/hydrogen_mass)**0.5).T
+			H_velocity_x = np.sort(H_velocity.flatten().tolist() + (-H_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			H_velocity_PDF = (4*np.pi*(H_velocity.T)**2 * gauss( H_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			H_velocity_PF = H_velocity_PDF.flatten()*np.array([(H_velocity.flatten()[1]-H_velocity.flatten()[0]),*np.diff(H_velocity.flatten())[1:]/2+np.diff(H_velocity.flatten())[:-1]/2,(H_velocity.flatten()[-1]-H_velocity.flatten()[-2])])
+			H_velocity_PF_x = np.array(np.flip(H_velocity_PF.flatten(),axis=0).tolist() + H_velocity_PF.flatten().tolist())/2
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hm.T),50))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+			Hm_velocity_x = np.sort(Hm_velocity.flatten().tolist() + (-Hm_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hm_velocity_PF = Hm_velocity_PDF.flatten()*np.array([(Hm_velocity.flatten()[1]-Hm_velocity.flatten()[0]),*np.diff(Hm_velocity.flatten())[1:]/2+np.diff(Hm_velocity.flatten())[:-1]/2,(Hm_velocity.flatten()[-1]-Hm_velocity.flatten()[-2])])
+			Hm_velocity_PF_x = np.array(np.flip(Hm_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
+			relative_velocity_x = np.array([H_velocity_x.tolist()]*100) - np.array([Hm_velocity_x.tolist()]*100).T
+			relative_velocity_x = np.log(np.abs(relative_velocity_x).flatten()).astype(np.float32)
+			relative_velocity_x_log_max = relative_velocity_x.max()
+			relative_velocity_x = (relative_velocity_x/relative_velocity_x_log_max*(2**8-1)).astype(np.uint8)
+			# relative_velocity_x = (np.log(relative_velocity_x/(relative_velocity_x.max()))*(2**8-1)).astype(np.uint8)
+			relative_velocity_PF_x = (np.array([H_velocity_PF_x.tolist()]*100) * np.array([Hm_velocity_PF_x.tolist()]*100).T).flatten()
+			relative_velocity_PF_x2 = []
+			for value in np.unique(relative_velocity_x):
+				relative_velocity_PF_x2.append(np.sum(relative_velocity_PF_x[relative_velocity_x==value]))
+			relative_velocity_PF_x2 = np.array(relative_velocity_PF_x2)
+			relative_velocity_x2 = np.exp(np.unique(relative_velocity_x).astype(float)/(2**8-1)*relative_velocity_x_log_max)**2
+			relative_velocity = (np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)) + np.array([np.array([relative_velocity_x2.tolist()]*len(relative_velocity_x2)).T.tolist()]*len(relative_velocity_x2)) + np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)).T).flatten()**0.5
+			relative_velocity_PF = (np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)) * np.array([np.array([relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)).T.tolist()]*len(relative_velocity_PF_x2)) * np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)).T).flatten()
+			relative_velocity = np.log(relative_velocity)
+			relative_velocity_log_max = relative_velocity.max()
+			relative_velocity = (relative_velocity/relative_velocity_log_max*(2**8-1)).astype(np.uint8)
+			relative_velocity_PF2 = []
+			for value in np.unique(relative_velocity):
+				relative_velocity_PF2.append(np.sum(relative_velocity_PF[relative_velocity==value]))
+			relative_velocity_PF2 = np.array(relative_velocity_PF2)
+			relative_velocity_2 = np.exp(np.unique(relative_velocity/(2**8-1)).astype(float)*relative_velocity_log_max)
+			relative_velocity_PDF2 = relative_velocity_PF2/np.array([(relative_velocity_2.flatten()[1]-relative_velocity_2.flatten()[0]),*np.diff(relative_velocity_2.flatten())[1:]/2+np.diff(relative_velocity_2.flatten())[:-1]/2,(relative_velocity_2.flatten()[-1]-relative_velocity_2.flatten()[-2])])
+			relative_energy = 1/2*reduced_mass*(relative_velocity_2**2) * J_to_eV
+			coefficients = np.array([-3.61799082*1e+1, 1.16615172, -1.41928602*1e-1, -1.11195959*1e-2, -1.72505995*1e-3, 1.59040356*1e-3, -2.53196144*1e-4, 1.66978235*1e-5, -4.09725797*1e-7])
+			# cross_section = (np.exp(np.sum(((np.log(relative_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+			cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(relative_energy)))* (1e-4* 1e20)	# multiplied 1e20
+			cross_section[np.logical_not(np.isfinite(cross_section))]=0
+			cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.1)).argmin()]	# I dont think that this is necessary because the polinomial fit seems behaving well (going to ~0 quite rapidly) for decreasing energy	# 07/09/2021 no, I stop at 0.1eV, because Janev says so and the RR is too high anyway
+			cross_section_max = cross_section.flatten()[(np.abs(relative_energy-20000)).argmin()]	# it becomes flattish for high energies, so this is not a big mistake
+			cross_section[relative_energy<0.1]=cross_section_min
+			cross_section[relative_energy>20000]=cross_section_max
+			cross_section[cross_section<0] = 0
+			reaction_rate = np.array([np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)])		# m^3 / s
+		else:
+			print('wrong calculation used')
+			H_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/hydrogen_mass)**0.5).T
+			H_velocity_PDF = (4*np.pi*(H_velocity.T)**2 * gauss( H_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			H_energy = 0.5 * H_velocity**2 * hydrogen_mass * J_to_eV
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
+			# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hm),200))+H_energy).T + Hm_energy).T
+			baricenter_impact_energy = (1/4)*((np.zeros((200,*np.shape(T_Hm),200))+H_energy).T + Hm_energy).T	# changed because in the centre of mass, for particles of same mass, the speed is half
+			# baricenter_impact_energy = np.array(([baricenter_impact_energy.tolist()])*9)
+			baricenter_impact_energy[baricenter_impact_energy<0.1]=0.1
+			baricenter_impact_energy[baricenter_impact_energy>20000]=20000
+			coefficients = np.array([-3.61799082*1e+1, 1.16615172, -1.41928602*1e-1, -1.11195959*1e-2, -1.72505995*1e-3, 1.59040356*1e-3, -2.53196144*1e-4, 1.66978235*1e-5, -4.09725797*1e-7])
+			# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+			cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(baricenter_impact_energy)))* (1e-4* 1e20)	# multiplied 1e20
+			cross_section[np.logical_not(np.isfinite(cross_section))]=0
+			cross_section_min = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-0.1)).argmin()]	# I dont think that this is necessary because the polinomial fit seems behaving well (going to ~0 quite rapidly) for decreasing energy	# 07/09/2021 no, I stop at 0.1eV, because Janev says so and the RR is too high anyway
+			cross_section_max = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-20000)).argmin()]	# it becomes flattish for high energies, so this is not a big mistake
+			cross_section[baricenter_impact_energy<0.1]=cross_section_min
+			cross_section[baricenter_impact_energy>20000]=cross_section_max
+			cross_section[cross_section<0] = 0
+			# reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s * 1e20
+			# the previous formula is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+			reaction_rate = np.trapz(np.trapz(((cross_section*np.abs(np.array([H_velocity.tolist()]*200) - np.array([Hm_velocity.tolist()]*200).T)*H_velocity_PDF).T*Hm_velocity_PDF).T,x=H_velocity,axis=-1).T ,x=Hm_velocity,axis=-1)		# m^3 / s
 		return reaction_rate
 	reaction_rate = list(map(internal,(np.array([T_H.flatten(),T_Hm.flatten()]).T)))
 	reaction_rate = np.reshape(reaction_rate,np.shape(T_H))[0]
 	Hm_H1s__H1s_H1s_e = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
 	return Hm_H1s__H1s_H1s_e	# m^-3/s *1e-20 / (nHm/ne) / (nH(1)/ne)
 
-
 def RR_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+	print('RR_Hm_H1s__H2_v_e__r should not have been used in favour of RR_Hm_H1s__H1s_H1s_e_plus_Hm_H1s__H2_v_e__r')
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
 		print('error, Te and ne are different shapes')
 		exit()
@@ -1752,31 +2106,178 @@ def RR_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,m
 		T_H,T_Hm = arg[0]
 		T_H = np.array([T_H])
 		T_Hm = np.array([T_Hm])
-		H_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/hydrogen_mass)**0.5).T
-		H_velocity_PDF = (4*np.pi*(H_velocity.T)**2 * gauss( H_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		H_energy = 0.5 * H_velocity**2 * hydrogen_mass * J_to_eV
-		Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
-		Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
-		baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hm),200))+H_energy).T + Hm_energy).T
-		# baricenter_impact_energy = np.array(([baricenter_impact_energy.tolist()])*9)
-		baricenter_impact_energy[baricenter_impact_energy<0.1]=0.1
-		baricenter_impact_energy[baricenter_impact_energy>20000]=20000
-		coefficients = np.array([-3.44152907*1e+1, -3.39348209*1e-1, 5.66591705*1e-2, -9.05150459*1e-3, 7.66060418*1e-4, -4.27126462*1e-5, -1.57273749*1e-7, 2.57607677*1e-7, -1.20071919*1e-8])
-		# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
-		cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(baricenter_impact_energy)))* (1e-4* 1e20)	# multiplied 1e20
-		cross_section[np.logical_not(np.isfinite(cross_section))]=0
-		cross_section_min = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-0.01)).argmin()]	# instead of 0.1 as limit I use 0.01, because I need to look at low energies, but still the fit starts to misbehave for too low energies
-		cross_section_max = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-20000)).argmin()]	# this can be used because the cross section is quite flat
-		cross_section[baricenter_impact_energy<0.01]=cross_section_min
-		cross_section[baricenter_impact_energy>20000]=cross_section_max
-		cross_section[cross_section<0] = 0
-		reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s * 1e20
+		if len(T_H)==1 and len(T_Hm)==1:
+			reduced_mass = hydrogen_mass*hydrogen_mass/(hydrogen_mass+hydrogen_mass)
+			H_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_H),50))).T*(2*boltzmann_constant_J*T_H.T/hydrogen_mass)**0.5).T
+			H_velocity_x = np.sort(H_velocity.flatten().tolist() + (-H_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			H_velocity_PDF = (4*np.pi*(H_velocity.T)**2 * gauss( H_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			H_velocity_PF = H_velocity_PDF.flatten()*np.array([(H_velocity.flatten()[1]-H_velocity.flatten()[0]),*np.diff(H_velocity.flatten())[1:]/2+np.diff(H_velocity.flatten())[:-1]/2,(H_velocity.flatten()[-1]-H_velocity.flatten()[-2])])
+			H_velocity_PF_x = np.array(np.flip(H_velocity_PF.flatten(),axis=0).tolist() + H_velocity_PF.flatten().tolist())/2
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hm.T),50))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+			Hm_velocity_x = np.sort(Hm_velocity.flatten().tolist() + (-Hm_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hm_velocity_PF = Hm_velocity_PDF.flatten()*np.array([(Hm_velocity.flatten()[1]-Hm_velocity.flatten()[0]),*np.diff(Hm_velocity.flatten())[1:]/2+np.diff(Hm_velocity.flatten())[:-1]/2,(Hm_velocity.flatten()[-1]-Hm_velocity.flatten()[-2])])
+			Hm_velocity_PF_x = np.array(np.flip(Hm_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
+			relative_velocity_x = np.array([H_velocity_x.tolist()]*100) - np.array([Hm_velocity_x.tolist()]*100).T
+			relative_velocity_x = np.log(np.abs(relative_velocity_x).flatten()).astype(np.float32)
+			relative_velocity_x_log_max = relative_velocity_x.max()
+			relative_velocity_x = (relative_velocity_x/relative_velocity_x_log_max*(2**8-1)).astype(np.uint8)
+			# relative_velocity_x = (np.log(relative_velocity_x/(relative_velocity_x.max()))*(2**8-1)).astype(np.uint8)
+			relative_velocity_PF_x = (np.array([H_velocity_PF_x.tolist()]*100) * np.array([Hm_velocity_PF_x.tolist()]*100).T).flatten()
+			relative_velocity_PF_x2 = []
+			for value in np.unique(relative_velocity_x):
+				relative_velocity_PF_x2.append(np.sum(relative_velocity_PF_x[relative_velocity_x==value]))
+			relative_velocity_PF_x2 = np.array(relative_velocity_PF_x2)
+			relative_velocity_x2 = np.exp(np.unique(relative_velocity_x).astype(float)/(2**8-1)*relative_velocity_x_log_max)**2
+			relative_velocity = (np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)) + np.array([np.array([relative_velocity_x2.tolist()]*len(relative_velocity_x2)).T.tolist()]*len(relative_velocity_x2)) + np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)).T).flatten()**0.5
+			relative_velocity_PF = (np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)) * np.array([np.array([relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)).T.tolist()]*len(relative_velocity_PF_x2)) * np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)).T).flatten()
+			relative_velocity = np.log(relative_velocity)
+			relative_velocity_log_max = relative_velocity.max()
+			relative_velocity = (relative_velocity/relative_velocity_log_max*(2**8-1)).astype(np.uint8)
+			relative_velocity_PF2 = []
+			for value in np.unique(relative_velocity):
+				relative_velocity_PF2.append(np.sum(relative_velocity_PF[relative_velocity==value]))
+			relative_velocity_PF2 = np.array(relative_velocity_PF2)
+			relative_velocity_2 = np.exp(np.unique(relative_velocity/(2**8-1)).astype(float)*relative_velocity_log_max)
+			relative_velocity_PDF2 = relative_velocity_PF2/np.array([(relative_velocity_2.flatten()[1]-relative_velocity_2.flatten()[0]),*np.diff(relative_velocity_2.flatten())[1:]/2+np.diff(relative_velocity_2.flatten())[:-1]/2,(relative_velocity_2.flatten()[-1]-relative_velocity_2.flatten()[-2])])
+			relative_energy = 1/2*reduced_mass*(relative_velocity_2**2) * J_to_eV
+			coefficients = np.array([-3.44152907*1e+1, -3.39348209*1e-1, 5.66591705*1e-2, -9.05150459*1e-3, 7.66060418*1e-4, -4.27126462*1e-5, -1.57273749*1e-7, 2.57607677*1e-7, -1.20071919*1e-8])
+			# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+			cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(relative_energy)))* (1e-4* 1e20)	# multiplied 1e20
+			cross_section[np.logical_not(np.isfinite(cross_section))]=0
+			cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.1)).argmin()]	# instead of 0.1 as limit I use 0.01, because I need to look at low energies, but still the fit starts to misbehave for too low energies	# 07/09/2021 no, I stop at 0.1eV, because Janev says so and the RR is too high anyway
+			cross_section_max = cross_section.flatten()[(np.abs(relative_energy-20000)).argmin()]	# this can be used because the cross section is quite flat
+			cross_section[relative_energy<0.1]=cross_section_min
+			cross_section[relative_energy>20000]=cross_section_max
+			cross_section[cross_section<0] = 0
+			reaction_rate = np.array([np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)])		# m^3 / s
+		else:
+			print('wrong calculation used')
+			H_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/hydrogen_mass)**0.5).T
+			H_velocity_PDF = (4*np.pi*(H_velocity.T)**2 * gauss( H_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			H_energy = 0.5 * H_velocity**2 * hydrogen_mass * J_to_eV
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
+			# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hm),200))+H_energy).T + Hm_energy).T
+			baricenter_impact_energy = (1/4)*((np.zeros((200,*np.shape(T_Hm),200))+H_energy).T + Hm_energy).T	# changed because in the centre of mass, for particles of same mass, the speed is half
+			# baricenter_impact_energy = np.array(([baricenter_impact_energy.tolist()])*9)
+			baricenter_impact_energy[baricenter_impact_energy<0.1]=0.1
+			baricenter_impact_energy[baricenter_impact_energy>20000]=20000
+			coefficients = np.array([-3.44152907*1e+1, -3.39348209*1e-1, 5.66591705*1e-2, -9.05150459*1e-3, 7.66060418*1e-4, -4.27126462*1e-5, -1.57273749*1e-7, 2.57607677*1e-7, -1.20071919*1e-8])
+			# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+			cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(baricenter_impact_energy)))* (1e-4* 1e20)	# multiplied 1e20
+			cross_section[np.logical_not(np.isfinite(cross_section))]=0
+			cross_section_min = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-0.1)).argmin()]	# instead of 0.1 as limit I use 0.01, because I need to look at low energies, but still the fit starts to misbehave for too low energies	# 07/09/2021 no, I stop at 0.1eV, because Janev says so and the RR is too high anyway
+			cross_section_max = cross_section.flatten()[(np.abs(baricenter_impact_energy[0]-20000)).argmin()]	# this can be used because the cross section is quite flat
+			cross_section[baricenter_impact_energy<0.1]=cross_section_min
+			cross_section[baricenter_impact_energy>20000]=cross_section_max
+			cross_section[cross_section<0] = 0
+			# reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s * 1e20
+			# the previous formula is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+			reaction_rate = np.trapz(np.trapz(((cross_section*np.abs(np.array([H_velocity.tolist()]*200) - np.array([Hm_velocity.tolist()]*200).T)*H_velocity_PDF).T*Hm_velocity_PDF).T,x=H_velocity,axis=-1).T ,x=Hm_velocity,axis=-1)		# m^3 / s
 		return reaction_rate
 	reaction_rate = list(map(internal,(np.array([T_H.flatten(),T_Hm.flatten()]).T)))
 	reaction_rate = np.reshape(reaction_rate,np.shape(T_H))[0]
 	Hm_H1s__H2_v_e = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
 	return Hm_H1s__H2_v_e	# m^-3/s *1e-20 / (nHm/ne) / (nH(1)/ne)
+
+def RR_Hm_H1s__H1s_H1s_e_plus_Hm_H1s__H2_v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hm,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
+		print('error, Te and ne are different shapes')
+		exit()
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)==():
+		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
+		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
+		T_H=np.array([T_H])
+		T_Hm=np.array([T_Hm])
+	# reaction rate		H- +H(1s) →H2-(B2Σ+g ) →H(1s) +H(1s) + e
+	# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
+	# chapter 3.3.2
+	reduced_mass = hydrogen_mass*hydrogen_mass/(hydrogen_mass+hydrogen_mass)
+	resolution = 30
+	# time = tm.time()
+	H_velocity = ((np.logspace(np.log10(0.01),np.log10(5),resolution))*(2*boltzmann_constant_J*T_H[0]/hydrogen_mass)**0.5)
+	H_velocity_x = np.sort(H_velocity.tolist() + (-H_velocity).tolist())/(3**0.5)	# in only one direction
+	H_velocity_PDF = (4*np.pi*(H_velocity)**2 * gauss( H_velocity, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_H[0]))**(3/2) , (T_H[0]*boltzmann_constant_J/hydrogen_mass)**0.5 ,0))
+	H_velocity_PF = H_velocity_PDF*np.array([(H_velocity[1]-H_velocity[0]),*np.diff(H_velocity)[1:]/2+np.diff(H_velocity)[:-1]/2,(H_velocity[-1]-H_velocity[-2])])
+	H_velocity_PF_x = np.array(np.flip(H_velocity_PF,axis=0).tolist() + H_velocity_PF.tolist())/2
+	Hm_velocity = ((np.logspace(np.log10(0.01),np.log10(5),resolution))*(2*boltzmann_constant_J*T_Hm[0]/hydrogen_mass)**0.5)
+	Hm_velocity_x = np.sort(Hm_velocity.tolist() + (-Hm_velocity).tolist())/(3**0.5)	# in only one direction
+	Hm_velocity_PDF = (4*np.pi*(Hm_velocity)**2 * gauss( Hm_velocity, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm[0]))**(3/2) , (T_Hm[0]*boltzmann_constant_J/hydrogen_mass)**0.5 ,0))
+	Hm_velocity_PF = Hm_velocity_PDF*np.array([(Hm_velocity[1]-Hm_velocity[0]),*np.diff(Hm_velocity)[1:]/2+np.diff(Hm_velocity)[:-1]/2,(Hm_velocity[-1]-Hm_velocity[-2])])
+	Hm_velocity_PF_x = np.array(np.flip(Hm_velocity_PF,axis=0).tolist() + Hm_velocity_PF.tolist())/2
+	relative_velocity_x = np.array([H_velocity_x.tolist()]*(resolution*2)) - np.array([Hm_velocity_x.tolist()]*(resolution*2)).T
+	relative_velocity_x = np.log(np.abs(relative_velocity_x).flatten()).astype(np.float32)
+	relative_velocity_x_log_max = relative_velocity_x.max()
+	relative_velocity_x = (relative_velocity_x/relative_velocity_x_log_max*(2**8-1)).astype(np.uint8)
+	# relative_velocity_x = (np.log(relative_velocity_x/(relative_velocity_x.max()))*(2**8-1)).astype(np.uint8)
+	relative_velocity_PF_x = (np.array([H_velocity_PF_x.tolist()]*(resolution*2)) * np.array([Hm_velocity_PF_x.tolist()]*(resolution*2)).T).flatten()
+	relative_velocity_PF_x2 = np.array([np.sum(relative_velocity_PF_x[relative_velocity_x==value]) for value in np.unique(relative_velocity_x)])
+	# relative_velocity_PF_x2 = []
+	# for value in np.unique(relative_velocity_x):
+	# 	relative_velocity_PF_x2.append(np.sum(relative_velocity_PF_x[relative_velocity_x==value]))
+	# relative_velocity_PF_x2 = np.array(relative_velocity_PF_x2)
+	relative_velocity_x2 = np.exp(np.unique(relative_velocity_x).astype(float)/(2**8-1)*relative_velocity_x_log_max)**2
+	# relative_velocity = (np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)) + np.array([np.array([relative_velocity_x2.tolist()]*len(relative_velocity_x2)).T.tolist()]*len(relative_velocity_x2)) + np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)).T).flatten()**0.5
+	# this is the same but faster
+	# print(tm.time()-time)
+	temp = np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2))
+	relative_velocity = cp.deepcopy(temp)
+	relative_velocity += np.transpose(temp,(0,2,1))
+	relative_velocity += np.transpose(temp,(2,0,1))
+	relative_velocity = relative_velocity.flatten()**0.5
+	# time = tm.time()
+	# relative_velocity_PF = (np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)) * np.array([np.array([relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)).T.tolist()]*len(relative_velocity_PF_x2)) * np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)).T).flatten()
+	# print(tm.time()-time)
+	# this is the same but faster
+	# time = tm.time()
+	temp = np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2))
+	relative_velocity_PF = cp.deepcopy(temp)
+	relative_velocity_PF *= np.transpose(temp,(0,2,1))
+	relative_velocity_PF *= np.transpose(temp,(2,0,1))
+	relative_velocity_PF = relative_velocity_PF.flatten()
+	# print(tm.time()-time)
+	relative_velocity = np.log(relative_velocity)
+	relative_velocity_log_max = relative_velocity.max()
+	relative_velocity = (relative_velocity/relative_velocity_log_max*(2**8-1)).astype(np.uint8)
+	relative_velocity_PF2 = np.array([np.sum(relative_velocity_PF[relative_velocity==value]) for value in np.unique(relative_velocity)])
+	# print(tm.time()-time)
+	# relative_velocity_PF2 = []
+	# for value in np.unique(relative_velocity):
+	# 	relative_velocity_PF2.append(np.sum(relative_velocity_PF[relative_velocity==value]))
+	# relative_velocity_PF2 = np.array(relative_velocity_PF2)
+	relative_velocity_PF2 = relative_velocity_PF2/np.sum(relative_velocity_PF2)	# reset the normalisation
+	relative_velocity_2 = np.exp(np.unique(relative_velocity).astype(float)/(2**8-1)*relative_velocity_log_max)
+	relative_velocity_PDF2 = relative_velocity_PF2/np.array([(relative_velocity_2[1]-relative_velocity_2[0]),*np.diff(relative_velocity_2)[1:]/2+np.diff(relative_velocity_2)[:-1]/2,(relative_velocity_2[-1]-relative_velocity_2[-2])])
+	relative_energy = 1/2*reduced_mass*(relative_velocity_2**2) * J_to_eV
+	# print(tm.time()-time)
+
+	coefficients = np.array([-3.61799082*1e+1, 1.16615172, -1.41928602*1e-1, -1.11195959*1e-2, -1.72505995*1e-3, 1.59040356*1e-3, -2.53196144*1e-4, 1.66978235*1e-5, -4.09725797*1e-7])
+	# cross_section = (np.exp(np.sum(((np.log(relative_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+	cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(relative_energy)))* (1e-4* 1e20)	# multiplied 1e20
+	cross_section[np.logical_not(np.isfinite(cross_section))]=0
+	cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.1)).argmin()]	# I dont think that this is necessary because the polinomial fit seems behaving well (going to ~0 quite rapidly) for decreasing energy	# 07/09/2021 no, I stop at 0.1eV, because Janev says so and the RR is too high anyway
+	cross_section_max = cross_section.flatten()[(np.abs(relative_energy-20000)).argmin()]	# it becomes flattish for high energies, so this is not a big mistake
+	cross_section[relative_energy<0.1]=cross_section_min
+	cross_section[relative_energy>20000]=cross_section_max
+	cross_section[cross_section<0] = 0
+	reaction_rate = np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)	# m^3 / s
+	Hm_H1s__H1s_H1s_e = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
+
+	coefficients = np.array([-3.44152907*1e+1, -3.39348209*1e-1, 5.66591705*1e-2, -9.05150459*1e-3, 7.66060418*1e-4, -4.27126462*1e-5, -1.57273749*1e-7, 2.57607677*1e-7, -1.20071919*1e-8])
+	# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
+	cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(relative_energy)))* (1e-4* 1e20)	# multiplied 1e20
+	cross_section[np.logical_not(np.isfinite(cross_section))]=0
+	cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.1)).argmin()]	# instead of 0.1 as limit I use 0.01, because I need to look at low energies, but still the fit starts to misbehave for too low energies	# 07/09/2021 no, I stop at 0.1eV, because Janev says so and the RR is too high anyway
+	cross_section_max = cross_section.flatten()[(np.abs(relative_energy-20000)).argmin()]	# this can be used because the cross section is quite flat
+	cross_section[relative_energy<0.1]=cross_section_min
+	cross_section[relative_energy>20000]=cross_section_max
+	cross_section[cross_section<0] = 0
+	reaction_rate = np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)	# m^3 / s
+	Hm_H1s__H2_v_e = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
+
+	return Hm_H1s__H1s_H1s_e,Hm_H1s__H2_v_e	# m^-3/s *1e-20 / (nHm/ne) / (nH(1)/ne)
 
 
 def RR_Hp_H_H__Hp_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hp,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
@@ -2366,7 +2867,9 @@ def RR_Hp_H2X1Σg__Hp_H1s_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_
 		cross_section =  (coefficients[1]/(Hp_energy**coefficients[2]))*((1-(1.5*coefficients[0]/Hp_energy)**coefficients[3])**coefficients[4]) * (1e-16 * 1e-4 * 1e20)	# m^2 * 1e20
 		cross_section[np.logical_not(np.isfinite(cross_section))]=0
 		cross_section[cross_section<0] = 0
-		reaction_rate = np.sum(cross_section*Hp_velocity*Hp_velocity_PDF,axis=-1)* np.mean(np.diff(Hp_velocity))		# m^3 / s
+		# reaction_rate = np.sum(cross_section*Hp_velocity*Hp_velocity_PDF,axis=-1)* np.mean(np.diff(Hp_velocity))		# m^3 / s
+		# the previous formula is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+		reaction_rate = np.trapz(cross_section*Hp_velocity*Hp_velocity_PDF,x=Hp_velocity,axis=-1)		# m^3 / s
 		reaction_rate_max = reaction_rate.flatten()[(np.abs(T_Hp*eV_to_K-20)).argmin()]
 		reaction_rate[T_Hp*eV_to_K>20]=reaction_rate_max
 		if v_index==0:
@@ -2413,7 +2916,9 @@ def RR_Hm_H2v__H_H2v_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,merg
 		cross_section[np.logical_not(np.isfinite(cross_section))]=0
 		cross_section[cross_section<0] = 0
 		cross_section[Hm_energy<1] = 0	# added to avoid to use a cross section of which I have no idea on the reliability below 2.3eV
-		reaction_rate = np.sum(cross_section*Hm_velocity*Hm_velocity_PDF,axis=-1)* np.mean(np.diff(Hm_velocity))		# m^3 / s
+		# reaction_rate = np.sum(cross_section*Hm_velocity*Hm_velocity_PDF,axis=-1)* np.mean(np.diff(Hm_velocity))		# m^3 / s
+		# the previous formula is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+		reaction_rate = np.trapz(cross_section*Hm_velocity*Hm_velocity_PDF,x=Hm_velocity,axis=-1)		# m^3 / s
 		if not np.shape(np.array(merge_Te_prof_multipulse_interp_crop_limited))==():
 			reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
 		Hm_H2v__H_H2v_e = reaction_rate*(merge_ne_prof_multipulse_interp_crop_limited**2) * 1e20	# m^-3/s *1e-20
@@ -2591,7 +3096,7 @@ def RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limite
 		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
 	return reaction_rate	# m^-3/s *1e-20 / (nH2p/ne)
 
-def RR_e_H2p__Hex_H__or__Hn_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+def RR_e_H2p__Hn_H__or__Hn_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
 	# used ONLY to calculate the controbution to the potential energy differenciated by hydrogen excider state
 	# H2p and e can do:
 	# H2+ + e- → H(p) + H+ + e-
@@ -2730,7 +3235,9 @@ def RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H
 	cross_section[np.logical_not(np.isfinite(cross_section))]=0
 	cross_section_max = cross_section.flatten()[(np.abs(H2p_energy-30000)).argmin()]
 	cross_section[H2p_energy>30000]=cross_section_max
-	reaction_rate = np.sum(cross_section*H2p_velocity*H2p_velocity_PDF,axis=-1)* np.mean(np.diff(H2p_velocity))		# m^3 / s
+	# reaction_rate = np.sum(cross_section*H2p_velocity*H2p_velocity_PDF,axis=-1)* np.mean(np.diff(H2p_velocity))		# m^3 / s
+	# the previous formula is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+	reaction_rate = np.trapz(cross_section*H2p_velocity*H2p_velocity_PDF,x=H2p_velocity,axis=-1)		# m^3 / s
 	H2pvi_H2v0__Hp_H_H2v1 = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
 	return H2pvi_H2v0__Hp_H_H2v1	# m^-3/s *1e-20 / (nH2p/ne) / (nH2/ne)
 
@@ -2747,32 +3254,60 @@ def RR_H2pvi_H2v0__H3p_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2,
 	# reaction rate
 	# from Collision Processes in Low-Temperature Hydrogen Plasmas, Janev, R K et al., 2003
 	# chapter 7.3.3
-	H2p_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/(2*hydrogen_mass))**0.5).T
-	H2p_velocity_PDF = (4*np.pi*(H2p_velocity.T)**2 * gauss( H2p_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T
-	H2p_energy = 0.5 * H2p_velocity**2 * (2*hydrogen_mass) * J_to_eV
-	H2_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2.T),200))).T*(2*boltzmann_constant_J*T_H2/(2*hydrogen_mass))**0.5).T
-	H2_velocity_PDF = (4*np.pi*(H2_velocity.T)**2 * gauss( H2_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2))**(3/2) , (T_H2*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T
-	H2_energy = 0.5 * H2_velocity**2 * (2*hydrogen_mass) * J_to_eV
-	baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H2p),200))+H2p_energy).T + H2_energy).T
-	# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
-	form_factor = 17.76/( (baricenter_impact_energy**0.477)*(1+0.0291*(baricenter_impact_energy**3.61)+1.53e-5 * (baricenter_impact_energy**6.55) )  ) * (1e-16 *1e-4 * 1e20)	# m^2 * 1e20
-	interpolation_v = np.array([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18])
-	interpolation_CMenergy = np.array([0.0000000000001,0.04,0.25,0.5,0.75,1,2,3,4,5,8,10,15,40,60,100,200])	# eV
-	interpolation_f = np.array([[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[0.932380952380952,0.94,0.98,1,1.01,1.075,1.27,1.46,1.23,1.17,1.13,1.01,0.97,0.77,0.61,0.289999999999999,0],[0.875714285714286,0.89,0.965,0.995,1.02,1.1,1.4,1.59,1.245,1.14,1.06,0.93,0.89,0.69,0.53,0.209999999999999,0],[0.848809523809524,0.865,0.95,0.99,1.01,1.11,1.49,1.57,1.175,1.035,0.93,0.82,0.78,0.58,0.42,0.0999999999999994,0],[0.821904761904762,0.84,0.935,0.985,0.99,1.115,1.47,1.46,1.075,0.925,0.81,0.72,0.68,0.48,0.320000000000001,0,0],[0.805952380952381,0.825,0.925,0.98,0.97,1.11,1.44,1.33,0.99,0.835,0.72,0.62,0.59,0.44,0.32,0.0799999999999995,0],[0.784047619047619,0.805,0.915,0.975,0.94,1.1,1.39,1.21,0.9,0.74,0.63,0.54,0.5,0.3,0.14,0,0],[0.768095238095238,0.79,0.905,0.97,0.91,1.09,1.34,1.09,0.82,0.67,0.55,0.47,0.43,0.23,0.0699999999999997,0,0],[0.746190476190476,0.77,0.895,0.965,0.88,1.08,1.29,0.99,0.74,0.6,0.48,0.41,0.37,0.17,0.00999999999999968,0,0],[0.736190476190476,0.76,0.885,0.96,0.85,1.07,1.24,0.89,0.67,0.53,0.415,0.36,0.31,0.0600000000000001,0,0,0],[0.726190476190476,0.75,0.875,0.955,0.82,1.06,1.19,0.79,0.61,0.46,0.35,0.31,0.26,0.0100000000000001,0,0,0],[0.686920535714286,0.714666642,0.8603337,0.95,0.810866639,1.05,1.145673,0.6643,0.5157149,0.373573,0.2592865,0.2219,0.17003,0,0,0,0],[0.665533804761905,0.694878764,0.8489398,0.945,0.787551488,1.04,1.097816,0.55323,0.4373221,0.296966,0.182858,0.1548,0.10039,0,0,0,0],[0.644147073809524,0.675090886,0.8375459,0.94,0.764236337,1.03,1.049959,0.44216,0.3589293,0.220359,0.1064295,0.0876999999999999,0.0307499999999999,0,0,0,0],[0.622760342857143,0.655303008,0.826152,0.935,0.740921186,1.02,1.002102,0.33109,0.2805365,0.143752,0.0300010000000002,0.0205999999999998,0,0,0,0,0],[0.601373611904762,0.63551513,0.8147581,0.93,0.717606035,1.01,0.954245,0.22002,0.2021437,0.0671450000000002,0,0,0,0,0,0,0],[0.579986880952381,0.615727252,0.8033642,0.925,0.694290884,1,0.906388,0.10895,0.1237509,0,0,0,0,0,0,0,0],[0.55860015,0.595939374,0.7919703,0.92,0.670975733,0.99,0.858531,0,0.0453580999999998,0,0,0,0,0,0,0,0],[0.537213419047619,0.576151496,0.7805764,0.915,0.647660582,0.98,0.810674,0,0,0,0,0,0,0,0,0,0]])	# au
-	interpolator_f = interpolate.interp2d(np.log(interpolation_CMenergy),interpolation_v, interpolation_f,fill_value=0)
-	H2pvi_H2v0__H3p_H1s = np.zeros((15,*np.shape(merge_ne_prof_multipulse_interp_crop_limited)))
-	# Population factors F 0v 0 of H 2 + (v 0 ) levels by electron-impact transitions from H 2 ( 1 Î£ + g ; v = 0) calculated in Franck-Condon approximation
-	coefficients = np.array([0.092,0.162,0.176,0.155,0.121,0.089,0.063,0.044,0.03,0.021,0.0147,0.0103,0.0072,0.0051,0.0036,0.0024,0.0016,0.0008,0.0002])
-	for vi_index in range(19):
-		cross_section = coefficients[vi_index]*form_factor*(interpolator_f(np.log(baricenter_impact_energy.flatten()),vi_index).reshape(np.shape(baricenter_impact_energy)))
-		cross_section[cross_section<0] = 0
-		reaction_rate = np.nansum((cross_section*H2p_velocity*H2p_velocity_PDF).T * H2_velocity*H2_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H2p_velocity))*np.mean(np.diff(H2_velocity))		# m^3 / s
-		reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
-		for v0_index in range(15):
-			if vi_index==0:
-				H2pvi_H2v0__H3p_H1s[v0_index] += reaction_rate * fractional_population_states_H2[0]
-			else:
-				H2pvi_H2v0__H3p_H1s[v0_index] += reaction_rate * fractional_population_states_H2[v0_index]
+	if np.sum(T_H2p==T_H2)==1:
+		reduced_mass = 2*hydrogen_mass*2*hydrogen_mass/(2*hydrogen_mass+2*hydrogen_mass)
+		relative_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/reduced_mass)**0.5).T
+		relative_velocity_PDF = (4*np.pi*(relative_velocity.T)**2 * gauss( relative_velocity.T, (reduced_mass/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/reduced_mass)**0.5 ,0)).T
+		relative_energy = 0.5*reduced_mass*(relative_velocity**2) * J_to_eV
+		form_factor = 17.76/( (relative_energy**0.477)*(1+0.0291*(relative_energy**3.61)+1.53e-5 * (relative_energy**6.55) )  ) * (1e-16 *1e-4 * 1e20)	# m^2 * 1e20
+		interpolation_v = np.array([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18])
+		interpolation_CMenergy = np.array([0.0000000000001,0.04,0.25,0.5,0.75,1,2,3,4,5,8,10,15,40,60,100,200])	# eV
+		interpolation_f = np.array([[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[0.932380952380952,0.94,0.98,1,1.01,1.075,1.27,1.46,1.23,1.17,1.13,1.01,0.97,0.77,0.61,0.289999999999999,0],[0.875714285714286,0.89,0.965,0.995,1.02,1.1,1.4,1.59,1.245,1.14,1.06,0.93,0.89,0.69,0.53,0.209999999999999,0],[0.848809523809524,0.865,0.95,0.99,1.01,1.11,1.49,1.57,1.175,1.035,0.93,0.82,0.78,0.58,0.42,0.0999999999999994,0],[0.821904761904762,0.84,0.935,0.985,0.99,1.115,1.47,1.46,1.075,0.925,0.81,0.72,0.68,0.48,0.320000000000001,0,0],[0.805952380952381,0.825,0.925,0.98,0.97,1.11,1.44,1.33,0.99,0.835,0.72,0.62,0.59,0.44,0.32,0.0799999999999995,0],[0.784047619047619,0.805,0.915,0.975,0.94,1.1,1.39,1.21,0.9,0.74,0.63,0.54,0.5,0.3,0.14,0,0],[0.768095238095238,0.79,0.905,0.97,0.91,1.09,1.34,1.09,0.82,0.67,0.55,0.47,0.43,0.23,0.0699999999999997,0,0],[0.746190476190476,0.77,0.895,0.965,0.88,1.08,1.29,0.99,0.74,0.6,0.48,0.41,0.37,0.17,0.00999999999999968,0,0],[0.736190476190476,0.76,0.885,0.96,0.85,1.07,1.24,0.89,0.67,0.53,0.415,0.36,0.31,0.0600000000000001,0,0,0],[0.726190476190476,0.75,0.875,0.955,0.82,1.06,1.19,0.79,0.61,0.46,0.35,0.31,0.26,0.0100000000000001,0,0,0],[0.686920535714286,0.714666642,0.8603337,0.95,0.810866639,1.05,1.145673,0.6643,0.5157149,0.373573,0.2592865,0.2219,0.17003,0,0,0,0],[0.665533804761905,0.694878764,0.8489398,0.945,0.787551488,1.04,1.097816,0.55323,0.4373221,0.296966,0.182858,0.1548,0.10039,0,0,0,0],[0.644147073809524,0.675090886,0.8375459,0.94,0.764236337,1.03,1.049959,0.44216,0.3589293,0.220359,0.1064295,0.0876999999999999,0.0307499999999999,0,0,0,0],[0.622760342857143,0.655303008,0.826152,0.935,0.740921186,1.02,1.002102,0.33109,0.2805365,0.143752,0.0300010000000002,0.0205999999999998,0,0,0,0,0],[0.601373611904762,0.63551513,0.8147581,0.93,0.717606035,1.01,0.954245,0.22002,0.2021437,0.0671450000000002,0,0,0,0,0,0,0],[0.579986880952381,0.615727252,0.8033642,0.925,0.694290884,1,0.906388,0.10895,0.1237509,0,0,0,0,0,0,0,0],[0.55860015,0.595939374,0.7919703,0.92,0.670975733,0.99,0.858531,0,0.0453580999999998,0,0,0,0,0,0,0,0],[0.537213419047619,0.576151496,0.7805764,0.915,0.647660582,0.98,0.810674,0,0,0,0,0,0,0,0,0,0]])	# au
+		interpolator_f = interpolate.interp2d(np.log(interpolation_CMenergy),interpolation_v, interpolation_f,fill_value=0)
+		H2pvi_H2v0__H3p_H1s = np.zeros((15,*np.shape(merge_ne_prof_multipulse_interp_crop_limited)))
+		# Population factors F 0v 0 of H 2 + (v 0 ) levels by electron-impact transitions from H 2 ( 1 Î£ + g ; v = 0) calculated in Franck-Condon approximation
+		coefficients = np.array([0.092,0.162,0.176,0.155,0.121,0.089,0.063,0.044,0.03,0.021,0.0147,0.0103,0.0072,0.0051,0.0036,0.0024,0.0016,0.0008,0.0002])
+		for vi_index in range(19):
+			cross_section = coefficients[vi_index]*form_factor*(interpolator_f(np.log(relative_energy.flatten()),vi_index).reshape(np.shape(relative_energy)))
+			cross_section[cross_section<0] = 0
+			reaction_rate = np.trapz((cross_section*relative_velocity_PDF*relative_velocity),x=relative_velocity)		# m^3 / s
+			reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
+			for v0_index in range(15):
+				if vi_index==0:
+					H2pvi_H2v0__H3p_H1s[v0_index] += reaction_rate * fractional_population_states_H2[0]
+				else:
+					H2pvi_H2v0__H3p_H1s[v0_index] += reaction_rate * fractional_population_states_H2[v0_index]
+	else:
+		print('wrong formula for RR used')
+		H2p_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/(2*hydrogen_mass))**0.5).T
+		H2p_velocity_PDF = (4*np.pi*(H2p_velocity.T)**2 * gauss( H2p_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T
+		H2p_energy = 0.5 * H2p_velocity**2 * (2*hydrogen_mass) * J_to_eV
+		H2_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2.T),200))).T*(2*boltzmann_constant_J*T_H2/(2*hydrogen_mass))**0.5).T
+		H2_velocity_PDF = (4*np.pi*(H2_velocity.T)**2 * gauss( H2_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2))**(3/2) , (T_H2*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T
+		H2_energy = 0.5 * H2_velocity**2 * (2*hydrogen_mass) * J_to_eV
+		# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H2p),200))+H2p_energy).T + H2_energy).T
+		baricenter_impact_energy = (1/4)*((np.zeros((200,*np.shape(T_H2p),200))+H2p_energy).T + H2_energy).T	# changed because in the centre of mass, for particles of same mass, the speed is half
+		# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
+		form_factor = 17.76/( (baricenter_impact_energy**0.477)*(1+0.0291*(baricenter_impact_energy**3.61)+1.53e-5 * (baricenter_impact_energy**6.55) )  ) * (1e-16 *1e-4 * 1e20)	# m^2 * 1e20
+		interpolation_v = np.array([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18])
+		interpolation_CMenergy = np.array([0.0000000000001,0.04,0.25,0.5,0.75,1,2,3,4,5,8,10,15,40,60,100,200])	# eV
+		interpolation_f = np.array([[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[0.932380952380952,0.94,0.98,1,1.01,1.075,1.27,1.46,1.23,1.17,1.13,1.01,0.97,0.77,0.61,0.289999999999999,0],[0.875714285714286,0.89,0.965,0.995,1.02,1.1,1.4,1.59,1.245,1.14,1.06,0.93,0.89,0.69,0.53,0.209999999999999,0],[0.848809523809524,0.865,0.95,0.99,1.01,1.11,1.49,1.57,1.175,1.035,0.93,0.82,0.78,0.58,0.42,0.0999999999999994,0],[0.821904761904762,0.84,0.935,0.985,0.99,1.115,1.47,1.46,1.075,0.925,0.81,0.72,0.68,0.48,0.320000000000001,0,0],[0.805952380952381,0.825,0.925,0.98,0.97,1.11,1.44,1.33,0.99,0.835,0.72,0.62,0.59,0.44,0.32,0.0799999999999995,0],[0.784047619047619,0.805,0.915,0.975,0.94,1.1,1.39,1.21,0.9,0.74,0.63,0.54,0.5,0.3,0.14,0,0],[0.768095238095238,0.79,0.905,0.97,0.91,1.09,1.34,1.09,0.82,0.67,0.55,0.47,0.43,0.23,0.0699999999999997,0,0],[0.746190476190476,0.77,0.895,0.965,0.88,1.08,1.29,0.99,0.74,0.6,0.48,0.41,0.37,0.17,0.00999999999999968,0,0],[0.736190476190476,0.76,0.885,0.96,0.85,1.07,1.24,0.89,0.67,0.53,0.415,0.36,0.31,0.0600000000000001,0,0,0],[0.726190476190476,0.75,0.875,0.955,0.82,1.06,1.19,0.79,0.61,0.46,0.35,0.31,0.26,0.0100000000000001,0,0,0],[0.686920535714286,0.714666642,0.8603337,0.95,0.810866639,1.05,1.145673,0.6643,0.5157149,0.373573,0.2592865,0.2219,0.17003,0,0,0,0],[0.665533804761905,0.694878764,0.8489398,0.945,0.787551488,1.04,1.097816,0.55323,0.4373221,0.296966,0.182858,0.1548,0.10039,0,0,0,0],[0.644147073809524,0.675090886,0.8375459,0.94,0.764236337,1.03,1.049959,0.44216,0.3589293,0.220359,0.1064295,0.0876999999999999,0.0307499999999999,0,0,0,0],[0.622760342857143,0.655303008,0.826152,0.935,0.740921186,1.02,1.002102,0.33109,0.2805365,0.143752,0.0300010000000002,0.0205999999999998,0,0,0,0,0],[0.601373611904762,0.63551513,0.8147581,0.93,0.717606035,1.01,0.954245,0.22002,0.2021437,0.0671450000000002,0,0,0,0,0,0,0],[0.579986880952381,0.615727252,0.8033642,0.925,0.694290884,1,0.906388,0.10895,0.1237509,0,0,0,0,0,0,0,0],[0.55860015,0.595939374,0.7919703,0.92,0.670975733,0.99,0.858531,0,0.0453580999999998,0,0,0,0,0,0,0,0],[0.537213419047619,0.576151496,0.7805764,0.915,0.647660582,0.98,0.810674,0,0,0,0,0,0,0,0,0,0]])	# au
+		interpolator_f = interpolate.interp2d(np.log(interpolation_CMenergy),interpolation_v, interpolation_f,fill_value=0)
+		H2pvi_H2v0__H3p_H1s = np.zeros((15,*np.shape(merge_ne_prof_multipulse_interp_crop_limited)))
+		# Population factors F 0v 0 of H 2 + (v 0 ) levels by electron-impact transitions from H 2 ( 1 Î£ + g ; v = 0) calculated in Franck-Condon approximation
+		coefficients = np.array([0.092,0.162,0.176,0.155,0.121,0.089,0.063,0.044,0.03,0.021,0.0147,0.0103,0.0072,0.0051,0.0036,0.0024,0.0016,0.0008,0.0002])
+		for vi_index in range(19):
+			cross_section = coefficients[vi_index]*form_factor*(interpolator_f(np.log(baricenter_impact_energy.flatten()),vi_index).reshape(np.shape(baricenter_impact_energy)))
+			cross_section[cross_section<0] = 0
+			# reaction_rate = np.nansum((cross_section*H2p_velocity*H2p_velocity_PDF).T * H2_velocity*H2_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H2p_velocity))*np.mean(np.diff(H2_velocity))		# m^3 / s
+			# the previous formula is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+			reaction_rate = np.trapz(np.trapz(((cross_section*np.abs(np.array([H2p_velocity.tolist()]*200) - np.array([H2_velocity.tolist()]*200).T)*H2p_velocity_PDF).T*H2_velocity_PDF).T,x=H2p_velocity,axis=-1).T ,x=H2_velocity,axis=-1)		# m^3 / s
+			reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
+			for v0_index in range(15):
+				if vi_index==0:
+					H2pvi_H2v0__H3p_H1s[v0_index] += reaction_rate * fractional_population_states_H2[0]
+				else:
+					H2pvi_H2v0__H3p_H1s[v0_index] += reaction_rate * fractional_population_states_H2[v0_index]
 	H2pvi_H2v0__H3p_H1s = (merge_ne_prof_multipulse_interp_crop_limited**2)*np.sum(H2pvi_H2v0__H3p_H1s,axis=0)
 	return H2pvi_H2v0__H3p_H1s	# m^-3/s *1e-20 / (nH2p/ne) / (nH2/ne)
 
@@ -2799,20 +3334,34 @@ def RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H
 		T_H2p,T_Hm = arg[0]
 		T_H2p = np.array([T_H2p])
 		T_Hm = np.array([T_Hm])
-		H2p_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/(2*hydrogen_mass))**0.5).T
-		H2p_velocity_PDF = (4*np.pi*(H2p_velocity.T)**2 * gauss( H2p_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T
-		H2p_energy = 0.5 * H2p_velocity**2 * (2*hydrogen_mass) * J_to_eV
-		Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
-		Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-		Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
-		baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H2p),200))+H2p_energy).T + Hm_energy).T
-		# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
-		cross_section1 = 7.5e-15 * (1e-4 *1e20)		# m^2	# channel N=2 * 1e20
-		cross_section2 = 5e-14 * (1e-4 * 1e20)		# m^2	# channel N=2 * 1e20
-		# cross_section = cross_section1 + cross_section2
-		cross_section = np.ones_like(baricenter_impact_energy) * (cross_section1 + cross_section2)
-		reaction_rate = np.nansum((cross_section*H2p_velocity*H2p_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H2p_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s
-		reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
+		if np.sum(T_H2p==T_Hm)==1:
+			reduced_mass = 2*hydrogen_mass*hydrogen_mass/(2*hydrogen_mass+hydrogen_mass)
+			relative_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/reduced_mass)**0.5).T
+			relative_velocity_PDF = (4*np.pi*(relative_velocity.T)**2 * gauss( relative_velocity.T, (reduced_mass/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/reduced_mass)**0.5 ,0)).T
+			relative_energy = 0.5*reduced_mass*(relative_velocity**2) * J_to_eV
+			cross_section1 = 7.5e-15 * (1e-4 *1e20)		# m^2	# channel N=2 * 1e20
+			cross_section2 = 5e-14 * (1e-4 * 1e20)		# m^2	# channel N=2 * 1e20
+			cross_section = np.ones_like(relative_energy) * (cross_section1 + cross_section2)
+			reaction_rate = np.trapz((cross_section*relative_velocity_PDF*relative_velocity),x=relative_velocity)		# m^3 / s
+		else:
+			print('wrong formula for RR used')
+			H2p_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/(2*hydrogen_mass))**0.5).T
+			H2p_velocity_PDF = (4*np.pi*(H2p_velocity.T)**2 * gauss( H2p_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T
+			H2p_energy = 0.5 * H2p_velocity**2 * (2*hydrogen_mass) * J_to_eV
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			Hm_energy = 0.5 * Hm_velocity**2 * hydrogen_mass * J_to_eV
+			# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H2p),200))+H2p_energy).T + Hm_energy).T
+			baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H2p),200))+H2p_energy*1/3).T + Hm_energy*2/3).T	# changed because in the centre of mass, for particles of same mass, the speed is half
+			# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
+			cross_section1 = 7.5e-15 * (1e-4 *1e20)		# m^2	# channel N=2 * 1e20
+			cross_section2 = 5e-14 * (1e-4 * 1e20)		# m^2	# channel N=2 * 1e20
+			# cross_section = cross_section1 + cross_section2
+			cross_section = np.ones_like(baricenter_impact_energy) * (cross_section1 + cross_section2)
+			# reaction_rate = np.nansum((cross_section*H2p_velocity*H2p_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H2p_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s
+			# the previous formula is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+			reaction_rate = np.trapz(np.trapz(((cross_section*np.abs(np.array([H2p_velocity.tolist()]*200) - np.array([Hm_velocity.tolist()]*200).T)*H2p_velocity_PDF).T*Hm_velocity_PDF).T,x=H2p_velocity,axis=-1).T ,x=Hm_velocity,axis=-1)		# m^3 / s
+			reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
 		return reaction_rate
 	reaction_rate = list(map(internal,(np.array([T_H2p.flatten(),T_Hm.flatten()]).T)))
 	reaction_rate = np.reshape(reaction_rate,np.shape(T_H2p))[0]
@@ -2836,18 +3385,31 @@ def RR_H2p_Hm__H3p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hm,T_H2p,
 		T_H2p,T_Hm = arg[0]
 		T_H2p = np.array([T_H2p])
 		T_Hm = np.array([T_Hm])
-		H2p_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/(2*hydrogen_mass))**0.5).T
-		H2p_velocity_PDF = (4*np.pi*(H2p_velocity.T)**2 * gauss( H2p_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T
-		H2p_energy = 0.5 * H2p_velocity**2 * (2*hydrogen_mass) * J_to_eV
-		Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/(hydrogen_mass))**0.5).T
-		Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
-		Hm_energy = 0.5 * Hm_velocity**2 * (hydrogen_mass) * J_to_eV
-		baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H2p),200))+H2p_energy).T + Hm_energy).T
-		# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
-		cross_section = 0.38/((baricenter_impact_energy**0.782)*(1+0.039*(baricenter_impact_energy**2.62))) * (1e-16 *1e-4 * 1e20)	# m^2 * 1e20
-		cross_section[cross_section<0] = 0
-		reaction_rate = np.nansum((cross_section*H2p_velocity*H2p_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H2p_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s
-		reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
+		if np.sum(T_H2p==T_Hm)==1:
+			reduced_mass = 2*hydrogen_mass*hydrogen_mass/(2*hydrogen_mass+hydrogen_mass)
+			relative_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/reduced_mass)**0.5).T
+			relative_velocity_PDF = (4*np.pi*(relative_velocity.T)**2 * gauss( relative_velocity.T, (reduced_mass/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/reduced_mass)**0.5 ,0)).T
+			relative_energy = 0.5*reduced_mass*(relative_velocity**2) * J_to_eV
+			cross_section = 0.38/((relative_energy**0.782)*(1+0.039*(relative_energy**2.62))) * (1e-16 *1e-4 * 1e20)	# m^2 * 1e20
+			cross_section[cross_section<0] = 0
+			reaction_rate = np.trapz((cross_section*relative_velocity_PDF*relative_velocity),x=relative_velocity)		# m^3 / s
+		else:
+			print('wrong formula for RR used')
+			H2p_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/(2*hydrogen_mass))**0.5).T
+			H2p_velocity_PDF = (4*np.pi*(H2p_velocity.T)**2 * gauss( H2p_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T
+			H2p_energy = 0.5 * H2p_velocity**2 * (2*hydrogen_mass) * J_to_eV
+			Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm.T),200))).T*(2*boltzmann_constant_J*T_Hm/(hydrogen_mass))**0.5).T
+			Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
+			Hm_energy = 0.5 * Hm_velocity**2 * (hydrogen_mass) * J_to_eV
+			# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H2p),200))+H2p_energy).T + Hm_energy).T
+			baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H2p),200))+H2p_energy*1/3).T + Hm_energy*2/3).T	# changed because in the centre of mass, for particles of same mass, the speed is half
+			# baricenter_impact_energy = ((np.zeros((200,*np.shape(T_Hp),200))+Hp_energy).T + Hm_energy).T
+			cross_section = 0.38/((baricenter_impact_energy**0.782)*(1+0.039*(baricenter_impact_energy**2.62))) * (1e-16 *1e-4 * 1e20)	# m^2 * 1e20
+			cross_section[cross_section<0] = 0
+			# reaction_rate = np.nansum((cross_section*H2p_velocity*H2p_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H2p_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s
+			# the previous formula is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+			reaction_rate = np.trapz(np.trapz(((cross_section*np.abs(np.array([H2p_velocity.tolist()]*200) - np.array([Hm_velocity.tolist()]*200).T)*H2p_velocity_PDF).T*Hm_velocity_PDF).T,x=H2p_velocity,axis=-1).T ,x=Hm_velocity,axis=-1)		# m^3 / s
+			reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
 		return reaction_rate
 	reaction_rate = list(map(internal,(np.array([T_H2p.flatten(),T_Hm.flatten()]).T)))
 	reaction_rate = np.reshape(reaction_rate,np.shape(T_H2p))[0]
@@ -2897,16 +3459,25 @@ def RR_H1s_H_2__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_
 		# H_velocity_PDF = 4*np.pi*H_velocity**2 * gauss( H_velocity, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_H_single))**(3/2) , (T_H_single*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)
 		# H_energy = 0.5 * H_velocity**2 * hydrogen_mass * J_to_eV
 		# baricenter_impact_energy = (np.zeros((len(H_energy),len(H_energy)))+H_energy).T + H_energy
-		H_1_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/(hydrogen_mass))**0.5).T
-		H_1_velocity_PDF = (4*np.pi*(H_1_velocity.T)**2 * gauss( H_1_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
-		H_1_energy = 0.5 * H_1_velocity**2 * (hydrogen_mass) * J_to_eV
-		H_2_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H.T),200))).T*(2*boltzmann_constant_J*T_H/(hydrogen_mass))**0.5).T
-		H_2_velocity_PDF = (4*np.pi*(H_2_velocity.T)**2 * gauss( H_2_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H))**(3/2) , (T_H*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
-		H_2_energy = 0.5 * H_2_velocity**2 * (hydrogen_mass) * J_to_eV
-		baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H),200))+H_1_energy).T + H_2_energy).T
-		cross_section = gauss(baricenter_impact_energy,2.5 * (1e-17 * 1e-4 * 1e20),0.9,3.25) # multiplied 1e20
-		reaction_rate = np.nansum((cross_section*H_1_velocity*H_1_velocity_PDF).T * H_2_velocity*H_2_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_1_velocity))*np.mean(np.diff(H_2_velocity))		# m^3 / s * 1e20
-		# reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * H_velocity*H_velocity_PDF )* np.mean(np.diff(H_velocity))		# m^3 / s
+		if False:	# this formulation is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+			print('wrong formula for RR used')
+			H_1_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/(hydrogen_mass))**0.5).T
+			H_1_velocity_PDF = (4*np.pi*(H_1_velocity.T)**2 * gauss( H_1_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
+			H_1_energy = 0.5 * H_1_velocity**2 * (hydrogen_mass) * J_to_eV
+			H_2_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H.T),200))).T*(2*boltzmann_constant_J*T_H/(hydrogen_mass))**0.5).T
+			H_2_velocity_PDF = (4*np.pi*(H_2_velocity.T)**2 * gauss( H_2_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H))**(3/2) , (T_H*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
+			H_2_energy = 0.5 * H_2_velocity**2 * (hydrogen_mass) * J_to_eV
+			baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H),200))+H_1_energy).T + H_2_energy).T
+			cross_section = gauss(baricenter_impact_energy,2.5 * (1e-17 * 1e-4 * 1e20),0.9,3.25) # multiplied 1e20
+			reaction_rate = np.nansum((cross_section*H_1_velocity*H_1_velocity_PDF).T * H_2_velocity*H_2_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_1_velocity))*np.mean(np.diff(H_2_velocity))		# m^3 / s * 1e20
+			# reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * H_velocity*H_velocity_PDF )* np.mean(np.diff(H_velocity))		# m^3 / s
+		else:
+			reduced_mass = hydrogen_mass*hydrogen_mass/(hydrogen_mass+hydrogen_mass)
+			relative_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/reduced_mass)**0.5).T
+			relative_velocity_PDF = (4*np.pi*(relative_velocity.T)**2 * gauss( relative_velocity.T, (reduced_mass/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/reduced_mass)**0.5 ,0)).T
+			relative_energy = 0.5*reduced_mass*(relative_velocity**2) * J_to_eV
+			cross_section = gauss(relative_energy,2.5 * (1e-17 * 1e-4 * 1e20),0.9,3.25) # multiplied 1e20
+			reaction_rate = np.trapz((cross_section*relative_velocity_PDF*relative_velocity),x=relative_velocity)		# m^3 / s
 		return reaction_rate
 	reaction_rate = list(map(internal,(np.array([T_H.flatten()]).T)))
 	reaction_rate = np.reshape(reaction_rate,np.shape(T_H))[0]
@@ -2942,20 +3513,31 @@ def RR_H1s_H_3__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_
 		# data from https://www-amdis.iaea.org/ALADDIN/
 		def internal(T_H):
 			T_H = np.array([T_H])
-			H_1_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/(hydrogen_mass))**0.5).T
-			H_1_velocity_PDF = (4*np.pi*(H_1_velocity.T)**2 * gauss( H_1_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
-			H_1_energy = 0.5 * H_1_velocity**2 * (hydrogen_mass) * J_to_eV
-			H_2_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H.T),200))).T*(2*boltzmann_constant_J*T_H/(hydrogen_mass))**0.5).T
-			H_2_velocity_PDF = (4*np.pi*(H_2_velocity.T)**2 * gauss( H_2_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H))**(3/2) , (T_H*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
-			H_2_energy = 0.5 * H_2_velocity**2 * (hydrogen_mass) * J_to_eV
-			baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H),200))+H_1_energy).T + H_2_energy).T
 			interpolation_ev = np.array([5.5235E-02,7.1967E-02,9.0916E-02,1.1491E-01,1.4010E-01,1.7236E-01,2.0159E-01,2.3787E-01,2.7819E-01,3.2052E-01,3.6487E-01,4.1326E-01,4.5760E-01,5.2211E-01,5.7453E-01,6.2694E-01,6.9145E-01,7.5797E-01,8.3659E-01,9.0110E-01,9.7972E-01,1.0583E+00,1.1491E+00,1.2297E+00,1.3103E+00,1.4010E+00,1.5018E+00,1.5925E+00,1.6933E+00,1.7941E+00,1.8949E+00,1.9957E+00,2.1167E+00,2.2376E+00,2.3586E+00,2.4594E+00,2.5803E+00,2.7214E+00,2.8424E+00,2.9835E+00,3.1045E+00,3.2456E+00,3.3867E+00,3.5278E+00,3.6689E+00,3.8302E+00,3.9713E+00,4.1326E+00,4.2938E+00,4.4551E+00,4.6164E+00,4.7776E+00,4.9591E+00,5.1203E+00,5.3018E+00,5.4630E+00,5.6445E+00,5.8259E+00,5.9872E+00])
 			interpolation_cross_section = np.array([7.3500E-16,5.9000E-16,4.2400E-16,3.1400E-16,2.3800E-16,2.0200E-16,3.1400E-16,2.6600E-16,2.1400E-16,2.1900E-16,1.9100E-16,2.0200E-16,2.6300E-16,2.6200E-16,2.3800E-16,2.6200E-16,2.1600E-16,2.3400E-16,2.5400E-16,2.8400E-16,2.7500E-16,2.8900E-16,3.0800E-16,3.0500E-16,3.3000E-16,2.8000E-16,3.1200E-16,2.3200E-16,3.0500E-16,2.7100E-16,2.5000E-16,2.2800E-16,2.4900E-16,2.3100E-16,2.0500E-16,1.9200E-16,2.1400E-16,2.0200E-16,2.1000E-16,2.0100E-16,1.8700E-16,1.8600E-16,2.0800E-16,1.7100E-16,1.6100E-16,1.5200E-16,1.6100E-16,1.2900E-16,1.2500E-16,1.2500E-16,1.2600E-16,1.1000E-16,1.0300E-16,1.1200E-16,1.0600E-16,9.3700E-17,7.7400E-17,8.0400E-17,6.9900E-17]) * (1e-4 * 1e20)		# m^2 * 1e20
 			interpolator_cross_section = interpolate.interp1d(np.log(interpolation_ev), np.log(interpolation_cross_section),fill_value='extrapolate')
-			cross_section = np.zeros_like(baricenter_impact_energy)
-			cross_section[baricenter_impact_energy>0] = np.exp(interpolator_cross_section(np.log(baricenter_impact_energy[baricenter_impact_energy>0])))
-			cross_section[cross_section<0] = 0
-			reaction_rate = np.nansum((cross_section*H_1_velocity*H_1_velocity_PDF).T * H_2_velocity*H_2_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_1_velocity))*np.mean(np.diff(H_2_velocity))		# m^3 / s * 1e20
+			if False:	# this formulation is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+				print('wrong formula for RR used')
+				H_1_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/(hydrogen_mass))**0.5).T
+				H_1_velocity_PDF = (4*np.pi*(H_1_velocity.T)**2 * gauss( H_1_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
+				H_1_energy = 0.5 * H_1_velocity**2 * (hydrogen_mass) * J_to_eV
+				H_2_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H.T),200))).T*(2*boltzmann_constant_J*T_H/(hydrogen_mass))**0.5).T
+				H_2_velocity_PDF = (4*np.pi*(H_2_velocity.T)**2 * gauss( H_2_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H))**(3/2) , (T_H*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
+				H_2_energy = 0.5 * H_2_velocity**2 * (hydrogen_mass) * J_to_eV
+				baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H),200))+H_1_energy).T + H_2_energy).T
+				cross_section = np.zeros_like(baricenter_impact_energy)
+				cross_section[baricenter_impact_energy>0] = np.exp(interpolator_cross_section(np.log(baricenter_impact_energy[baricenter_impact_energy>0])))
+				cross_section[cross_section<0] = 0
+				reaction_rate = np.nansum((cross_section*H_1_velocity*H_1_velocity_PDF).T * H_2_velocity*H_2_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_1_velocity))*np.mean(np.diff(H_2_velocity))		# m^3 / s * 1e20
+			else:
+				reduced_mass = hydrogen_mass*hydrogen_mass/(hydrogen_mass+hydrogen_mass)
+				relative_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/reduced_mass)**0.5).T
+				relative_velocity_PDF = (4*np.pi*(relative_velocity.T)**2 * gauss( relative_velocity.T, (reduced_mass/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/reduced_mass)**0.5 ,0)).T
+				relative_energy = 0.5*reduced_mass*(relative_velocity**2) * J_to_eV
+				cross_section = np.zeros_like(relative_energy)
+				cross_section[relative_energy>0] = np.exp(interpolator_cross_section(np.log(relative_energy[relative_energy>0])))
+				cross_section[cross_section<0] = 0
+				reaction_rate = np.trapz((cross_section*relative_velocity_PDF*relative_velocity),x=relative_velocity)		# m^3 / s
 			return reaction_rate
 		reaction_rate = list(map(internal,(np.array([T_H.flatten()]).T)))
 		reaction_rate = np.reshape(reaction_rate,np.shape(T_H))[0]
@@ -2981,26 +3563,38 @@ def RR_H1s_H_4__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,merge_
 	# baricenter_impact_energy = (np.zeros((len(H_energy),len(H_energy)))+H_energy).T + H_energy
 	def internal(T_H):
 		T_H = np.array([T_H])
-		H_1_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/(hydrogen_mass))**0.5).T
-		H_1_velocity_PDF = (4*np.pi*(H_1_velocity.T)**2 * gauss( H_1_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
-		H_1_energy = 0.5 * H_1_velocity**2 * (hydrogen_mass) * J_to_eV
-		H_2_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H.T),200))).T*(2*boltzmann_constant_J*T_H/(hydrogen_mass))**0.5).T
-		H_2_velocity_PDF = (4*np.pi*(H_2_velocity.T)**2 * gauss( H_2_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H))**(3/2) , (T_H*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
-		H_2_energy = 0.5 * H_2_velocity**2 * (hydrogen_mass) * J_to_eV
-		baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H),200))+H_1_energy).T + H_2_energy).T
-		cross_section = np.zeros_like(baricenter_impact_energy)
-		cross_section[np.logical_and(baricenter_impact_energy<=0.1,baricenter_impact_energy>0)] += 2.96*(4**4)*1e-19*1e-4/baricenter_impact_energy[np.logical_and(baricenter_impact_energy<=0.1,baricenter_impact_energy>0)] * 1e20
-		cross_section[np.logical_and(baricenter_impact_energy<=1,baricenter_impact_energy>0.1)] += 2.96*(4**4)*1e-18*1e-4 * 1e20
-		cross_section[baricenter_impact_energy>1] += 2.96*(4**4)*1e-18*1e-4/(baricenter_impact_energy[baricenter_impact_energy>1]**(0.4*4)) * 1e20 # multiplied 1e20
-		cross_section[cross_section<0] = 0
-		reaction_rate = np.nansum((cross_section*H_1_velocity*H_1_velocity_PDF).T * H_2_velocity*H_2_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_1_velocity))*np.mean(np.diff(H_2_velocity))		# m^3 / s * 1e20
-		# reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * H_velocity*H_velocity_PDF )* np.mean(np.diff(H_velocity))		# m^3 / s * 1e20
+		if False:	# this formulation is very wrong because it considers homogeneous spacing of the velocity intesvals, while I'm use logaritmic ones!!
+			print('wrong formula for RR used')
+			H_1_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/(hydrogen_mass))**0.5).T
+			H_1_velocity_PDF = (4*np.pi*(H_1_velocity.T)**2 * gauss( H_1_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
+			H_1_energy = 0.5 * H_1_velocity**2 * (hydrogen_mass) * J_to_eV
+			H_2_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H.T),200))).T*(2*boltzmann_constant_J*T_H/(hydrogen_mass))**0.5).T
+			H_2_velocity_PDF = (4*np.pi*(H_2_velocity.T)**2 * gauss( H_2_velocity.T, ((hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H))**(3/2) , (T_H*boltzmann_constant_J/(hydrogen_mass))**0.5 ,0)).T
+			H_2_energy = 0.5 * H_2_velocity**2 * (hydrogen_mass) * J_to_eV
+			baricenter_impact_energy = ((np.zeros((200,*np.shape(T_H),200))+H_1_energy).T + H_2_energy).T
+			cross_section = np.zeros_like(baricenter_impact_energy)
+			cross_section[np.logical_and(baricenter_impact_energy<=0.1,baricenter_impact_energy>0)] += 2.96*(4**4)*1e-19*1e-4/baricenter_impact_energy[np.logical_and(baricenter_impact_energy<=0.1,baricenter_impact_energy>0)] * 1e20
+			cross_section[np.logical_and(baricenter_impact_energy<=1,baricenter_impact_energy>0.1)] += 2.96*(4**4)*1e-18*1e-4 * 1e20
+			cross_section[baricenter_impact_energy>1] += 2.96*(4**4)*1e-18*1e-4/(baricenter_impact_energy[baricenter_impact_energy>1]**(0.4*4)) * 1e20 # multiplied 1e20
+			cross_section[cross_section<0] = 0
+			reaction_rate = np.nansum((cross_section*H_1_velocity*H_1_velocity_PDF).T * H_2_velocity*H_2_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_1_velocity))*np.mean(np.diff(H_2_velocity))		# m^3 / s * 1e20
+			# reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * H_velocity*H_velocity_PDF )* np.mean(np.diff(H_velocity))		# m^3 / s * 1e20
+		else:
+			reduced_mass = hydrogen_mass*hydrogen_mass/(hydrogen_mass+hydrogen_mass)
+			relative_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H),200))).T*(2*boltzmann_constant_J*T_H.T/reduced_mass)**0.5).T
+			relative_velocity_PDF = (4*np.pi*(relative_velocity.T)**2 * gauss( relative_velocity.T, (reduced_mass/(2*np.pi*boltzmann_constant_J*T_H.T))**(3/2) , (T_H.T*boltzmann_constant_J/reduced_mass)**0.5 ,0)).T
+			relative_energy = 0.5*reduced_mass*(relative_velocity**2) * J_to_eV
+			cross_section = np.zeros_like(relative_energy)
+			cross_section[np.logical_and(relative_energy<=0.1,relative_energy>0)] += 2.96*(4**4)*1e-19*1e-4/relative_energy[np.logical_and(relative_energy<=0.1,relative_energy>0)] * 1e20
+			cross_section[np.logical_and(relative_energy<=1,relative_energy>0.1)] += 2.96*(4**4)*1e-18*1e-4 * 1e20
+			cross_section[relative_energy>1] += 2.96*(4**4)*1e-18*1e-4/(relative_energy[relative_energy>1]**(0.4*4)) * 1e20 # multiplied 1e20
+			cross_section[cross_section<0] = 0
+			reaction_rate = np.trapz((cross_section*relative_velocity_PDF*relative_velocity),x=relative_velocity)		# m^3 / s
 		return reaction_rate
 	reaction_rate = list(map(internal,(np.array([T_H.flatten()]).T)))
 	reaction_rate = np.reshape(reaction_rate,np.shape(T_H))[0]
 	H1s_H_4__H2p_e = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
 	return H1s_H_4__H2p_e	# m^-3/s *1e-20 / (nH(4)/ne) / (nH(1)/ne)
-
 
 
 def RR_ionisation__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
@@ -3051,9 +3645,13 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 		e_Hm__e_H_e = nHm_ne_all*RR_e_Hm__e_H_e__r(Te,ne)[0]
 		Hp_Hm__Hex_H = nHm_ne_all*RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all)
 		Hp_Hm__Hn_H = nHm_ne_all*RR_Hp_Hm__Hn_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all)
-		Hp_Hm__H2p_e = nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0]
-		Hm_H1s__H1s_H1s_e = nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0]
-		Hm_H1s__H2_v_e = nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0]
+		# Hp_Hm__H2p_e = nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r(Te,np.unique(T_Hp),np.unique(T_Hm),ne)[0]
+		Hp_Hm__H2p_e = nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H2p_e__r2(Te,np.unique(T_Hp),np.unique(T_Hm),ne)
+		# Hm_H1s__H1s_H1s_e = nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H1s_H1s_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0]
+		# Hm_H1s__H2_v_e = nHm_ne_all*nH_ne_all_ground_state*RR_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)[0]
+		temp = RR_Hm_H1s__H1s_H1s_e_plus_Hm_H1s__H2_v_e__r(Te,np.unique(T_H),np.unique(T_Hm),ne)	# I do once the same calculation of relative velocity
+		Hm_H1s__H1s_H1s_e = nHm_ne_all*nH_ne_all_ground_state*temp[0]
+		Hm_H1s__H2_v_e = nHm_ne_all*nH_ne_all_ground_state*temp[1]
 		Hm_H2v__H_H2v_e = nHm_ne_all*nH2_ne_all*RR_Hm_H2v__H_H2v_e__r(Te,np.unique(T_Hm),ne)[0]
 		H2p_Hm__Hex_H2 = nHm_ne_all*RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
 		H2p_Hm__Hn_H2 = nHm_ne_all*RR_H2p_Hm__Hn_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all)
@@ -3066,7 +3664,7 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 		e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0]
 		e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne)[0]
 		e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0]
-		e_H2p__Hex_H__or__Hn_Hp_e = np.transpose(np.transpose(np.array([nH2p_ne_all.tolist()]*len(np.unique(excited_states_From_H2p))), (*np.arange(1,1+len(nH2p_ne_all.shape)),0))*RR_e_H2p__Hex_H__or__Hn_Hp_e__r(Te,ne)[0], (-1,*np.arange(len(nH2p_ne_all.shape))))	# split among hydrogen excited states
+		e_H2p__Hn_H__or__Hn_Hp_e = np.transpose(np.transpose(np.array([nH2p_ne_all.tolist()]*len(np.unique(excited_states_From_H2p))), (*np.arange(1,1+len(nH2p_ne_all.shape)),0))*RR_e_H2p__Hn_H__or__Hn_Hp_e__r(Te,ne)[0], (-1,*np.arange(len(nH2p_ne_all.shape))))	# split among hydrogen excited states
 		e_H2p__e_Hp_Hp_e = nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0]
 		H1s_H2pv__Hp_H_H = nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(Te,np.unique(T_H),np.unique(T_H2p),ne)[0]
 		H2pvi_H2v0__Hp_H_H2v1 = nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(Te,np.unique(T_H2p),ne)[0]
@@ -3105,7 +3703,7 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 		e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
 		e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
 		e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
-		e_H2p__Hex_H__or__Hn_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hn_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)	# split among hydrogen excited states
+		e_H2p__Hn_H__or__Hn_Hp_e = nH2p_ne_all*RR_e_H2p__Hn_H__or__Hn_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)	# split among hydrogen excited states
 		e_H2p__e_Hp_Hp_e = nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited)
 		H1s_H2pv__Hp_H_H = nH_ne_all_ground_state*nH2p_ne_all*RR_H1s_H2pv__Hp_H_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_H2p,merge_ne_prof_multipulse_interp_crop_limited)
 		H2pvi_H2v0__Hp_H_H2v1 = nH2_ne_all*nH2p_ne_all*RR_H2pvi_H2v0__Hp_H_H2v1__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,merge_ne_prof_multipulse_interp_crop_limited)
@@ -3150,12 +3748,12 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 		H1s_H_2__H2p_e[:] = 0
 		H1s_H_3__H2p_e[:] = 0
 		H1s_H_4__H2p_e[:] = 0
-		# I cannot erase the next 2 here because I use them to calculate in a fine way the potential energy contribution of e_H2p__Hex_H__or__Hn_Hp_e
+		# I cannot erase the next 2 here because I use them to calculate in a fine way the potential energy contribution of e_H2p__Hn_H__or__Hn_Hp_e
 		# also because they contribute to  different parts of the particle balance
 		# e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0]
 		# e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne)[0]
 		# e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0]
-		# e_H2p__Hex_H__or__Hn_Hp_e = np.transpose(np.transpose(np.array([nH2p_ne_all.tolist()]*len(np.unique(excited_states_From_H2p))), (*np.arange(1,1+len(nH2p_ne_all.shape)),0))*RR_e_H2p__Hex_H__or__Hn_Hp_e__r(Te,ne)[0], (-1,*np.arange(len(nH2p_ne_all.shape))))	# split among hydrogen excited states
+		# e_H2p__Hn_H__or__Hn_Hp_e = np.transpose(np.transpose(np.array([nH2p_ne_all.tolist()]*len(np.unique(excited_states_From_H2p))), (*np.arange(1,1+len(nH2p_ne_all.shape)),0))*RR_e_H2p__Hn_H__or__Hn_Hp_e__r(Te,ne)[0], (-1,*np.arange(len(nH2p_ne_all.shape))))	# split among hydrogen excited states
 		e_H2p__e_Hp_Hp_e[:] = 0
 		H1s_H2pv__Hp_H_H[:] = 0
 		H2pvi_H2v0__Hp_H_H2v1[:] = 0
@@ -3171,6 +3769,16 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 		Hp_H2X1Σg__Hp_H1s_H1s[:] = 0
 		H1s_H2v__H1s_2H1s[:] = 0
 		H2v0_H2v__H2v0_2H1s[:] = 0
+
+	# # I don't consider H3p anyway, i don't want it to screw the particle balance
+	# H2pvi_H2v0__H3p_H1s[:] = 0
+	# H2p_Hm__H3p_e[:] = 0
+	# H1s_H_2__H2p_e[:] = 0
+	# H1s_H_3__H2p_e[:] = 0
+	# H1s_H_4__H2p_e[:] = 0
+	# H2p_Hm__H2N13Λσ_H1s[:] = 0
+	# Hm_H1s__H2_v_e[:] = 0
+	# Hm_H1s__H1s_H1s_e[:] = 0
 
 	e_H__Hm_sigma = molecular_precision*e_H__Hm*1e-10	# *1e-10 is only to avoid numerical overflow
 	e_H2__Hm_H_sigma = molecular_precision*e_H2__Hm_H*1e-10
@@ -3263,11 +3871,15 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 	# plasma heating
 	e_H__Hm_energy = e_H__Hm * ((H_potential_n1 + e_potential) - (Hm_potential))	# eV m^-3/s *1e-20		# 1
 	# Hp_Hm__Hex_H_energy = Hp_Hm__Hex_H * ((Hm_potential + Hp_potential) - (2*H_potential_n1))		# 2
-	Hp_Hm__Hex_H_energy = np.sum(Hp_Hm__Hn_H.T * ((Hm_potential + Hp_potential) - (H_potential_n1 + H_potential_n2_x)),axis=-1).T		# 2
+	# Hp_Hm__Hex_H_energy = np.sum(Hp_Hm__Hn_H.T * ((Hm_potential + Hp_potential) - (H_potential_n1 + H_potential_n2_x)),axis=-1).T		# 2
+	# Changed because the energy that goes into radiated power (the difference between H_7 and H_1, for example) is already accounted for by the Yacora coefficients
+	# Here I must only consider the END difference in potential energy.
+	Hp_Hm__Hex_H_energy = np.sum(Hp_Hm__Hn_H.T * ((Hm_potential + Hp_potential) - (H_potential_n1 + H_potential_n1)),axis=-1).T		# 2
 	Hp_Hm__H2p_e_energy = Hp_Hm__H2p_e * ((Hm_potential + Hp_potential) - (H2p_potential + e_potential))		# 3
 	Hm_H1s__H2_v_e_energy = Hm_H1s__H2_v_e * ((H_potential_n1 + Hm_potential) - (H2_potential + e_potential))		# 4
 	# H2p_Hm__Hex_H2_energy = H2p_Hm__Hex_H2 * ((Hm_potential + H2p_potential) - (H_potential_n1 + H2_potential))		# 5
-	H2p_Hm__Hex_H2_energy = np.sum(H2p_Hm__Hn_H2.T * ((Hm_potential + H2p_potential) - (H_potential_n2_x + H2_potential)),axis=-1).T		# 5
+	# H2p_Hm__Hex_H2_energy = np.sum(H2p_Hm__Hn_H2.T * ((Hm_potential + H2p_potential) - (H_potential_n2_x + H2_potential)),axis=-1).T		# 5
+	H2p_Hm__Hex_H2_energy = np.sum(H2p_Hm__Hn_H2.T * ((Hm_potential + H2p_potential) - (H_potential_n1 + H2_potential)),axis=-1).T		# 5
 	Hp_H_H__H_H2p_energy = Hp_H_H__H_H2p * ((2*H_potential_n1 + Hp_potential) - (H_potential_n1 + H2p_potential))		# 6
 	H1s_H_3__H2p_e_energy = H1s_H_3__H2p_e * ((H_potential_n1 + H_potential_n3) - (H2p_potential + e_potential))		# 7
 	H1s_H_4__H2p_e_energy = H1s_H_4__H2p_e * ((H_potential_n1 + H_potential_n4) - (H2p_potential + e_potential))		# 8
@@ -3291,7 +3903,8 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 	H2pvi_H2v0__H3p_H1s_energy = H2pvi_H2v0__H3p_H1s * ((H2_potential + H2p_potential) - (H_potential_n1 + H3p_potential))		# 30
 	H2p_Hm__H3p_e_energy = H2p_Hm__H3p_e * ((Hm_potential + H2p_potential) - (H3p_potential + e_potential))		# 31
 	# e_H2__e_Hex_H_energy = e_H2__e_Hex_H * ((H2_potential + e_potential) - (2*H_potential_n1 + e_potential))		# 32
-	e_H2__e_Hex_H_energy = np.sum(e_H2__e_Hn_H.T * ((H2_potential + e_potential) - (H_potential_n1 + H_potential_n2_x + e_potential)),axis=-1).T		# 32
+	# e_H2__e_Hex_H_energy = np.sum(e_H2__e_Hn_H.T * ((H2_potential + e_potential) - (H_potential_n1 + H_potential_n2_x + e_potential)),axis=-1).T		# 32
+	e_H2__e_Hex_H_energy = np.sum(e_H2__e_Hn_H.T * ((H2_potential + e_potential) - (H_potential_n1 + H_potential_n1 + e_potential)),axis=-1).T		# 32
 	e_H2__Hp_H_2e_energy = e_H2__Hp_H_2e * ((H2_potential + e_potential) - (H_potential_n1 + 2*e_potential + Hp_potential))		# 33
 	e_H2X1Σg__e_H1s_H1s_energy = e_H2X1Σg__e_H1s_H1s * ((H2_potential + e_potential) - (2*H_potential_n1 + e_potential))		# 34
 	Hp_H2X1Σg__Hp_H1s_H1s_energy = Hp_H2X1Σg__Hp_H1s_H1s * ((H2_potential + Hp_potential) - (2*H_potential_n1 + Hp_potential))		# 35
@@ -3299,13 +3912,14 @@ def all_RR_and_power_balance(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T
 	H2v0_H2v__H2v0_2H1s_energy = H2v0_H2v__H2v0_2H1s * ((2*H2_potential) - (2*H_potential_n1 + H2_potential))		# 37
 	ionisation_energy = ionisation * ((e_potential + H_potential_n1) - (2*e_potential + Hp_potential))		# 38
 
-	# part added to evaluate the potential energy difference from e_H2p__Hex_H__or__Hn_Hp_e divided by excitation state
-	e_H2__potential_consumed = np.min([e_H2p__XXX__e_Hp_H + e_H2p__H_H , np.sum(e_H2p__Hex_H__or__Hn_Hp_e,axis=0)],axis=0) * (H2p_potential + e_potential)
+	# part added to evaluate the potential energy difference from e_H2p__Hn_H__or__Hn_Hp_e divided by excitation state
+	e_H2p__potential_consumed = np.max([e_H2p__XXX__e_Hp_H + e_H2p__H_H , np.sum(e_H2p__Hn_H__or__Hn_Hp_e,axis=0)],axis=0) * (H2p_potential + e_potential)
 	e__potential_created = e_H2p__XXX__e_Hp_H * (e_potential)
 	Hp__potential_created = e_H2p__XXX__e_Hp_H * (Hp_potential)
-	H_1__potential_created = e_H2p__H_H + np.max([e_H2p__XXX__e_Hp_H + e_H2p__H_H - np.sum(e_H2p__Hex_H__or__Hn_Hp_e,axis=0) , np.zeros_like(e_H2p__XXX__e_Hp_H)],axis=0) * (H_potential_n1)
-	H_2_n__potential_created = np.sum((e_H2p__Hex_H__or__Hn_Hp_e.T * H_potential_n2_x).T , axis=0)
-	e_H2p__Hex_H__or__Hex_Hp_e_energy = e_H2__potential_consumed - (e__potential_created + Hp__potential_created + H_1__potential_created + H_2_n__potential_created)
+	H_1__potential_created = (e_H2p__H_H + np.max([e_H2p__XXX__e_Hp_H + e_H2p__H_H - np.sum(e_H2p__Hn_H__or__Hn_Hp_e,axis=0) , np.zeros_like(e_H2p__XXX__e_Hp_H)],axis=0)) * (H_potential_n1)
+	# H_2_n__potential_created = np.sum((e_H2p__Hn_H__or__Hn_Hp_e.T * H_potential_n2_x).T , axis=0)
+	H_2_n__potential_created = np.sum((e_H2p__Hn_H__or__Hn_Hp_e.T * H_potential_n1).T , axis=0)
+	e_H2p__Hex_H__or__Hex_Hp_e_energy = e_H2p__potential_consumed - (e__potential_created + Hp__potential_created + H_1__potential_created + H_2_n__potential_created)
 	e_H2p__Hex_H__or__Hex_Hp_e_energy_heating = np.zeros_like(e_H2p__Hex_H__or__Hex_Hp_e_energy)
 	e_H2p__Hex_H__or__Hex_Hp_e_energy_heating[e_H2p__Hex_H__or__Hex_Hp_e_energy<0] = e_H2p__Hex_H__or__Hex_Hp_e_energy[e_H2p__Hex_H__or__Hex_Hp_e_energy<0]		# 14
 	e_H2p__Hex_H__or__Hex_Hp_e_energy_cooling = np.zeros_like(e_H2p__Hex_H__or__Hex_Hp_e_energy)

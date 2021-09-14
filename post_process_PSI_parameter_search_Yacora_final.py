@@ -83,7 +83,7 @@ plank_constant_eV = 4.135667696e-15	# eV s
 light_speed = 299792458	# m/s
 photon_wavelength_full_full = plank_constant_eV * light_speed / energy_difference_full_full	# m
 visible_light_flag_full_full = np.logical_and(photon_wavelength_full_full>=380*1e-9,photon_wavelength_full_full<=750*1e-9)
-J_to_eV = 6.242e18
+J_to_eV = 6.242e18	# eV / J
 multiplicative_factor_full = energy_difference_full * einstein_coeff_full / J_to_eV
 multiplicative_factor_full_full = np.sum(energy_difference_full_full * einstein_coeff_full_full / J_to_eV,axis=0)
 einstein_coeff_full_cumulative = np.sum(einstein_coeff_full_full,axis=0)	# used for the reaction rates from Yacora. sum of all the consumption of excited states
@@ -112,7 +112,7 @@ exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/functions/Mo
 # merge_ID_target_multipulse = np.flip([851,86,87,89,92, 93, 94],axis=0)
 # merge_ID_target_multipulse = np.flip([73,75,76,77,78,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
 merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
-# merge_ID_target_multipulse = [86, 87, 89]
+# merge_ID_target_multipulse = [95]
 # merge_ID_target_multipulse = [91, 92, 93, 94]
 # merge_ID_target_multipulse = [73,75,76,77,78,79]
 # merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
@@ -124,7 +124,7 @@ merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97
 # merge_ID_target_multipulse = [86,95,85,87,89,88]
 # merge_ID_target_multipulse = [87]
 
-merge_ID_target_multipulse = np.flip(merge_ID_target_multipulse,axis=0)
+# merge_ID_target_multipulse = np.flip(merge_ID_target_multipulse,axis=0)
 only_plots = False
 if only_plots:
 	number_cpu_available = 2
@@ -145,7 +145,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 	include_particles_limitation = True
 	H2_suppression = False
 	molecular_particle_balance_enabled = True	# when the proper bounds for the density priors are used there is not much difference with or without this
-	only_Yacora_as_molecule = True	# who knows the applicability of the RR from Amjuel and Janev to my case. let's see what appens if I only include Yacora processes, that I can also measure radiatively
+	only_Yacora_as_molecule = False	# who knows the applicability of the RR from Amjuel and Janev to my case. let's see what appens if I only include Yacora processes, that I can also measure radiatively
 
 	externally_provided_TS_Te_steps = 11
 	externally_provided_TS_Te_steps_increase = 5
@@ -343,11 +343,11 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 			collect_power_PDF = True
 			print('Will power PDF be collected? '+str(collect_power_PDF))
 			print('Will particles balance be included? '+str(include_particles_limitation))
-			timeout_bayesian_search = 60*60	# time in seconds
+			timeout_bayesian_search = 2*60*60	# time in seconds
 			print('Timeout for bayesian search of a single point %.3g min' %(timeout_bayesian_search/60))
 			power_molecular_precision,power_atomic_precision,power_budget_precision = 0.5,0.2,0.5
 			print('precision (sigma) for molecular elements of power balance %.3g%%, for atomic elements %.3g%%, for the budget %.3g%%' %(power_molecular_precision*100,power_atomic_precision*100,power_budget_precision*100))
-			particle_molecular_precision,particle_atomic_precision,particle_molecular_budget_precision,particle_atomic_budget_precision = 0.5,0.5,1,0.5	# 1,0.5,1,0.5
+			particle_molecular_precision,particle_atomic_precision,particle_molecular_budget_precision,particle_atomic_budget_precision = 0.5,0.5,0.5,0.5	# 1,0.5,1,0.5
 			if include_particles_limitation:
 				print('precision (sigma) for molecular elements of particle balance %.3g%%, for atomic elements %.3g%%, for the molecular budget %.3g%%, for the atomic budget %.3g%%' %(particle_molecular_precision*100,particle_atomic_precision*100,particle_molecular_budget_precision*100,particle_atomic_budget_precision*100))
 			print('externally_provided_H2p_steps = '+str(externally_provided_H2p_steps))
@@ -1324,35 +1324,35 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 					def calc_power_balance_elements_simplified2(H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps,Te_values,ne_values,multiplicative_factor_full_full,multiplicative_factor_visible_light_full_full,record_nH_ne_values,record_nHm_ne_values,record_nH2_ne_values,record_nH2p_ne_values,record_nHp_ne_values,T_Hp_values,T_H2p_values,T_Hm_values,coeff_1_record,coeff_2_record,coeff_3_record,coeff_4_record):
 						total_wavelengths = np.unique(excited_states_From_Hn_with_Hp)
 						power_rad_H2p = np.zeros((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps))	# H, Hm, H2, H2p, ne, Te
-						coeff_1 = coeff_1_record.reshape((TS_ne_steps,TS_Te_steps,len(total_wavelengths)))
+						coeff_1 = coeff_1_record.reshape((TS_ne_steps,TS_Te_steps,len(total_wavelengths)))	# (# / m^-3) / (# / m^3)**2
 						power_rad_H2p = np.zeros((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps))	# H, Hm, H2, H2p, ne, Te
-						nH_ne_excited_states_mol = power_rad_H2p + np.sum((coeff_1),axis=-1) * (ne_values)
-						nH_ne_excited_state_mol_2 = power_rad_H2p + coeff_1[:,:,0]* (ne_values)
-						nH_ne_excited_state_mol_3 = power_rad_H2p + coeff_1[:,:,1]* (ne_values)
-						nH_ne_excited_state_mol_4 = power_rad_H2p + coeff_1[:,:,2]* (ne_values)
+						nH_ne_excited_states_mol = power_rad_H2p + np.sum((coeff_1),axis=-1) * (ne_values)	# (# / m^-3) / (# / m^3), (# / m^-3) / (nH2p)
+						nH_ne_excited_state_mol_2 = power_rad_H2p + coeff_1[:,:,0]* (ne_values)	# (# / m^-3) / (# / m^3), (# / m^-3) / (nH2p)
+						nH_ne_excited_state_mol_3 = power_rad_H2p + coeff_1[:,:,1]* (ne_values)	# (# / m^-3) / (# / m^3), (# / m^-3) / (nH2p)
+						nH_ne_excited_state_mol_4 = power_rad_H2p + coeff_1[:,:,2]* (ne_values)	# (# / m^-3) / (# / m^3), (# / m^-3) / (nH2p)
 						power_rad_H2p_visible = power_rad_H2p + np.sum((coeff_1 * multiplicative_factor_visible_light_full_full),axis=-1) * (ne_values**2)
 						power_rad_H2p = power_rad_H2p + np.sum((coeff_1 * multiplicative_factor_full_full),axis=-1) * (ne_values**2)
 						power_rad_H2p_visible = np.float32(power_rad_H2p_visible * (record_nH2p_ne_values.reshape(H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))	# H, Hm, H2, H2p, ne, Te
 						power_rad_H2p = np.float32(power_rad_H2p * (record_nH2p_ne_values.reshape(H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))	# H, Hm, H2, H2p, ne, Te
-						nH_ne_excited_states_mol = np.float32(nH_ne_excited_states_mol * (record_nH2p_ne_values.reshape(H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))	# H, Hm, H2, H2p, ne, Te
-						nH_ne_excited_state_mol_2 = np.float32(nH_ne_excited_state_mol_2 * (record_nH2p_ne_values.reshape(H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))	# H, Hm, H2, H2p, ne, Te
-						nH_ne_excited_state_mol_3 = np.float32(nH_ne_excited_state_mol_3 * (record_nH2p_ne_values.reshape(H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))	# H, Hm, H2, H2p, ne, Te
-						nH_ne_excited_state_mol_4 = np.float32(nH_ne_excited_state_mol_4 * (record_nH2p_ne_values.reshape(H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))	# H, Hm, H2, H2p, ne, Te
+						nH_ne_excited_states_mol = np.float32(nH_ne_excited_states_mol * (record_nH2p_ne_values.reshape(H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))	# H, Hm, H2, H2p, ne, Te	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+						nH_ne_excited_state_mol_2 = np.float32(nH_ne_excited_state_mol_2 * (record_nH2p_ne_values.reshape(H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))	# H, Hm, H2, H2p, ne, Te	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+						nH_ne_excited_state_mol_3 = np.float32(nH_ne_excited_state_mol_3 * (record_nH2p_ne_values.reshape(H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))	# H, Hm, H2, H2p, ne, Te	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+						nH_ne_excited_state_mol_4 = np.float32(nH_ne_excited_state_mol_4 * (record_nH2p_ne_values.reshape(H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps)))	# H, Hm, H2, H2p, ne, Te	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
 						# coeff_1 = coeff_1.reshape((*np.shape(Te_values),len(np.unique(excited_states_From_H2p))))
 						coeff_2 = coeff_2_record.reshape((TS_ne_steps,TS_Te_steps,len(total_wavelengths)))
 						power_rad_H2 = np.zeros((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps))	# H, Hm, H2, H2p, ne, Te
-						temp = power_rad_H2 + np.sum((coeff_2),axis=-1) * (ne_values)
-						temp = np.float32(temp * np.transpose([(record_nH2_ne_values.reshape(H2_steps,TS_ne_steps,TS_Te_steps)).tolist()]*(H2p_steps), (1,0,2,3)))	# H, Hm, H2, H2p, ne, Te
-						nH_ne_excited_states_mol += temp
-						temp = power_rad_H2 + coeff_2[:,:,0] * (ne_values)
-						temp = np.float32(temp * np.transpose([(record_nH2_ne_values.reshape(H2_steps,TS_ne_steps,TS_Te_steps)).tolist()]*(H2p_steps), (1,0,2,3)))	# H, Hm, H2, H2p, ne, Te
-						nH_ne_excited_state_mol_2 += temp
-						temp = power_rad_H2 + coeff_2[:,:,1] * (ne_values)
-						temp = np.float32(temp * np.transpose([(record_nH2_ne_values.reshape(H2_steps,TS_ne_steps,TS_Te_steps)).tolist()]*(H2p_steps), (1,0,2,3)))	# H, Hm, H2, H2p, ne, Te
-						nH_ne_excited_state_mol_3 += temp
-						temp = power_rad_H2 + coeff_2[:,:,2] * (ne_values)
-						temp = np.float32(temp * np.transpose([(record_nH2_ne_values.reshape(H2_steps,TS_ne_steps,TS_Te_steps)).tolist()]*(H2p_steps), (1,0,2,3)))	# H, Hm, H2, H2p, ne, Te
-						nH_ne_excited_state_mol_4 += temp
+						temp = power_rad_H2 + np.sum((coeff_2),axis=-1) * (ne_values)	# (# / m^-3) / (# / m^3), (# / m^-3) / (nH2)
+						temp = np.float32(temp * np.transpose([(record_nH2_ne_values.reshape(H2_steps,TS_ne_steps,TS_Te_steps)).tolist()]*(H2p_steps), (1,0,2,3)))	# H, Hm, H2, H2p, ne, Te	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+						nH_ne_excited_states_mol += temp	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+						temp = power_rad_H2 + coeff_2[:,:,0] * (ne_values)	# (# / m^-3) / (# / m^3), (# / m^-3) / (nH2)
+						temp = np.float32(temp * np.transpose([(record_nH2_ne_values.reshape(H2_steps,TS_ne_steps,TS_Te_steps)).tolist()]*(H2p_steps), (1,0,2,3)))	# H, Hm, H2, H2p, ne, Te	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+						nH_ne_excited_state_mol_2 += temp	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+						temp = power_rad_H2 + coeff_2[:,:,1] * (ne_values)	# (# / m^-3) / (# / m^3), (# / m^-3) / (nH2)
+						temp = np.float32(temp * np.transpose([(record_nH2_ne_values.reshape(H2_steps,TS_ne_steps,TS_Te_steps)).tolist()]*(H2p_steps), (1,0,2,3)))	# H, Hm, H2, H2p, ne, Te	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+						nH_ne_excited_state_mol_3 += temp	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+						temp = power_rad_H2 + coeff_2[:,:,2] * (ne_values)	# (# / m^-3) / (# / m^3), (# / m^-3) / (nH2)
+						temp = np.float32(temp * np.transpose([(record_nH2_ne_values.reshape(H2_steps,TS_ne_steps,TS_Te_steps)).tolist()]*(H2p_steps), (1,0,2,3)))	# H, Hm, H2, H2p, ne, Te	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+						nH_ne_excited_state_mol_4 += temp	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
 						power_rad_H2_visible = power_rad_H2 + np.sum((coeff_2 * multiplicative_factor_visible_light_full_full),axis=-1) * (ne_values**2)
 						power_rad_H2 = power_rad_H2 + np.sum((coeff_2 * multiplicative_factor_full_full),axis=-1) * (ne_values**2)
 						power_rad_H2_visible = np.float32(power_rad_H2_visible * np.transpose([(record_nH2_ne_values.reshape(H2_steps,TS_ne_steps,TS_Te_steps)).tolist()]*(H2p_steps), (1,0,2,3)))	# H, Hm, H2, H2p, ne, Te
@@ -1382,10 +1382,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								nH2p_ne_values = record_nH2p_ne_values[i4,i5]
 								# coeff_4 = (From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te_values.flatten(),T_H2p_values,T_Hm_values,ne_values.flatten(),nH2p_ne_values*ne_values.flatten()]).T,total_wavelengths)).reshape((TS_ne_steps,TS_Te_steps,len(total_wavelengths)))
 								coeff_4 = coeff_4_record[i4*H2p_steps + i5].reshape((TS_ne_steps,TS_Te_steps,len(total_wavelengths)))		# From_Hn_with_H2p_pop_coeff_full_extra
-								temp = np.sum((coeff_4),axis=-1)
-								temp_2 = cp.deepcopy(coeff_4[:,:,0])	# I am forced to use cp.deepcopy because if not this lines would change coeff_4_record itself
-								temp_3 = cp.deepcopy(coeff_4[:,:,1])
-								temp_4 = cp.deepcopy(coeff_4[:,:,2])
+								temp = np.sum((coeff_4),axis=-1)	# (# / m^-3) / (# / m^3)**2
+								temp_2 = cp.deepcopy(coeff_4[:,:,0])	# I am forced to use cp.deepcopy because if not this lines would change coeff_4_record itself	# (# / m^-3) / (# / m^3)**2
+								temp_3 = cp.deepcopy(coeff_4[:,:,1])	# (# / m^-3) / (# / m^3)**2
+								temp_4 = cp.deepcopy(coeff_4[:,:,2])	# (# / m^-3) / (# / m^3)**2
 								coeff_4_visible = np.sum((coeff_4 * multiplicative_factor_visible_light_full_full),axis=-1)*(ne_values**2)
 								coeff_4 = np.sum((coeff_4 * multiplicative_factor_full_full),axis=-1)*(ne_values**2)
 								for i3 in range(Hm_steps):
@@ -1402,10 +1402,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									# coeff_3 = coeff_3.reshape((TS_ne_steps,TS_Te_steps,len(total_wavelengths)))
 									# coeff_3 = (From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te_values.flatten(),T_Hp_values,T_Hm_values,ne_values.flatten(),nHp_ne_values*(ne_values.flatten())]).T ,total_wavelengths)).reshape((TS_ne_steps,TS_Te_steps,len(total_wavelengths)))
 									coeff_3 = coeff_3_record[i4*Hm_steps*H2p_steps + i5*Hm_steps + i3].reshape((TS_ne_steps,TS_Te_steps,len(total_wavelengths)))		# From_Hn_with_Hp_pop_coeff_full_extra
-									temp += np.sum((coeff_3),axis=-1)
-									temp_2 += coeff_3[:,:,0]
-									temp_3 += coeff_3[:,:,1]
-									temp_4 += coeff_3[:,:,2]
+									temp += np.sum((coeff_3),axis=-1)	# (# / m^-3) / (# / m^3)**2
+									temp_2 += coeff_3[:,:,0]	# (# / m^-3) / (# / m^3)**2
+									temp_3 += coeff_3[:,:,1]	# (# / m^-3) / (# / m^3)**2
+									temp_4 += coeff_3[:,:,2]	# (# / m^-3) / (# / m^3)**2
 									coeff_3_visible = np.sum((coeff_3 * multiplicative_factor_visible_light_full_full),axis=-1) *(ne_values**2)
 									coeff_3 = np.sum((coeff_3 * multiplicative_factor_full_full),axis=-1) *(ne_values**2)
 									# coeff_3[(np.logical_and(nHp_ne_mid,nHp_ne_bad)).reshape((TS_ne_steps,TS_Te_steps))]=0
@@ -1414,10 +1414,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									power_rad_Hm_visible[:,i3,i4,i5,nHp_ne_good] = (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( coeff_3_visible + coeff_4_visible )).astype(np.float32)[nHp_ne_good]
 									power_rad_Hm_H2p[:,i3,i4,i5,nHp_ne_good] = (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( coeff_4 )).astype(np.float32)[nHp_ne_good]
 									power_rad_Hm_Hp[:,i3,i4,i5,nHp_ne_good] = (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( coeff_3 )).astype(np.float32)[nHp_ne_good]
-									nH_ne_excited_states_mol[:,i3,i4,i5] += (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( temp * ne_values ))
-									nH_ne_excited_state_mol_2[:,i3,i4,i5] += (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( temp_2 * ne_values ))
-									nH_ne_excited_state_mol_3[:,i3,i4,i5] += (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( temp_3 * ne_values ))
-									nH_ne_excited_state_mol_4[:,i3,i4,i5] += (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( temp_4 * ne_values ))
+									nH_ne_excited_states_mol[:,i3,i4,i5] += (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( temp * ne_values ))	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+									nH_ne_excited_state_mol_2[:,i3,i4,i5] += (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( temp_2 * ne_values ))	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+									nH_ne_excited_state_mol_3[:,i3,i4,i5] += (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( temp_3 * ne_values ))	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
+									nH_ne_excited_state_mol_4[:,i3,i4,i5] += (nHm_ne_values.reshape((TS_ne_steps,TS_Te_steps))*( temp_4 * ne_values ))	# (# / m^-3) / (# / m^3), (# / m^-3) / (ne)
 						power_rad_mol = (power_rad_Hm_H2p + power_rad_Hm_Hp + power_rad_H2 + power_rad_H2p).astype(np.float32)
 						power_rad_Hm = (power_rad_Hm_H2p + power_rad_Hm_Hp).astype(np.float32)
 						power_rad_mol_visible = (power_rad_Hm_visible + power_rad_H2_visible + power_rad_H2p_visible).astype(np.float32)
@@ -1617,7 +1617,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								# excitation_internal = (excitation_internal.T * (10 ** -6) * (energy_difference / J_to_eV))  # in W m^-3 / (# / m^3)**2
 								# excitation_internal = (excitation_internal[:,n_list_all - 4] /multiplicative_factor)  # in m^-3 / (# / m^3)**2
 
-								multiplicative_factor_full = energy_difference_full * einstein_coeff_full / J_to_eV
+								multiplicative_factor_full = energy_difference_full * einstein_coeff_full / J_to_eV	# eV * 1/s / (eV / J) = W
 								excitation_full = []
 								for isel in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
 									if isel==0:
@@ -1666,9 +1666,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								# nHp_ne_value = 1
 								# total_nHp_ne_value = (((recombination_internal[n_list_all - 4] * nHp_ne_value*np.ones((TS_steps,TS_steps)) ).T/multiplicative_factor).T).astype('float').T.reshape((TS_steps*TS_steps,len(n_list_all)))
 								# total_nHp_ne_value = recombination_internal * nHp_ne_value
-								coeff_1_record = From_H2p_pop_coeff_full_extra(np.array([Te_values.flatten(),ne_values.flatten()]).T,total_wavelengths)
+								coeff_1_record = From_H2p_pop_coeff_full_extra(np.array([Te_values.flatten(),ne_values.flatten()]).T,total_wavelengths)	# (# / m^-3) / (# / m^3)**2
 								coeff_1 = coeff_1_record[:,n_list_all-2]
-								coeff_2_record = From_H2_pop_coeff_full_extra(np.array([Te_values.flatten(),ne_values.flatten()]).T,total_wavelengths)
+								coeff_2_record = From_H2_pop_coeff_full_extra(np.array([Te_values.flatten(),ne_values.flatten()]).T,total_wavelengths)	# (# / m^-3) / (# / m^3)**2
 								coeff_2 = coeff_2_record[:,n_list_all-2]
 								T_Hm_values = np.exp(TH2_fit_from_simulations(np.log(Te_values.flatten())))/eV_to_K	# K
 								T_Hm_values[T_Hm_values<300]=300
@@ -1701,7 +1701,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								record_nH_ne_values = (np.array(np.transpose(record_nH_ne_values,(1,0,2))).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
 								# record_nH_ne_log_prob = (np.array([record_nH_ne_log_prob]*TS_ne_steps).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
 								record_nH_ne_log_prob = (np.array(np.transpose(record_nH_ne_log_prob,(1,0,2))).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
-								nH_ne_excited_states_atomic = [[[np.float32(record_nH_ne_values*np.sum(excitation_full,axis=-1)*ne_values.flatten()).tolist()]*H2p_to_find_steps]*H2_steps]*Hm_to_find_steps
+								nH_ne_excited_states_atomic = [[[np.float32(record_nH_ne_values*np.sum(excitation_full,axis=-1)*ne_values.flatten()).tolist()]*H2p_to_find_steps]*H2_steps]*Hm_to_find_steps	# m^-3
 								nH_ne_excited_states_atomic = np.transpose(nH_ne_excited_states_atomic, (3,0,1,2,4))	# H, Hm, H2, H2p, ne, Te
 								nH_ne_excited_state_atomic_2 = [[[np.float32(record_nH_ne_values*excitation_full[:,0]*ne_values.flatten()).tolist()]*H2p_to_find_steps]*H2_steps]*Hm_to_find_steps
 								nH_ne_excited_state_atomic_2 = np.transpose(nH_ne_excited_state_atomic_2, (3,0,1,2,4))	# H, Hm, H2, H2p, ne, Te
@@ -1747,7 +1747,6 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								record_nHm_nH2_values = nHm_nH2_values_Te(Te_values.flatten(),Hm_to_find_steps,H2_suppression=H2_suppression)	# Hm, ne*Te
 								record_nHm_ne_values = np.transpose([record_nH2_ne_values.tolist()]*(Hm_to_find_steps) ,(1,0,2)) * record_nHm_nH2_values
 								record_nHp_ne_values = 1 - record_nH2p_ne_values + np.transpose([record_nHm_ne_values.tolist()]*(H2p_to_find_steps), (2,1,0,3))	# Hm, H2, H2p, ne*Te
-								record_nHp_ne_values[record_nHp_ne_values<=0] = 1e-15	# H, Hm, H2, H2p, ne, Te
 								if loop_index==1:
 									record_nH2p_nH2_values_initial = cp.deepcopy(record_nH2p_nH2_values)
 									record_nH2p_ne_values_initial = cp.deepcopy(record_nH2p_ne_values)
@@ -1826,6 +1825,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								time_lapsed = tm.time()-start_time
 								print('worker '+str(current_process())+' Initial loop nr '+str(loop_index)+'-3 done '+str(domain_index)+' in %.3gmin %.3gsec' %(int(time_lapsed/60),int(time_lapsed%60)) +' shape '+str(np.shape(calculated_emission_log_probs))+' - good=%.3g, nan=%.3g, -inf=%.3g' %( np.sum(np.isfinite(calculated_emission_log_probs)),np.sum(np.isnan(calculated_emission_log_probs)),np.sum(np.isinf(calculated_emission_log_probs)) ) )
 
+								nHp_ne_penalty = np.zeros_like(nH_ne_excited_states_atomic,dtype=np.float16)
+								nHp_ne_penalty[:,record_nHp_ne_values<0] = -np.inf
+								nHp_ne_penalty = nHp_ne_penalty.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps,TS_Te_steps))
+								record_nHp_ne_values[record_nHp_ne_values<=0] = 1e-15	# H, Hm, H2, H2p, ne, Te
 								power_rad_H2p,power_rad_H2,power_rad_excit,power_via_ionisation,power_rad_rec_bremm,power_via_recombination,power_via_brem,power_rec_neutral,power_rad_Hm_H2p,power_rad_Hm_Hp,power_rad_Hm,power_rad_mol,power_heating_rec,tot_rad_power,total_removed_power_atomic,nH_ne_excited_states_mol,nH_ne_excited_state_mol_2,nH_ne_excited_state_mol_3,nH_ne_excited_state_mol_4,power_rad_mol_visible = calc_power_balance_elements_simplified2(H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps,TS_Te_steps,Te_values,ne_values,multiplicative_factor_full_full,multiplicative_factor_visible_light_full_full,record_nH_ne_values,record_nHm_ne_values,record_nH2_ne_values,record_nH2p_ne_values,record_nHp_ne_values,T_Hp_values,T_H2p_values,T_Hm_values,coeff_1_record,coeff_2_record,coeff_3_record,coeff_4_record)
 
 								nH_ne_excited_states = np.float32(nH_ne_excited_states_atomic + nH_ne_excited_states_mol.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps*TS_Te_steps)))
@@ -1861,7 +1864,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								# likelihood_log_probs = ((calculated_emission_log_probs + Te_log_probs + (np.ones((TS_Te_steps,TS_ne_steps))*ne_log_probs).T + (np.ones((TS_Te_steps,TS_ne_steps,len(nH2p_ne_values),len(nH2_ne_values)))*nH2_ne_log_probs).T ).T + nH_ne_log_probs).T
 								likelihood_log_probs = calculated_emission_log_probs + np.float32(Te_log_probs) + (np.ones((TS_Te_steps,TS_ne_steps),dtype=np.float32)*np.float32(ne_log_probs)).T + np.float32(np.transpose([np.float32(record_nH2_ne_log_prob).reshape((H2_steps,TS_ne_steps,TS_Te_steps)).tolist()]*H2p_to_find_steps,(1,0,2,3)))
 								# likelihood_log_probs = np.transpose(np.transpose(likelihood_log_probs,(1,2,3,0,4,5)) + np.float32(record_nH_ne_log_prob.reshape((H_steps,TS_ne_steps,TS_Te_steps))) ,(3,0,1,2,4,5)) + power_penalty + nH_ne_penalty	# power_penalty calculated after the particle conservation
-								likelihood_log_probs = np.transpose(np.transpose(likelihood_log_probs,(1,2,3,0,4,5)) + np.float32(record_nH_ne_log_prob.reshape((H_steps,TS_ne_steps,TS_Te_steps))) ,(3,0,1,2,4,5)) + nH_ne_penalty
+								likelihood_log_probs = np.transpose(np.transpose(likelihood_log_probs,(1,2,3,0,4,5)) + np.float32(record_nH_ne_log_prob.reshape((H_steps,TS_ne_steps,TS_Te_steps))) ,(3,0,1,2,4,5)) + nH_ne_penalty + nHp_ne_penalty
 								# likelihood_log_probs -= np.max(likelihood_log_probs)
 								# likelihood_log_probs -= np.log(np.sum(np.exp(likelihood_log_probs)))	# normalisation for logarithmic probabilities
 								# good_priors = likelihood_log_probs!=-np.inf
@@ -1897,10 +1900,14 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									all_net_e_destruction = np.zeros_like((likelihood_log_probs),dtype=np.float32)
 									all_net_Hm_destruction = np.zeros_like((likelihood_log_probs),dtype=np.float32)
 									all_net_H2p_destruction = np.zeros_like((likelihood_log_probs),dtype=np.float32)
+									all_net_H2_destruction = np.zeros_like((likelihood_log_probs),dtype=np.float32)
+									all_net_H_destruction = np.zeros_like((likelihood_log_probs),dtype=np.float32)
 									all_net_Hp_destruction_sigma = np.ones_like((likelihood_log_probs),dtype=np.float32)
 									all_net_e_destruction_sigma = np.ones_like((likelihood_log_probs),dtype=np.float32)
 									all_net_Hm_destruction_sigma = np.ones_like((likelihood_log_probs),dtype=np.float32)
 									all_net_H2p_destruction_sigma = np.ones_like((likelihood_log_probs),dtype=np.float32)
+									all_net_H2_destruction_sigma = np.ones_like((likelihood_log_probs),dtype=np.float32)
+									all_net_H_destruction_sigma = np.ones_like((likelihood_log_probs),dtype=np.float32)
 									all_power_potential_mol = np.zeros_like((likelihood_log_probs),dtype=np.float32)
 									all_power_potential_mol_sigma = np.ones_like((likelihood_log_probs),dtype=np.float32)
 									if False:
@@ -1922,6 +1929,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 													all_net_e_destruction[:,:,:,:,i5,i6] = record_all_net_e_destruction[:,:,:,:,i5_old,i6_old]
 													all_net_Hm_destruction[:,:,:,:,i5,i6] = record_all_net_Hm_destruction[:,:,:,:,i5_old,i6_old]
 													all_net_H2p_destruction[:,:,:,:,i5,i6] = record_all_net_H2p_destruction[:,:,:,:,i5_old,i6_old]
+													all_net_H2_destruction[:,:,:,:,i5,i6] = record_all_net_H2_destruction[:,:,:,:,i5_old,i6_old]
+													all_net_H_destruction[:,:,:,:,i5,i6] = record_all_net_H_destruction[:,:,:,:,i5_old,i6_old]
 												else:
 													# local_good_priors = good_priors[:,:,:,:,i5,i6]
 													# # local_good_priors = np.ones_like(good_priors[:,:,:,:,i5,i6],dtype=bool)
@@ -1960,6 +1969,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 														all_net_Hm_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_Hm_sigma*1e-10)**2 + (rate_creation_Hm_sigma*1e-10)**2)**0.5 *1e10)
 														all_net_H2p_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H2p - rate_creation_H2p)
 														all_net_H2p_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H2p_sigma*1e-10)**2 + (rate_creation_H2p_sigma*1e-10)**2)**0.5 *1e10)
+														all_net_H2_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H2 - rate_creation_H2)
+														all_net_H2_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H2_sigma*1e-10)**2 + (rate_creation_H2_sigma*1e-10)**2)**0.5 *1e10)
+														all_net_H_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H - rate_creation_H)
+														all_net_H_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H_sigma*1e-10)**2 + (rate_creation_H_sigma*1e-10)**2)**0.5 *1e10)
 														all_power_potential_mol[:,:,:,:,i5,i6] = np.float32(power_potential_mol)
 														all_power_potential_mol_sigma[:,:,:,:,i5,i6] = np.float32(power_potential_mol_sigma)
 
@@ -1973,10 +1986,14 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										all_net_e_destruction *= area*length*dt/1000
 										all_net_Hm_destruction *= area*length*dt/1000
 										all_net_H2p_destruction *= area*length*dt/1000
+										all_net_H2_destruction *= area*length*dt/1000
+										all_net_H_destruction *= area*length*dt/1000
 										all_net_Hp_destruction_sigma *= area*length*dt/1000
 										all_net_e_destruction_sigma *= area*length*dt/1000
 										all_net_Hm_destruction_sigma *= area*length*dt/1000
 										all_net_H2p_destruction_sigma *= area*length*dt/1000
+										all_net_H2_destruction_sigma *= area*length*dt/1000
+										all_net_H_destruction_sigma *= area*length*dt/1000
 									total_removable_Hp = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*all_ne_values*all_nHp_ne_values*1e-20)	# I assume no molecules upstream >> nH+/ne~1
 									total_removable_e = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*all_ne_values*1e-20)
 									if False:
@@ -1990,8 +2007,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										particles_penalty += np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
 										particles_penalty_e += np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
 
-									total_removable_Hm = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nHm_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ downstream
-									total_removable_H2p = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nH2p_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ downstream
+									# total_removable_Hm = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nHm_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ downstream
+									# total_removable_H2p = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nH2p_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ downstream
+									total_removable_Hm = np.float32(area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ 0
+									total_removable_H2p = np.float32(area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ 0
 									if False:
 										select = all_net_Hm_destruction>total_removable_Hm
 										particles_penalty[select] += np.float32(-0.5*((all_net_Hm_destruction[select] - total_removable_Hm[select])/(total_removable_Hm[select]*2))**2)	# 200% uncertanty
@@ -2005,6 +2024,17 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										particles_penalty_H2p += np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
 									particles_penalty -= np.nanmax(particles_penalty)
 									# particles_penalty[np.isnan(particles_penalty)]=-np.inf
+
+									# added to limit the RR of consumprion of H and H2
+									nH2vH2_r_outer = target_chamber_pressure/(boltzmann_constant_J*300)* ( (300*boltzmann_constant_J)/ (2*hydrogen_mass))**0.5
+									nH2vH2_r_inner = all_ne_values*all_nH_ne_values* ( (300*boltzmann_constant_J)/ (2*hydrogen_mass))**0.5	# inner H density should be lower
+									total_removable_H2 = np.float32(area*length*all_ne_values*all_nH2_ne_values*1e-20 + 2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_outer*dt/1000*1e-20 + 2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_inner*dt/1000*1e-20)	# I assume molecules upstream ~ 0
+									particles_penalty += np.log( 1 + erf( (total_removable_H2-all_net_H2_destruction)/(2**0.5 * (all_net_H2_destruction_sigma**2 + (total_removable_H2*particle_molecular_budget_precision)**2)**0.5)) )
+									particles_penalty_H2 = np.log( 1 + erf( (total_removable_H2-all_net_H2_destruction)/(2**0.5 * (all_net_H2_destruction_sigma**2 + (total_removable_H2*particle_molecular_budget_precision)**2)**0.5)) )
+
+									total_removable_H = np.float32(area*length*all_ne_values*all_nH_ne_values*1e-20 + 2*2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_outer*dt/1000*1e-20 + 2*2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_inner*dt/1000*1e-20)	# I assume molecules upstream ~ 0
+									particles_penalty += np.log( 1 + erf( (total_removable_H-all_net_H_destruction)/(2**0.5 * (all_net_H_destruction_sigma**2 + (total_removable_H*particle_molecular_budget_precision)**2)**0.5)) )
+									particles_penalty_H = np.log( 1 + erf( (total_removable_H-all_net_H_destruction)/(2**0.5 * (all_net_H_destruction_sigma**2 + (total_removable_H*particle_molecular_budget_precision)**2)**0.5)) )
 
 									likelihood_log_probs += particles_penalty
 									# likelihood_log_probs -= np.max(likelihood_log_probs)
@@ -2056,12 +2086,16 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										record_all_net_e_destruction = all_net_e_destruction/(area*length*dt/1000)
 										record_all_net_Hm_destruction = all_net_Hm_destruction/(area*length*dt/1000)
 										record_all_net_H2p_destruction = all_net_H2p_destruction/(area*length*dt/1000)
+										record_all_net_H2_destruction = all_net_H2_destruction/(area*length*dt/1000)
+										record_all_net_H_destruction = all_net_H_destruction/(area*length*dt/1000)
 										record_all_net_Hp_destruction_sigma = all_net_Hp_destruction_sigma/(area*length*dt/1000)
 										record_all_net_e_destruction_sigma = all_net_e_destruction_sigma/(area*length*dt/1000)
 										record_all_net_Hm_destruction_sigma = all_net_Hm_destruction_sigma/(area*length*dt/1000)
 										record_all_net_H2p_destruction_sigma = all_net_H2p_destruction_sigma/(area*length*dt/1000)
+										record_all_net_H2_destruction_sigma = all_net_H2_destruction_sigma/(area*length*dt/1000)
+										record_all_net_H_destruction_sigma = all_net_H_destruction_sigma/(area*length*dt/1000)
 									else:
-										del record_all_net_Hp_destruction,record_all_net_e_destruction,record_all_net_Hm_destruction,record_all_net_H2p_destruction,record_all_net_Hp_destruction_sigma,record_all_net_e_destruction_sigma,record_all_net_Hm_destruction_sigma,record_all_net_H2p_destruction_sigma
+										del record_all_net_Hp_destruction,record_all_net_e_destruction,record_all_net_Hm_destruction,record_all_net_H2p_destruction,record_all_net_H2_destruction,record_all_net_H_destruction,record_all_net_Hp_destruction_sigma,record_all_net_e_destruction_sigma,record_all_net_Hm_destruction_sigma,record_all_net_H2p_destruction_sigma,record_all_net_H2_destruction_sigma,record_all_net_H_destruction_sigma
 									del all_nHm_nH2_values,all_nH2p_nH2_values,all_nH2_ne_values,all_nH_ne_values,all_ne_values,all_Te_values,all_nHp_ne_values,all_net_Hp_destruction,all_net_Hp_destruction_sigma,total_removable_Hp,all_net_e_destruction,all_net_e_destruction_sigma,total_removable_e,all_net_Hm_destruction,all_net_Hm_destruction_sigma,all_net_H2p_destruction,all_net_H2p_destruction_sigma,total_removable_Hm,total_removable_H2p,all_nHm_ne_values,all_nH2p_ne_values
 									del nH_ne_excited_states,temp_nH_ne_excited_state_2,temp_nH_ne_excited_state_3,temp_nH_ne_excited_state_4,all_power_potential_mol,all_power_potential_mol_sigma
 
@@ -2240,6 +2274,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 												marginalised_particles_penalty_H2p_only_nH2_ne_first = np.log(np.sum(np.exp(particles_penalty_H2p)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 												marginalised_particles_penalty_H2p_only_nH2_ne_first = marginalised_particles_penalty_H2p_only_nH2_ne_first-np.max(marginalised_particles_penalty_H2p_only_nH2_ne_first)
 												marginalised_particles_penalty_H2p_only_nH2_ne_first = marginalised_particles_penalty_H2p_only_nH2_ne_first-np.log(np.sum(np.exp(marginalised_particles_penalty_H2p_only_nH2_ne_first)))	# normalisation for logarithmic probabilities
+												marginalised_particles_penalty_H2_only_nH2_ne_first = np.log(np.sum(np.exp(particles_penalty_H2)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2, ne, Te
+												marginalised_particles_penalty_H2_only_nH2_ne_first = marginalised_particles_penalty_H2_only_nH2_ne_first-np.max(marginalised_particles_penalty_H2_only_nH2_ne_first)
+												marginalised_particles_penalty_H2_only_nH2_ne_first = marginalised_particles_penalty_H2_only_nH2_ne_first-np.log(np.sum(np.exp(marginalised_particles_penalty_H2_only_nH2_ne_first)))	# normalisation for logarithmic probabilities
+												marginalised_particles_penalty_H_only_nH2_ne_first = np.log(np.sum(np.exp(particles_penalty_H)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H, ne, Te
+												marginalised_particles_penalty_H_only_nH2_ne_first = marginalised_particles_penalty_H_only_nH2_ne_first-np.max(marginalised_particles_penalty_H_only_nH2_ne_first)
+												marginalised_particles_penalty_H_only_nH2_ne_first = marginalised_particles_penalty_H_only_nH2_ne_first-np.log(np.sum(np.exp(marginalised_particles_penalty_H_only_nH2_ne_first)))	# normalisation for logarithmic probabilities
 												temp = calculated_emission_log_probs + np.float32(Te_log_probs) + (np.ones((TS_Te_steps,TS_ne_steps),dtype=np.float32)*np.float32(ne_log_probs)).T
 												emission_Te_ne_best = np.unravel_index(temp.argmax(), temp.shape)
 												marginalised_emission_Te_ne_H2p_only_nH2_ne_first = np.log(np.sum(np.exp(temp)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2p, ne, Te
@@ -2248,6 +2288,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 												marginalised_nH_ne_penalty_only_nH2_ne_first = np.log(np.sum(np.exp(nH_ne_penalty)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 												marginalised_nH_ne_penalty_only_nH2_ne_first = marginalised_nH_ne_penalty_only_nH2_ne_first-np.max(marginalised_nH_ne_penalty_only_nH2_ne_first)
 												marginalised_nH_ne_penalty_only_nH2_ne_first = marginalised_nH_ne_penalty_only_nH2_ne_first-np.log(np.sum(np.exp(marginalised_nH_ne_penalty_only_nH2_ne_first)))	# normalisation for logarithmic probabilities
+												marginalised_nHp_ne_penalty_only_nH2_ne_first = np.log(np.sum(np.exp(nHp_ne_penalty)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_nHp_ne_penalty_only_nH2_ne_first = marginalised_nHp_ne_penalty_only_nH2_ne_first-np.max(marginalised_nHp_ne_penalty_only_nH2_ne_first)
+												marginalised_nHp_ne_penalty_only_nH2_ne_first = marginalised_nHp_ne_penalty_only_nH2_ne_first-np.log(np.sum(np.exp(marginalised_nHp_ne_penalty_only_nH2_ne_first)))	# normalisation for logarithmic probabilities
 												marginalised_power_penalty_only_nH2_ne_first = np.log(np.sum(np.exp(power_penalty)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 												marginalised_power_penalty_only_nH2_ne_first = marginalised_power_penalty_only_nH2_ne_first-np.max(marginalised_power_penalty_only_nH2_ne_first)
 												marginalised_power_penalty_only_nH2_ne_first = marginalised_power_penalty_only_nH2_ne_first-np.log(np.sum(np.exp(marginalised_power_penalty_only_nH2_ne_first)))	# normalisation for logarithmic probabilities
@@ -2289,6 +2332,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 												marginalised_particles_penalty_H2p_only_nH_ne_first = np.log(np.sum(np.exp(particles_penalty_H2p)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 												marginalised_particles_penalty_H2p_only_nH_ne_first = marginalised_particles_penalty_H2p_only_nH_ne_first-np.max(marginalised_particles_penalty_H2p_only_nH_ne_first)
 												marginalised_particles_penalty_H2p_only_nH_ne_first = marginalised_particles_penalty_H2p_only_nH_ne_first-np.log(np.sum(np.exp(marginalised_particles_penalty_H2p_only_nH_ne_first)))	# normalisation for logarithmic probabilities
+												marginalised_particles_penalty_H2_only_nH_ne_first = np.log(np.sum(np.exp(particles_penalty_H2)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2, ne, Te
+												marginalised_particles_penalty_H2_only_nH_ne_first = marginalised_particles_penalty_H2_only_nH_ne_first-np.max(marginalised_particles_penalty_H2_only_nH_ne_first)
+												marginalised_particles_penalty_H2_only_nH_ne_first = marginalised_particles_penalty_H2_only_nH_ne_first-np.log(np.sum(np.exp(marginalised_particles_penalty_H2_only_nH_ne_first)))	# normalisation for logarithmic probabilities
+												marginalised_particles_penalty_H_only_nH_ne_first = np.log(np.sum(np.exp(particles_penalty_H)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H, ne, Te
+												marginalised_particles_penalty_H_only_nH_ne_first = marginalised_particles_penalty_H_only_nH_ne_first-np.max(marginalised_particles_penalty_H_only_nH_ne_first)
+												marginalised_particles_penalty_H_only_nH_ne_first = marginalised_particles_penalty_H_only_nH_ne_first-np.log(np.sum(np.exp(marginalised_particles_penalty_H_only_nH_ne_first)))	# normalisation for logarithmic probabilities
 												temp = calculated_emission_log_probs + np.float32(Te_log_probs) + (np.ones((TS_Te_steps,TS_ne_steps),dtype=np.float32)*np.float32(ne_log_probs)).T
 												emission_Te_ne_best = np.unravel_index(temp.argmax(), temp.shape)
 												marginalised_emission_Te_ne_H2p_only_nH_ne_first = np.log(np.sum(np.exp(temp)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2p, ne, Te
@@ -2297,6 +2346,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 												marginalised_nH_ne_penalty_only_nH_ne_first = np.log(np.sum(np.exp(nH_ne_penalty)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 												marginalised_nH_ne_penalty_only_nH_ne_first = marginalised_nH_ne_penalty_only_nH_ne_first-np.max(marginalised_nH_ne_penalty_only_nH_ne_first)
 												marginalised_nH_ne_penalty_only_nH_ne_first = marginalised_nH_ne_penalty_only_nH_ne_first-np.log(np.sum(np.exp(marginalised_nH_ne_penalty_only_nH_ne_first)))	# normalisation for logarithmic probabilities
+												marginalised_nHp_ne_penalty_only_nH_ne_first = np.log(np.sum(np.exp(nHp_ne_penalty)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_nHp_ne_penalty_only_nH_ne_first = marginalised_nHp_ne_penalty_only_nH_ne_first-np.max(marginalised_nHp_ne_penalty_only_nH_ne_first)
+												marginalised_nHp_ne_penalty_only_nH_ne_first = marginalised_nHp_ne_penalty_only_nH_ne_first-np.log(np.sum(np.exp(marginalised_nHp_ne_penalty_only_nH_ne_first)))	# normalisation for logarithmic probabilities
 												marginalised_power_penalty_only_nH_ne_first = np.log(np.sum(np.exp(power_penalty)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 												marginalised_power_penalty_only_nH_ne_first = marginalised_power_penalty_only_nH_ne_first-np.max(marginalised_power_penalty_only_nH_ne_first)
 												marginalised_power_penalty_only_nH_ne_first = marginalised_power_penalty_only_nH_ne_first-np.log(np.sum(np.exp(marginalised_power_penalty_only_nH_ne_first)))	# normalisation for logarithmic probabilities
@@ -2304,7 +2356,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 												marginalised_calculated_emission_log_probs_only_nH_ne_first = marginalised_calculated_emission_log_probs_only_nH_ne_first-np.max(marginalised_calculated_emission_log_probs_only_nH_ne_first)
 												marginalised_calculated_emission_log_probs_only_nH_ne_first = marginalised_calculated_emission_log_probs_only_nH_ne_first-np.log(np.sum(np.exp(marginalised_calculated_emission_log_probs_only_nH_ne_first)))	# normalisation for logarithmic probabilities
 
-												del particles_penalty,nH_ne_penalty,power_penalty
+												del particles_penalty,nH_ne_penalty,nHp_ne_penalty,power_penalty
 
 								PDF_matrix_shape.append(np.shape(likelihood_log_probs))
 
@@ -2651,7 +2703,6 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							record_nHm_ne_values = np.transpose([record_nH2_ne_values.tolist()]*(Hm_to_find_steps+how_much_expand_nHm_nH2_indexes) ,(1,0,2)) * record_nHm_nH2_values
 
 							record_nHp_ne_values = 1 - record_nH2p_ne_values + np.transpose([record_nHm_ne_values.tolist()]*(H2p_to_find_steps+how_much_expand_nH2p_nH2_indexes), (2,1,0,3))	# H, Hm, H2, H2p, ne, Te
-							record_nHp_ne_values[record_nHp_ne_values<=0] = 1e-15
 
 							# total_nH2p_ne_values = np.array([record_nH2_ne_values.T.tolist()]*(H2p_to_find_steps+how_much_expand_nH2p_nH2_indexes)).T * record_nH2p_nH2_values.T
 							# total_nH2p_ne_values = np.transpose(total_nH2p_ne_values, (0,2,1)) * (ne_values.flatten() ** 2)
@@ -2752,6 +2803,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							Hm_steps = Hm_to_find_steps+how_much_expand_nHm_nH2_indexes
 							H2p_steps = H2p_to_find_steps+how_much_expand_nH2p_nH2_indexes
 
+							nHp_ne_penalty = np.zeros_like(nH_ne_excited_states_atomic,dtype=np.float16)
+							nHp_ne_penalty[:,record_nHp_ne_values<0] = -np.inf
+							nHp_ne_penalty = nHp_ne_penalty.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps))
+							record_nHp_ne_values[record_nHp_ne_values<=0] = 1e-15	# H, Hm, H2, H2p, ne, Te
 							power_rad_H2p,power_rad_H2,power_rad_excit,power_via_ionisation,power_rad_rec_bremm,power_via_recombination,power_via_brem,power_rec_neutral,power_rad_Hm_H2p,power_rad_Hm_Hp,power_rad_Hm,power_rad_mol,power_heating_rec,tot_rad_power,total_removed_power_atomic,nH_ne_excited_states_mol,nH_ne_excited_state_mol_2,nH_ne_excited_state_mol_3,nH_ne_excited_state_mol_4,power_rad_mol_visible = calc_power_balance_elements_simplified2(H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps,TS_Te_steps,Te_values,ne_values,multiplicative_factor_full_full,multiplicative_factor_visible_light_full_full,record_nH_ne_values,record_nHm_ne_values,record_nH2_ne_values,record_nH2p_ne_values,record_nHp_ne_values,T_Hp_values,T_H2p_values,T_Hm_values,coeff_1_record,coeff_2_record,coeff_3_record_2,coeff_4_record_2)
 							del coeff_1_record,coeff_2_record,coeff_3_record_2,coeff_4_record_2
 
@@ -2839,10 +2894,14 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									all_net_e_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_net_Hm_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_net_H2p_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									all_net_H2_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									all_net_H_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_net_Hp_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_net_e_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_net_Hm_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_net_H2p_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									all_net_H2_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									all_net_H_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_power_potential_mol = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_power_potential_mol_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_power_potential_mol_plasma_heating = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
@@ -2920,6 +2979,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 												all_net_Hm_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_Hm_sigma*1e-10)**2 + (rate_creation_Hm_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
 												all_net_H2p_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H2p - rate_creation_H2p)	# m^-3/s *1e-20
 												all_net_H2p_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H2p_sigma*1e-10)**2 + (rate_creation_H2p_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
+												all_net_H2_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H2 - rate_creation_H2)	# m^-3/s *1e-20
+												all_net_H2_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H2_sigma*1e-10)**2 + (rate_creation_H2_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
+												all_net_H_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H - rate_creation_H)	# m^-3/s *1e-20
+												all_net_H_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H_sigma*1e-10)**2 + (rate_creation_H_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
 												all_power_potential_mol[:,:,:,:,i5,i6] = np.float32(power_potential_mol)
 												all_power_potential_mol_sigma[:,:,:,:,i5,i6] = np.float32(power_potential_mol_sigma)
 												all_power_potential_mol_plasma_heating[:,:,:,:,i5,i6] = np.float32(power_potential_mol_plasma_heating)
@@ -2938,10 +3001,14 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								all_net_e_destruction *= area*length*dt/1000	# *1e-20
 								all_net_Hm_destruction *= area*length*dt/1000	# *1e-20
 								all_net_H2p_destruction *= area*length*dt/1000	# *1e-20
+								all_net_H2_destruction *= area*length*dt/1000	# *1e-20
+								all_net_H_destruction *= area*length*dt/1000	# *1e-20
 								all_net_Hp_destruction_sigma *= area*length*dt/1000	# *1e-20
 								all_net_e_destruction_sigma *= area*length*dt/1000	# *1e-20
 								all_net_Hm_destruction_sigma *= area*length*dt/1000	# *1e-20
 								all_net_H2p_destruction_sigma *= area*length*dt/1000	# *1e-20
+								all_net_H2_destruction_sigma *= area*length*dt/1000	# *1e-20
+								all_net_H_destruction_sigma *= area*length*dt/1000	# *1e-20
 								total_removable_Hp = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*all_ne_values*all_nHp_ne_values*1e-20)	# I assume no molecules upstream >> nH+/ne~1	# *1e-20
 								total_removable_e = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*all_ne_values*1e-20)	# *1e-20
 								if False:
@@ -2958,8 +3025,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									particles_penalty_e += np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
 									del all_net_Hp_destruction_sigma,all_net_e_destruction_sigma
 
-								total_removable_Hm = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nHm_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ downstream
-								total_removable_H2p = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nH2p_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ downstream
+								# total_removable_Hm = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nHm_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ downstream
+								# total_removable_H2p = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nH2p_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ downstream
+								total_removable_Hm = np.float32(area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ 0
+								total_removable_H2p = np.float32(area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ 0
 								if False:
 									select = all_net_Hm_destruction>total_removable_Hm
 									particles_penalty[select] += np.float32(-0.5*((all_net_Hm_destruction[select] - total_removable_Hm[select])/(total_removable_Hm[select]*2))**2)	# 200% uncertanty
@@ -2976,6 +3045,17 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									del all_net_Hm_destruction_sigma,all_net_H2p_destruction_sigma
 								particles_penalty -= np.nanmax(particles_penalty)
 								# particles_penalty[np.isnan(particles_penalty)] = -np.inf
+
+								# added to limit the RR of consumprion of H and H2
+								nH2vH2_r_inner = all_ne_values*all_nH_ne_values* ( (300*boltzmann_constant_J)/ (2*hydrogen_mass))**0.5	# inner H density should be lower
+								total_removable_H2 = np.float32(area*length*all_ne_values*all_nH2_ne_values*1e-20 + 2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_outer*dt/1000*1e-20 + 2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_inner*dt/1000*1e-20)	# I assume molecules upstream ~ 0
+								particles_penalty += np.log( 1 + erf( (total_removable_H2-all_net_H2_destruction)/(2**0.5 * (all_net_H2_destruction_sigma**2 + (total_removable_H2*particle_molecular_budget_precision)**2)**0.5)) )
+								particles_penalty_H2 = np.log( 1 + erf( (total_removable_H2-all_net_H2_destruction)/(2**0.5 * (all_net_H2_destruction_sigma**2 + (total_removable_H2*particle_molecular_budget_precision)**2)**0.5)) )
+
+								total_removable_H = np.float32(area*length*all_ne_values*all_nH_ne_values*1e-20 + 2*2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_outer*dt/1000*1e-20 + 2*2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_inner*dt/1000*1e-20)	# I assume molecules upstream ~ 0
+								particles_penalty += np.log( 1 + erf( (total_removable_H-all_net_H_destruction)/(2**0.5 * (all_net_H_destruction_sigma**2 + (total_removable_H*particle_molecular_budget_precision)**2)**0.5)) )
+								particles_penalty_H = np.log( 1 + erf( (total_removable_H-all_net_H_destruction)/(2**0.5 * (all_net_H_destruction_sigma**2 + (total_removable_H*particle_molecular_budget_precision)**2)**0.5)) )
+								del all_net_H2_destruction_sigma,all_net_H_destruction_sigma,all_net_H_destruction,all_net_H2_destruction
 
 								# likelihood_log_probs += particles_penalty
 								# likelihood_log_probs -= np.max(likelihood_log_probs)
@@ -3043,7 +3123,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							del nH_ne_excited_states_atomic,nH_ne_excited_state_atomic_2,nH_ne_excited_state_atomic_3,nH_ne_excited_state_atomic_4,nH_ne_excited_states_mol,nH_ne_excited_state_mol_2,nH_ne_excited_state_mol_3,nH_ne_excited_state_mol_4
 
 							likelihood_log_probs = calculated_emission_log_probs_expanded + np.float32(Te_log_probs) + (np.ones((TS_Te_steps,TS_ne_steps),dtype=np.float32)*np.float32(ne_log_probs)).T + np.float32(np.transpose([np.float32(record_nH2_ne_log_prob).reshape((H2_steps,TS_ne_steps,TS_Te_steps)).tolist()]*(H2p_steps),(1,0,2,3)))
-							likelihood_log_probs = np.transpose(np.transpose(likelihood_log_probs,(1,2,3,0,4,5)) + np.float32(record_nH_ne_log_prob.reshape((H_steps,TS_ne_steps,TS_Te_steps))) ,(3,0,1,2,4,5)) + power_penalty + nH_ne_penalty + particles_penalty
+							likelihood_log_probs = np.transpose(np.transpose(likelihood_log_probs,(1,2,3,0,4,5)) + np.float32(record_nH_ne_log_prob.reshape((H_steps,TS_ne_steps,TS_Te_steps))) ,(3,0,1,2,4,5)) + power_penalty + nH_ne_penalty + particles_penalty + nHp_ne_penalty
 							likelihood_log_probs -= np.max(likelihood_log_probs)
 							likelihood_log_probs -= np.log(np.sum(np.exp(likelihood_log_probs)))	# normalisation for logarithmic probabilities
 							PDF_matrix_shape.append(np.shape(likelihood_log_probs))
@@ -3204,6 +3284,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							marginalised_nH_ne_penalty = np.log(np.sum(np.exp(nH_ne_penalty)*hypervolume_of_each_combination,axis=(2,4,5)))	# H, Hm, H2, H2p, ne, Te
 							marginalised_nH_ne_penalty = marginalised_nH_ne_penalty-np.max(marginalised_nH_ne_penalty)
 							marginalised_nH_ne_penalty = marginalised_nH_ne_penalty-np.log(np.sum(np.exp(marginalised_nH_ne_penalty)))	# normalisation for logarithmic probabilities
+							marginalised_nHp_ne_penalty = np.log(np.sum(np.exp(nHp_ne_penalty)*hypervolume_of_each_combination,axis=(2,4,5)))	# H, Hm, H2, H2p, ne, Te
+							marginalised_nHp_ne_penalty = marginalised_nHp_ne_penalty-np.max(marginalised_nHp_ne_penalty)
+							marginalised_nHp_ne_penalty = marginalised_nHp_ne_penalty-np.log(np.sum(np.exp(marginalised_nHp_ne_penalty)))	# normalisation for logarithmic probabilities
 
 							marginalised_particles_penalty = np.log(np.sum(np.exp(particles_penalty)*hypervolume_of_each_combination,axis=(2,4,5)))	# H, Hm, H2, H2p, ne, Te
 							marginalised_particles_penalty = marginalised_particles_penalty-np.max(marginalised_particles_penalty)
@@ -3268,6 +3351,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										marginalised_particles_penalty_H2p_only_nH2_ne = np.log(np.sum(np.exp(particles_penalty_H2p)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 										marginalised_particles_penalty_H2p_only_nH2_ne = marginalised_particles_penalty_H2p_only_nH2_ne-np.max(marginalised_particles_penalty_H2p_only_nH2_ne)
 										marginalised_particles_penalty_H2p_only_nH2_ne = marginalised_particles_penalty_H2p_only_nH2_ne-np.log(np.sum(np.exp(marginalised_particles_penalty_H2p_only_nH2_ne)))	# normalisation for logarithmic probabilities
+										marginalised_particles_penalty_H2_only_nH2_ne = np.log(np.sum(np.exp(particles_penalty_H2)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2, ne, Te
+										marginalised_particles_penalty_H2_only_nH2_ne = marginalised_particles_penalty_H2_only_nH2_ne-np.max(marginalised_particles_penalty_H2_only_nH2_ne)
+										marginalised_particles_penalty_H2_only_nH2_ne = marginalised_particles_penalty_H2_only_nH2_ne-np.log(np.sum(np.exp(marginalised_particles_penalty_H2_only_nH2_ne)))	# normalisation for logarithmic probabilities
+										marginalised_particles_penalty_H_only_nH2_ne = np.log(np.sum(np.exp(particles_penalty_H)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H, ne, Te
+										marginalised_particles_penalty_H_only_nH2_ne = marginalised_particles_penalty_H_only_nH2_ne-np.max(marginalised_particles_penalty_H_only_nH2_ne)
+										marginalised_particles_penalty_H_only_nH2_ne = marginalised_particles_penalty_H_only_nH2_ne-np.log(np.sum(np.exp(marginalised_particles_penalty_H_only_nH2_ne)))	# normalisation for logarithmic probabilities
 										marginalised_Te_log_probs_H2p_only_nH2_ne = np.log(np.sum(np.exp(np.zeros_like(calculated_emission_log_probs_expanded) + np.float32(Te_log_probs))*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 										marginalised_Te_log_probs_H2p_only_nH2_ne = marginalised_Te_log_probs_H2p_only_nH2_ne-np.max(marginalised_Te_log_probs_H2p_only_nH2_ne)
 										marginalised_Te_log_probs_H2p_only_nH2_ne = marginalised_Te_log_probs_H2p_only_nH2_ne-np.log(np.sum(np.exp(marginalised_Te_log_probs_H2p_only_nH2_ne)))	# normalisation for logarithmic probabilities
@@ -3285,6 +3374,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										marginalised_nH_ne_penalty_only_nH2_ne = np.log(np.sum(np.exp(nH_ne_penalty)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 										marginalised_nH_ne_penalty_only_nH2_ne = marginalised_nH_ne_penalty_only_nH2_ne-np.max(marginalised_nH_ne_penalty_only_nH2_ne)
 										marginalised_nH_ne_penalty_only_nH2_ne = marginalised_nH_ne_penalty_only_nH2_ne-np.log(np.sum(np.exp(marginalised_nH_ne_penalty_only_nH2_ne)))	# normalisation for logarithmic probabilities
+										marginalised_nHp_ne_penalty_only_nH2_ne = np.log(np.sum(np.exp(nHp_ne_penalty)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2p, ne, Te
+										marginalised_nHp_ne_penalty_only_nH2_ne = marginalised_nHp_ne_penalty_only_nH2_ne-np.max(marginalised_nHp_ne_penalty_only_nH2_ne)
+										marginalised_nHp_ne_penalty_only_nH2_ne = marginalised_nHp_ne_penalty_only_nH2_ne-np.log(np.sum(np.exp(marginalised_nHp_ne_penalty_only_nH2_ne)))	# normalisation for logarithmic probabilities
 										marginalised_power_penalty_only_nH2_ne = np.log(np.sum(np.exp(power_penalty)*hypervolume_of_each_combination,axis=(0,1,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 										marginalised_power_penalty_only_nH2_ne = marginalised_power_penalty_only_nH2_ne-np.max(marginalised_power_penalty_only_nH2_ne)
 										marginalised_power_penalty_only_nH2_ne = marginalised_power_penalty_only_nH2_ne-np.log(np.sum(np.exp(marginalised_power_penalty_only_nH2_ne)))	# normalisation for logarithmic probabilities
@@ -3325,6 +3417,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										marginalised_particles_penalty_H2p_only_nH_ne = np.log(np.sum(np.exp(particles_penalty_H2p)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 										marginalised_particles_penalty_H2p_only_nH_ne = marginalised_particles_penalty_H2p_only_nH_ne-np.max(marginalised_particles_penalty_H2p_only_nH_ne)
 										marginalised_particles_penalty_H2p_only_nH_ne = marginalised_particles_penalty_H2p_only_nH_ne-np.log(np.sum(np.exp(marginalised_particles_penalty_H2p_only_nH_ne)))	# normalisation for logarithmic probabilities
+										marginalised_particles_penalty_H2_only_nH_ne = np.log(np.sum(np.exp(particles_penalty_H2)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2, ne, Te
+										marginalised_particles_penalty_H2_only_nH_ne = marginalised_particles_penalty_H2_only_nH_ne-np.max(marginalised_particles_penalty_H2_only_nH_ne)
+										marginalised_particles_penalty_H2_only_nH_ne = marginalised_particles_penalty_H2_only_nH_ne-np.log(np.sum(np.exp(marginalised_particles_penalty_H2_only_nH_ne)))	# normalisation for logarithmic probabilities
+										marginalised_particles_penalty_H_only_nH_ne = np.log(np.sum(np.exp(particles_penalty_H)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H, ne, Te
+										marginalised_particles_penalty_H_only_nH_ne = marginalised_particles_penalty_H_only_nH_ne-np.max(marginalised_particles_penalty_H_only_nH_ne)
+										marginalised_particles_penalty_H_only_nH_ne = marginalised_particles_penalty_H_only_nH_ne-np.log(np.sum(np.exp(marginalised_particles_penalty_H_only_nH_ne)))	# normalisation for logarithmic probabilities
 										marginalised_Te_log_probs_H2p_only_nH_ne = np.log(np.sum(np.exp(np.zeros_like(calculated_emission_log_probs_expanded) + np.float32(Te_log_probs))*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 										marginalised_Te_log_probs_H2p_only_nH_ne = marginalised_Te_log_probs_H2p_only_nH_ne-np.max(marginalised_Te_log_probs_H2p_only_nH_ne)
 										marginalised_Te_log_probs_H2p_only_nH_ne = marginalised_Te_log_probs_H2p_only_nH_ne-np.log(np.sum(np.exp(marginalised_Te_log_probs_H2p_only_nH_ne)))	# normalisation for logarithmic probabilities
@@ -3342,6 +3440,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										marginalised_nH_ne_penalty_only_nH_ne = np.log(np.sum(np.exp(nH_ne_penalty)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 										marginalised_nH_ne_penalty_only_nH_ne = marginalised_nH_ne_penalty_only_nH_ne-np.max(marginalised_nH_ne_penalty_only_nH_ne)
 										marginalised_nH_ne_penalty_only_nH_ne = marginalised_nH_ne_penalty_only_nH_ne-np.log(np.sum(np.exp(marginalised_nH_ne_penalty_only_nH_ne)))	# normalisation for logarithmic probabilities
+										marginalised_nHp_ne_penalty_only_nH_ne = np.log(np.sum(np.exp(nHp_ne_penalty)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2p, ne, Te
+										marginalised_nHp_ne_penalty_only_nH_ne = marginalised_nHp_ne_penalty_only_nH_ne-np.max(marginalised_nHp_ne_penalty_only_nH_ne)
+										marginalised_nHp_ne_penalty_only_nH_ne = marginalised_nHp_ne_penalty_only_nH_ne-np.log(np.sum(np.exp(marginalised_nHp_ne_penalty_only_nH_ne)))	# normalisation for logarithmic probabilities
 										marginalised_power_penalty_only_nH_ne = np.log(np.sum(np.exp(power_penalty)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 										marginalised_power_penalty_only_nH_ne = marginalised_power_penalty_only_nH_ne-np.max(marginalised_power_penalty_only_nH_ne)
 										marginalised_power_penalty_only_nH_ne = marginalised_power_penalty_only_nH_ne-np.log(np.sum(np.exp(marginalised_power_penalty_only_nH_ne)))	# normalisation for logarithmic probabilities
@@ -3470,14 +3571,17 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											temp1=[]
 											temp2 = []
 											prev_loc=0
+											prev_cum_prob = temp[0]
 											for i in range(0,10000):
-												loc = np.abs(temp-(treshold*i+treshold/2)).argmin()
+												loc = np.abs(temp[prev_loc:]-(treshold*i+treshold/2)).argmin() + prev_loc
 												temp1.append(power_values[loc])
+												cum_prob = temp[loc]
 												if i==0:
 													temp2.append(temp[loc])
 												else:
-													temp2.append(temp[loc]-temp[prev_loc])
+													temp2.append(temp[loc]-prev_cum_prob)
 												prev_loc=loc
+												prev_cum_prob=cum_prob
 											# temp1.append(power_values[-1])
 											# temp2.append(temp[-1]-np.sum(temp2))
 											power_values = np.unique(temp1)
@@ -3492,6 +3596,37 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											sorted_prob = []
 											for value in power_values:
 												sorted_prob.append(np.sum(likelihood_probs_times_volume_short[power_short==value]))
+											sorted_prob = np.array(sorted_prob)/np.sum(sorted_prob)
+										elif len(np.unique(power))>10000:
+											sorted_prob = (np.array([to_sort for _, to_sort in sorted(zip(power.flatten(), likelihood_probs_times_volume.flatten()))])).astype(np.float32)
+											sorted_prob = (sorted_prob/np.sum(sorted_prob)).astype(np.float32)
+											# print('1')
+											power_values = (np.sort(power.flatten())).astype(np.float32)
+											treshold = 1/10000
+											temp = (np.cumsum(sorted_prob)).astype(np.float32)
+											# print('2')
+											temp1=[]
+											temp2 = []
+											prev_loc=0
+											prev_cum_prob = temp[0]
+											for i in range(0,10000):
+												loc = np.abs(temp[prev_loc:]-(treshold*i+treshold/2)).argmin() + prev_loc
+												temp1.append(power_values[loc])
+												cum_prob = temp[loc]
+												if i==0:
+													temp2.append(temp[loc])
+												else:
+													temp2.append(temp[loc]-prev_cum_prob)
+												prev_loc=loc
+												prev_cum_prob=cum_prob
+											# temp1.append(power_values[-1])
+											# temp2.append(temp[-1]-np.sum(temp2))
+											power_values = np.unique(temp1)
+											temp1 = np.array(temp1)
+											temp2 = np.array(temp2)
+											sorted_prob = []
+											for value in power_values:
+												sorted_prob.append(np.sum(temp2[temp1==value]))
 											sorted_prob = np.array(sorted_prob)/np.sum(sorted_prob)
 										else:
 											power_values = np.unique(power)
@@ -3964,7 +4099,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index],np.polyval(fit_average,record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index]),'k--')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4002,7 +4137,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4041,7 +4176,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4079,7 +4214,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-')
 										ax[plot_index,1].set_ylabel('nH/ne index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4118,7 +4253,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH/ne')
@@ -4156,7 +4291,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH/ne index')
@@ -4165,13 +4300,13 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										save_done = 0
 										save_index=1
 										try:	# All this trie are because of a known issues when saving lots of figure inside of multiprocessor
-											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps', bbox_inches='tight')
+											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps', bbox_inches='tight')
 										except Exception as e:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps save try number '+str(1)+' failed. Reason %s' % e)
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps save try number '+str(1)+' failed. Reason %s' % e)
 											while save_done==0 and save_index<100:
 												try:
-													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps', bbox_inches='tight')
-													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps save try number '+str(save_index+1)+' successfull')
+													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps', bbox_inches='tight')
+													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps save try number '+str(save_index+1)+' successfull')
 													save_done=1
 												except Exception as e:
 													tm.sleep((np.random.random()*4)**2)
@@ -4217,7 +4352,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index],np.polyval(fit_average,record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index]),'k--')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4255,7 +4390,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4294,7 +4429,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4332,7 +4467,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-')
 										ax[plot_index,1].set_ylabel('nH/ne index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4371,7 +4506,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH/ne')
@@ -4409,7 +4544,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH/ne index')
@@ -4418,13 +4553,13 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										save_done = 0
 										save_index=1
 										try:	# All this trie are because of a known issues when saving lots of figure inside of multiprocessor
-											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps', bbox_inches='tight')
+											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps', bbox_inches='tight')
 										except Exception as e:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps save try number '+str(1)+' failed. Reason %s' % e)
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps save try number '+str(1)+' failed. Reason %s' % e)
 											while save_done==0 and save_index<100:
 												try:
-													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps', bbox_inches='tight')
-													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps save try number '+str(save_index+1)+' successfull')
+													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps', bbox_inches='tight')
+													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps save try number '+str(save_index+1)+' successfull')
 													save_done=1
 												except Exception as e:
 													tm.sleep((np.random.random()*4)**2)
@@ -4470,7 +4605,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index],np.polyval(fit_average,record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index]),'k--')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4508,7 +4643,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4547,7 +4682,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4585,7 +4720,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-')
 										ax[plot_index,1].set_ylabel('nH/ne index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4624,7 +4759,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH/ne')
@@ -4662,7 +4797,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH/ne index')
@@ -4671,13 +4806,13 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										save_done = 0
 										save_index=1
 										try:	# All this trie are because of a known issues when saving lots of figure inside of multiprocessor
-											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps', bbox_inches='tight')
+											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps', bbox_inches='tight')
 										except Exception as e:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps save try number '+str(1)+' failed. Reason %s' % e)
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps save try number '+str(1)+' failed. Reason %s' % e)
 											while save_done==0 and save_index<100:
 												try:
-													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps', bbox_inches='tight')
-													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps save try number '+str(save_index+1)+' successfull')
+													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps', bbox_inches='tight')
+													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps save try number '+str(save_index+1)+' successfull')
 													save_done=1
 												except Exception as e:
 													tm.sleep((np.random.random()*4)**2)
@@ -4723,7 +4858,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index],np.polyval(fit_average,record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index]),'k--')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4761,7 +4896,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4800,7 +4935,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4838,7 +4973,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-')
 										ax[plot_index,1].set_ylabel('nH/ne index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4877,7 +5012,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH/ne')
@@ -4915,7 +5050,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH/ne index')
@@ -4924,13 +5059,13 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										save_done = 0
 										save_index=1
 										try:	# All this trie are because of a known issues when saving lots of figure inside of multiprocessor
-											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps', bbox_inches='tight')
+											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps', bbox_inches='tight')
 										except Exception as e:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps save try number '+str(1)+' failed. Reason %s' % e)
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps save try number '+str(1)+' failed. Reason %s' % e)
 											while save_done==0 and save_index<100:
 												try:
-													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps', bbox_inches='tight')
-													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps save try number '+str(save_index+1)+' successfull')
+													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps', bbox_inches='tight')
+													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps save try number '+str(save_index+1)+' successfull')
 													save_done=1
 												except Exception as e:
 													tm.sleep((np.random.random()*4)**2)
@@ -4976,7 +5111,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index],np.polyval(fit_average,record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index]),'k--')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -5014,7 +5149,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -5053,7 +5188,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -5091,7 +5226,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-')
 										ax[plot_index,1].set_ylabel('nH/ne index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -5130,7 +5265,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH/ne')
@@ -5168,7 +5303,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps'+'fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH/ne index')
@@ -5177,13 +5312,13 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										save_done = 0
 										save_index=1
 										try:	# All this trie are because of a known issues when saving lots of figure inside of multiprocessor
-											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps', bbox_inches='tight')
+											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps', bbox_inches='tight')
 										except Exception as e:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps save try number '+str(1)+' failed. Reason %s' % e)
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps save try number '+str(1)+' failed. Reason %s' % e)
 											while save_done==0 and save_index<100:
 												try:
-													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps', bbox_inches='tight')
-													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps save try number '+str(save_index+1)+' successfull')
+													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps', bbox_inches='tight')
+													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps save try number '+str(save_index+1)+' successfull')
 													save_done=1
 												except Exception as e:
 													tm.sleep((np.random.random()*4)**2)
@@ -5262,6 +5397,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax6.plot(np.exp(marginalised_particles_penalty_Hm_only_nH2_ne_first),'--',color=color[4])
 											im = ax6.plot(np.exp(marginalised_particles_penalty_H2p_only_nH2_ne),color=color[5],label='H2+ particles_penalty')
 											im = ax6.plot(np.exp(marginalised_particles_penalty_H2p_only_nH2_ne_first),'--',color=color[5])
+											im = ax6.plot(np.exp(marginalised_particles_penalty_H2_only_nH2_ne),color=color[13],label='H2 particles_penalty')
+											im = ax6.plot(np.exp(marginalised_particles_penalty_H2_only_nH2_ne_first),'--',color=color[13])
+											im = ax6.plot(np.exp(marginalised_particles_penalty_H_only_nH2_ne),color=color[14],label='H particles_penalty')
+											im = ax6.plot(np.exp(marginalised_particles_penalty_H_only_nH2_ne_first),'--',color=color[14])
 										else:
 											im = ax6.plot(np.exp(marginalised_particles_penalty_Hm_only_nH2_ne),':',color=color[4],label='H- particles_penalty')
 											im = ax6.plot(np.exp(marginalised_particles_penalty_Hm_only_nH2_ne_first),'--',color=color[4])
@@ -5269,6 +5408,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax6.plot(np.exp(marginalised_particles_penalty_H2p_only_nH2_ne_first),'--',color=color[5])
 										im = ax6.plot(np.exp(marginalised_nH_ne_penalty_only_nH2_ne),color=color[6],label='nH_ne_penalty')
 										im = ax6.plot(np.exp(marginalised_nH_ne_penalty_only_nH2_ne_first),'--',color=color[6])
+										im = ax6.plot(np.exp(marginalised_nHp_ne_penalty_only_nH2_ne),color=color[15],label='nHp_ne_penalty')
+										im = ax6.plot(np.exp(marginalised_nHp_ne_penalty_only_nH2_ne_first),'--',color=color[15])
 										im = ax6.plot(np.exp(marginalised_power_penalty_only_nH2_ne),color=color[7],label='power_penalty')
 										im = ax6.plot(np.exp(marginalised_power_penalty_only_nH2_ne_first),'--',color=color[7])
 										im = ax6.plot(np.exp(marginalised_calculated_emission_log_probs_expanded_only_nH2_ne),color=color[8],label='emission')
@@ -5323,13 +5464,13 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										save_done = 0
 										save_index=1
 										try:	# All this trie are because of a known issues when saving lots of figure inside of multiprocessor
-											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_5.eps', bbox_inches='tight')
+											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_5.eps', bbox_inches='tight')
 										except Exception as e:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_5.eps save try number '+str(1)+' failed. Reason %s' % e)
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_5.eps save try number '+str(1)+' failed. Reason %s' % e)
 											while save_done==0 and save_index<100:
 												try:
-													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_5.eps', bbox_inches='tight')
-													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_5.eps save try number '+str(save_index+1)+' successfull')
+													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_5.eps', bbox_inches='tight')
+													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_5.eps save try number '+str(save_index+1)+' successfull')
 													save_done=1
 												except Exception as e:
 													tm.sleep((np.random.random()*4)**2)
@@ -5510,13 +5651,13 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										save_done = 0
 										save_index=1
 										try:	# All this trie are because of a known issues when saving lots of figure inside of multiprocessor
-											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_second.eps', bbox_inches='tight')
+											plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_second.eps', bbox_inches='tight')
 										except Exception as e:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_second.eps save try number '+str(1)+' failed. Reason %s' % e)
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_second.eps save try number '+str(1)+' failed. Reason %s' % e)
 											while save_done==0 and save_index<100:
 												try:
-													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_second.eps', bbox_inches='tight')
-													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_adaptable_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_second.eps save try number '+str(save_index+1)+' successfull')
+													plt.savefig(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_second.eps', bbox_inches='tight')
+													print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_second.eps save try number '+str(save_index+1)+' successfull')
 													save_done=1
 												except Exception as e:
 													tm.sleep((np.random.random()*4)**2)
@@ -6524,29 +6665,59 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										all_indexes.append([global_index,my_time_pos,my_r_pos,2,guess,ionization_length_H[my_time_pos, my_r_pos],ionization_length_H2[my_time_pos, my_r_pos],to_print])
 								global_index+=1
 
-						# if __name__ == '__main__':
-						try:
-							# with Pool(number_cpu_available,maxtasksperchild=1) as pool:
-								# pool = Pool(number_cpu_available)
-							all_results = []
-							for fraction in range(int(np.ceil(len(all_indexes)/(number_cpu_available*4)))):
-								with Pool(number_cpu_available,maxtasksperchild=1) as pool:
-									print('starting set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1)))
-									temp = pool.map(calc_stuff_2, all_indexes[fraction*(number_cpu_available*4):(fraction+1)*(number_cpu_available*4)])
-									pool.close()
-									pool.join()
-									pool.terminate()
-									del pool
-									all_results.extend(temp)
-									print('set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1))+' done')
-								#all_results = [*pool.map(calc_stuff, all_indexes)]
-						except Exception as e:
-							print('parent multiprocessor terminated with error '+str(e))
-							pool.close()
-						# pool.close()
-							pool.join()
-							pool.terminate()
-							del pool
+						if False:
+							try:
+								# with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+									# pool = Pool(number_cpu_available)
+								all_results = []
+								for fraction in range(int(np.ceil(len(all_indexes)/(number_cpu_available*4)))):
+									with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+										print('starting set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1)))
+										temp = pool.map(calc_stuff_2, all_indexes[fraction*(number_cpu_available*4):(fraction+1)*(number_cpu_available*4)])
+										pool.close()
+										pool.join()
+										pool.terminate()
+										del pool
+										all_results.extend(temp)
+										print('set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1))+' done')
+									#all_results = [*pool.map(calc_stuff, all_indexes)]
+							except Exception as e:
+								print('parent multiprocessor terminated with error '+str(e))
+								pool.close()
+							# pool.close()
+								pool.join()
+								pool.terminate()
+								del pool
+						elif True:	# new loop with timeout
+							try:
+								# with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+									# pool = Pool(number_cpu_available)
+								all_results = []
+								for fraction in range(int(np.ceil(len(all_indexes)/(number_cpu_available*4)))):
+									with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+										print('starting set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1)) + ', index ' + str(all_indexes[fraction*(number_cpu_available*4)][0]) + ' to ' + str(all_indexes[(fraction+1)*(number_cpu_available*4)-1][0]))
+										temp1 = []
+										for f in all_indexes[fraction*(number_cpu_available*4):(fraction+1)*(number_cpu_available*4)]:
+											abortable_func = partial(abortable_worker, calc_stuff_2)
+											temp1.append(pool.apply_async(abortable_func, args=f))
+										pool.close()
+										pool.join()
+										pool.terminate()
+										temp = []
+										for value in temp1:
+											temp.append(value.get())
+										del pool
+										all_results.extend(temp)
+										print('set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1))+' done')
+									#all_results = [*pool.map(calc_stuff, all_indexes)]
+							except Exception as e:
+								print('parent multiprocessor terminated with error '+str(e))
+								pool.close()
+							# pool.close()
+								pool.join()
+								pool.terminate()
+								del pool
+
 
 						for i in range(len(all_results)):
 							if (all_results[i].results)[17]==False:
@@ -6628,29 +6799,59 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										all_indexes.append([global_index,my_time_pos,my_r_pos,2,guess,ionization_length_H[my_time_pos, my_r_pos],ionization_length_H2[my_time_pos, my_r_pos],to_print])
 								global_index+=1
 
-						# if __name__ == '__main__':
-						try:
-							# with Pool(number_cpu_available,maxtasksperchild=1) as pool:
-								# pool = Pool(number_cpu_available)
-							all_results = []
-							for fraction in range(int(np.ceil(len(all_indexes)/(number_cpu_available*4)))):
-								with Pool(number_cpu_available,maxtasksperchild=1) as pool:
-									print('starting set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1)))
-									temp = pool.map(calc_stuff_2, all_indexes[fraction*(number_cpu_available*4):(fraction+1)*(number_cpu_available*4)])
-									pool.close()
-									pool.join()
-									pool.terminate()
-									del pool
-									all_results.extend(temp)
-									print('set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1))+' done')
-								#all_results = [*pool.map(calc_stuff, all_indexes)]
-						except Exception as e:
-							print('parent multiprocessor terminated with error '+str(e))
-							pool.close()
-						# pool.close()
-							pool.join()
-							pool.terminate()
-							del pool
+						if False:
+							try:
+								# with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+									# pool = Pool(number_cpu_available)
+								all_results = []
+								for fraction in range(int(np.ceil(len(all_indexes)/(number_cpu_available*4)))):
+									with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+										print('starting set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1)))
+										temp = pool.map(calc_stuff_2, all_indexes[fraction*(number_cpu_available*4):(fraction+1)*(number_cpu_available*4)])
+										pool.close()
+										pool.join()
+										pool.terminate()
+										del pool
+										all_results.extend(temp)
+										print('set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1))+' done')
+									#all_results = [*pool.map(calc_stuff, all_indexes)]
+							except Exception as e:
+								print('parent multiprocessor terminated with error '+str(e))
+								pool.close()
+							# pool.close()
+								pool.join()
+								pool.terminate()
+								del pool
+						elif True:	# new loop with timeout
+							try:
+								# with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+									# pool = Pool(number_cpu_available)
+								all_results = []
+								for fraction in range(int(np.ceil(len(all_indexes)/(number_cpu_available*4)))):
+									with Pool(number_cpu_available,maxtasksperchild=1) as pool:
+										print('starting set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1)) + ', index ' + str(all_indexes[fraction*(number_cpu_available*4)][0]) + ' to ' + str(all_indexes[(fraction+1)*(number_cpu_available*4)-1][0]))
+										temp1 = []
+										for f in all_indexes[fraction*(number_cpu_available*4):(fraction+1)*(number_cpu_available*4)]:
+											abortable_func = partial(abortable_worker, calc_stuff_2)
+											temp1.append(pool.apply_async(abortable_func, args=f))
+										pool.close()
+										pool.join()
+										pool.terminate()
+										temp = []
+										for value in temp1:
+											temp.append(value.get())
+										del pool
+										all_results.extend(temp)
+										print('set '+str(fraction)+' of '+str(int(np.ceil(len(all_indexes)/(number_cpu_available*4))-1))+' done')
+									#all_results = [*pool.map(calc_stuff, all_indexes)]
+							except Exception as e:
+								print('parent multiprocessor terminated with error '+str(e))
+								pool.close()
+							# pool.close()
+								pool.join()
+								pool.terminate()
+								del pool
+
 
 						for i in range(len(all_results)):
 							if (all_results[i].results)[17]==False:

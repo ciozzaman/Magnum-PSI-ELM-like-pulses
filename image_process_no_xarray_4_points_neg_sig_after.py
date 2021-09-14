@@ -225,7 +225,7 @@ elif (merge_ID_target <= 1000):
 		no_calculate_presets = 1
 
 
-geom_null = pd.DataFrame(columns = ['angle','tilt','binInterv','bin00a','bin00b'])
+geom_null = pd.DataFrame([['angle','tilt','binInterv','bin00a','bin00b']],columns = ['angle','tilt','binInterv','bin00a','bin00b'])
 geom_null.loc[0] = [0,0,0,0,0]
 
 
@@ -360,7 +360,7 @@ if no_calculate_presets==0:
 		print(tilt)
 
 
-	geom = pd.DataFrame(columns = ['angle','tilt','binInterv','bin00a','bin00b'])
+	geom = pd.DataFrame([['angle','tilt','binInterv','bin00a','bin00b']],columns = ['angle','tilt','binInterv','bin00a','bin00b'])
 	geom.loc[0] = [angle, tilt_4_points, tilt[0], tilt[2], tilt[2]]
 	geom_store = copy.deepcopy(geom)
 	print(geom)
