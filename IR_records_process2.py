@@ -85,68 +85,80 @@ def DOM52sec(value):
 	else:
 		return np.nan
 
-def specemi(Lambda,T,de):
-	e0 = 0.4205 *(Lambda**((1.88949 *Lambda**3+0.24191) /(Lambda**3+1.90197))) **-1;
-	e1 = 5.55537e-5+1.77717e-6*e0-8.43353e-4*e0**2+9.82596e-4*e0**3;
-	e = e0 + e1*T + de;
-	return e
+if False:
+	def specemi(Lambda,T,de):
+		e0 = 0.4205 *(Lambda**((1.88949 *Lambda**3+0.24191) /(Lambda**3+1.90197))) **-1;
+		e1 = 5.55537e-5+1.77717e-6*e0-8.43353e-4*e0**2+9.82596e-4*e0**3;
+		e = e0 + e1*T + de;
+		return e
 
-def dl2temp_generator(de,beta_sample,tau,t_exp,target_material,out_emissivity=False):
-	# generator of interpolator DL to K
+	def dl2temp_generator(de,beta_sample,tau,t_exp,target_material,out_emissivity=False):
+		# generator of interpolator DL to K
 
-	beta_cam = np.arccos(77/92)*360/(2*np.pi) + beta_sample;                     # camera view angle in Magnum-PSI
+		beta_cam = np.arccos(77/92)*360/(2*np.pi) + beta_sample;                     # camera view angle in Magnum-PSI
 
-	c = 299792458;                                                               # [m/s], speed of light in a vaccum
-	h = 6.62607015e-34;                                                       # [J*s], Planck constant
-	k = 1.380649e-23;                                                           # [J/K], Boltzmann constant
+		c = 299792458;                                                               # [m/s], speed of light in a vaccum
+		h = 6.62607015e-34;                                                       # [J*s], Planck constant
+		k = 1.380649e-23;                                                           # [J/K], Boltzmann constant
 
-	lambda_cam = np.arange(3.97,4.01,0.001)*1e-6;                            # [m], wavelength, camera spectral range for the 60% filter
+		lambda_cam = np.arange(3.97,4.01,0.001)*1e-6;                            # [m], wavelength, camera spectral range for the 60% filter
 
 
-	# https://www.plansee.com/en/materials/molybdenum.html
-	moly_emissivity_interp = interp1d([0,280,500,1000,1500,2000,2500],[0.08,0.1,0.125,0.181,0.243,0.294,0.33],fill_value="extrapolate")
-
-	T_ref = np.arange(300,30000,1);                                                     # [K]
-
-	e_cal = np.zeros_like(T_ref,dtype=np.float)
-	phi_bb = np.zeros_like(T_ref,dtype=np.float)
-	for ii in range(len(T_ref)):
-		if target_material=='tungsten dummy':
-			e_cal[ii] = np.mean(np.min([specemi(lambda_cam*1e6,T_ref[ii],de),np.ones_like(lambda_cam)],axis=0))
-		else:
+		if False:
+			# NON spectrally resolved emissivity
 			# https://www.plansee.com/en/materials/molybdenum.html
-			e_cal[ii] = moly_emissivity_interp(T_ref[ii]+273.15)+de
-		# spectral radiance, [W/Sr/m3] to average photon fluence including emissivity
-		phi_bb[ii] = e_cal[ii] * np.mean(2 * h * c**2 /(lambda_cam**5) *  ((np.exp(h * c / (lambda_cam * k * T_ref[ii])) - 1)**-1) /(h * c /lambda_cam) * lambda_cam ) * t_exp/1e6
+			moly_emissivity_interp = interp1d([0,280,500,1000,1500,2000,2500],[0.08,0.1,0.125,0.181,0.243,0.294,0.33],fill_value="extrapolate")	# [°C]
+		else:
+			# NON spectrally resolved emissivity
+			# from
+			# 1 J.M. Jones, P.E. Mason, and A. Williams, J. Energy Inst. 92, 523 (2019).
+			# 1 C. Cagran, G. Pottlacher, M. Rink, and W. Bauer, Int. J. Thermophys. 26, 1001 (2005).
+			# 1 E.M. Hollmann, N.A. Pablant, D.L. Rudakov, J.A. Boedo, N.H. Brooks, T.C. Jernigan, and A.Y.P. Pigarov, J. Nucl. Mater. 390–391, 597 (2009).
+			moly_emissivity_interp = lambda T_C: 0.0288 + 1e-5 * (T_C - 273.15)	# [°C]
 
-	# print(e_cal)
-	# to real photon flux
+		T_ref = np.arange(300,30000,1);                                                     # [K]
 
-	phi_real = phi_bb * tau
+		e_cal = np.zeros_like(T_ref,dtype=np.float)
+		phi_bb = np.zeros_like(T_ref,dtype=np.float)
+		for ii in range(len(T_ref)):
+			if target_material=='tungsten dummy':
+				e_cal[ii] = np.mean(np.min([specemi(lambda_cam*1e6,T_ref[ii],de),np.ones_like(lambda_cam)],axis=0))
+			else:
+				# https://www.plansee.com/en/materials/molybdenum.html
+				e_cal[ii] = moly_emissivity_interp(T_ref[ii]+273.15)+de
+			# spectral radiance, [W/Sr/m3] to average photon fluence including emissivity
+			phi_bb[ii] = e_cal[ii] * np.mean(2 * h * c**2 /(lambda_cam**5) *  ((np.exp(h * c / (lambda_cam * k * T_ref[ii])) - 1)**-1) /(h * c /lambda_cam) * lambda_cam ) * t_exp/1e6
 
-	# to convert photon fluence into digital level,
-	# coefficients come from the dl2fluence script, with raw data from Jordy
-	dl_real = phi_real * 6.9825e-16 -3.74;
-	# to substract the bb @ T==300 K
-	dl_real = dl_real - dl_real[0];
+		# print(e_cal)
+		# to real photon flux
 
-	# the Table
+		phi_real = phi_bb * tau
 
-	dl_cal = np.arange(0,20000,1)
-	temp = interpolate.interp1d(dl_real,T_ref,kind='slinear')
-	temp_cal = temp(dl_cal)
-	dl2temp = interpolate.interp1d(dl_cal,temp_cal,kind='slinear')
+		# to convert photon fluence into digital level,
+		# coefficients come from the dl2fluence script, with raw data from Jordy
+		dl_real = phi_real * 6.9825e-16 -3.74;
+		# to substract the bb @ T==300 K
+		dl_real = dl_real - dl_real[0];
 
-	if out_emissivity:
-		return dl2temp,T_ref,e_cal
-	else:
-		return dl2temp	# interpolator DL to K
+		# the Table
+
+		dl_cal = np.arange(0,20000,1)
+		temp = interpolate.interp1d(dl_real,T_ref,kind='slinear')
+		temp_cal = temp(dl_cal)
+		dl2temp = interpolate.interp1d(dl_cal,temp_cal,kind='slinear')
+
+		if out_emissivity:
+			return dl2temp,T_ref,e_cal
+		else:
+			return dl2temp	# interpolator DL to K
+else:
+	exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/IR_records_process_preamble.py").read())
 
 
-all_j = [231,232,233,234,244,245,275,393,394,305,306,416]
-time_shift = [1562076516.351,1562076678.708+4,1562077276.157,1562077372.03,1562080690.253,1562080859.278,1562157127.002,1562165683.122,1562165819.007,1562169014.003,1562169074.379,1562251726.311]
-de = [0.07,0.07,0.2,0.2,0.4,0.4,0.05,0.05,0.05,-0.05,-0.05,0.05]                                                                           # emissivity offset, -0.03 for polished tungsten
-fig, ax = plt.subplots(len(de),1,figsize=(15, 15*len(de)))
+all_j = [231,232,233,234,411,244,245,275,393,394,305,306,416]
+time_shift = [1562076516.351,1562076678.708+4,1562077276.157,1562077372.031,(1562077372.031+1562080690.253)/2,1562080690.253,1562080859.278,1562157127.002,1562165683.122,1562165819.007,1562169014.003,1562169074.379,1562251726.311]
+de = [0.035,0.035,0.035,0.035,0.035,  0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15]                                                                           # emissivity offset, -0.03 for polished tungsten
+fig, ax = plt.subplots(len(de),1,figsize=(15, 9*len(de)))
 for i_j,j in enumerate(all_j):
 
 	print('analysing item n '+str(j))
@@ -179,7 +191,14 @@ for i_j,j in enumerate(all_j):
 		path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/'+folder+'/'+"{0:0=2g}".format(sequence)+'/IR_camera'
 	figure_index = 0
 
-	header = ryptw.readPTWHeader('/home/ffederic/work/Collaboratory/test/experimental_data/'+folder+'/'+"{0:0=2g}".format(sequence)+'/IR_camera/'+IR_reference+'.ptw')
+	if IR_reference[:3]=='Cap':
+		header = ryptw.readPTWHeader('/home/ffederic/work/Collaboratory/test/experimental_data/'+folder+'/'+"{0:0=2g}".format(sequence)+'/IR_camera/'+IR_reference+'.ptw')
+	else:
+		(folder_reference,date_reference,sequence_reference,untitled_reference) = df_log.loc[int(IR_reference),['folder','date','sequence','untitled']]
+		(IR_trace_reference) = df_log.loc[int(IR_reference),['IR_trace']][0]
+		header = ryptw.readPTWHeader('/home/ffederic/work/Collaboratory/test/experimental_data/'+folder_reference+'/'+"{0:0=2g}".format(sequence_reference)+'/IR_camera/'+IR_trace_reference+'.ptw')
+		print('reference is item '+str(IR_trace_reference))
+
 	# ryptw.showHeader(header)
 
 	f = 1/header.h_CEDIPAquisitionPeriod                                                                        # [Hz], frame rate
@@ -240,21 +259,26 @@ for i_j,j in enumerate(all_j):
 	# Background subtraction
 	dl_bkg = dark                                                                # if the real background is recorded; a manual one can be added
 	dl_sub = dl_tot - dl_bkg
-	dl_sub = median_filter(dl_sub,size=[2,7,7])									# NOT part of original Yu Li script
+	# dl_sub = median_filter(dl_sub,size=[2,7,7])									# NOT part of original Yu Li script
 	dl_sub[dl_sub<0]=0															# NOT part of original Yu Li script
 	# dl_sub_center = reshape(dl_sub(Nrow-AOI_center(2),AOI_center(1),:),[],1);                     # DL at a the center
 	# dl_sub_edge = reshape(dl_sub(Nrow-AOI_edge(2),AOI_edge(1),:),[],1);
 	dl_sub_center = dl_sub[:,AOI_center[1],AOI_center[0]]                     # DL at a the center
 	# dl_sub_edge = dl_sub[:,AOI_edge[1],AOI_edge[0]]
 
-	temp_sub_center = dl2temp(dl_sub_center)#+1);                                                                   # central temp.
+	temp_sub_center = np.exp(dl2temp(dl_sub_center))+273#+1);                                                                   # central temp.
 	# temp field
-	temp_sub_full = dl2temp(dl_sub)#+1)
+	temp_sub_full = np.exp(dl2temp(dl_sub))+273#+1)
 
 	selected_x = np.zeros_like(dl_tot[0])+np.arange(np.shape(dl_tot)[-1])
 	selected_y = (np.zeros_like(dl_tot[0]).T+np.arange(np.shape(dl_tot)[-2])).T
 	selected_1 = ((selected_x-IR_shape[1])**2 + (selected_y-IR_shape[0])**2)<IR_shape[2]**2
 	selected_2 = ((selected_x-IR_shape[1])**2 + (selected_y-IR_shape[0])**2)<IR_shape[3]**2
+
+	selected_3 = ((selected_x-min(selected_x.max(),max(IR_shape[1]-20,selected_x.min())))**2 + (selected_y-min(selected_y.max(),max(IR_shape[0]-20,selected_y.min())))**2)<IR_shape[2]**2
+	selected_4 = ((selected_x-min(selected_x.max(),max(IR_shape[1]+20,selected_x.min())))**2 + (selected_y-min(selected_y.max(),max(IR_shape[0]-20,selected_y.min())))**2)<IR_shape[2]**2
+	selected_5 = ((selected_x-min(selected_x.max(),max(IR_shape[1]-20,selected_x.min())))**2 + (selected_y-min(selected_y.max(),max(IR_shape[0]+20,selected_y.min())))**2)<IR_shape[2]**2
+	selected_6 = ((selected_x-min(selected_x.max(),max(IR_shape[1]+20,selected_x.min())))**2 + (selected_y-min(selected_y.max(),max(IR_shape[0]+20,selected_y.min())))**2)<IR_shape[2]**2
 
 	# selected_1_mean_counts = np.mean(dl_tot[:,selected_1],axis=-1)
 	# selected_1_max_counts = np.max(dl_tot[:,selected_1],axis=-1)
@@ -270,6 +294,12 @@ for i_j,j in enumerate(all_j):
 	selected_1_max_temp = np.max(temp_sub_full[:,selected_1],axis=-1)
 	selected_2_mean_temp = np.mean(temp_sub_full[:,selected_2],axis=-1)
 	selected_2_max_temp = np.max(temp_sub_full[:,selected_2],axis=-1)
+
+	selected_3_mean_temp = np.mean(temp_sub_full[:,selected_3],axis=-1)
+	selected_4_mean_temp = np.mean(temp_sub_full[:,selected_4],axis=-1)
+	selected_5_mean_temp = np.mean(temp_sub_full[:,selected_5],axis=-1)
+	selected_6_mean_temp = np.mean(temp_sub_full[:,selected_6],axis=-1)
+
 
 	dl_max = np.max(dl_ave)
 	idx_max_frame = dl_ave.argmax();
@@ -287,6 +317,12 @@ for i_j,j in enumerate(all_j):
 	ax[i_j].plot(time_IR,selected_2_mean_temp,'C3',label='selected_2_mean_temp')
 	ax[i_j].plot(time_IR,selected_2_max_temp,'--C4',label='selected_2_max_temp')
 	ax[i_j].set_xlim(left=np.min(time_IR)-20,right=np.max(time_IR)+20)
+
+	ax[i_j].plot(time_IR,selected_3_mean_temp,'C5',label='selected_3_mean_temp')
+	ax[i_j].plot(time_IR,selected_4_mean_temp,'C6',label='selected_4_mean_temp')
+	ax[i_j].plot(time_IR,selected_5_mean_temp,'C7',label='selected_5_mean_temp')
+	ax[i_j].plot(time_IR,selected_6_mean_temp,'C8',label='selected_6_mean_temp')
+	ax[i_j].set_ylim(top = selected_2_max_temp.max()+100)
 	# 	# plt.plot([time_IR.min(),time_IR.max()],[T_pyro]*2,'C5',label='T_pyro')
 	# else:
 	# 	ax[i_j].plot(time_IR,temp_sub_center,'C0')
@@ -326,8 +362,11 @@ for i_j,j in enumerate(all_j):
 		# date_time_stamp2time = [dt.datetime.fromtimestamp(int(_)) for _ in date_time_stamp2sec//1 ]
 		# if i_date_label==0:
 		ax[i_j].errorbar(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,yerr=multi_1[multi_1.keys()[i_index*3+2+3]][:len(date_time_stamp2time)],label=index[i_index*3+2])
+		ax[i_j].plot(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,'o',label=index[i_index*3+2])
 		# else:
 		# 	ax[i_j].errorbar(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,yerr=multi_1[multi_1.keys()[i_index*3+2+3]][:len(date_time_stamp2time)])
+	ax[i_j].axhline(y=3422+273,label='tungsten melting')
+	ax[i_j].axhline(y=2623+273,label='molybdenum melting')
 	ax[i_j].legend(loc='best', fontsize='xx-small')
 	ax[i_j].grid()
 	ax[i_j].set_title(pre_title+str([folder,sequence,untitled,' ',j])+' material '+str(target_material)+' de=%.3g, window transmissivity %.3g' %(de[i_j],tau))
@@ -344,7 +383,7 @@ fig.suptitle('window transmissivity %.3g' %(tau))
 # plt.pause(0.1)
 # plt.show()
 path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data'
-plt.savefig(path_where_to_save_everything +'/pyrometer_IRcamera_comparison.eps', bbox_inches='tight')
+plt.savefig(path_where_to_save_everything +'/pyrometer_IRcamera_comparison_7.eps', bbox_inches='tight')
 plt.close()
 
 

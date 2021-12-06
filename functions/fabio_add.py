@@ -2355,6 +2355,8 @@ def load_TS(merge_ID_target,new_timesteps,r,spatial_factor=1,time_shift_factor=0
 			merge_dTe_multipulse[-end:] = 2*merge_Te_prof_multipulse_SS
 			merge_ne_prof_multipulse[-end:] = merge_ne_prof_multipulse_SS
 			merge_dne_multipulse[-end:] = merge_ne_prof_multipulse_SS
+	else:
+		pass
 
 	return merge_Te_prof_multipulse,merge_dTe_multipulse,merge_ne_prof_multipulse,merge_dne_multipulse,centre,profile_centres,profile_sigma,profile_centres_score,TS_r,dt,TS_dt,dx,TS_dr,TS_r_new,merge_time,number_of_radial_divisions,merge_time_original
 
@@ -2392,9 +2394,9 @@ def find_TS_centre(merge_ne_prof_multipulse,merge_dne_multipulse,TS_r,TS_size,mi
 
 def average_TS_around_axis(merge_Te_prof_multipulse,merge_dTe_multipulse,merge_ne_prof_multipulse,merge_dne_multipulse,r,TS_r,TS_dt,TS_r_new,merge_time,new_timesteps,number_of_radial_divisions,start_time=0,end_time=None):
 	# This is the mean of Te and ne weighted in their own uncertainties.
-	dx = np.nanmedian(np.diff(r))
-	dt = np.nanmedian(np.diff(new_timesteps))
-	TS_dr = np.median(np.diff(TS_r)) / 1000
+	dx = np.nanmedian(np.diff(r))	# m
+	dt = np.nanmedian(np.diff(new_timesteps))	# ms
+	TS_dr = np.median(np.diff(TS_r)) / 1000	# m
 	temp1 = np.zeros((len(new_timesteps),number_of_radial_divisions))
 	temp2 = np.zeros((len(new_timesteps),number_of_radial_divisions))
 	temp3 = np.zeros((len(new_timesteps),number_of_radial_divisions))
@@ -2407,18 +2409,18 @@ def average_TS_around_axis(merge_Te_prof_multipulse,merge_dTe_multipulse,merge_n
 		if np.sum(np.abs(merge_time - value_t) < interp_range_t) == 0:
 			continue
 		for i_r, value_r in enumerate(np.abs(r)):
-			if np.sum(np.abs(np.abs(TS_r_new) - value_r) < interp_range_r) == 0:
-				continue
-			elif np.sum(np.logical_and(np.abs(merge_time - value_t) < interp_range_t,np.sum(merge_Te_prof_multipulse, axis=1) > 0)) == 0:
+			selected_values_r = np.abs(np.abs(TS_r_new) - value_r) < interp_range_r
+			if np.sum(selected_values_r) == 0:
 				continue
 			selected_values_t = np.logical_and(np.abs(merge_time - value_t) < interp_range_t,np.sum(merge_Te_prof_multipulse, axis=1) > 0)
-			selected_values_r = np.abs(np.abs(TS_r_new) - value_r) < interp_range_r
+			if np.sum(selected_values_t) == 0:
+				continue
 			selected_values = (np.array([selected_values_t])).T * selected_values_r
 			selected_values[merge_Te_prof_multipulse == 0] = False
 			# weights = 1/(weights_r[selected_values]-value_r)**2 + 1/(weights_t[selected_values]-value_t)**2
-			weights = 1/((weights_t[selected_values]-value_t)/interp_range_t)**2 + 1/((weights_r[selected_values]-value_r)/interp_range_r)**2
 			if np.sum(selected_values) == 0:
 				continue
+			weights = 1/((np.abs(weights_t[selected_values]-value_t)+TS_dt/1e-3)/interp_range_t)**2 + 1/((np.abs(weights_r[selected_values]-value_r)+TS_dr/1e-3)/interp_range_r)**2
 			# temp1[i_t,i_r] = np.mean(merge_Te_prof_multipulse[selected_values_t][:,selected_values_r])
 			# temp2[i_t, i_r] = np.max(merge_dTe_multipulse[selected_values_t][:,selected_values_r]) / (np.sum(np.isfinite(merge_dTe_multipulse[selected_values_t][:,selected_values_r])) ** 0.5)
 			temp1[i_t, i_r] = np.sum(merge_Te_prof_multipulse[selected_values]*weights / merge_dTe_multipulse[selected_values]) / np.sum(weights / merge_dTe_multipulse[selected_values])
@@ -2433,8 +2435,10 @@ def average_TS_around_axis(merge_Te_prof_multipulse,merge_dTe_multipulse,merge_n
 			else:
 				# temp2_temp = 1/(np.sum(1 / merge_dTe_multipulse[selected_values]))*(np.sum( ((temp1[i_t, i_r]-merge_Te_prof_multipulse[selected_values])/merge_dTe_multipulse[selected_values])**2 )**0.5)
 				# temp4_temp = 1/(np.sum(1 / merge_dne_multipulse[selected_values]))*(np.sum( ((temp3[i_t, i_r]-merge_ne_prof_multipulse[selected_values])/merge_dne_multipulse[selected_values])**2 )**0.5)
-				temp2[i_t, i_r] = max(np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dTe_multipulse[selected_values]),(np.max(merge_Te_prof_multipulse[selected_values])-np.min(merge_Te_prof_multipulse[selected_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
-				temp4[i_t, i_r] = max(np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dne_multipulse[selected_values]),(np.max(merge_ne_prof_multipulse[selected_values])-np.min(merge_ne_prof_multipulse[selected_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
+				# temp2[i_t, i_r] = max(np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dTe_multipulse[selected_values]),(np.max(merge_Te_prof_multipulse[selected_values])-np.min(merge_Te_prof_multipulse[selected_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
+				# temp4[i_t, i_r] = max(np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dne_multipulse[selected_values]),(np.max(merge_ne_prof_multipulse[selected_values])-np.min(merge_ne_prof_multipulse[selected_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
+				temp2[i_t, i_r] = np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dTe_multipulse[selected_values])*10	# this is what theory says it should be done. I arbitrarily multiply by 10 to account for reducing the peak a bit, finding the centre of the plasma and other unknowns
+				temp4[i_t, i_r] = np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dne_multipulse[selected_values])*10	# this is what theory says it should be done. I arbitrarily multiply by 10 to account for reducing the peak a bit, finding the centre of the plasma and other unknowns
 
 	merge_Te_prof_multipulse_interp = np.array(temp1)
 	merge_dTe_prof_multipulse_interp = np.array(temp2)

@@ -336,117 +336,8 @@ if initial_conditions:
 		# Ideal gas law
 		max_nH2_from_pressure_at_the_target = target_chamber_pressure_at_the_target/(boltzmann_constant_J*300)	# [#/m^3] I suppose ambient temp is ~ 300K
 
-		path_where_to_save_everything_target = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target_at_the_target)
-		merge_Te_prof_multipulse_target = np.load(path_where_to_save_everything_target + '/TS_data_merge_' + str(merge_ID_target_at_the_target) + '.npz')['merge_Te_prof_multipulse']
-		merge_dTe_multipulse_target = np.load(path_where_to_save_everything_target + '/TS_data_merge_' + str(merge_ID_target_at_the_target) + '.npz')['merge_dTe_multipulse']
-		merge_ne_prof_multipulse_target = np.load(path_where_to_save_everything_target + '/TS_data_merge_' + str(merge_ID_target_at_the_target) + '.npz')['merge_ne_prof_multipulse']
-		merge_dne_multipulse_target = np.load(path_where_to_save_everything_target + '/TS_data_merge_' + str(merge_ID_target_at_the_target) + '.npz')['merge_dne_multipulse']
-		merge_time_original_target = np.load(path_where_to_save_everything_target + '/TS_data_merge_' + str(merge_ID_target_at_the_target) + '.npz')['merge_time']
-		merge_time_target = time_shift_factor + merge_time_original_target
-
-		TS_size = [-4.149230769230769056e+01, 4.416923076923076508e+01]
-		TS_r = TS_size[0] + np.linspace(0, 1, 65) * (TS_size[1] - TS_size[0])
-		TS_dr = np.median(np.diff(TS_r)) / 1000
-		gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
-		profile_target_centres = []
-		profile_target_sigma = []
-		profile_target_centres_score = []
-		for index in range(np.shape(merge_ne_prof_multipulse_target)[0]):
-			yy = merge_ne_prof_multipulse_target[index]
-			yy_sigma = merge_dne_multipulse_target[index]
-			yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
-			if np.sum(yy>0)<5:
-				# profile_target_centres.append(0)
-				# profile_target_sigma.append(10)
-				# profile_target_centres_score.append(np.max(TS_r))
-				continue
-			yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
-			p0 = [np.max(yy), 10, 0]
-			bds = [[0, 0, np.min(TS_r)], [np.inf, TS_size[1], np.max(TS_r)]]
-			fit = curve_fit(gauss, TS_r, yy, p0, sigma=yy_sigma, maxfev=100000, bounds=bds)
-			profile_target_centres.append(fit[0][-1])
-			profile_target_sigma.append(fit[0][-2])
-			profile_target_centres_score.append(fit[1][-1, -1])
-		# plt.figure();plt.plot(TS_r,merge_Te_prof_multipulse[index]);plt.plot(TS_r,gauss(TS_r,*fit[0]));plt.pause(0.01)
-		profile_target_centres = np.array(profile_target_centres)
-		profile_target_sigma = np.array(profile_target_sigma)
-		profile_target_centres_score = np.array(profile_target_centres_score)
-		# centre = np.nanmean(profile_target_centres[profile_target_centres_score < 1])
-		centre_target = np.nansum(profile_target_centres/(profile_target_centres_score**1))/np.sum(1/profile_target_centres_score**1)
-		TS_r_new_target = (TS_r - centre_target) / 1000
-		print('TS profile centre at %.3gmm compared to the theoretical centre or the target TS' %centre_target)
-		# temp_r, temp_t = np.meshgrid(TS_r_new, merge_time)
-		# plt.figure();plt.pcolor(temp_t,temp_r,merge_Te_prof_multipulse,vmin=0);plt.colorbar().set_label('Te [eV]');plt.pause(0.01)
-		# plt.figure();plt.pcolor(temp_t,temp_r,merge_ne_prof_multipulse,vmin=0);plt.colorbar().set_label('ne [10^20 #/m^3]');plt.pause(0.01)
-
-		# This is the mean of Te and ne weighted in their own uncertainties.
-		temp1 = np.zeros_like(inverted_profiles[:, 0])
-		temp2 = np.zeros_like(inverted_profiles[:, 0])
-		temp3 = np.zeros_like(inverted_profiles[:, 0])
-		temp4 = np.zeros_like(inverted_profiles[:, 0])
-		interp_range_t = max(dt, TS_dt) * 1.5
-		interp_range_r = max(dx, TS_dr) * 1.5
-		weights_r = (np.zeros_like(merge_Te_prof_multipulse_target) + TS_r_new_target)
-		weights_t = (((np.zeros_like(merge_Te_prof_multipulse_target)).T + merge_time_target).T)
-		for i_t, value_t in enumerate(new_timesteps):
-			if np.sum(np.abs(merge_time_target - value_t) < interp_range_t) == 0:
-				continue
-			for i_r, value_r in enumerate(np.abs(r)):
-				if np.sum(np.abs(np.abs(TS_r_new_target) - value_r) < interp_range_r) == 0:
-					continue
-				elif np.sum(np.logical_and(np.abs(merge_time_target - value_t) < interp_range_t,np.sum(merge_Te_prof_multipulse_target, axis=1) > 0)) == 0:
-					continue
-				selected_values_t = np.logical_and(np.abs(merge_time_target - value_t) < interp_range_t,np.sum(merge_Te_prof_multipulse_target, axis=1) > 0)
-				selected_values_r = np.abs(np.abs(TS_r_new_target) - value_r) < interp_range_r
-				selecte_values = (np.array([selected_values_t])).T * selected_values_r
-				selecte_values[merge_Te_prof_multipulse_target == 0] = False
-				# weights = 1/(weights_r[selecte_values]-value_r)**2 + 1/(weights_t[selecte_values]-value_t)**2
-				weights = 1/((weights_t[selecte_values]-value_t)/interp_range_t)**2 + 1/((weights_r[selecte_values]-value_r)/interp_range_r)**2
-				if np.sum(selecte_values) == 0:
-					continue
-				# temp1[i_t,i_r] = np.mean(merge_Te_prof_multipulse[selected_values_t][:,selected_values_r])
-				# temp2[i_t, i_r] = np.max(merge_dTe_multipulse[selected_values_t][:,selected_values_r]) / (np.sum(np.isfinite(merge_dTe_multipulse[selected_values_t][:,selected_values_r])) ** 0.5)
-				temp1[i_t, i_r] = np.sum(merge_Te_prof_multipulse_target[selecte_values]*weights / merge_dTe_multipulse_target[selecte_values]) / np.sum(weights / merge_dTe_multipulse_target[selecte_values])
-				# temp3[i_t,i_r] = np.mean(merge_ne_prof_multipulse[selected_values_t][:,selected_values_r])
-				# temp4[i_t, i_r] = np.max(merge_dne_multipulse[selected_values_t][:,selected_values_r]) / (np.sum(np.isfinite(merge_dne_multipulse[selected_values_t][:,selected_values_r])) ** 0.5)
-				temp3[i_t, i_r] = np.sum(merge_ne_prof_multipulse_target[selecte_values]*weights / merge_dne_multipulse_target[selecte_values]) / np.sum(weights / merge_dne_multipulse_target[selecte_values])
-				if False: 	# suggestion from Daljeet: use the "worst case scenario" in therms of uncertainty
-					# temp2[i_t, i_r] = (np.sum(selecte_values) / (np.sum(1 / merge_dTe_multipulse[selecte_values]) ** 2)) ** 0.5
-					# temp4[i_t, i_r] = (np.sum(selecte_values) / (np.sum(1 / merge_dne_multipulse[selecte_values]) ** 2)) ** 0.5
-					temp2[i_t, i_r] = 1/(np.sum(1 / merge_dTe_multipulse_target[selecte_values]))*(np.sum( ((temp1[i_t, i_r]-merge_Te_prof_multipulse_target[selecte_values])/merge_dTe_multipulse_target[selecte_values])**2 )**0.5)
-					temp4[i_t, i_r] = 1/(np.sum(1 / merge_dne_multipulse_target[selecte_values]))*(np.sum( ((temp3[i_t, i_r]-merge_ne_prof_multipulse_target[selecte_values])/merge_dne_multipulse_target[selecte_values])**2 )**0.5)
-				else:
-					# temp2_temp = 1/(np.sum(1 / merge_dTe_multipulse[selecte_values]))*(np.sum( ((temp1[i_t, i_r]-merge_Te_prof_multipulse[selecte_values])/merge_dTe_multipulse[selecte_values])**2 )**0.5)
-					# temp4_temp = 1/(np.sum(1 / merge_dne_multipulse[selecte_values]))*(np.sum( ((temp3[i_t, i_r]-merge_ne_prof_multipulse[selecte_values])/merge_dne_multipulse[selecte_values])**2 )**0.5)
-					temp2[i_t, i_r] = max(np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dTe_multipulse_target[selecte_values]),(np.max(merge_Te_prof_multipulse_target[selecte_values])-np.min(merge_Te_prof_multipulse_target[selecte_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
-					temp4[i_t, i_r] = max(np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dne_multipulse_target[selecte_values]),(np.max(merge_ne_prof_multipulse_target[selecte_values])-np.min(merge_ne_prof_multipulse_target[selecte_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
-
-		merge_Te_prof_multipulse_interp_target = np.array(temp1)
-		merge_dTe_prof_multipulse_interp_target = np.array(temp2)
-		merge_ne_prof_multipulse_interp_target = np.array(temp3)
-		merge_dne_prof_multipulse_interp_target = np.array(temp4)
-		temp_r, temp_t = np.meshgrid(r, new_timesteps)
-
-		# I crop to the usefull stuff
-		start_time = np.abs(new_timesteps - 0).argmin()
-		end_time = np.abs(new_timesteps - 1.5).argmin() + 1
-		time_crop = new_timesteps[start_time:end_time]
-		start_r = np.abs(r - 0).argmin()
-		end_r = np.abs(r - 5).argmin() + 1
-		r_crop = r[start_r:end_r]
-		temp_r, temp_t = np.meshgrid([*r_crop-dx/2,r_crop.max()+dx/2], [*time_crop-dt/2,time_crop.max()+dt/2])
-		merge_Te_prof_multipulse_interp_target_crop = merge_Te_prof_multipulse_interp_target[start_time:end_time,start_r:end_r]
-		merge_Te_prof_multipulse_interp_target_crop[merge_Te_prof_multipulse_interp_target_crop<0]=0
-		merge_dTe_prof_multipulse_interp_target_crop = merge_dTe_prof_multipulse_interp_target[start_time:end_time, start_r:end_r]
-		merge_ne_prof_multipulse_interp_target_crop = merge_ne_prof_multipulse_interp_target[start_time:end_time,start_r:end_r]
-		merge_ne_prof_multipulse_interp_target_crop[merge_ne_prof_multipulse_interp_target_crop<0]=0
-		merge_dne_prof_multipulse_interp_target_crop = merge_dne_prof_multipulse_interp_target[start_time:end_time, start_r:end_r]
-		inverted_profiles_crop = inverted_profiles[start_time:end_time, :, start_r:end_r]
-		inverted_profiles_crop[np.isnan(inverted_profiles_crop)] = 0
-		inverted_profiles_sigma_crop = inverted_profiles_sigma[start_time:end_time, :, start_r:end_r]
-		inverted_profiles_sigma_crop[np.isnan(inverted_profiles_sigma_crop)] = 0
-		all_fits_crop = all_fits[start_time:end_time]
-		# inverted_profiles_crop[inverted_profiles_crop<0] = 0
+		merge_Te_prof_multipulse_target,merge_dTe_multipulse_target,merge_ne_prof_multipulse_target,merge_dne_multipulse_target,centre_target,profile_target_centres,profile_target_sigma,profile_target_centres_score,TS_r_target,trash,TS_dt_target,trash,TS_dr_target,TS_r_new_target,merge_time_target,trash,merge_time_original_target = load_TS(merge_ID_target_at_the_target,new_timesteps,r,spatial_factor=spatial_factor,time_shift_factor=time_shift_factor)
+		merge_Te_prof_multipulse_interp_target_crop,merge_dTe_prof_multipulse_interp_target_crop,merge_ne_prof_multipulse_interp_target_crop,merge_dne_prof_multipulse_interp_target_crop,interp_range_r_target = average_TS_around_axis(merge_Te_prof_multipulse_target,merge_dTe_multipulse_target,merge_ne_prof_multipulse_target,merge_dne_multipulse_target,r,TS_r_target,TS_dt_target,TS_r_new_target,merge_time_target,new_timesteps,number_of_radial_divisions,start_time=start_time,end_time=end_time)
 
 		gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
 		averaged_profile_sigma_target = []
@@ -460,7 +351,7 @@ if initial_conditions:
 			yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
 			yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
 			p0 = [np.max(yy), np.max(r_crop)/2, 0]
-			bds = [[0, 0, -interp_range_r/1000], [np.inf, np.max(r_crop), interp_range_r/1000]]
+			bds = [[0, 0, -interp_range_r_target/1000], [np.inf, np.max(r_crop), interp_range_r_target/1000]]
 			fit = curve_fit(gauss, r_crop, yy, p0, maxfev=100000, bounds=bds, sigma=yy_sigma)
 			averaged_profile_sigma_target.append(fit[0][-2])
 		# plt.figure();plt.plot(TS_r,merge_Te_prof_multipulse[index]);plt.plot(TS_r,gauss(TS_r,*fit[0]));plt.pause(0.01)
@@ -625,211 +516,8 @@ if initial_conditions:
 		# Ideal gas law
 		max_nH2_from_pressure_at_the_upstream = target_chamber_pressure_case_upstream/(boltzmann_constant_J*300)	# [#/m^3] I suppose ambient temp is ~ 300K
 
-		path_where_to_save_everything_upstream = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target_at_the_upstream)
-		merge_Te_prof_multipulse_upstream = np.load(path_where_to_save_everything_upstream + '/TS_data_merge_' + str(merge_ID_target_at_the_upstream) + '.npz')['merge_Te_prof_multipulse']
-		merge_dTe_multipulse_upstream = np.load(path_where_to_save_everything_upstream + '/TS_data_merge_' + str(merge_ID_target_at_the_upstream) + '.npz')['merge_dTe_multipulse']
-		merge_ne_prof_multipulse_upstream = np.load(path_where_to_save_everything_upstream + '/TS_data_merge_' + str(merge_ID_target_at_the_upstream) + '.npz')['merge_ne_prof_multipulse']
-		merge_dne_multipulse_upstream = np.load(path_where_to_save_everything_upstream + '/TS_data_merge_' + str(merge_ID_target_at_the_upstream) + '.npz')['merge_dne_multipulse']
-		merge_time_original_upstream = np.load(path_where_to_save_everything_upstream + '/TS_data_merge_' + str(merge_ID_target_at_the_upstream) + '.npz')['merge_time']
-		merge_time_upstream = time_shift_factor + merge_time_original_upstream
-
-		TS_size = [-4.149230769230769056e+01, 4.416923076923076508e+01]
-		TS_r = TS_size[0] + np.linspace(0, 1, 65) * (TS_size[1] - TS_size[0])
-		TS_dr = np.median(np.diff(TS_r)) / 1000
-		gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
-		profile_upstream_centres = []
-		profile_upstream_sigma = []
-		profile_upstream_centres_score = []
-		for index in range(np.shape(merge_ne_prof_multipulse_upstream)[0]):
-			yy = merge_ne_prof_multipulse_upstream[index]
-			yy_sigma = merge_dne_multipulse_upstream[index]
-			yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
-			if np.sum(yy>0)<5:
-				# profile_upstream_centres.append(0)
-				# profile_upstream_sigma.append(10)
-				# profile_upstream_centres_score.append(np.max(TS_r))
-				continue
-			yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
-			p0 = [np.max(yy), 10, 0]
-			bds = [[0, 0, np.min(TS_r)], [np.inf, TS_size[1], np.max(TS_r)]]
-			fit = curve_fit(gauss, TS_r, yy, p0, sigma=yy_sigma, maxfev=100000, bounds=bds)
-			profile_upstream_centres.append(fit[0][-1])
-			profile_upstream_sigma.append(fit[0][-2])
-			profile_upstream_centres_score.append(fit[1][-1, -1])
-		# plt.figure();plt.plot(TS_r,merge_Te_prof_multipulse[index]);plt.plot(TS_r,gauss(TS_r,*fit[0]));plt.pause(0.01)
-		profile_upstream_centres = np.array(profile_upstream_centres)
-		profile_upstream_sigma = np.array(profile_upstream_sigma)
-		profile_upstream_centres_score = np.array(profile_upstream_centres_score)
-		# centre = np.nanmean(profile_upstream_centres[profile_upstream_centres_score < 1])
-		centre_upstream = np.nansum(profile_upstream_centres/(profile_upstream_centres_score**1))/np.sum(1/profile_upstream_centres_score**1)
-		TS_r_new_upstream = (TS_r - centre_upstream) / 1000
-		print('TS profile centre at %.3gmm compared to the theoretical centre' %centre)
-		# temp_r, temp_t = np.meshgrid(TS_r_new, merge_time)
-		# plt.figure();plt.pcolor(temp_t,temp_r,merge_Te_prof_multipulse,vmin=0);plt.colorbar().set_label('Te [eV]');plt.pause(0.01)
-		# plt.figure();plt.pcolor(temp_t,temp_r,merge_ne_prof_multipulse,vmin=0);plt.colorbar().set_label('ne [10^20 #/m^3]');plt.pause(0.01)
-
-		# This is the mean of Te and ne weighted in their own uncertainties.
-		temp1 = np.zeros_like(inverted_profiles[:, 0])
-		temp2 = np.zeros_like(inverted_profiles[:, 0])
-		temp3 = np.zeros_like(inverted_profiles[:, 0])
-		temp4 = np.zeros_like(inverted_profiles[:, 0])
-		interp_range_t = max(dt, TS_dt) * 1.5
-		interp_range_r = max(dx, TS_dr) * 1.5
-		weights_r = (np.zeros_like(merge_Te_prof_multipulse_upstream) + TS_r_new_upstream)
-		weights_t = (((np.zeros_like(merge_Te_prof_multipulse_upstream)).T + merge_time_upstream).T)
-		for i_t, value_t in enumerate(new_timesteps):
-			if np.sum(np.abs(merge_time_upstream - value_t) < interp_range_t) == 0:
-				continue
-			for i_r, value_r in enumerate(np.abs(r)):
-				if np.sum(np.abs(np.abs(TS_r_new_upstream) - value_r) < interp_range_r) == 0:
-					continue
-				elif np.sum(np.logical_and(np.abs(merge_time_upstream - value_t) < interp_range_t,np.sum(merge_Te_prof_multipulse_upstream, axis=1) > 0)) == 0:
-					continue
-				selected_values_t = np.logical_and(np.abs(merge_time_upstream - value_t) < interp_range_t,np.sum(merge_Te_prof_multipulse_upstream, axis=1) > 0)
-				selected_values_r = np.abs(np.abs(TS_r_new_upstream) - value_r) < interp_range_r
-				selecte_values = (np.array([selected_values_t])).T * selected_values_r
-				selecte_values[merge_Te_prof_multipulse_upstream == 0] = False
-				# weights = 1/(weights_r[selecte_values]-value_r)**2 + 1/(weights_t[selecte_values]-value_t)**2
-				weights = 1/((weights_t[selecte_values]-value_t)/interp_range_t)**2 + 1/((weights_r[selecte_values]-value_r)/interp_range_r)**2
-				if np.sum(selecte_values) == 0:
-					continue
-				# temp1[i_t,i_r] = np.mean(merge_Te_prof_multipulse[selected_values_t][:,selected_values_r])
-				# temp2[i_t, i_r] = np.max(merge_dTe_multipulse[selected_values_t][:,selected_values_r]) / (np.sum(np.isfinite(merge_dTe_multipulse[selected_values_t][:,selected_values_r])) ** 0.5)
-				temp1[i_t, i_r] = np.sum(merge_Te_prof_multipulse_upstream[selecte_values]*weights / merge_dTe_multipulse_upstream[selecte_values]) / np.sum(weights / merge_dTe_multipulse_upstream[selecte_values])
-				# temp3[i_t,i_r] = np.mean(merge_ne_prof_multipulse[selected_values_t][:,selected_values_r])
-				# temp4[i_t, i_r] = np.max(merge_dne_multipulse[selected_values_t][:,selected_values_r]) / (np.sum(np.isfinite(merge_dne_multipulse[selected_values_t][:,selected_values_r])) ** 0.5)
-				temp3[i_t, i_r] = np.sum(merge_ne_prof_multipulse_upstream[selecte_values]*weights / merge_dne_multipulse_upstream[selecte_values]) / np.sum(weights / merge_dne_multipulse_upstream[selecte_values])
-				if False: 	# suggestion from Daljeet: use the "worst case scenario" in therms of uncertainty
-					# temp2[i_t, i_r] = (np.sum(selecte_values) / (np.sum(1 / merge_dTe_multipulse[selecte_values]) ** 2)) ** 0.5
-					# temp4[i_t, i_r] = (np.sum(selecte_values) / (np.sum(1 / merge_dne_multipulse[selecte_values]) ** 2)) ** 0.5
-					temp2[i_t, i_r] = 1/(np.sum(1 / merge_dTe_multipulse_upstream[selecte_values]))*(np.sum( ((temp1[i_t, i_r]-merge_Te_prof_multipulse_upstream[selecte_values])/merge_dTe_multipulse_upstream[selecte_values])**2 )**0.5)
-					temp4[i_t, i_r] = 1/(np.sum(1 / merge_dne_multipulse_upstream[selecte_values]))*(np.sum( ((temp3[i_t, i_r]-merge_ne_prof_multipulse_upstream[selecte_values])/merge_dne_multipulse_upstream[selecte_values])**2 )**0.5)
-				else:
-					# temp2_temp = 1/(np.sum(1 / merge_dTe_multipulse[selecte_values]))*(np.sum( ((temp1[i_t, i_r]-merge_Te_prof_multipulse[selecte_values])/merge_dTe_multipulse[selecte_values])**2 )**0.5)
-					# temp4_temp = 1/(np.sum(1 / merge_dne_multipulse[selecte_values]))*(np.sum( ((temp3[i_t, i_r]-merge_ne_prof_multipulse[selecte_values])/merge_dne_multipulse[selecte_values])**2 )**0.5)
-					temp2[i_t, i_r] = max(np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dTe_multipulse_upstream[selecte_values]),(np.max(merge_Te_prof_multipulse_upstream[selecte_values])-np.min(merge_Te_prof_multipulse_upstream[selecte_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
-					temp4[i_t, i_r] = max(np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dne_multipulse_upstream[selecte_values]),(np.max(merge_ne_prof_multipulse_upstream[selecte_values])-np.min(merge_ne_prof_multipulse_upstream[selecte_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
-
-		merge_Te_prof_multipulse_interp_upstream = np.array(temp1)
-		merge_dTe_prof_multipulse_interp_upstream = np.array(temp2)
-		merge_ne_prof_multipulse_interp_upstream = np.array(temp3)
-		merge_dne_prof_multipulse_interp_upstream = np.array(temp4)
-		temp_r, temp_t = np.meshgrid(r, new_timesteps)
-
-		# I crop to the usefull stuff
-		start_time = np.abs(new_timesteps - 0).argmin()
-		end_time = np.abs(new_timesteps - 1.5).argmin() + 1
-		time_crop = new_timesteps[start_time:end_time]
-		start_r = np.abs(r - 0).argmin()
-		end_r = np.abs(r - 5).argmin() + 1
-		r_crop = r[start_r:end_r]
-		temp_r, temp_t = np.meshgrid([*r_crop-dx/2,r_crop.max()+dx/2], [*time_crop-dt/2,time_crop.max()+dt/2])
-		merge_Te_prof_multipulse_interp_upstream_crop = merge_Te_prof_multipulse_interp_upstream[start_time:end_time,start_r:end_r]
-		merge_Te_prof_multipulse_interp_upstream_crop[merge_Te_prof_multipulse_interp_upstream_crop<0]=0
-		merge_dTe_prof_multipulse_interp_upstream_crop = merge_dTe_prof_multipulse_interp_upstream[start_time:end_time, start_r:end_r]
-		merge_ne_prof_multipulse_interp_upstream_crop = merge_ne_prof_multipulse_interp_upstream[start_time:end_time,start_r:end_r]
-		merge_ne_prof_multipulse_interp_upstream_crop[merge_ne_prof_multipulse_interp_upstream_crop<0]=0
-		merge_dne_prof_multipulse_interp_upstream_crop = merge_dne_prof_multipulse_interp_upstream[start_time:end_time, start_r:end_r]
-		inverted_profiles_crop = inverted_profiles[start_time:end_time, :, start_r:end_r]
-		inverted_profiles_crop[np.isnan(inverted_profiles_crop)] = 0
-		inverted_profiles_sigma_crop = inverted_profiles_sigma[start_time:end_time, :, start_r:end_r]
-		inverted_profiles_sigma_crop[np.isnan(inverted_profiles_sigma_crop)] = 0
-		all_fits_crop = all_fits[start_time:end_time]
-		# inverted_profiles_crop[inverted_profiles_crop<0] = 0
-
-
-		if os.path.exists(path_where_to_save_everything_upstream + '/TS_SS_data_merge_' + str(merge_ID_target_at_the_upstream) + '.npz'):
-			merge_Te_prof_multipulse_SS_upstream = np.load(path_where_to_save_everything_upstream + '/TS_SS_data_merge_' + str(merge_ID_target_at_the_upstream) + '.npz')['merge_Te_prof_multipulse']
-			merge_dTe_multipulse_SS_upstream = np.load(path_where_to_save_everything_upstream + '/TS_SS_data_merge_' + str(merge_ID_target_at_the_upstream) + '.npz')['merge_dTe_multipulse']
-			merge_ne_prof_multipulse_SS_upstream = np.load(path_where_to_save_everything_upstream + '/TS_SS_data_merge_' + str(merge_ID_target_at_the_upstream) + '.npz')['merge_ne_prof_multipulse']
-			merge_dne_multipulse_SS_upstream = np.load(path_where_to_save_everything_upstream + '/TS_SS_data_merge_' + str(merge_ID_target_at_the_upstream) + '.npz')['merge_dne_multipulse']
-
-			gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
-			yy = merge_ne_prof_multipulse_SS_upstream
-			yy_sigma = merge_dne_multipulse_SS_upstream
-			if np.sum(np.isfinite(yy_sigma))>0:
-				yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
-				yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
-			else:
-				yy_sigma = np.ones_like(yy)*np.nanmin([np.nanmax(yy),1])
-			p0 = [np.max(yy), 10, 0]
-			bds = [[0, 0, np.min(TS_r)], [np.inf, TS_size[1], np.max(TS_r)]]
-			fit = curve_fit(gauss, TS_r, yy, p0, sigma=yy_sigma, maxfev=100000, bounds=bds)
-			SS_profile_centres_upstream=[fit[0][-1]]
-			SS_profile_sigma_upstream=[fit[0][-2]]
-			SS_profile_centres_upstream_score=[fit[1][-1, -1]]
-			# plt.figure();plt.plot(TS_r,merge_ne_prof_multipulse,label='ne')
-			# plt.plot([fit[0][-1],fit[0][-1]],[np.max(merge_ne_prof_multipulse),np.min(merge_ne_prof_multipulse)],'--',label='ne')
-			yy = merge_Te_prof_multipulse_SS_upstream
-			yy_sigma = merge_dTe_multipulse_SS_upstream
-			if np.sum(np.isfinite(yy_sigma))>0:
-				yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
-				yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
-			else:
-				yy_sigma = np.ones_like(yy)*np.nanmin([np.nanmax(yy),1])
-			p0 = [np.max(yy), 10, 0]
-			bds = [[0, 0, np.min(TS_r)], [np.inf, TS_size[1], np.max(TS_r)]]
-			fit = curve_fit(gauss, TS_r, yy, p0, sigma=yy_sigma, maxfev=100000, bounds=bds)
-			SS_profile_centres_upstream = np.append(SS_profile_centres_upstream,[fit[0][-1]],axis=0)
-			SS_profile_sigma_upstream = np.append(SS_profile_sigma_upstream,[fit[0][-2]],axis=0)
-			SS_profile_centres_upstream_score = np.append(SS_profile_centres_upstream_score,[fit[1][-1, -1]],axis=0)
-			SS_centre_upstream = np.nanmean(SS_profile_centres_upstream)
-			SS_TS_r_new_upstream = (TS_r - SS_centre_upstream) / 1000
-			print('TS profile SS_centre_upstream at %.3gmm compared to the theoretical centre' %centre)
-
-			# This is the mean of Te and ne weighted in their own uncertainties.
-			interp_range_r = max(dx, TS_dr) * 1.5
-			# weights_r = TS_r_new/interp_range_r
-			weights_r = SS_TS_r_new_upstream
-			merge_Te_prof_multipulse_SS_upstream_interp = np.zeros_like(merge_Te_prof_multipulse_interp_upstream[ 0])
-			merge_dTe_prof_multipulse_SS_upstream_interp = np.zeros_like(merge_Te_prof_multipulse_interp_upstream[ 0])
-			merge_ne_prof_multipulse_SS_upstream_interp = np.zeros_like(merge_Te_prof_multipulse_interp_upstream[ 0])
-			merge_dne_prof_multipulse_SS_upstream_interp = np.zeros_like(merge_Te_prof_multipulse_interp_upstream[ 0])
-			for i_r, value_r in enumerate(np.abs(r)):
-				if np.sum(np.abs(np.abs(SS_TS_r_new_upstream) - value_r) < interp_range_r) == 0:
-					continue
-				selected_values = np.abs(np.abs(SS_TS_r_new_upstream) - value_r) < interp_range_r
-				selected_values[merge_Te_prof_multipulse_SS_upstream == 0] = False
-				# weights = 1/np.abs(weights_r[selected_values]+1e-5)
-				weights = 1/((weights_r[selected_values]-value_r)/interp_range_r)**2
-				# weights = np.ones((np.sum(selected_values)))
-				if np.sum(selected_values) == 0:
-					continue
-				merge_Te_prof_multipulse_SS_upstream_interp[i_r] = np.sum(merge_Te_prof_multipulse_SS_upstream[selected_values]*weights / merge_dTe_multipulse_SS_upstream[selected_values]) / np.sum(weights / merge_dTe_multipulse_SS_upstream[selected_values])
-				merge_ne_prof_multipulse_SS_upstream_interp[i_r] = np.sum(merge_ne_prof_multipulse_SS_upstream[selected_values]*weights / merge_dne_multipulse_SS_upstream[selected_values]) / np.sum(weights / merge_dne_multipulse_SS_upstream[selected_values])
-				if False: 	# suggestion from Daljeet: use the "worst case scenario" in therms of uncertainty
-					merge_dTe_prof_multipulse_SS_upstream_interp[i_r] = 1/(np.sum(1 / merge_dTe_multipulse_SS_upstream[selected_values]))*(np.sum( ((merge_Te_prof_multipulse_SS_upstream_interp[i_r]-merge_Te_prof_multipulse_SS_upstream[selected_values])/merge_dTe_multipulse_SS_upstream[selected_values])**2 )**0.5)
-					merge_dne_prof_multipulse_SS_upstream_interp[i_r] = 1/(np.sum(1 / merge_dne_multipulse_SS_upstream[selected_values]))*(np.sum( ((merge_ne_prof_multipulse_SS_upstream_interp[i_r]-merge_ne_prof_multipulse_SS_upstream[selected_values])/merge_dne_multipulse_SS_upstream[selected_values])**2 )**0.5)
-				else:
-					merge_dTe_prof_multipulse_SS_upstream_interp_temp = 1/(np.sum(1 / merge_dTe_multipulse_SS_upstream[selected_values]))*(np.sum( ((merge_Te_prof_multipulse_SS_upstream_interp[i_r]-merge_Te_prof_multipulse_SS_upstream[selected_values])/merge_dTe_multipulse_SS_upstream[selected_values])**2 )**0.5)
-					merge_dne_prof_multipulse_SS_upstream_interp_temp = 1/(np.sum(1 / merge_dne_multipulse_SS_upstream[selected_values]))*(np.sum( ((merge_ne_prof_multipulse_SS_upstream_interp[i_r]-merge_ne_prof_multipulse_SS_upstream[selected_values])/merge_dne_multipulse_SS_upstream[selected_values])**2 )**0.5)
-					merge_dTe_prof_multipulse_SS_upstream_interp[i_r] = max(merge_dTe_prof_multipulse_SS_upstream_interp_temp,(np.max(merge_Te_prof_multipulse_SS_upstream[selected_values])-np.min(merge_Te_prof_multipulse_SS_upstream[selected_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
-					merge_dne_prof_multipulse_SS_upstream_interp[i_r] = max(merge_dne_prof_multipulse_SS_upstream_interp_temp,(np.max(merge_ne_prof_multipulse_SS_upstream[selected_values])-np.min(merge_ne_prof_multipulse_SS_upstream[selected_values]))/2/2 )	# I enlarged the integration range by 1.5, so I reduce the sigma in the second calculation mechanism to compensate for that and get reasonables uncertainties
-			temp_r, temp_t = np.meshgrid(r, new_timesteps)
-
-			start_r = np.abs(r - 0).argmin()
-			end_r = np.abs(r - 5).argmin() + 1
-			r_crop = r[start_r:end_r]
-			merge_Te_prof_multipulse_SS_upstream_interp_crop = merge_Te_prof_multipulse_SS_upstream_interp[start_r:end_r]
-			merge_dTe_prof_multipulse_SS_upstream_interp_crop = merge_dTe_prof_multipulse_SS_upstream_interp[start_r:end_r]
-			merge_ne_prof_multipulse_SS_upstream_interp_crop = merge_ne_prof_multipulse_SS_upstream_interp[start_r:end_r]
-			merge_dne_prof_multipulse_SS_upstream_interp_crop = merge_dne_prof_multipulse_SS_upstream_interp[start_r:end_r]
-
-			gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
-			yy = merge_ne_prof_multipulse_SS_upstream_interp_crop
-			yy_sigma = merge_dne_prof_multipulse_SS_upstream_interp_crop
-			yy_sigma[np.isnan(yy_sigma)]=np.nanmax(yy_sigma)
-			yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
-			p0 = [np.max(yy), np.max(r_crop)/2, np.min(r_crop)]
-			bds = [[0, 0, np.min(r_crop)], [np.inf, np.max(r_crop), np.max(r_crop)]]
-			fit = curve_fit(gauss, r_crop, yy, p0, maxfev=100000, bounds=bds, sigma=yy_sigma)
-			SS_averaged_profile_sigma_upstream=fit[0][-2]
-			# plt.figure();plt.plot(TS_r,merge_Te_prof_multipulse[index]);plt.plot(TS_r,gauss(TS_r,*fit[0]));plt.pause(0.01)
-
-			merge_Te_prof_multipulse_interp_upstream_crop[np.max(merge_ne_prof_multipulse_interp_upstream_crop,axis=1)<2] = merge_Te_prof_multipulse_SS_upstream_interp_crop
-			merge_dTe_prof_multipulse_interp_upstream_crop[np.max(merge_ne_prof_multipulse_interp_upstream_crop,axis=1)<2] = np.max([merge_Te_prof_multipulse_SS_upstream_interp_crop,merge_dTe_prof_multipulse_SS_upstream_interp_crop],axis=0)
-			merge_ne_prof_multipulse_interp_upstream_crop[np.max(merge_ne_prof_multipulse_interp_upstream_crop,axis=1)<2] = merge_ne_prof_multipulse_SS_upstream_interp_crop
-			merge_dne_prof_multipulse_interp_upstream_crop[np.max(merge_ne_prof_multipulse_interp_upstream_crop,axis=1)<2] = np.max([merge_ne_prof_multipulse_SS_upstream_interp_crop,merge_dne_prof_multipulse_SS_upstream_interp_crop],axis=0)
+		merge_Te_prof_multipulse_upstream,merge_dTe_multipulse_upstream,merge_ne_prof_multipulse_upstream,merge_dne_multipulse_upstream,centre_upstream,profile_upstream_centres,profile_upstream_sigma,profile_upstream_centres_score,TS_r_upstream,trash,TS_dt_upstream,trash,TS_dr_upstream,TS_r_new_upstream,merge_time_upstream,trash,merge_time_original_upstream = load_TS(merge_ID_target_at_the_upstream,new_timesteps,r,spatial_factor=spatial_factor,time_shift_factor=time_shift_factor)
+		merge_Te_prof_multipulse_interp_upstream_crop,merge_dTe_prof_multipulse_interp_upstream_crop,merge_ne_prof_multipulse_interp_upstream_crop,merge_dne_prof_multipulse_interp_upstream_crop,interp_range_r_upstream = average_TS_around_axis(merge_Te_prof_multipulse_upstream,merge_dTe_multipulse_upstream,merge_ne_prof_multipulse_upstream,merge_dne_multipulse_upstream,r,TS_r_upstream,TS_dt_upstream,TS_r_new_upstream,merge_time_upstream,new_timesteps,number_of_radial_divisions,start_time=start_time,end_time=end_time)
 
 		gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
 		averaged_profile_sigma_upstream = []
@@ -843,7 +531,7 @@ if initial_conditions:
 			yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
 			yy_sigma[yy_sigma==0]=np.nanmax(yy_sigma[yy_sigma!=0])
 			p0 = [np.max(yy), np.max(r_crop)/2, 0]
-			bds = [[0, 0, -interp_range_r/1000], [np.inf, np.max(r_crop), interp_range_r/1000]]
+			bds = [[0, 0, -interp_range_r_upstream/1000], [np.inf, np.max(r_crop), interp_range_r_upstream/1000]]
 			fit = curve_fit(gauss, r_crop, yy, p0, maxfev=100000, bounds=bds, sigma=yy_sigma)
 			averaged_profile_sigma_upstream.append(fit[0][-2])
 		# plt.figure();plt.plot(TS_r,merge_Te_prof_multipulse[index]);plt.plot(TS_r,gauss(TS_r,*fit[0]));plt.pause(0.01)
@@ -5016,6 +4704,30 @@ else:
 			prob_nH2p_values = np.zeros_like(Te_all).tolist()
 			actual_values_nH2p_values = np.zeros_like(Te_all).tolist()
 
+			intervals_Hp_destruction_RR = np.zeros_like(Te_all).tolist()
+			prob_Hp_destruction_RR = np.zeros_like(Te_all).tolist()
+			actual_values_Hp_destruction_RR = np.zeros_like(Te_all).tolist()
+			intervals_Hp_creation_RR = np.zeros_like(Te_all).tolist()
+			prob_Hp_creation_RR = np.zeros_like(Te_all).tolist()
+			actual_values_Hp_creation_RR = np.zeros_like(Te_all).tolist()
+			intervals_e_destruction_RR = np.zeros_like(Te_all).tolist()
+			prob_e_destruction_RR = np.zeros_like(Te_all).tolist()
+			actual_values_e_destruction_RR = np.zeros_like(Te_all).tolist()
+			intervals_e_creation_RR = np.zeros_like(Te_all).tolist()
+			prob_e_creation_RR = np.zeros_like(Te_all).tolist()
+			actual_values_e_creation_RR = np.zeros_like(Te_all).tolist()
+			intervals_Hm_destruction_RR = np.zeros_like(Te_all).tolist()
+			prob_Hm_destruction_RR = np.zeros_like(Te_all).tolist()
+			actual_values_Hm_destruction_RR = np.zeros_like(Te_all).tolist()
+			intervals_Hm_creation_RR = np.zeros_like(Te_all).tolist()
+			prob_Hm_creation_RR = np.zeros_like(Te_all).tolist()
+			actual_values_Hm_creation_RR = np.zeros_like(Te_all).tolist()
+			intervals_H2p_destruction_RR = np.zeros_like(Te_all).tolist()
+			prob_H2p_destruction_RR = np.zeros_like(Te_all).tolist()
+			actual_values_H2p_destruction_RR = np.zeros_like(Te_all).tolist()
+			intervals_H2p_creation_RR = np.zeros_like(Te_all).tolist()
+			prob_H2p_creation_RR = np.zeros_like(Te_all).tolist()
+			actual_values_H2p_creation_RR = np.zeros_like(Te_all).tolist()
 
 		for i_t in range(np.shape(Te_all)[0]):
 			for i_r in range(np.shape(Te_all)[1]):
@@ -5100,6 +4812,32 @@ else:
 						intervals_H2_creation_RR[i_t][i_r] = [0,0]
 						prob_H2_creation_RR[i_t][i_r] = [1]
 						actual_values_H2_creation_RR[i_t][i_r] = [0]
+
+						intervals_Hp_destruction_RR[i_t][i_r] = [0,0]
+						prob_Hp_destruction_RR[i_t][i_r] = [1]
+						actual_values_Hp_destruction_RR[i_t][i_r] = [0]
+						intervals_Hp_creation_RR[i_t][i_r] = [0,0]
+						prob_Hp_creation_RR[i_t][i_r] = [1]
+						actual_values_Hp_creation_RR[i_t][i_r] = [0]
+						intervals_e_destruction_RR[i_t][i_r] = [0,0]
+						prob_e_destruction_RR[i_t][i_r] = [1]
+						actual_values_e_destruction_RR[i_t][i_r] = [0]
+						intervals_e_creation_RR[i_t][i_r] = [0,0]
+						prob_e_creation_RR[i_t][i_r] = [1]
+						actual_values_e_creation_RR[i_t][i_r] = [0]
+						intervals_Hm_destruction_RR[i_t][i_r] = [0,0]
+						prob_Hm_destruction_RR[i_t][i_r] = [1]
+						actual_values_Hm_destruction_RR[i_t][i_r] = [0]
+						intervals_Hm_creation_RR[i_t][i_r] = [0,0]
+						prob_Hm_creation_RR[i_t][i_r] = [1]
+						actual_values_Hm_creation_RR[i_t][i_r] = [0]
+						intervals_H2p_destruction_RR[i_t][i_r] = [0,0]
+						prob_H2p_destruction_RR[i_t][i_r] = [1]
+						actual_values_H2p_destruction_RR[i_t][i_r] = [0]
+						intervals_H2p_creation_RR[i_t][i_r] = [0,0]
+						prob_H2p_creation_RR[i_t][i_r] = [1]
+						actual_values_H2p_creation_RR[i_t][i_r] = [0]
+
 					intervals_CX_term_1_1[i_t][i_r] = [0,0]
 					prob_CX_term_1_1[i_t][i_r] = [1]
 					actual_values_CX_term_1_1[i_t][i_r] = [0]
@@ -5253,6 +4991,32 @@ else:
 						intervals_H2_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2_creation_RR']['intervals']	# m^-3/s * 1e-20
 						prob_H2_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2_creation_RR']['prob']	# m^-3/s * 1e-20
 						actual_values_H2_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2_creation_RR']['actual_values']	# m^-3/s * 1e-20
+
+						intervals_Hp_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['Hp_destruction_RR']['intervals']	# m^-3/s * 1e-20
+						prob_Hp_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['Hp_destruction_RR']['prob']	# m^-3/s * 1e-20
+						actual_values_Hp_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['Hp_destruction_RR']['actual_values']	# m^-3/s * 1e-20
+						intervals_Hp_creation_RR[i_t][i_r] = power_balance_data_dict[i]['Hp_creation_RR']['intervals']	# m^-3/s * 1e-20
+						prob_Hp_creation_RR[i_t][i_r] = power_balance_data_dict[i]['Hp_creation_RR']['prob']	# m^-3/s * 1e-20
+						actual_values_Hp_creation_RR[i_t][i_r] = power_balance_data_dict[i]['Hp_creation_RR']['actual_values']	# m^-3/s * 1e-20
+						intervals_e_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['e_destruction_RR']['intervals']	# m^-3/s * 1e-20
+						prob_e_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['e_destruction_RR']['prob']	# m^-3/s * 1e-20
+						actual_values_e_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['e_destruction_RR']['actual_values']	# m^-3/s * 1e-20
+						intervals_e_creation_RR[i_t][i_r] = power_balance_data_dict[i]['e_creation_RR']['intervals']	# m^-3/s * 1e-20
+						prob_e_creation_RR[i_t][i_r] = power_balance_data_dict[i]['e_creation_RR']['prob']	# m^-3/s * 1e-20
+						actual_values_e_creation_RR[i_t][i_r] = power_balance_data_dict[i]['e_creation_RR']['actual_values']	# m^-3/s * 1e-20
+						intervals_Hm_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['Hm_destruction_RR']['intervals']	# m^-3/s * 1e-20
+						prob_Hm_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['Hm_destruction_RR']['prob']	# m^-3/s * 1e-20
+						actual_values_Hm_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['Hm_destruction_RR']['actual_values']	# m^-3/s * 1e-20
+						intervals_Hm_creation_RR[i_t][i_r] = power_balance_data_dict[i]['Hm_creation_RR']['intervals']	# m^-3/s * 1e-20
+						prob_Hm_creation_RR[i_t][i_r] = power_balance_data_dict[i]['Hm_creation_RR']['prob']	# m^-3/s * 1e-20
+						actual_values_Hm_creation_RR[i_t][i_r] = power_balance_data_dict[i]['Hm_creation_RR']['actual_values']	# m^-3/s * 1e-20
+						intervals_H2p_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['H2p_destruction_RR']['intervals']	# m^-3/s * 1e-20
+						prob_H2p_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['H2p_destruction_RR']['prob']	# m^-3/s * 1e-20
+						actual_values_H2p_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['H2p_destruction_RR']['actual_values']	# m^-3/s * 1e-20
+						intervals_H2p_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2p_creation_RR']['intervals']	# m^-3/s * 1e-20
+						prob_H2p_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2p_creation_RR']['prob']	# m^-3/s * 1e-20
+						actual_values_H2p_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2p_creation_RR']['actual_values']	# m^-3/s * 1e-20
+
 					intervals_CX_term_1_1[i_t][i_r] = power_balance_data_dict[i]['CX_term_1_1']['intervals']
 					prob_CX_term_1_1[i_t][i_r] = power_balance_data_dict[i]['CX_term_1_1']['prob']
 					actual_values_CX_term_1_1[i_t][i_r] = power_balance_data_dict[i]['CX_term_1_1']['actual_values']
@@ -5360,9 +5124,12 @@ else:
 			# 	histogram[0] += np.sum(temp == -np.inf)
 			return histogram,bins
 
-		def make_plot_type_1(most_likely_something,label,label_units,figure_index,ext_vmin=0.1):
+		def make_plot_type_1(most_likely_something,label,label_units,figure_index,ext_vmin=0.1,logaritmic=True):
 			plt.figure(figsize=(8, 5));
-			plt.pcolor(temp_t, temp_r, most_likely_something,cmap='rainbow',vmin=max(max(ext_vmin,np.nanmin(most_likely_something)),np.nanmax(most_likely_something)*1e-6), norm=LogNorm());
+			if logaritmic:
+				plt.pcolor(temp_t, temp_r, most_likely_something,cmap='rainbow',vmin=max(max(ext_vmin,np.nanmin(most_likely_something)),np.nanmax(most_likely_something)*1e-6), norm=LogNorm());
+			else:
+				plt.pcolor(temp_t, temp_r, most_likely_something,cmap='rainbow',vmin=max(max(ext_vmin,np.nanmin(most_likely_something)),np.nanmax(most_likely_something)*1e-6));
 			plt.colorbar(orientation="horizontal").set_label(label_units)  # ;plt.pause(0.01)
 			plt.axes().set_aspect(20)
 			plt.xlabel('time [ms]')
@@ -5661,6 +5428,30 @@ else:
 
 		most_likely_H_destruction_RR2,most_likely_H_destruction_RR2_sigma = calculate_most_likely(prob_H_destruction_RR2,actual_values_H_destruction_RR2,intervals_H_destruction_RR2)	# m^-3/s * 1e-20
 		figure_index = make_plot_type_1((np.array(most_likely_H_destruction_RR2)*1e20).tolist(),'H_destruction_RR2','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_Hp_destruction_RR,most_likely_Hp_destruction_RR_sigma = calculate_most_likely(prob_Hp_destruction_RR,actual_values_Hp_destruction_RR,intervals_Hp_destruction_RR)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_Hp_destruction_RR)*1e20).tolist(),'Hp_destruction_RR','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_Hp_creation_RR,most_likely_Hp_creation_RR_sigma = calculate_most_likely(prob_Hp_creation_RR,actual_values_Hp_creation_RR,intervals_Hp_creation_RR)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_Hp_creation_RR)*1e20).tolist(),'Hp_creation_RR','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_e_destruction_RR,most_likely_e_destruction_RR_sigma = calculate_most_likely(prob_e_destruction_RR,actual_values_e_destruction_RR,intervals_e_destruction_RR)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_e_destruction_RR)*1e20).tolist(),'e_destruction_RR','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_e_creation_RR,most_likely_e_creation_RR_sigma = calculate_most_likely(prob_e_creation_RR,actual_values_e_creation_RR,intervals_e_creation_RR)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_e_creation_RR)*1e20).tolist(),'e_creation_RR','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_Hm_destruction_RR,most_likely_Hm_destruction_RR_sigma = calculate_most_likely(prob_Hm_destruction_RR,actual_values_Hm_destruction_RR,intervals_Hm_destruction_RR)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_Hm_destruction_RR)*1e20).tolist(),'Hm_destruction_RR','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_Hm_creation_RR,most_likely_Hm_creation_RR_sigma = calculate_most_likely(prob_Hm_creation_RR,actual_values_Hm_creation_RR,intervals_Hm_creation_RR)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_Hm_creation_RR)*1e20).tolist(),'Hm_creation_RR','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_H2p_destruction_RR,most_likely_H2p_destruction_RR_sigma = calculate_most_likely(prob_H2p_destruction_RR,actual_values_H2p_destruction_RR,intervals_H2p_destruction_RR)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_H2p_destruction_RR)*1e20).tolist(),'H2p_destruction_RR','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_H2p_creation_RR,most_likely_H2p_creation_RR_sigma = calculate_most_likely(prob_H2p_creation_RR,actual_values_H2p_creation_RR,intervals_H2p_creation_RR)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_H2p_creation_RR)*1e20).tolist(),'H2p_creation_RR','reaction rate\n[#/(m^3 s)]',figure_index)
 
 		if latest_version:
 			most_likely_H_creation_RR,most_likely_H_creation_RR_sigma = calculate_most_likely(prob_H_creation_RR,actual_values_H_creation_RR,intervals_H_creation_RR)	# m^-3/s * 1e-20
@@ -6061,10 +5852,14 @@ else:
 		figure_index = make_plot_type_1(most_likely_power_rad_mol_visible,'power_rad_mol_visible','power [W/m3]',figure_index)
 
 		most_likely_Te_values,most_likely_Te_values_sigma = calculate_most_likely(prob_Te_values,actual_values_Te_values,intervals_Te_values)
-		figure_index = make_plot_type_1(most_likely_Te_values,'Te_values','temperature [eV]',figure_index)
+		temp = np.array(most_likely_Te_values)
+		temp[temp==0] = np.nan
+		figure_index = make_plot_type_1(temp,'Te_values','temperature [eV]',figure_index,logaritmic=False)
 
 		most_likely_ne_values,most_likely_ne_values_sigma = calculate_most_likely(prob_ne_values,actual_values_ne_values,intervals_ne_values)
-		figure_index = make_plot_type_1(most_likely_ne_values,'ne_values','density [#/m3]',figure_index)
+		temp = np.array(most_likely_ne_values)
+		temp[temp==0] = np.nan
+		figure_index = make_plot_type_1(temp,'ne_values','density [#/m3]',figure_index,logaritmic=False)
 
 		most_likely_nH_values,most_likely_nH_values_sigma = calculate_most_likely(prob_nH_values,actual_values_nH_values,intervals_nH_values)
 		figure_index = make_plot_type_1(most_likely_nH_values,'nH_values','density [#/m3]',figure_index)
@@ -6395,9 +6190,19 @@ else:
 		intervals_P_HCX_3_r, prob_P_HCX_3_r, actual_values_P_HCX_3_r = radial_sum_PDF_MC(actual_values_P_HCX_3,prob_P_HCX_3)
 		intervals_H_destruction_RR2_r, prob_H_destruction_RR2_r, actual_values_H_destruction_RR2_r = radial_sum_PDF_MC(actual_values_H_destruction_RR2,prob_H_destruction_RR2)	# #/s * 1e-20
 		intervals_H2_destruction_RR2_r, prob_H2_destruction_RR2_r, actual_values_H2_destruction_RR2_r = radial_sum_PDF_MC(actual_values_H2_destruction_RR2,prob_H2_destruction_RR2)	# #/s * 1e-20
+
+		intervals_Hp_destruction_RR_r, prob_Hp_destruction_RR_r, actual_values_Hp_destruction_RR_r = radial_sum_PDF_MC(actual_values_Hp_destruction_RR,prob_Hp_destruction_RR)	# #/s * 1e-20
+		intervals_Hp_creation_RR_r, prob_Hp_creation_RR_r, actual_values_Hp_creation_RR_r = radial_sum_PDF_MC(actual_values_Hp_creation_RR,prob_Hp_creation_RR)	# #/s * 1e-20
+		intervals_e_destruction_RR_r, prob_e_destruction_RR_r, actual_values_e_destruction_RR_r = radial_sum_PDF_MC(actual_values_e_destruction_RR,prob_e_destruction_RR)	# #/s * 1e-20
+		intervals_e_creation_RR_r, prob_e_creation_RR_r, actual_values_e_creation_RR_r = radial_sum_PDF_MC(actual_values_e_creation_RR,prob_e_creation_RR)	# #/s * 1e-20
+		intervals_Hm_destruction_RR_r, prob_Hm_destruction_RR_r, actual_values_Hm_destruction_RR_r = radial_sum_PDF_MC(actual_values_Hm_destruction_RR,prob_Hm_destruction_RR)	# #/s * 1e-20
+		intervals_Hm_creation_RR_r, prob_Hm_creation_RR_r, actual_values_Hm_creation_RR_r = radial_sum_PDF_MC(actual_values_Hm_creation_RR,prob_Hm_creation_RR)	# #/s * 1e-20
+		intervals_H2p_destruction_RR_r, prob_H2p_destruction_RR_r, actual_values_H2p_destruction_RR_r = radial_sum_PDF_MC(actual_values_H2p_destruction_RR,prob_H2p_destruction_RR)	# #/s * 1e-20
+		intervals_H2p_creation_RR_r, prob_H2p_creation_RR_r, actual_values_H2p_creation_RR_r = radial_sum_PDF_MC(actual_values_H2p_creation_RR,prob_H2p_creation_RR)	# #/s * 1e-20
 		if latest_version:
 			intervals_H_creation_RR_r, prob_H_creation_RR_r, actual_values_H_creation_RR_r = radial_sum_PDF_MC(actual_values_H_creation_RR,prob_H_creation_RR)	# #/s * 1e-20
 			intervals_H2_creation_RR_r, prob_H2_creation_RR_r, actual_values_H2_creation_RR_r = radial_sum_PDF_MC(actual_values_H2_creation_RR,prob_H2_creation_RR)	# #/s * 1e-20
+
 
 		def find_DPF_range_temporal(actual_values_something_r,prob_something_r,intervals_something_r):
 			most_likely_something_r = []
@@ -6441,6 +6246,15 @@ else:
 		most_likely_P_HCX_3_r,actual_values_P_HCX_3_r_up,actual_values_P_HCX_3_r_down = find_DPF_range_temporal(actual_values_P_HCX_3_r,prob_P_HCX_3_r,intervals_P_HCX_3_r)
 		most_likely_H_destruction_RR2_r,actual_values_H_destruction_RR2_r_up,actual_values_H_destruction_RR2_r_down = find_DPF_range_temporal(actual_values_H_destruction_RR2_r,prob_H_destruction_RR2_r,intervals_H_destruction_RR2_r)	# #/s * 1e-20
 		most_likely_H2_destruction_RR2_r,actual_values_H2_destruction_RR2_r_up,actual_values_H2_destruction_RR2_r_down = find_DPF_range_temporal(actual_values_H2_destruction_RR2_r,prob_H2_destruction_RR2_r,intervals_H2_destruction_RR2_r)	# #/s * 1e-20
+
+		most_likely_Hp_destruction_RR_r,actual_values_Hp_destruction_RR_r_up,actual_values_Hp_destruction_RR_r_down = find_DPF_range_temporal(actual_values_Hp_destruction_RR_r,prob_Hp_destruction_RR_r,intervals_Hp_destruction_RR_r)	# #/s * 1e-20
+		most_likely_Hp_creation_RR_r,actual_values_Hp_creation_RR_r_up,actual_values_Hp_creation_RR_r_down = find_DPF_range_temporal(actual_values_Hp_creation_RR_r,prob_Hp_creation_RR_r,intervals_Hp_creation_RR_r)	# #/s * 1e-20
+		most_likely_e_destruction_RR_r,actual_values_e_destruction_RR_r_up,actual_values_e_destruction_RR_r_down = find_DPF_range_temporal(actual_values_e_destruction_RR_r,prob_e_destruction_RR_r,intervals_e_destruction_RR_r)	# #/s * 1e-20
+		most_likely_e_creation_RR_r,actual_values_e_creation_RR_r_up,actual_values_e_creation_RR_r_down = find_DPF_range_temporal(actual_values_e_creation_RR_r,prob_e_creation_RR_r,intervals_e_creation_RR_r)	# #/s * 1e-20
+		most_likely_Hm_destruction_RR_r,actual_values_Hm_destruction_RR_r_up,actual_values_Hm_destruction_RR_r_down = find_DPF_range_temporal(actual_values_Hm_destruction_RR_r,prob_Hm_destruction_RR_r,intervals_Hm_destruction_RR_r)	# #/s * 1e-20
+		most_likely_Hm_creation_RR_r,actual_values_Hm_creation_RR_r_up,actual_values_Hm_creation_RR_r_down = find_DPF_range_temporal(actual_values_Hm_creation_RR_r,prob_Hm_creation_RR_r,intervals_Hm_creation_RR_r)	# #/s * 1e-20
+		most_likely_H2p_destruction_RR_r,actual_values_H2p_destruction_RR_r_up,actual_values_H2p_destruction_RR_r_down = find_DPF_range_temporal(actual_values_H2p_destruction_RR_r,prob_H2p_destruction_RR_r,intervals_H2p_destruction_RR_r)	# #/s * 1e-20
+		most_likely_H2p_creation_RR_r,actual_values_H2p_creation_RR_r_up,actual_values_H2p_creation_RR_r_down = find_DPF_range_temporal(actual_values_H2p_creation_RR_r,prob_H2p_creation_RR_r,intervals_H2p_creation_RR_r)	# #/s * 1e-20
 		if latest_version:
 			most_likely_H_creation_RR_r,actual_values_H_creation_RR_r_up,actual_values_H_creation_RR_r_down = find_DPF_range_temporal(actual_values_H_creation_RR_r,prob_H_creation_RR_r,intervals_H_creation_RR_r)	# #/s * 1e-20
 			most_likely_H2_creation_RR_r,actual_values_H2_creation_RR_r_up,actual_values_H2_creation_RR_r_down = find_DPF_range_temporal(actual_values_H2_creation_RR_r,prob_H2_creation_RR_r,intervals_H2_creation_RR_r)	# #/s * 1e-20
@@ -6740,6 +6554,15 @@ else:
 		figure_index = make_plot_type_2(intervals_P_HCX_3_r,prob_P_HCX_3_r,most_likely_P_HCX_3_r,actual_values_P_HCX_3_r_down,actual_values_P_HCX_3_r_up,'P_HCX_3 MODE 3','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_H_destruction_RR2_r,prob_H_destruction_RR2_r,most_likely_H_destruction_RR2_r,actual_values_H_destruction_RR2_r_down,actual_values_H_destruction_RR2_r_up,'H_destruction_RR2','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
 		figure_index = make_plot_type_2(intervals_H2_destruction_RR2_r,prob_H2_destruction_RR2_r,most_likely_H2_destruction_RR2_r,actual_values_H2_destruction_RR2_r_down,actual_values_H2_destruction_RR2_r_up,'H2_destruction_RR2','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+
+		figure_index = make_plot_type_2(intervals_Hp_destruction_RR_r,prob_Hp_destruction_RR_r,most_likely_Hp_destruction_RR_r,actual_values_Hp_destruction_RR_r_down,actual_values_Hp_destruction_RR_r_up,'Hp_destruction_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_Hp_creation_RR_r,prob_Hp_creation_RR_r,most_likely_Hp_creation_RR_r,actual_values_Hp_creation_RR_r_down,actual_values_Hp_creation_RR_r_up,'Hp_creation_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_e_destruction_RR_r,prob_e_destruction_RR_r,most_likely_e_destruction_RR_r,actual_values_e_destruction_RR_r_down,actual_values_e_destruction_RR_r_up,'e_destruction_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_e_creation_RR_r,prob_e_creation_RR_r,most_likely_e_creation_RR_r,actual_values_e_creation_RR_r_down,actual_values_e_creation_RR_r_up,'e_creation_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_Hm_destruction_RR_r,prob_Hm_destruction_RR_r,most_likely_Hm_destruction_RR_r,actual_values_Hm_destruction_RR_r_down,actual_values_Hm_destruction_RR_r_up,'Hm_destruction_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_Hm_creation_RR_r,prob_Hm_creation_RR_r,most_likely_Hm_creation_RR_r,actual_values_Hm_creation_RR_r_down,actual_values_Hm_creation_RR_r_up,'Hm_creation_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_H2p_destruction_RR_r,prob_H2p_destruction_RR_r,most_likely_H2p_destruction_RR_r,actual_values_H2p_destruction_RR_r_down,actual_values_H2p_destruction_RR_r_up,'H2p_destruction_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_H2p_creation_RR_r,prob_H2p_creation_RR_r,most_likely_H2p_creation_RR_r,actual_values_H2p_creation_RR_r_down,actual_values_H2p_creation_RR_r_up,'H2p_creation_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
 		if latest_version:
 			figure_index = make_plot_type_2(intervals_H_creation_RR_r,prob_H_creation_RR_r,most_likely_H_creation_RR_r,actual_values_H_creation_RR_r_down,actual_values_H_creation_RR_r_up,'H_creation_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
 			figure_index = make_plot_type_2(intervals_H2_creation_RR_r,prob_H2_creation_RR_r,most_likely_H2_creation_RR_r,actual_values_H2_creation_RR_r_down,actual_values_H2_creation_RR_r_up,'H2_creation_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
@@ -7268,6 +7091,15 @@ else:
 		intervals_power_rad_mol_visible_tr, prob_power_rad_mol_visible_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_mol_visible_r,prob_power_rad_mol_visible_r)
 		intervals_H_destruction_RR2_tr, prob_H_destruction_RR2_tr = temporal_radial_sum_PDF_MC(actual_values_H_destruction_RR2_r,prob_H_destruction_RR2_r)	# # * 1e-20
 		intervals_H2_destruction_RR2_tr, prob_H2_destruction_RR2_tr = temporal_radial_sum_PDF_MC(actual_values_H2_destruction_RR2_r,prob_H2_destruction_RR2_r)	# # * 1e-20
+
+		intervals_Hp_destruction_RR_tr, prob_Hp_destruction_RR_tr = temporal_radial_sum_PDF_MC(actual_values_Hp_destruction_RR_r,prob_Hp_destruction_RR_r)	# # * 1e-20
+		intervals_Hp_creation_RR_tr, prob_Hp_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_Hp_creation_RR_r,prob_Hp_creation_RR_r)	# # * 1e-20
+		intervals_e_destruction_RR_tr, prob_e_destruction_RR_tr = temporal_radial_sum_PDF_MC(actual_values_e_destruction_RR_r,prob_e_destruction_RR_r)	# # * 1e-20
+		intervals_e_creation_RR_tr, prob_e_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_e_creation_RR_r,prob_e_creation_RR_r)	# # * 1e-20
+		intervals_Hm_destruction_RR_tr, prob_Hm_destruction_RR_tr = temporal_radial_sum_PDF_MC(actual_values_Hm_destruction_RR_r,prob_Hm_destruction_RR_r)	# # * 1e-20
+		intervals_Hm_creation_RR_tr, prob_Hm_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_Hm_creation_RR_r,prob_Hm_creation_RR_r)	# # * 1e-20
+		intervals_H2p_destruction_RR_tr, prob_H2p_destruction_RR_tr = temporal_radial_sum_PDF_MC(actual_values_H2p_destruction_RR_r,prob_H2p_destruction_RR_r)	# # * 1e-20
+		intervals_H2p_creation_RR_tr, prob_H2p_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_H2p_creation_RR_r,prob_H2p_creation_RR_r)	# # * 1e-20
 		if latest_version:
 			intervals_H_creation_RR_tr, prob_H_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_H_creation_RR_r,prob_H_creation_RR_r)	# # * 1e-20
 			intervals_H2_creation_RR_tr, prob_H2_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_H2_creation_RR_r,prob_H2_creation_RR_r)	# # * 1e-20
@@ -7353,9 +7185,34 @@ else:
 		ML_H_destruction_RR2 = (np.add(intervals_H_destruction_RR2_tr[1:],intervals_H_destruction_RR2_tr[:-1])/2)[np.array(prob_H_destruction_RR2_tr).argmax()]	# # * 1e-20
 		temp = np.cumsum(prob_H_destruction_RR2_tr)	# # * 1e-20
 		ML_H_destruction_RR2_sigma = np.mean([ML_H_destruction_RR2-intervals_H_destruction_RR2_tr[np.abs(temp-0.159).argmin()+1],intervals_H_destruction_RR2_tr[np.abs(temp-1+0.159).argmin()]-ML_H_destruction_RR2])	# # * 1e-20
+
+		ML_Hp_destruction_RR = (np.add(intervals_Hp_destruction_RR_tr[1:],intervals_Hp_destruction_RR_tr[:-1])/2)[np.array(prob_Hp_destruction_RR_tr).argmax()]	# # * 1e-20
+		temp = np.cumsum(prob_Hp_destruction_RR_tr)	# # * 1e-20
+		ML_Hp_destruction_RR_sigma = np.mean([ML_Hp_destruction_RR-intervals_Hp_destruction_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_Hp_destruction_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_Hp_destruction_RR])	# # * 1e-20
 		ML_H2_destruction_RR2 = (np.add(intervals_H2_destruction_RR2_tr[1:],intervals_H2_destruction_RR2_tr[:-1])/2)[np.array(prob_H2_destruction_RR2_tr).argmax()]	# # * 1e-20
 		temp = np.cumsum(prob_H2_destruction_RR2_tr)	# # * 1e-20
 		ML_H2_destruction_RR2_sigma = np.mean([ML_H2_destruction_RR2-intervals_H2_destruction_RR2_tr[np.abs(temp-0.159).argmin()+1],intervals_H2_destruction_RR2_tr[np.abs(temp-1+0.159).argmin()]-ML_H2_destruction_RR2])	# # * 1e-20
+		ML_Hp_creation_RR = (np.add(intervals_Hp_creation_RR_tr[1:],intervals_Hp_creation_RR_tr[:-1])/2)[np.array(prob_Hp_creation_RR_tr).argmax()]	# # * 1e-20
+		temp = np.cumsum(prob_Hp_creation_RR_tr)	# # * 1e-20
+		ML_Hp_creation_RR_sigma = np.mean([ML_Hp_creation_RR-intervals_Hp_creation_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_Hp_creation_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_Hp_creation_RR])	# # * 1e-20
+		ML_e_destruction_RR = (np.add(intervals_e_destruction_RR_tr[1:],intervals_e_destruction_RR_tr[:-1])/2)[np.array(prob_e_destruction_RR_tr).argmax()]	# # * 1e-20
+		temp = np.cumsum(prob_e_destruction_RR_tr)	# # * 1e-20
+		ML_e_destruction_RR_sigma = np.mean([ML_e_destruction_RR-intervals_e_destruction_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_e_destruction_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_e_destruction_RR])	# # * 1e-20
+		ML_e_creation_RR = (np.add(intervals_e_creation_RR_tr[1:],intervals_e_creation_RR_tr[:-1])/2)[np.array(prob_e_creation_RR_tr).argmax()]	# # * 1e-20
+		temp = np.cumsum(prob_e_creation_RR_tr)	# # * 1e-20
+		ML_e_creation_RR_sigma = np.mean([ML_e_creation_RR-intervals_e_creation_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_e_creation_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_e_creation_RR])	# # * 1e-20
+		ML_Hm_destruction_RR = (np.add(intervals_Hm_destruction_RR_tr[1:],intervals_Hm_destruction_RR_tr[:-1])/2)[np.array(prob_Hm_destruction_RR_tr).argmax()]	# # * 1e-20
+		temp = np.cumsum(prob_Hm_destruction_RR_tr)	# # * 1e-20
+		ML_Hm_destruction_RR_sigma = np.mean([ML_Hm_destruction_RR-intervals_Hm_destruction_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_Hm_destruction_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_Hm_destruction_RR])	# # * 1e-20
+		ML_Hm_creation_RR = (np.add(intervals_Hm_creation_RR_tr[1:],intervals_Hm_creation_RR_tr[:-1])/2)[np.array(prob_Hm_creation_RR_tr).argmax()]	# # * 1e-20
+		temp = np.cumsum(prob_Hm_creation_RR_tr)	# # * 1e-20
+		ML_Hm_creation_RR_sigma = np.mean([ML_Hm_creation_RR-intervals_Hm_creation_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_Hm_creation_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_Hm_creation_RR])	# # * 1e-20
+		ML_H2p_destruction_RR = (np.add(intervals_H2p_destruction_RR_tr[1:],intervals_H2p_destruction_RR_tr[:-1])/2)[np.array(prob_H2p_destruction_RR_tr).argmax()]	# # * 1e-20
+		temp = np.cumsum(prob_H2p_destruction_RR_tr)	# # * 1e-20
+		ML_H2p_destruction_RR_sigma = np.mean([ML_H2p_destruction_RR-intervals_H2p_destruction_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_H2p_destruction_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_H2p_destruction_RR])	# # * 1e-20
+		ML_H2p_creation_RR = (np.add(intervals_H2p_creation_RR_tr[1:],intervals_H2p_creation_RR_tr[:-1])/2)[np.array(prob_H2p_creation_RR_tr).argmax()]	# # * 1e-20
+		temp = np.cumsum(prob_H2p_creation_RR_tr)	# # * 1e-20
+		ML_H2p_creation_RR_sigma = np.mean([ML_H2p_creation_RR-intervals_H2p_creation_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_H2p_creation_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_H2p_creation_RR])	# # * 1e-20
 		if latest_version:
 			ML_H_creation_RR = (np.add(intervals_H_creation_RR_tr[1:],intervals_H_creation_RR_tr[:-1])/2)[np.array(prob_H_creation_RR_tr).argmax()]	# # * 1e-20
 			temp = np.cumsum(prob_H_creation_RR_tr)	# # * 1e-20
@@ -7420,6 +7277,23 @@ else:
 
 		plt.figure(figsize=(20, 10));
 		plt.plot(np.sort((1e20*intervals_H_destruction_RR2_tr).tolist()*2)[1:-1],100*np.array([prob_H_destruction_RR2_tr]*2).T.flatten(),label='H_destruction_RR2 ML=%.3g+/-%.3g#' %((1e20*ML_H_destruction_RR2),(1e20*ML_H_destruction_RR2_sigma)))
+
+
+
+
+
+
+
+
+
+		plt.plot(np.sort((1e20*intervals_Hp_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hp_destruction_RR_tr]*2).T.flatten(),label='Hp_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hp_destruction_RR),(1e20*ML_Hp_destruction_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_Hp_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hp_creation_RR_tr]*2).T.flatten(),label='Hp_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hp_creation_RR),(1e20*ML_Hp_creation_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_e_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_e_destruction_RR_tr]*2).T.flatten(),label='e_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_e_destruction_RR),(1e20*ML_e_destruction_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_e_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_e_creation_RR_tr]*2).T.flatten(),label='e_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_e_creation_RR),(1e20*ML_e_creation_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_Hm_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hm_destruction_RR_tr]*2).T.flatten(),label='Hm_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hm_destruction_RR),(1e20*ML_Hm_destruction_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_Hm_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hm_creation_RR_tr]*2).T.flatten(),label='Hm_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hm_creation_RR),(1e20*ML_Hm_creation_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_H2p_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2p_destruction_RR_tr]*2).T.flatten(),label='H2p_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2p_destruction_RR),(1e20*ML_H2p_destruction_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_H2p_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2p_creation_RR_tr]*2).T.flatten(),label='H2p_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2p_creation_RR),(1e20*ML_H2p_creation_RR_sigma)))
 		plt.plot(np.sort((1e20*intervals_H2_destruction_RR2_tr).tolist()*2)[1:-1],100*np.array([prob_H2_destruction_RR2_tr]*2).T.flatten(),label='H2_destruction_RR2 ML=%.3g+/-%.3g#' %((1e20*ML_H2_destruction_RR2),(1e20*ML_H2_destruction_RR2_sigma)))
 		if latest_version:
 			plt.plot(np.sort((1e20*intervals_H_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H_creation_RR_tr]*2).T.flatten(),label='H_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H_creation_RR),(1e20*ML_H_creation_RR_sigma)))
@@ -7668,6 +7542,40 @@ else:
 		bayesian_results_dict['H2_destruction_RR2']['full'] = dict([('intervals',intervals_H2_destruction_RR2),('prob',prob_H2_destruction_RR2),('actual_values',actual_values_H2_destruction_RR2),('most_likely',most_likely_H2_destruction_RR2),('most_likely_sigma',most_likely_H2_destruction_RR2_sigma),('unit','# 1e-20 m^-3 s^-1')])
 		bayesian_results_dict['H2_destruction_RR2']['radial_sum'] = dict([('intervals',intervals_H2_destruction_RR2_r),('prob',prob_H2_destruction_RR2_r),('actual_values',actual_values_H2_destruction_RR2_r),('most_likely',most_likely_H2_destruction_RR2_r),('unit','# 1e-20 s^-1')])
 		bayesian_results_dict['H2_destruction_RR2']['radial_time_sum'] = dict([('intervals',intervals_H2_destruction_RR2_tr),('prob',prob_H2_destruction_RR2_tr),('most_likely',ML_H2_destruction_RR2),('most_likely_sigma',ML_H2_destruction_RR2_sigma),('unit','# 1e-20')])
+
+		bayesian_results_dict['Hp_destruction_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['Hp_destruction_RR']['full'] = dict([('intervals',intervals_Hp_destruction_RR),('prob',prob_Hp_destruction_RR),('actual_values',actual_values_Hp_destruction_RR),('most_likely',most_likely_Hp_destruction_RR),('most_likely_sigma',most_likely_Hp_destruction_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['Hp_destruction_RR']['radial_sum'] = dict([('intervals',intervals_Hp_destruction_RR_r),('prob',prob_Hp_destruction_RR_r),('actual_values',actual_values_Hp_destruction_RR_r),('most_likely',most_likely_Hp_destruction_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['Hp_destruction_RR']['radial_time_sum'] = dict([('intervals',intervals_Hp_destruction_RR_tr),('prob',prob_Hp_destruction_RR_tr),('most_likely',ML_Hp_destruction_RR),('most_likely_sigma',ML_Hp_destruction_RR_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['Hp_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['Hp_creation_RR']['full'] = dict([('intervals',intervals_Hp_creation_RR),('prob',prob_Hp_creation_RR),('actual_values',actual_values_Hp_creation_RR),('most_likely',most_likely_Hp_creation_RR),('most_likely_sigma',most_likely_Hp_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['Hp_creation_RR']['radial_sum'] = dict([('intervals',intervals_Hp_creation_RR_r),('prob',prob_Hp_creation_RR_r),('actual_values',actual_values_Hp_creation_RR_r),('most_likely',most_likely_Hp_creation_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['Hp_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_Hp_creation_RR_tr),('prob',prob_Hp_creation_RR_tr),('most_likely',ML_Hp_creation_RR),('most_likely_sigma',ML_Hp_creation_RR_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['e_destruction_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['e_destruction_RR']['full'] = dict([('intervals',intervals_e_destruction_RR),('prob',prob_e_destruction_RR),('actual_values',actual_values_e_destruction_RR),('most_likely',most_likely_e_destruction_RR),('most_likely_sigma',most_likely_e_destruction_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['e_destruction_RR']['radial_sum'] = dict([('intervals',intervals_e_destruction_RR_r),('prob',prob_e_destruction_RR_r),('actual_values',actual_values_e_destruction_RR_r),('most_likely',most_likely_e_destruction_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['e_destruction_RR']['radial_time_sum'] = dict([('intervals',intervals_e_destruction_RR_tr),('prob',prob_e_destruction_RR_tr),('most_likely',ML_e_destruction_RR),('most_likely_sigma',ML_e_destruction_RR_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['e_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['e_creation_RR']['full'] = dict([('intervals',intervals_e_creation_RR),('prob',prob_e_creation_RR),('actual_values',actual_values_e_creation_RR),('most_likely',most_likely_e_creation_RR),('most_likely_sigma',most_likely_e_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['e_creation_RR']['radial_sum'] = dict([('intervals',intervals_e_creation_RR_r),('prob',prob_e_creation_RR_r),('actual_values',actual_values_e_creation_RR_r),('most_likely',most_likely_e_creation_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['e_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_e_creation_RR_tr),('prob',prob_e_creation_RR_tr),('most_likely',ML_e_creation_RR),('most_likely_sigma',ML_e_creation_RR_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['Hm_destruction_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['Hm_destruction_RR']['full'] = dict([('intervals',intervals_Hm_destruction_RR),('prob',prob_Hm_destruction_RR),('actual_values',actual_values_Hm_destruction_RR),('most_likely',most_likely_Hm_destruction_RR),('most_likely_sigma',most_likely_Hm_destruction_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['Hm_destruction_RR']['radial_sum'] = dict([('intervals',intervals_Hm_destruction_RR_r),('prob',prob_Hm_destruction_RR_r),('actual_values',actual_values_Hm_destruction_RR_r),('most_likely',most_likely_Hm_destruction_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['Hm_destruction_RR']['radial_time_sum'] = dict([('intervals',intervals_Hm_destruction_RR_tr),('prob',prob_Hm_destruction_RR_tr),('most_likely',ML_Hm_destruction_RR),('most_likely_sigma',ML_Hm_destruction_RR_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['Hm_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['Hm_creation_RR']['full'] = dict([('intervals',intervals_Hm_creation_RR),('prob',prob_Hm_creation_RR),('actual_values',actual_values_Hm_creation_RR),('most_likely',most_likely_Hm_creation_RR),('most_likely_sigma',most_likely_Hm_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['Hm_creation_RR']['radial_sum'] = dict([('intervals',intervals_Hm_creation_RR_r),('prob',prob_Hm_creation_RR_r),('actual_values',actual_values_Hm_creation_RR_r),('most_likely',most_likely_Hm_creation_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['Hm_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_Hm_creation_RR_tr),('prob',prob_Hm_creation_RR_tr),('most_likely',ML_Hm_creation_RR),('most_likely_sigma',ML_Hm_creation_RR_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['H2p_destruction_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['H2p_destruction_RR']['full'] = dict([('intervals',intervals_H2p_destruction_RR),('prob',prob_H2p_destruction_RR),('actual_values',actual_values_H2p_destruction_RR),('most_likely',most_likely_H2p_destruction_RR),('most_likely_sigma',most_likely_H2p_destruction_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['H2p_destruction_RR']['radial_sum'] = dict([('intervals',intervals_H2p_destruction_RR_r),('prob',prob_H2p_destruction_RR_r),('actual_values',actual_values_H2p_destruction_RR_r),('most_likely',most_likely_H2p_destruction_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['H2p_destruction_RR']['radial_time_sum'] = dict([('intervals',intervals_H2p_destruction_RR_tr),('prob',prob_H2p_destruction_RR_tr),('most_likely',ML_H2p_destruction_RR),('most_likely_sigma',ML_H2p_destruction_RR_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['H2p_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['H2p_creation_RR']['full'] = dict([('intervals',intervals_H2p_creation_RR),('prob',prob_H2p_creation_RR),('actual_values',actual_values_H2p_creation_RR),('most_likely',most_likely_H2p_creation_RR),('most_likely_sigma',most_likely_H2p_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['H2p_creation_RR']['radial_sum'] = dict([('intervals',intervals_H2p_creation_RR_r),('prob',prob_H2p_creation_RR_r),('actual_values',actual_values_H2p_creation_RR_r),('most_likely',most_likely_H2p_creation_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['H2p_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_H2p_creation_RR_tr),('prob',prob_H2p_creation_RR_tr),('most_likely',ML_H2p_creation_RR),('most_likely_sigma',ML_H2p_creation_RR_sigma),('unit','# 1e-20')])
+
 
 		if latest_version:
 			bayesian_results_dict['H_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])

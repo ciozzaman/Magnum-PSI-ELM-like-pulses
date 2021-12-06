@@ -1018,7 +1018,7 @@ for index,merge_ID_target_multipulse in enumerate(merge_ID_target_multipulse_all
 	# fig.suptitle('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ\n ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
 	ax[0,0].errorbar(j_specific_pulse_en_semi_inf,1e-6*np.array(j_specific_energy_density)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),xerr=j_specific_pulse_en_semi_inf_sigma,yerr=1e-6*np.array(j_specific_energy_density_sigma)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),fmt='+',color=color[index],capsize=5)
 	temp = np.polyfit(j_specific_pulse_en_semi_inf,1e-6*np.array(j_specific_energy_density)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),1)
-	ax[0,0].plot(np.sort(j_specific_pulse_en_semi_inf),np.polyval(temp,np.sort(j_specific_pulse_en_semi_inf)),'--',linewidth=4,color=color[index],label='B=%.3g' %(np.nanmedian(magnetic_field)))
+	ax[0,0].plot(np.sort(j_specific_pulse_en_semi_inf),np.polyval(temp,np.sort(j_specific_pulse_en_semi_inf)),'--',linewidth=4,color=color[index],label='B=%.3gT' %(np.nanmedian(magnetic_field)))
 	ax[1,0].errorbar(j_specific_pulse_en_semi_inf,1e6*np.array(j_specific_area_of_interest_IR),xerr=j_specific_pulse_en_semi_inf_sigma,yerr=1e6*np.array(j_specific_area_of_interest_IR_sigma),fmt='+',color=color[index],capsize=5)
 	temp = np.polyfit(j_specific_pulse_en_semi_inf,j_specific_area_of_interest_IR,1)
 	ax[1,0].plot(np.sort(j_specific_pulse_en_semi_inf),1e6*np.polyval(temp,np.sort(j_specific_pulse_en_semi_inf)),'--',linewidth=4,color=color[index])
@@ -1027,18 +1027,18 @@ for index,merge_ID_target_multipulse in enumerate(merge_ID_target_multipulse_all
 	if index!=3:
 		ax4[0,0].errorbar(j_specific_pulse_en_semi_inf,1e-6*np.array(j_specific_energy_density)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),xerr=j_specific_pulse_en_semi_inf_sigma,yerr=1e-6*np.array(j_specific_energy_density_sigma)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),fmt='+',color=color[index],capsize=5)
 		temp = np.polyfit(j_specific_pulse_en_semi_inf,1e-6*np.array(j_specific_energy_density)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),1)
-		ax4[0,0].plot(np.sort(j_specific_pulse_en_semi_inf),np.polyval(temp,np.sort(j_specific_pulse_en_semi_inf)),'--',linewidth=4,color=color[index],label='B=%.3g' %(np.nanmedian(magnetic_field)))
+		ax4[0,0].plot(np.sort(j_specific_pulse_en_semi_inf),np.polyval(temp,np.sort(j_specific_pulse_en_semi_inf)),'--',linewidth=4,color=color[index],label='B=%.3gT' %(np.nanmedian(magnetic_field)))
 		ax4[1,0].errorbar(j_specific_pulse_en_semi_inf,1e6*np.array(j_specific_area_of_interest_IR),xerr=j_specific_pulse_en_semi_inf_sigma,yerr=1e6*np.array(j_specific_area_of_interest_IR_sigma),fmt='+',color=color[index],capsize=5)
 		temp = np.polyfit(j_specific_pulse_en_semi_inf,j_specific_area_of_interest_IR,1)
 		ax4[1,0].plot(np.sort(j_specific_pulse_en_semi_inf),1e6*np.polyval(temp,np.sort(j_specific_pulse_en_semi_inf)),'--',linewidth=4,color=color[index])
 
 	ax2[0,0].errorbar(j_specific_target_chamber_pressure,1e-6*np.array(j_specific_energy_density)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),yerr=1e-6*np.array(j_specific_energy_density_sigma)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),fmt='+',color=color[index],capsize=5)
 	temp = np.array([y for _, y in sorted(zip(target_chamber_pressure_2, 1e-6*np.array(pulse_energy_density2)/np.array(TS_pulse_duration_at_max_power2)**0.5))])
-	ax2[0,0].plot(np.sort(target_chamber_pressure_2),temp,color=color[index],label='B=%.3g' %(np.nanmedian(magnetic_field)))
+	ax2[0,0].plot(np.sort(target_chamber_pressure_2),temp,color=color[index],label='B=%.3gT' %(np.nanmedian(magnetic_field)))
 
 	ax3[0,0].errorbar(j_specific_target_chamber_pressure,j_specific_pulse_en_semi_inf,yerr=j_specific_pulse_en_semi_inf_sigma,fmt='+',color=color[index],capsize=5)
 	temp = np.array([y for _, y in sorted(zip(target_chamber_pressure_2, pulse_energy))])
-	ax3[0,0].plot(np.sort(target_chamber_pressure_2),temp,color=color[index],label='B=%.3g' %(np.nanmedian(magnetic_field)))
+	ax3[0,0].plot(np.sort(target_chamber_pressure_2),temp,color=color[index],label='B=%.3gT' %(np.nanmedian(magnetic_field)))
 
 ax[0,0].grid()
 ax[0,0].legend(loc='best', fontsize='small')

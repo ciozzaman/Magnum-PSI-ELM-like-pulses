@@ -29,6 +29,14 @@ os.chdir('/home/ffederic/work/Collaboratory/test/experimental_data/functions')
 print(os.path.abspath(os.getcwd()))
 import pyradi.ryptw as ryptw
 
+# to calculate the Hessian and consequently the covariance matrix from a fit with scipy.optimize.fmin_l_bfgs_b
+# see https://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/DAVIES1/rd_bhatt_cvonline/node9.html
+import numdifftools as nd
+
+# to show the line where it fails
+import sys, traceback, logging
+logging.basicConfig(level=logging.ERROR)
+
 fdir = '/home/ffederic/work/Collaboratory/test/experimental_data'
 df_log = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/shots_3.csv',index_col=0)
 df_settings = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Log/settings_3.csv',index_col=0)
@@ -41,8 +49,8 @@ temp=[]
 # merge_id_all = [17,18,19,20,21,24,32,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99,101,103]
 merge_id_all = [66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99,101,103]
 # merge_id_all = [85, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99, 95]
-# merge_id_all = [90, 91]
-# merge_id_all = [32]
+# merge_id_all = [85, 95, 104]
+# merge_id_all = [89]
 for merge_id in merge_id_all:
 	temp.extend(find_index_of_file(merge_id,df_settings,df_log,only_OES=False))
 all_j=[]
@@ -254,7 +262,13 @@ for j in all_j:
 
 	IR_shape = np.array((IR_shape.replace(' ', '').split(','))).astype(int)
 
-	header = ryptw.readPTWHeader('/home/ffederic/work/Collaboratory/test/experimental_data/'+folder+'/'+"{0:0=2g}".format(sequence)+'/IR_camera/'+IR_reference+'.ptw')
+	if IR_reference[:3]=='Cap':
+		header = ryptw.readPTWHeader('/home/ffederic/work/Collaboratory/test/experimental_data/'+folder+'/'+"{0:0=2g}".format(sequence)+'/IR_camera/'+IR_reference+'.ptw')
+	else:
+		(folder_reference,date_reference,sequence_reference,untitled_reference) = df_log.loc[int(IR_reference),['folder','date','sequence','untitled']]
+		(IR_trace_reference) = df_log.loc[int(IR_reference),['IR_trace']][0]
+		header = ryptw.readPTWHeader('/home/ffederic/work/Collaboratory/test/experimental_data/'+folder_reference+'/'+"{0:0=2g}".format(sequence_reference)+'/IR_camera/'+IR_trace_reference+'.ptw')
+		print('reference is item '+str(IR_trace_reference))
 	# ryptw.showHeader(header)
 	frequency = 1/header.h_CEDIPAquisitionPeriod # Hz
 	int_time = round(header.h_CEDIPIntegrationTime,9) # s
@@ -277,46 +291,72 @@ for j in all_j:
 	print('mark7')
 
 	# frames = frames.flatten().reshape((np.shape(frames)[1],np.shape(frames)[2],np.shape(frames)[0])).T
+	# frames = [[],[]]	# this does not work because during the recording the sequence of the digitizers can and does change, so I cannot assume that it is regular
 	frames = []
 	for i in range(1,background_interval):
 		frame = ryptw.getPTWFrames(header, [i])[0][0]
+		# if i%2:
+		# 	frames[0].append(frame.flatten().reshape(np.shape(frame.T)).T)
+		# else:
+		# 	frames[1].append(frame.flatten().reshape(np.shape(frame.T)).T)
 		frames.append(frame.flatten().reshape(np.shape(frame.T)).T)
 	print('mark6')
 
-	dark = np.mean(frames,axis=0)
-	# plt.figure();plt.imshow(dark),plt.colorbar();plt.pause(0.01)
-
-	plt.figure(figsize=(20, 10))
-	# plt.imshow(dark,'rainbow')
-	# plt.plot(IR_shape[1],IR_shape[0],'k+')
-	# plt.plot(IR_shape[1] + np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10),IR_shape[0] + np.abs(IR_shape[2]**2-np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10)**2)**0.5,'k--',label='externally supplied')
-	# plt.plot(IR_shape[1] + np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10),IR_shape[0] - np.abs(IR_shape[2]**2-np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10)**2)**0.5,'k--')
-	# plt.plot(IR_shape[1] + np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10),IR_shape[0] + np.abs(IR_shape[3]**2-np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10)**2)**0.5,'k--')
-	# plt.plot(IR_shape[1] + np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10),IR_shape[0] - np.abs(IR_shape[3]**2-np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10)**2)**0.5,'k--')
-	# plt.xlabel('horizontal coord [pixels]')
-	# plt.ylabel('vertical coord [pixels]')
-	plt.pcolor(h_coordinates,v_coordinates,dark,cmap='rainbow')
-	plt.plot(IR_shape[1]*p2d_h,IR_shape[0]*p2d_v,'k+')
-	plt.plot((IR_shape_in_mm[1] + np.arange(-IR_shape_in_mm[2],+IR_shape_in_mm[2]+IR_shape_in_mm[2]/10,IR_shape_in_mm[2]/10)),(IR_shape_in_mm[0] + np.abs(IR_shape_in_mm[2]**2-np.arange(-IR_shape_in_mm[2],+IR_shape_in_mm[2]+IR_shape_in_mm[2]/10,IR_shape_in_mm[2]/10)**2)**0.5),'k--',label='externally supplied')
-	plt.plot((IR_shape[1] + np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10))*p2d_h,(IR_shape[0] + np.abs(IR_shape[2]**2-np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10)**2)**0.5)*p2d_v,'k--',label='externally supplied')
-	plt.plot((IR_shape[1] + np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10))*p2d_h,(IR_shape[0] - np.abs(IR_shape[2]**2-np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10)**2)**0.5)*p2d_v,'k--')
-	plt.plot((IR_shape[1] + np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10))*p2d_h,(IR_shape[0] + np.abs(IR_shape[3]**2-np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10)**2)**0.5)*p2d_v,'k--')
-	plt.plot((IR_shape[1] + np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10))*p2d_h,(IR_shape[0] - np.abs(IR_shape[3]**2-np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10)**2)**0.5)*p2d_v,'k--')
-	plt.xlabel('horizontal coord [mm]')
-	plt.ylabel('vertical coord [mm]')
-	plt.colorbar().set_label('digital level [au]')
-	# plt.axes().set_aspect('equal')
-	plt.axes().set_aspect(aspect_ratio)
-	plt.title(pre_title+'Dark background in '+str(j)+', IR trace '+IR_reference+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
-	figure_index+=1
-	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
-	plt.close()
+	# dark = np.mean(frames,axis=0)
+	dark_bad_pixels_marker = []
+	dark_bad_pixels_marker_str = []
+	for i in range(len(frames)):
+		bad_pixels_flag = coleval.find_dead_pixels([frames[i]],treshold_for_bad_low_std=-1,treshold_for_bad_std=100,treshold_for_bad_difference=30).flatten()
+		dark_bad_pixels_marker.append(np.arange(len(bad_pixels_flag))[bad_pixels_flag>0])
+		dark_bad_pixels_marker_str.append(str(dark_bad_pixels_marker[-1]))
+	counter = collections.Counter(dark_bad_pixels_marker_str)
+	most_common_str = [counter.most_common()[0][0],counter.most_common()[1][0]]
+	most_common = [dark_bad_pixels_marker[(np.array(dark_bad_pixels_marker_str)==most_common_str[0]).argmax()],dark_bad_pixels_marker[(np.array(dark_bad_pixels_marker_str)==most_common_str[1]).argmax()]]
+	dark0 = []
+	dark1 = []
+	for i in range(len(frames)):
+		if np.sum([value in most_common[0] for value in dark_bad_pixels_marker[i]]) > np.sum([value in most_common[1] for value in dark_bad_pixels_marker[i]]):
+			dark0.append(frames[i])
+		elif np.sum([value in most_common[1] for value in dark_bad_pixels_marker[i]]) > np.sum([value in most_common[0] for value in dark_bad_pixels_marker[i]]):
+			dark1.append(frames[i])
+		else:
+			print('dark frame n'+str(i)+' discarded')
+	dark = [np.mean(dark0,axis=0),np.mean(dark1,axis=0)]
+	dark_bad_pixels_marker = most_common
+		# plt.figure();plt.imshow(dark),plt.colorbar();plt.pause(0.01)
+	for i in range(len(dark)):
+		plt.figure(figsize=(20, 10))
+		# plt.imshow(dark,'rainbow')
+		# plt.plot(IR_shape[1],IR_shape[0],'k+')
+		# plt.plot(IR_shape[1] + np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10),IR_shape[0] + np.abs(IR_shape[2]**2-np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10)**2)**0.5,'k--',label='externally supplied')
+		# plt.plot(IR_shape[1] + np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10),IR_shape[0] - np.abs(IR_shape[2]**2-np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10)**2)**0.5,'k--')
+		# plt.plot(IR_shape[1] + np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10),IR_shape[0] + np.abs(IR_shape[3]**2-np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10)**2)**0.5,'k--')
+		# plt.plot(IR_shape[1] + np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10),IR_shape[0] - np.abs(IR_shape[3]**2-np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10)**2)**0.5,'k--')
+		# plt.xlabel('horizontal coord [pixels]')
+		# plt.ylabel('vertical coord [pixels]')
+		plt.pcolor(h_coordinates,v_coordinates,dark[i],cmap='rainbow')
+		plt.plot(IR_shape[1]*p2d_h,IR_shape[0]*p2d_v,'k+')
+		plt.plot((IR_shape_in_mm[1] + np.arange(-IR_shape_in_mm[2],+IR_shape_in_mm[2]+IR_shape_in_mm[2]/10,IR_shape_in_mm[2]/10)),(IR_shape_in_mm[0] + np.abs(IR_shape_in_mm[2]**2-np.arange(-IR_shape_in_mm[2],+IR_shape_in_mm[2]+IR_shape_in_mm[2]/10,IR_shape_in_mm[2]/10)**2)**0.5),'k--',label='externally supplied')
+		plt.plot((IR_shape[1] + np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10))*p2d_h,(IR_shape[0] + np.abs(IR_shape[2]**2-np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10)**2)**0.5)*p2d_v,'k--',label='externally supplied')
+		plt.plot((IR_shape[1] + np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10))*p2d_h,(IR_shape[0] - np.abs(IR_shape[2]**2-np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10)**2)**0.5)*p2d_v,'k--')
+		plt.plot((IR_shape[1] + np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10))*p2d_h,(IR_shape[0] + np.abs(IR_shape[3]**2-np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10)**2)**0.5)*p2d_v,'k--')
+		plt.plot((IR_shape[1] + np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10))*p2d_h,(IR_shape[0] - np.abs(IR_shape[3]**2-np.arange(-IR_shape[3],+IR_shape[3]+IR_shape[3]/10,IR_shape[3]/10)**2)**0.5)*p2d_v,'k--')
+		plt.xlabel('horizontal coord [mm]')
+		plt.ylabel('vertical coord [mm]')
+		plt.colorbar().set_label('digital level [au]')
+		# plt.axes().set_aspect('equal')
+		plt.axes().set_aspect(aspect_ratio)
+		plt.title(pre_title+'Dark background in '+str(j)+', IR trace '+IR_reference+'\n frequency %.3gHz, int time %.3gms\ndigit%.3g dead pixel marker ' %(frequency,int_time*1000,i) +str(dark_bad_pixels_marker[i]))
+		figure_index+=1
+		plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
+		plt.close()
 
 	header = ryptw.readPTWHeader('/home/ffederic/work/Collaboratory/test/experimental_data/'+folder+'/'+"{0:0=2g}".format(sequence)+'/IR_camera/'+IR_trace+'.ptw')
 
 	# check what operation is required controlling the .npz file
 	try:
 		selected_1_mean_counts = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace +'.npz')['selected_1_mean_counts']
+		original_timestamp_ms = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace +'.npz')['original_timestamp_ms']
 		successfull_reading = True
 		try:
 			corrected_frames_temp_restrict = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')['twoD_peak_evolution_temp_averaged_std']
@@ -332,67 +372,86 @@ for j in all_j:
 
 
 
-	# # !! TEMPORARY !! need to reset everything
-	# successfull_reading = False
+	# !! TEMPORARY !! need to reset everything
+	successfull_reading = False
 	# corrected_frames_generation_required = True
-	# # !! TEMPORARY !! need to reset everything
-	# corrected_frames_generation_required = True
-	# print('generation of corrected_frames required')
+	# !! TEMPORARY !! need to reset everything
+	corrected_frames_generation_required = True
+	print('generation of corrected_frames required')
 
 
 
 	if corrected_frames_generation_required:
-		frames = []
-	yyyy = []
-	mm = []
-	dd = []
-	hh = []
-	minutes = []
-	ss_sss = []
-	yyyy_mm_dd_in_ss = []
-	for i in range(header.h_firstframe,header.h_lastframe):
-		if corrected_frames_generation_required:
+		frames = [[],[]]
+		frames_ordering = [[],[]]
+		discarded_frames = []
+		yyyy = []
+		mm = []
+		dd = []
+		hh = []
+		minutes = []
+		ss_sss = []
+		yyyy_mm_dd_in_ss = []
+		for i in range(header.h_firstframe,header.h_lastframe):
 			frame = ryptw.getPTWFrames(header, [i])[0][0]
-			frames.append(frame.flatten().reshape(np.shape(frame.T)).T)
-		temp = ryptw.getPTWFrames(header, [i])[1][0]
-		yyyy.append(temp.h_FileSaveYear)
-		mm.append(temp.h_FileSaveMonth)
-		dd.append(temp.h_FileSaveDay)
-		hh.append(temp.h_frameHour)
-		minutes.append(temp.h_frameMinute)
-		ss_sss.append(temp.h_frameSecond)
-		yyyy_mm_dd_in_ss.append(datetime.datetime(temp.h_FileSaveYear-30,temp.h_FileSaveMonth,temp.h_FileSaveDay).timestamp())	# I follow the same convention as the OES camera. t=0 is at the start of year 2000
-	yyyy = np.array(yyyy)
-	mm = np.array(mm)
-	dd = np.array(dd)
-	hh = np.array(hh)
-	minutes = np.array(minutes)
-	ss_sss = np.array(ss_sss)
-	yyyy_mm_dd_in_ss = np.array(yyyy_mm_dd_in_ss)
-	day_ss = (hh*60+minutes)*60+ss_sss
-	original_timestamp_ms = (yyyy_mm_dd_in_ss+day_ss)*1000
-	# effective_dt = np.mean(np.diff(day_ss))
-	effective_dt = header.h_CEDIPAquisitionPeriod
-	temp = np.mean(day_ss-np.arange(len(day_ss))*effective_dt)
-	day_ss = np.arange(len(day_ss))*effective_dt + temp
-	corrected_timestamp_ms = (yyyy_mm_dd_in_ss + day_ss)*1000
-	if os.path.exists(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'):
-		try:
-			full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
-		except:
+			frame = frame.flatten().reshape(np.shape(frame.T)).T
+			bad_pixels_flag = coleval.find_dead_pixels([frame],treshold_for_bad_low_std=-1,treshold_for_bad_std=100,treshold_for_bad_difference=30).flatten()
+			bad_pixels_marker = np.arange(len(bad_pixels_flag))[bad_pixels_flag>0]
+			if np.sum([value in dark_bad_pixels_marker[0] for value in bad_pixels_marker]) > np.sum([value in dark_bad_pixels_marker[1] for value in bad_pixels_marker]):
+				frames[0].append(frame)
+				frames_ordering[0].append(i)
+				discarded_frames.append(False)
+			elif np.sum([value in dark_bad_pixels_marker[1] for value in bad_pixels_marker]) > np.sum([value in dark_bad_pixels_marker[0] for value in bad_pixels_marker]):
+				frames[1].append(frame)
+				frames_ordering[1].append(i)
+				discarded_frames.append(False)
+			else:
+				print('frame n'+str(i)+' discarded')
+				discarded_frames.append(True)
+			temp = ryptw.getPTWFrames(header, [i])[1][0]
+			yyyy.append(temp.h_FileSaveYear)
+			mm.append(temp.h_FileSaveMonth)
+			dd.append(temp.h_FileSaveDay)
+			hh.append(temp.h_frameHour)
+			minutes.append(temp.h_frameMinute)
+			ss_sss.append(temp.h_frameSecond)
+			yyyy_mm_dd_in_ss.append(datetime.datetime(temp.h_FileSaveYear-30,temp.h_FileSaveMonth,temp.h_FileSaveDay).timestamp())	# I follow the same convention as the OES camera. t=0 is at the start of year 2000
+		yyyy = np.array(yyyy)
+		mm = np.array(mm)
+		dd = np.array(dd)
+		hh = np.array(hh)
+		minutes = np.array(minutes)
+		ss_sss = np.array(ss_sss)
+		yyyy_mm_dd_in_ss = np.array(yyyy_mm_dd_in_ss)
+		day_ss = (hh*60+minutes)*60+ss_sss
+		original_timestamp_ms = (yyyy_mm_dd_in_ss+day_ss)*1000
+		# effective_dt = np.mean(np.diff(day_ss))
+		effective_dt = header.h_CEDIPAquisitionPeriod
+		temp = np.mean(day_ss-np.arange(len(day_ss))*effective_dt)
+		day_ss = np.arange(len(day_ss))*effective_dt + temp
+		corrected_timestamp_ms = (yyyy_mm_dd_in_ss + day_ss)*1000
+		if os.path.exists(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'):
+			try:
+				temp = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')
+				temp.allow_pickle=True
+				full_saved_file_dict = dict(temp)
+			except:
+				full_saved_file_dict = dict([])
+		else:
 			full_saved_file_dict = dict([])
+		full_saved_file_dict['original_timestamp_ms'] = original_timestamp_ms[np.logical_not(discarded_frames)]
+		full_saved_file_dict['corrected_timestamp_ms'] = corrected_timestamp_ms[np.logical_not(discarded_frames)]
 	else:
-		full_saved_file_dict = dict([])
-	full_saved_file_dict['original_timestamp_ms'] = original_timestamp_ms
-	full_saved_file_dict['corrected_timestamp_ms'] = corrected_timestamp_ms
+		original_timestamp_ms = full_saved_file_dict['original_timestamp_ms']
+		corrected_timestamp_ms = full_saved_file_dict['corrected_timestamp_ms']
 	# np.savez_compressed(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace,**full_saved_file_dict)
 
 	print('mark3')
 
 	if corrected_frames_generation_required:
-		spectra = np.fft.fft(np.array(frames).reshape((np.shape(frames)[0],np.shape(frames)[1]*np.shape(frames)[2]))[:,2000:5000],axis=0)
+		spectra = np.fft.fft(np.array(frames[0]).reshape((np.shape(frames[0])[0],np.shape(frames[0])[1]*np.shape(frames[0])[2]))[:,2000:5000],axis=0)
 		magnitude = 2 * np.abs(spectra) / len(spectra)
-		freq = np.fft.fftfreq(len(magnitude), d=1 / frequency)
+		freq = np.fft.fftfreq(len(magnitude), d=2*1 / frequency)	# 2* comes from separating digitizers
 
 		# plt.figure();plt.plot(freq,magnitude[:,40,24]),plt.semilogy();plt.pause(0.01)
 		# plt.figure();plt.imshow(magnitude[freq.argmax()]),plt.colorbar();plt.pause(0.01)
@@ -410,7 +469,7 @@ for j in all_j:
 		ax.set_xlabel('frequency [Hz]')
 		ax.set_ylabel('pixel index')
 		ax.set_zlabel('amplitude [au]')
-		plt.title(pre_title+'Original FT for rows interested by oscillation in '+str(j)+', IR trace '+IR_reference+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
+		plt.title(pre_title+'Original FT for rows interested by oscillation in '+str(j)+', IR trace '+IR_reference+'\n frequency %.3gHz, int time %.3gms digitizer 0' %(frequency,int_time*1000))
 		figure_index+=1
 		plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
 		plt.close()
@@ -486,9 +545,29 @@ for j in all_j:
 	# plt.figure();plt.imshow(corrected_frames[0]),plt.colorbar();plt.pause(0.01)
 
 	if corrected_frames_generation_required:
-		corrected_frames = np.array(frames)
-		corrected_frames = corrected_frames-dark
-		# corrected_frames = medfilt(corrected_frames,[1,5,5])
+		if False:	# done at the stage of collecting the frames alrady
+			# addition to manage dead pixels
+			bad_pixels_marker = []
+			for i in range(len(frames)):
+				bad_pixels_flag = coleval.find_dead_pixels([frames[i][:background_interval]],treshold_for_bad_std=100,treshold_for_bad_difference=30).flatten()
+				bad_pixels_marker.append(np.arange(len(bad_pixels_flag))[bad_pixels_flag>0])
+
+			score = np.zeros((len(frames),len(frames)))
+			for i in range(len(frames)):
+				for ii in range(len(frames)):
+					score[i,ii] = np.sum([value in dark_bad_pixels_marker[ii] for value in bad_pixels_marker[i]])
+			if score[0,1]+score[1,0]<score[0,0]+score[1,1]:
+				dark = np.flip(dark,axis=0)
+		corrected_frames = []
+		for i in range(len(frames)):
+			corrected_frames.append(frames[i]-dark[i])
+		frames_ordering = coleval.flatten(frames_ordering)
+		corrected_frames = coleval.flatten(corrected_frames)
+		corrected_frames = np.array([y for _, y in sorted(zip(frames_ordering, corrected_frames))])
+
+		# corrected_frames = np.array(frames)
+		# corrected_frames = corrected_frames-dark
+		# # corrected_frames = medfilt(corrected_frames,[1,5,5])
 		corrected_frames_no_min_zero = cp.deepcopy(corrected_frames)
 
 		plt.figure(figsize=(20, 20))
@@ -555,13 +634,13 @@ for j in all_j:
 			thermal_conductivity = Moly_thermal_conductivity_interp	# W/mK
 			heat_capacity = Moly_heat_capacity_interp	# J/kg k
 			density = Moly_density_interp(20)	# kg/m3
-			de=0.05
+			de=0.15
 			target_thickness = 9e-3	# m
 		elif target_material in ['TZM thin','TZM thick']:
 			thermal_conductivity = TZM_thermal_conductivity_interp	# W/mK
 			heat_capacity = TZM_heat_capacity_interp	# J/kg k
 			density = TZM_density_interp(20)	# kg/m3
-			de=0.05
+			de=0.15
 			if target_material == 'TZM thin':
 				target_thickness = 9e-3	# m
 			else:
@@ -570,7 +649,7 @@ for j in all_j:
 			thermal_conductivity = W_thermal_conductivity_interp	# W/mK
 			heat_capacity = W_heat_capacity_interp	# J/kg k
 			density = W_density_interp(20)	# kg/m3
-			de=0.2
+			de=0.035
 			target_thickness = 1e-3	# m
 		else:
 			print('Error, target material not specified. add it to the shot characteristics')
@@ -583,17 +662,17 @@ for j in all_j:
 			thermal_conductivity = 126	# W/mK
 			heat_capacity = 305	# J/kg k
 			density = 10220	# kg/m3
-			de=0.05
+			de=0.15
 		elif target_material in ['TZM thin','TZM thick']:
 			thermal_conductivity = 126	# W/mK
 			heat_capacity = 305	# J/kg k
 			density = 10220	# kg/m3
-			de=0.05
+			de=0.15
 		elif target_material in ['tungsten dummy','tungsten']:
 			thermal_conductivity = 175	# W/mK
 			heat_capacity = 134	# J/kg k
 			density = 19250	# kg/m3
-			de=0.2
+			de=0.035
 		else:
 			print('Error, target material not specified. add it to the shot characteristics')
 			exit()
@@ -736,6 +815,18 @@ for j in all_j:
 		peaks = find_peaks(selected_2_mean,distance=incremental_step*frequency*0.9)[0]
 		proms = get_proms(selected_2_mean,peaks)[0]
 		# figure_index+=8
+
+	plt.figure(figsize=(20, 10))
+	plt.plot((np.arange(len(selected_1_mean))/frequency),selected_1_mean,label='selected_1_mean')
+	plt.plot((np.arange(len(selected_1_max))/frequency),selected_1_max,label='selected_1_max')
+	plt.plot((np.arange(len(selected_2_mean))/frequency),selected_2_mean,label='selected_2_mean')
+	plt.plot((np.arange(len(selected_2_max))/frequency),selected_2_max,label='selected_2_max')
+	plt.xlabel('time [s]')
+	plt.ylabel('Temperature [°C]')
+	plt.legend(loc='best')
+	figure_index+=1
+	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
+	plt.close('all')
 
 	# plt.figure(figsize=(20, 10));plt.plot(selected_1_mean);plt.plot(selected_1_max);plt.plot(selected_2_mean);plt.plot(selected_2_max);plt.pause(0.01)
 
@@ -1308,6 +1399,7 @@ for j in all_j:
 		# 	continue
 		left = peak_pos-int(3*frequency/1000)
 		right = peak_pos+int(interval_between_pulses*1/3)
+		left -= int(17*frequency/1000)
 		# if right>=len(selected_1_max_counts):
 		# 	continue
 		traces_corrected = selected_2_max_counts[left:right]
@@ -1320,9 +1412,9 @@ for j in all_j:
 		real_peak_loc = (np.arange((right-left)*10)/10)[traces_corrected.argmax()*10-20+(interpolated[traces_corrected.argmax()*10-20:traces_corrected.argmax()*10+20].argmax())]
 		# plt.plot(np.arange((right-left)*10)/10 - real_peak_loc,interpolated,'--')
 		# plt.plot(np.arange(right-left) - real_peak_loc,traces_corrected)
-		peak_shape.append(np.interp(np.arange((right-left)*10)/10,np.arange(right-left),traces_corrected-np.mean(selected_2_max_counts[peak_pos-15:peak_pos-5])))
-		peak_mean_shape.append(np.interp(np.arange((right-left)*10)/10,np.arange(right-left),traces_corrected_mean-np.mean(selected_2_mean_counts[peak_pos-15:peak_pos-5])))
 		peak_shape_time.append((np.arange((right-left)*10)/10 - real_peak_loc)/frequency)
+		peak_shape.append(np.interp(np.arange((right-left)*10)/10,np.arange(right-left),traces_corrected-np.mean(traces_corrected[(np.arange(right-left) - real_peak_loc)/frequency<-1e-3])))
+		peak_mean_shape.append(np.interp(np.arange((right-left)*10)/10,np.arange(right-left),traces_corrected_mean-np.mean(traces_corrected_mean[(np.arange(right-left) - real_peak_loc)/frequency<-1e-3])))
 
 	fig, ax = plt.subplots( 2,4,figsize=(34, 18), squeeze=False)
 	fig2, ax2 = plt.subplots( 2,2,figsize=(18, 18), squeeze=False)
@@ -1792,6 +1884,8 @@ for j in all_j:
 
 	if corrected_frames_generation_required:
 		twoD_peak_evolution_counts = []
+		twoD_peak_evolution_counts_delta = []
+		twoD_peak_evolution_counts_before = []
 		twoD_peak_evolution_time = []
 		interval_to_find_peak = int(0.3e-3*frequency*10)
 		for i_peak_pos,peak_pos in enumerate(very_good_pulses):
@@ -1811,31 +1905,43 @@ for j in all_j:
 			real_peak_loc = (np.arange((right-left)*10)/10)[traces_corrected.argmax()*10-20+(interpolated[traces_corrected.argmax()*10-20:traces_corrected.argmax()*10+20].argmax())]
 			# plt.plot(np.arange((right-left)*10)/10 - real_peak_loc,interpolated,'--')
 			# plt.plot(np.arange(right-left) - real_peak_loc,traces_corrected)
-			left -= int(7*frequency/1000)
+			left -= int(17*frequency/1000)
 			twoD_peak_evolution_counts.append(corrected_frames_no_min_zero[left:right])
-			twoD_peak_evolution_time.append(np.arange(right-left)/frequency - (real_peak_loc + int(7*frequency/1000))/frequency)
+			twoD_peak_evolution_time.append(np.arange(right-left)/frequency - (real_peak_loc + int(17*frequency/1000))/frequency)
+			twoD_peak_evolution_counts_before.append(np.mean(twoD_peak_evolution_counts[-1][twoD_peak_evolution_time[-1]<-1e-3],axis=0))
+			twoD_peak_evolution_counts_delta.append(twoD_peak_evolution_counts[-1]-twoD_peak_evolution_counts_before[-1])
 
 		twoD_peak_evolution_time = np.array(twoD_peak_evolution_time)
 		twoD_peak_evolution_counts = np.array(twoD_peak_evolution_counts)
+		twoD_peak_evolution_counts_before = np.median(twoD_peak_evolution_counts_before,axis=0)
+		twoD_peak_evolution_counts_delta = np.array(twoD_peak_evolution_counts_delta)
 		twoD_first_time = np.median(twoD_peak_evolution_time[:,0])
 		twoD_peak_evolution_time_averaged = []
 		twoD_peak_evolution_counts_averaged = []
 		twoD_peak_evolution_counts_std = []
+		twoD_peak_evolution_counts_delta_averaged = []
+		twoD_peak_evolution_counts_delta_std = []
 		# if (np.sum(np.logical_and(twoD_peak_evolution_time[:,0]>=twoD_first_time-1/frequency/10/2,twoD_peak_evolution_time[:,0]<twoD_first_time+1/frequency/10/2))<len(twoD_peak_evolution_time)*3/4):
 		flag_time_missing = []
 		for i_t in range(np.shape(twoD_peak_evolution_time)[1]*10):
 			select = np.logical_and(twoD_peak_evolution_time<twoD_first_time+(i_t+1/2)/frequency/10,twoD_peak_evolution_time>=twoD_first_time+(i_t-1/2)/frequency/10)
 			if np.sum(select)<len(twoD_peak_evolution_time)/10/3:
 				twoD_peak_evolution_time_averaged.append(twoD_first_time+i_t/frequency/10)
-				twoD_peak_evolution_counts_averaged.append(np.zeros_like(twoD_peak_evolution_counts[0,0]))
-				twoD_peak_evolution_counts_std.append(np.ones_like(twoD_peak_evolution_counts[0,0]))
+				twoD_peak_evolution_counts_averaged.append(np.zeros_like(twoD_peak_evolution_counts[0][0]))
+				twoD_peak_evolution_counts_std.append(np.ones_like(twoD_peak_evolution_counts[0][0]))
+				twoD_peak_evolution_counts_delta_averaged.append(np.zeros_like(twoD_peak_evolution_counts_delta[0][0]))
+				twoD_peak_evolution_counts_delta_std.append(np.ones_like(twoD_peak_evolution_counts_delta[0][0]))
 				flag_time_missing.append(i_t)
 				continue
 			twoD_peak_evolution_time_averaged.append(np.mean(twoD_peak_evolution_time[select]))
-			twoD_peak_evolution_counts_averaged.append(np.mean(twoD_peak_evolution_counts[select],axis=0))
+			twoD_peak_evolution_counts_averaged.append(np.median(twoD_peak_evolution_counts[select],axis=0))
 			twoD_peak_evolution_counts_std.append(np.std(twoD_peak_evolution_counts[select],axis=0))
+			twoD_peak_evolution_counts_delta_averaged.append(np.median(twoD_peak_evolution_counts_delta[select],axis=0))
+			twoD_peak_evolution_counts_delta_std.append(np.std(twoD_peak_evolution_counts_delta[select],axis=0))
 		twoD_peak_evolution_counts_averaged_2 = []
 		twoD_peak_evolution_counts_std_2 = []
+		twoD_peak_evolution_counts_delta_averaged_2 = []
+		twoD_peak_evolution_counts_delta_std_2 = []
 		twoD_peak_evolution_time_averaged_2 = []
 		flag_bad_data = np.max(twoD_peak_evolution_counts_averaged,axis=(1,2))==0
 		for i_t in range(np.shape(twoD_peak_evolution_time)[1]*10):
@@ -1852,13 +1958,19 @@ for j in all_j:
 				difference_up = difference_up.argmin()
 				twoD_peak_evolution_counts_averaged_2.append( ((difference_up-i_t)*twoD_peak_evolution_counts_averaged[difference_down]+(i_t-difference_down)*twoD_peak_evolution_counts_averaged[difference_up] )/(difference_up-difference_down) )
 				twoD_peak_evolution_counts_std_2.append( np.max([twoD_peak_evolution_counts_std[difference_down],twoD_peak_evolution_counts_std[difference_up]],axis=0) )
+				twoD_peak_evolution_counts_delta_averaged_2.append( ((difference_up-i_t)*twoD_peak_evolution_counts_delta_averaged[difference_down]+(i_t-difference_down)*twoD_peak_evolution_counts_delta_averaged[difference_up] )/(difference_up-difference_down) )
+				twoD_peak_evolution_counts_delta_std_2.append( np.max([twoD_peak_evolution_counts_delta_std[difference_down],twoD_peak_evolution_counts_delta_std[difference_up]],axis=0) )
 			else:
 				twoD_peak_evolution_counts_averaged_2.append( twoD_peak_evolution_counts_averaged[i_t] )
 				twoD_peak_evolution_counts_std_2.append( twoD_peak_evolution_counts_std[i_t] )
+				twoD_peak_evolution_counts_delta_averaged_2.append( twoD_peak_evolution_counts_delta_averaged[i_t] )
+				twoD_peak_evolution_counts_delta_std_2.append( twoD_peak_evolution_counts_delta_std[i_t] )
 			twoD_peak_evolution_time_averaged_2.append(twoD_first_time+i_t/frequency/10)
 		twoD_peak_evolution_time_averaged = np.array(twoD_peak_evolution_time_averaged_2)
 		twoD_peak_evolution_counts_averaged = np.array(twoD_peak_evolution_counts_averaged_2)
 		twoD_peak_evolution_counts_std = np.array(twoD_peak_evolution_counts_std_2)
+		twoD_peak_evolution_counts_delta_averaged = np.array(twoD_peak_evolution_counts_delta_averaged_2)
+		twoD_peak_evolution_counts_delta_std = np.array(twoD_peak_evolution_counts_delta_std_2)
 
 		temporal_mean_filter_footprint = [20,1,1]
 		spatial_mean_filter_footprint = [1,7,7]
@@ -1869,18 +1981,32 @@ for j in all_j:
 		temp = 1/temp**2
 		twoD_peak_evolution_counts_std_full_mean_filter = (full_mean_filter_footprint[0]*full_mean_filter_footprint[1]*full_mean_filter_footprint[2])**0.5 * 1/(generic_filter(temp,np.sum,size=full_mean_filter_footprint)**0.5)
 		twoD_peak_evolution_counts_std = (temporal_mean_filter_footprint[0]*temporal_mean_filter_footprint[1]*temporal_mean_filter_footprint[2])**0.5 * 1/(generic_filter(temp,np.sum,size=temporal_mean_filter_footprint)**0.5)
+		temp = cp.deepcopy(twoD_peak_evolution_counts_delta_std)
+		temp[np.isnan(temp)] = np.nanmin(temp)
+		temp[temp<=0] = np.nanmax(temp)
+		temp = 1/temp**2
+		twoD_peak_evolution_counts_delta_std_full_mean_filter = (full_mean_filter_footprint[0]*full_mean_filter_footprint[1]*full_mean_filter_footprint[2])**0.5 * 1/(generic_filter(temp,np.sum,size=full_mean_filter_footprint)**0.5)
+		twoD_peak_evolution_counts_delta_std = (temporal_mean_filter_footprint[0]*temporal_mean_filter_footprint[1]*temporal_mean_filter_footprint[2])**0.5 * 1/(generic_filter(temp,np.sum,size=temporal_mean_filter_footprint)**0.5)
 
 		ani = coleval.movie_from_data(np.array([twoD_peak_evolution_counts_averaged[::10]]), 1/(np.median(np.diff(twoD_peak_evolution_time_averaged)))/10, integration=int_time/1000,xlabel='horizontal coord [pixels]',ylabel='vertical coord [pixels]',barlabel='Counts [au]',time_offset=np.min(twoD_peak_evolution_time_averaged),prelude=pre_title+'Counts averaged among all second half of peaks no mean filter\n')
 		figure_index+=1
 		ani.save(path_where_to_save_everything+'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.mp4', fps=3, writer='ffmpeg',codec='mpeg4')
 		plt.close()
 
+		ani = coleval.movie_from_data(np.array([twoD_peak_evolution_counts_delta_averaged[::10]]), 1/(np.median(np.diff(twoD_peak_evolution_time_averaged)))/10, integration=int_time/1000,xlabel='horizontal coord [pixels]',ylabel='vertical coord [pixels]',barlabel='Count increment [au]',time_offset=np.min(twoD_peak_evolution_time_averaged),prelude=pre_title+'Counts averaged among all second half of peaks no mean filter\n')
+		figure_index+=1
+		ani.save(path_where_to_save_everything+'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.mp4', fps=3, writer='ffmpeg',codec='mpeg4')
+		plt.close()
+
 		# twoD_peak_evolution_counts_averaged = median_filter(twoD_peak_evolution_counts_averaged,size=mean_filter_footprint)
-		twoD_peak_evolution_counts_averaged_full_mean_filter = generic_filter(twoD_peak_evolution_counts_averaged,np.mean,size=full_mean_filter_footprint)
-		twoD_peak_evolution_counts_averaged = generic_filter(twoD_peak_evolution_counts_averaged,np.mean,size=temporal_mean_filter_footprint)
-		twoD_peak_evolution_counts_averaged_before = np.mean(twoD_peak_evolution_counts_averaged[:np.abs(twoD_peak_evolution_time_averaged+5/1000).argmin()],axis=0)
+		twoD_peak_evolution_counts_averaged_full_mean_filter = generic_filter(twoD_peak_evolution_counts_averaged,np.median,size=full_mean_filter_footprint)
+		twoD_peak_evolution_counts_averaged = generic_filter(twoD_peak_evolution_counts_averaged,np.median,size=temporal_mean_filter_footprint)
+		# twoD_peak_evolution_counts_averaged_before = np.mean(twoD_peak_evolution_counts_averaged[:np.abs(twoD_peak_evolution_time_averaged+5/1000).argmin()],axis=0)
+		# twoD_peak_evolution_counts_averaged_before_full_mean_filter = np.mean(twoD_peak_evolution_counts_averaged_full_mean_filter[:np.abs(twoD_peak_evolution_time_averaged+5/1000).argmin()],axis=0)
+		# twoD_peak_evolution_counts_averaged_delta = twoD_peak_evolution_counts_averaged-twoD_peak_evolution_counts_averaged_before
+		twoD_peak_evolution_counts_averaged_before = cp.deepcopy(twoD_peak_evolution_counts_before)
 		twoD_peak_evolution_counts_averaged_before_full_mean_filter = np.mean(twoD_peak_evolution_counts_averaged_full_mean_filter[:np.abs(twoD_peak_evolution_time_averaged+5/1000).argmin()],axis=0)
-		twoD_peak_evolution_counts_averaged_delta = twoD_peak_evolution_counts_averaged-twoD_peak_evolution_counts_averaged_before
+		twoD_peak_evolution_counts_averaged_delta = cp.deepcopy(twoD_peak_evolution_counts_delta_averaged)
 
 		# else:
 		# 	for i_t in range(np.shape(twoD_peak_evolution_time)[1]):
@@ -1889,7 +2015,6 @@ for j in all_j:
 		# 		twoD_peak_evolution_counts_averaged.append(np.mean(twoD_peak_evolution_counts[select],axis=0))
 		# 	twoD_peak_evolution_time_averaged = np.array(twoD_peak_evolution_time_averaged)
 		# 	twoD_peak_evolution_counts_averaged = np.array(twoD_peak_evolution_counts_averaged)
-
 
 		ani = coleval.movie_from_data(np.array([twoD_peak_evolution_counts_averaged_full_mean_filter[::10]]), 1/(np.median(np.diff(twoD_peak_evolution_time_averaged)))/10, integration=int_time/1000,xlabel='horizontal coord [pixels]',ylabel='vertical coord [pixels]',barlabel='Counts [au]',time_offset=np.min(twoD_peak_evolution_time_averaged),prelude=pre_title+'Counts averaged among all second half of peaks mean filter '+str(full_mean_filter_footprint)+'\n')
 		figure_index+=1
@@ -1901,16 +2026,24 @@ for j in all_j:
 		ani.save(path_where_to_save_everything+'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.mp4', fps=3, writer='ffmpeg',codec='mpeg4')
 		plt.close()
 
+
 		twoD_peak_evolution_counts_averaged[twoD_peak_evolution_counts_averaged<0] = 0
 		twoD_peak_evolution_counts_averaged_full_mean_filter[twoD_peak_evolution_counts_averaged_full_mean_filter<0] = 0
+		temp = twoD_peak_evolution_counts_averaged_before + twoD_peak_evolution_counts_averaged_delta
+		temp[temp<0] = 0
 		twoD_peak_evolution_temp_averaged = np.zeros_like(twoD_peak_evolution_counts_averaged)
 		twoD_peak_evolution_temp_averaged_std_up = np.zeros_like(twoD_peak_evolution_counts_averaged)
 		twoD_peak_evolution_temp_averaged_std_down = np.zeros_like(twoD_peak_evolution_counts_averaged)
 		for i in range(len(twoD_peak_evolution_time_averaged)):
 			# emissivity[i] = np.exp(counts_to_emissivity(corrected_frames[i]))
-			twoD_peak_evolution_temp_averaged[i] = np.exp(counts_to_temperature(twoD_peak_evolution_counts_averaged[i]))
-			twoD_peak_evolution_temp_averaged_std_up[i] = np.exp(counts_to_temperature(twoD_peak_evolution_counts_averaged[i]+twoD_peak_evolution_counts_std[i]))
-			twoD_peak_evolution_temp_averaged_std_down[i] = np.exp(counts_to_temperature(np.max([np.zeros_like(twoD_peak_evolution_counts_std[i]),twoD_peak_evolution_counts_averaged[i]-twoD_peak_evolution_counts_std[i]],axis=0)))
+			if False:
+				twoD_peak_evolution_temp_averaged[i] = np.exp(counts_to_temperature(twoD_peak_evolution_counts_averaged[i]))
+				twoD_peak_evolution_temp_averaged_std_up[i] = np.exp(counts_to_temperature(twoD_peak_evolution_counts_averaged[i]+twoD_peak_evolution_counts_std[i]))
+				twoD_peak_evolution_temp_averaged_std_down[i] = np.exp(counts_to_temperature(np.max([np.zeros_like(twoD_peak_evolution_counts_std[i]),twoD_peak_evolution_counts_averaged[i]-twoD_peak_evolution_counts_std[i]],axis=0)))
+			elif True:	# pricess calculating the delta and the before separately. important for high temperature
+				twoD_peak_evolution_temp_averaged[i] = np.exp(counts_to_temperature(temp[i]))
+				twoD_peak_evolution_temp_averaged_std_up[i] = np.exp(counts_to_temperature(temp[i]+twoD_peak_evolution_counts_delta_std[i]))
+				twoD_peak_evolution_temp_averaged_std_down[i] = np.exp(counts_to_temperature(np.max([np.zeros_like(twoD_peak_evolution_counts_delta_std[i]),temp[i]-twoD_peak_evolution_counts_delta_std[i]],axis=0)))
 		twoD_peak_evolution_temp_averaged_before = np.mean(twoD_peak_evolution_temp_averaged[:np.abs(twoD_peak_evolution_time_averaged+5/1000).argmin()],axis=0)
 		twoD_peak_evolution_temp_averaged_delta = twoD_peak_evolution_temp_averaged-twoD_peak_evolution_temp_averaged_before
 		twoD_peak_evolution_temp_averaged_std = (twoD_peak_evolution_temp_averaged_std_up-twoD_peak_evolution_temp_averaged_std_down)/2
@@ -2004,60 +2137,138 @@ for j in all_j:
 		out[select]=twoD_peak_evolution_temp_averaged_delta_after_short[select]
 		return (out-twoD_peak_evolution_temp_averaged_delta_after_short).flatten()
 
-	guess = [twoD_peak_evolution_temp_averaged_delta_after_short.max()-max(0,twoD_peak_evolution_temp_averaged_delta_after_short.min()),IR_shape[0],IR_shape[1],IR_shape[3]]
-	bds=[[0,max(0,IR_shape[0]-IR_shape[3]),max(0,IR_shape[1]-IR_shape[3]),min(IR_shape[2],10)],[np.inf,min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[0],IR_shape[0]+IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[1],IR_shape[1]+IR_shape[3]),np.max(twoD_peak_evolution_temp_averaged_delta_after_short.shape)/2]]
 	spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[0]))
-	fit1 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_delta_after_short.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
+	def gaussian_2D_fitting_plus_gradient(full_output,data):
+		def internal(args):
+			x = spatial_coord[0]	# horizontal
+			y = spatial_coord[1]	# vertical
+			diameter_2 = ((x-args[2])*p2d_h)**2+((y-args[1])*p2d_v)**2
+			out = args[0]*np.exp(- diameter_2/(2*(args[3]**2)) )
+
+			select = np.exp(-(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**40)	# super gaussian that cuts at max_diameter_to_fit/2/2, the 1.4 factor is required
+			full_out = out-data
+			grad_a0 = np.sum( 2*full_out*np.exp(- diameter_2/(2*(args[3]**2)) )*select )
+			grad_a1 = -np.sum( 2*full_out*out*(-1/(2*(args[3]**2)))*2*(p2d_v**2)*(y-args[1])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**39)*(1/(2*((max_diameter_to_fit/2/2/1.4)**2)))*2*(p2d_v**2)*(y-args[1]) )
+			grad_a2 = -np.sum( 2*full_out*out*(-1/(2*(args[3]**2)))*2*(p2d_h**2)*(x-args[2])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**39)*(1/(2*((max_diameter_to_fit/2/2/1.4)**2)))*2*(p2d_h**2)*(x-args[2]) )
+			grad_a3 = np.sum( 2*full_out*out*( diameter_2/(args[3]**3))*select )
+			out = (full_out**2)*select
+			if full_output==True:
+				return np.sum(out),np.array([grad_a0,grad_a1,grad_a2,grad_a3])
+			else:
+				return np.sum(out)
+		return internal
+
+	def make_standatd_fit_output(function,x_optimal):
+		hessian = nd.Hessian(function)
+		hessian = hessian(x_optimal)
+		covariance = np.linalg.inv(hessian)
+		for i in range(len(covariance)):
+			covariance[i,i] = np.abs(covariance[i,i])
+		fit = [x_optimal,covariance]
+		return fit
+
+	if False:	# only for testinf the prob_and_gradient function
+		target = 1
+		scale = 1e-4
+		# guess[target] = 1e5
+		temp1 = gaussian_2D_fitting_plus_gradient(True,twoD_peak_evolution_temp_averaged_delta_after_short)(guess)
+		guess[target] +=scale
+		temp2 = gaussian_2D_fitting_plus_gradient(True,twoD_peak_evolution_temp_averaged_delta_after_short)(guess)
+		guess[target] += -2*scale
+		temp3 = gaussian_2D_fitting_plus_gradient(True,twoD_peak_evolution_temp_averaged_delta_after_short)(guess)
+		guess[target] += scale
+		print('calculated derivated of %.7g vs true of %.7g' %(temp1[1][target],((temp2[0]-temp3[0])/(2*scale))))
+
+	if False:
+		guess = [twoD_peak_evolution_temp_averaged_delta_after_short.max()-max(0,twoD_peak_evolution_temp_averaged_delta_after_short.min()),IR_shape[0],IR_shape[1],IR_shape[3]]
+		bds=[[0,max(0,IR_shape[0]-IR_shape[3]),max(0,IR_shape[1]-IR_shape[3]),min(IR_shape[2],10)],[np.inf,min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[0],IR_shape[0]+IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[1],IR_shape[1]+IR_shape[3]),np.max(twoD_peak_evolution_temp_averaged_delta_after_short.shape)/2]]
+		spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[0]))
+		fit1 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_delta_after_short.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
+	else:
+		guess = np.array([twoD_peak_evolution_temp_averaged_delta_after_short.max()-max(0,twoD_peak_evolution_temp_averaged_delta_after_short.min()),IR_shape[0],IR_shape[1],IR_shape[3]*p2d_v])
+		bds=[[0,np.inf],[max(0,IR_shape[0]-IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[0],IR_shape[0]+IR_shape[3])],[max(0,IR_shape[1]-IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[1],IR_shape[1]+IR_shape[3])],[min(IR_shape[2],10)*p2d_v,np.max(twoD_peak_evolution_temp_averaged_delta_after_short.shape)/2*p2d_v]]
+		x_optimal, y_opt, opt_info = scipy.optimize.fmin_l_bfgs_b(gaussian_2D_fitting_plus_gradient(True,twoD_peak_evolution_temp_averaged_delta_after_short), x0=guess, iprint=0, factr=1e0, pgtol=1e-6,bounds=bds)#,m=1000, maxls=1000, pgtol=1e-10, factr=1e0)#,approx_grad = True)
+		fit1 = make_standatd_fit_output(gaussian_2D_fitting_plus_gradient(False,twoD_peak_evolution_temp_averaged_delta_after_short),x_optimal)
+		fit1[0][-1] /= p2d_v
+		fit1[1][-1,:] /= p2d_v
+		fit1[1][:,-1] /= p2d_v
+
 
 	# area calculation from delta Temperature
-	p2d_h = 25/77	# 25 mm == 77 pixels without sample tilting
-	p2d_v = 25/92	# 25 mm == 92 pixels
-	max_diameter_to_fit = 24	# mm
-	def gaussian_2D_fitting(spatial_coord,*args):
+	if False:
+		p2d_h = 25/77	# 25 mm == 77 pixels without sample tilting
+		p2d_v = 25/92	# 25 mm == 92 pixels
+		max_diameter_to_fit = 24	# mm
+		def gaussian_2D_fitting(spatial_coord,*args):
+			x = spatial_coord[0]	# horizontal
+			y = spatial_coord[1]	# vertical
+			# out = args[1]*np.exp(- (((x-args[3])*p2d_v/p2d_h)**2 + (y-args[2])**2)/(2*(args[4]**2)) ) + args[0]
+			out = args[0]*np.exp(- (((x-args[2])*p2d_v/p2d_h)**2 + (y-args[1])**2)/(2*(args[3]**2)) )
+			select = ((x-args[2])*p2d_h)**2+((y-args[1])*p2d_v)**2>(max_diameter_to_fit/2)**2
+			out[select]=twoD_peak_evolution_temp_averaged_delta_after_long[select]
+			return (out-twoD_peak_evolution_temp_averaged_delta_after_long).flatten()
+
+		# guess = [0,twoD_peak_evolution_temp_averaged_delta_after_long.max()-max(0,twoD_peak_evolution_temp_averaged_delta_after_long.min()),IR_shape[0],IR_shape[1],IR_shape[3]]
+		# bds=[[0,0,max(0,IR_shape[0]-IR_shape[3]),max(0,IR_shape[1]-IR_shape[3]),min(IR_shape[2],10)],[np.inf,np.inf,min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[0],IR_shape[0]+IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[1],IR_shape[1]+IR_shape[3]),np.max(twoD_peak_evolution_temp_averaged_delta_after_long.shape)/2]]
+		# spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[0]))
+		# fit1 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_delta_after_long.flatten()), guess,bounds=bds,maxfev=int(1e4))
 		x = spatial_coord[0]	# horizontal
 		y = spatial_coord[1]	# vertical
-		# out = args[1]*np.exp(- (((x-args[3])*p2d_v/p2d_h)**2 + (y-args[2])**2)/(2*(args[4]**2)) ) + args[0]
-		out = args[0]*np.exp(- (((x-args[2])*p2d_v/p2d_h)**2 + (y-args[1])**2)/(2*(args[3]**2)) )
-		select = ((x-args[2])*p2d_h)**2+((y-args[1])*p2d_v)**2>(max_diameter_to_fit/2)**2
-		out[select]=twoD_peak_evolution_temp_averaged_delta_after_long[select]
-		return (out-twoD_peak_evolution_temp_averaged_delta_after_long).flatten()
+		temp = max(1,np.median(np.sort(twoD_peak_evolution_temp_averaged_delta_after_long[((x-fit1[0][1])*p2d_h)**2+((y-fit1[0][2])*p2d_v)**2<(max_diameter_to_fit/2)**2])[:10]))
+		guess = [max(0,twoD_peak_evolution_temp_averaged_delta_after_long.max()-temp),fit1[0][1],fit1[0][2],fit1[0][3]]
+		bds=[[0,fit1[0][1]-0.1,fit1[0][2]-0.1,min(IR_shape[2],10)],[np.inf,fit1[0][1]+0.1,fit1[0][2]+0.1,np.max(twoD_peak_evolution_temp_averaged_delta_after_long.shape)/2]]
+		spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[0]))
+		print(guess);print(bds)
+		fit2 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_delta_after_long.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e5))
+		# area_of_interest_sigma = np.pi*( 2**0.5 *(correlated_values(fit2[0],fit2[1])[3])*p2d_v/1000)**2	# Area equivalent to all the overtemperature profile collapsed in a homogeneous circular spot
+		# area_of_interest_sigma = area_of_interest_sigma + ufloat(0,0.1*area_of_interest_sigma.nominal_value)	# this to add the uncertainly coming from the method itself
+		# area_of_interest_radius = 2**0.5 *fit2[0][3]	# pixels
+	else:
+		temp = max(1,np.median(np.sort(twoD_peak_evolution_temp_averaged_delta_after_long[((x-fit1[0][1])*p2d_v)**2+((y-fit1[0][2])*p2d_v)**2<(max_diameter_to_fit/2)**2])[:10]))
+		guess = [max(0,twoD_peak_evolution_temp_averaged_delta_after_long.max()-temp),fit1[0][1],fit1[0][2],x_optimal[3]]
+		bds=[[0,np.inf],[fit1[0][1]-0.1,fit1[0][1]+0.1],[fit1[0][2]-0.1,fit1[0][2]+0.1],[min(IR_shape[2],10)*p2d_v,np.max(twoD_peak_evolution_temp_averaged_delta_after_long.shape)/2*p2d_v]]
+		x_optimal, y_opt, opt_info = scipy.optimize.fmin_l_bfgs_b(gaussian_2D_fitting_plus_gradient(True,twoD_peak_evolution_temp_averaged_delta_after_long), x0=guess, iprint=0, factr=1e0, pgtol=1e-6,bounds=bds)#,m=1000, maxls=1000, pgtol=1e-10, factr=1e0)#,approx_grad = True)
+		fit2 = make_standatd_fit_output(gaussian_2D_fitting_plus_gradient(False,twoD_peak_evolution_temp_averaged_delta_after_long),x_optimal)
+		fit2[0][-1] /= p2d_v
+		fit2[1][-1,:] /= p2d_v
+		fit2[1][:,-1] /= p2d_v
 
-	# guess = [0,twoD_peak_evolution_temp_averaged_delta_after_long.max()-max(0,twoD_peak_evolution_temp_averaged_delta_after_long.min()),IR_shape[0],IR_shape[1],IR_shape[3]]
-	# bds=[[0,0,max(0,IR_shape[0]-IR_shape[3]),max(0,IR_shape[1]-IR_shape[3]),min(IR_shape[2],10)],[np.inf,np.inf,min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[0],IR_shape[0]+IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[1],IR_shape[1]+IR_shape[3]),np.max(twoD_peak_evolution_temp_averaged_delta_after_long.shape)/2]]
-	# spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[0]))
-	# fit1 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_delta_after_long.flatten()), guess,bounds=bds,maxfev=int(1e4))
-	x = spatial_coord[0]	# horizontal
-	y = spatial_coord[1]	# vertical
-	temp = max(1,np.median(np.sort(twoD_peak_evolution_temp_averaged_delta_after_long[((x-fit1[0][1])*p2d_h)**2+((y-fit1[0][2])*p2d_v)**2<(max_diameter_to_fit/2)**2])[:10]))
-	guess = [max(0,twoD_peak_evolution_temp_averaged_delta_after_long.max()-temp),fit1[0][1],fit1[0][2],fit1[0][3]]
-	bds=[[0,fit1[0][1]-0.1,fit1[0][2]-0.1,min(IR_shape[2],10)],[np.inf,fit1[0][1]+0.1,fit1[0][2]+0.1,np.max(twoD_peak_evolution_temp_averaged_delta_after_long.shape)/2]]
-	spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_long)[0]))
-	print(guess);print(bds)
-	fit2 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_delta_after_long.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e5))
-	# area_of_interest_sigma = np.pi*( 2**0.5 *(correlated_values(fit2[0],fit2[1])[3])*p2d_v/1000)**2	# Area equivalent to all the overtemperature profile collapsed in a homogeneous circular spot
-	# area_of_interest_sigma = area_of_interest_sigma + ufloat(0,0.1*area_of_interest_sigma.nominal_value)	# this to add the uncertainly coming from the method itself
-	# area_of_interest_radius = 2**0.5 *fit2[0][3]	# pixels
 
 	# here I refine the area from measuring it at each time ang getting a weighted average
-	spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta)[2]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta)[1]))
-	x = spatial_coord[0]	# horizontal
-	y = spatial_coord[1]	# vertical
-	select = ((x-fit2[0][2])*p2d_h)**2+((y-fit2[0][1])*p2d_v)**2>(max_diameter_to_fit/2)**2
-	def gaussian_2D_fitting_reduced_master(temperature_distridution_to_fit):
-		def gaussian_2D_fitting_reduced(spatial_coord,*args):
-			out = args[0]*np.exp(- (((x-fit2[0][2])*p2d_v/p2d_h)**2 + (y-fit2[0][1])**2)/(2*(args[1]**2)) )# + args[0]
-			out[select]=temperature_distridution_to_fit[select]
-			return (out-temperature_distridution_to_fit).flatten()
-		return gaussian_2D_fitting_reduced
+	if False:
+		spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta)[2]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta)[1]))
+		x = spatial_coord[0]	# horizontal
+		y = spatial_coord[1]	# vertical
+		select = ((x-fit2[0][2])*p2d_h)**2+((y-fit2[0][1])*p2d_v)**2>(max_diameter_to_fit/2)**2
+		def gaussian_2D_fitting_reduced_master(temperature_distridution_to_fit):
+			def gaussian_2D_fitting_reduced(spatial_coord,*args):
+				out = args[0]*np.exp(- (((x-fit2[0][2])*p2d_v/p2d_h)**2 + (y-fit2[0][1])**2)/(2*(args[1]**2)) )# + args[0]
+				out[select]=temperature_distridution_to_fit[select]
+				return (out-temperature_distridution_to_fit).flatten()
+			return gaussian_2D_fitting_reduced
+		bds=[[0,fit2[0][3]/2],[twoD_peak_evolution_counts_averaged_delta.max()*2,fit2[0][3]*2]]
+		guess = [twoD_peak_evolution_counts_averaged_delta.mean(),fit2[0][3]]
+	else:
+		guess = [max(0,twoD_peak_evolution_counts_averaged_delta.mean()),fit2[0][1],fit2[0][2],fit2[0][3]]
+		bds = [[0,twoD_peak_evolution_counts_averaged_delta.max()*2],[fit2[0][1]*0.99,fit2[0][1]*1.01],[fit2[0][2]*0.99,fit2[0][2]*1.01],[fit2[0][3]/2*p2d_v,fit2[0][3]*2*p2d_v]]
 	ensamble_peak_shape_counts_fitted = []
 	ensamble_peak_shape_counts_fitted_std = []
-	guess = [twoD_peak_evolution_counts_averaged_delta.mean(),fit2[0][3]]
-	bds=[[0,fit2[0][3]/2],[twoD_peak_evolution_counts_averaged_delta.max()*2,fit2[0][3]*2]]
 	for temperature_distridution_to_fit in twoD_peak_evolution_counts_averaged_delta:
-		fit = curve_fit(gaussian_2D_fitting_reduced_master(temperature_distridution_to_fit), spatial_coord, np.zeros_like(temperature_distridution_to_fit.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
+		print(len(ensamble_peak_shape_counts_fitted))
+		if False:
+			fit = curve_fit(gaussian_2D_fitting_reduced_master(temperature_distridution_to_fit), spatial_coord, np.zeros_like(temperature_distridution_to_fit.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
+			guess = fit[0]
+		else:
+			x_optimal, y_opt, opt_info = scipy.optimize.fmin_l_bfgs_b(gaussian_2D_fitting_plus_gradient(True,temperature_distridution_to_fit), x0=guess, iprint=0, factr=1e0, pgtol=1e-6,bounds=bds)#,m=1000, maxls=1000, pgtol=1e-10, factr=1e0)#,approx_grad = True)
+			guess = cp.deepcopy(x_optimal)
+			fit = make_standatd_fit_output(gaussian_2D_fitting_plus_gradient(False,temperature_distridution_to_fit),x_optimal)
+			fit[0][-1] /= p2d_v
+			fit[1][-1,:] /= p2d_v
+			fit[1][:,-1] /= p2d_v
+			fit[0] = np.array([fit[0][0],fit[0][-1]])
+			fit[1] = np.array([[fit[1][0,0],fit[1][0,-1]],[fit[1][-1,0],fit[1][-1,-1]]])
 		ensamble_peak_shape_counts_fitted.append(fit[0])
-		ensamble_peak_shape_counts_fitted_std.append(np.diag(fit[1])**0.5)
-		guess = fit[0]
+		ensamble_peak_shape_counts_fitted_std.append(np.abs(np.diag(fit[1]))**0.5)
 		# print(guess)
 	ensamble_peak_shape_counts_fitted = np.array(ensamble_peak_shape_counts_fitted)
 	ensamble_peak_shape_counts_fitted_std = np.array(ensamble_peak_shape_counts_fitted_std)
@@ -2083,15 +2294,29 @@ for j in all_j:
 	# 	guess = fit[0]
 	# 	# print(guess)
 	# ensamble_peak_shape_temp_fitted = np.array(ensamble_peak_shape_temp_fitted)
+	if False:
+		guess = [twoD_peak_evolution_temp_averaged_delta.mean(),fit2[0][3]]
+		bds=[[0,fit2[0][3]/2],[twoD_peak_evolution_temp_averaged_delta.max()*2,fit2[0][3]*2]]
+	else:
+		guess = [max(0,twoD_peak_evolution_temp_averaged_delta.mean()),fit2[0][1],fit2[0][2],fit2[0][3]]
+		bds=[[0,twoD_peak_evolution_temp_averaged_delta.max()*2],[fit2[0][1]*0.99,fit2[0][1]*1.01],[fit2[0][2]*0.99,fit2[0][2]*1.01],[fit2[0][3]/2*p2d_v,fit2[0][3]*2*p2d_v]]
 	ensamble_peak_shape_temp_fitted = []
 	ensamble_peak_shape_temp_fitted_std = []
-	guess = [twoD_peak_evolution_temp_averaged_delta.mean(),fit2[0][3]]
-	bds=[[0,fit2[0][3]/2],[twoD_peak_evolution_temp_averaged_delta.max()*2,fit2[0][3]*2]]
 	for temperature_distridution_to_fit in twoD_peak_evolution_temp_averaged_delta:
-		fit = curve_fit(gaussian_2D_fitting_reduced_master(temperature_distridution_to_fit), spatial_coord, np.zeros_like(temperature_distridution_to_fit.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
+		if False:
+			fit = curve_fit(gaussian_2D_fitting_reduced_master(temperature_distridution_to_fit), spatial_coord, np.zeros_like(temperature_distridution_to_fit.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
+			guess = fit[0]
+		else:
+			x_optimal, y_opt, opt_info = scipy.optimize.fmin_l_bfgs_b(gaussian_2D_fitting_plus_gradient(True,temperature_distridution_to_fit), x0=guess, iprint=0, factr=1e0, pgtol=1e-6,bounds=bds)#,m=1000, maxls=1000, pgtol=1e-10, factr=1e0)#,approx_grad = True)
+			guess = cp.deepcopy(x_optimal)
+			fit = make_standatd_fit_output(gaussian_2D_fitting_plus_gradient(False,temperature_distridution_to_fit),x_optimal)
+			fit[0][-1] /= p2d_v
+			fit[1][-1,:] /= p2d_v
+			fit[1][:,-1] /= p2d_v
+			fit[0] = np.array([fit[0][0],fit[0][-1]])
+			fit[1] = np.array([[fit[1][0,0],fit[1][0,-1]],[fit[1][-1,0],fit[1][-1,-1]]])
 		ensamble_peak_shape_temp_fitted.append(fit[0])
 		ensamble_peak_shape_temp_fitted_std.append(np.diag(fit[1])**0.5)
-		guess = fit[0]
 		# print(guess)
 	ensamble_peak_shape_temp_fitted = np.array(ensamble_peak_shape_temp_fitted)
 	ensamble_peak_shape_temp_fitted_std = np.array(ensamble_peak_shape_temp_fitted_std)
@@ -2135,31 +2360,76 @@ for j in all_j:
 		# temph,tempv=np.meshgrid(temph,tempv)
 		# footprint = (temph**2+tempv**2)**0.5<max_diameter_to_fit/2/3
 		# a=generic_filter(twoD_peak_evolution_temp_averaged_before,np.sum,footprint=footprint)
-		def gaussian_2D_fitting(spatial_coord,*args):
-			x = spatial_coord[0]	# horizontal
-			y = spatial_coord[1]	# vertical
-			out = args[1]*np.exp(- (((x-args[3])*p2d_v/p2d_h)**2 + (y-args[2])**2)/(2*(args[4]**2)) ) + args[0]
-			select = ((x-args[3])*p2d_h)**2+((y-args[2])*p2d_v)**2>(max_diameter_to_fit/2/2)**2
-			out[select]=twoD_peak_evolution_temp_averaged_before[select]
-			return (out-twoD_peak_evolution_temp_averaged_before).flatten()
+		if False:
+			def gaussian_2D_fitting(spatial_coord,*args):
+				x = spatial_coord[0]	# horizontal
+				y = spatial_coord[1]	# vertical
+				out = args[1]*np.exp(- (((x-args[3])*p2d_v/p2d_h)**2 + (y-args[2])**2)/(2*(args[4]**2)) ) + args[0]
+				select = ((x-args[3])*p2d_h)**2+((y-args[2])*p2d_v)**2>(max_diameter_to_fit/2/2)**2
+				out[select]=twoD_peak_evolution_temp_averaged_before[select]
+				return (out-twoD_peak_evolution_temp_averaged_before).flatten()
 
-		guess = [20,twoD_peak_evolution_temp_averaged_before.max()-max(0,twoD_peak_evolution_temp_averaged_before.min()),IR_shape[0],IR_shape[1],IR_shape[3]]
-		bds=[[20,0,max(0,IR_shape[0]-IR_shape[3]),max(0,IR_shape[1]-IR_shape[3]),min(IR_shape[2],10)],[np.inf,np.inf,min(np.shape(twoD_peak_evolution_temp_averaged_before)[0],IR_shape[0]+IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_before)[1],IR_shape[1]+IR_shape[3]),np.max(twoD_peak_evolution_temp_averaged_before.shape)/2]]
-		spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[0]))
-		fit1_SS = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_before.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
+			guess = [20,twoD_peak_evolution_temp_averaged_before.max()-max(0,twoD_peak_evolution_temp_averaged_before.min()),fit_of_plasma_centre_and_area[1],fit_of_plasma_centre_and_area[2],fit_of_plasma_centre_and_area[3]]
+			bds=[[20,0,max(0,IR_shape[0]-IR_shape[3]),max(0,IR_shape[1]-IR_shape[3]),min(IR_shape[2],10)],[np.inf,np.inf,min(np.shape(twoD_peak_evolution_temp_averaged_before)[0],IR_shape[0]+IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_before)[1],IR_shape[1]+IR_shape[3]),np.max(twoD_peak_evolution_temp_averaged_before.shape)/2]]
+			spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[0]))
+			fit1_SS = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_before.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
 
-		def gaussian_2D_fitting(spatial_coord,*args):
-			x = spatial_coord[0]	# horizontal
-			y = spatial_coord[1]	# vertical
-			out = args[1]*np.exp(- (((x-args[3])*p2d_v/p2d_h)**2 + (y-args[2])**2)/(2*(args[4]**2)) ) + args[0]
-			select = ((x-args[3])*p2d_h)**2+((y-args[2])*p2d_v)**2>(max_diameter_to_fit/2*0.7)**2
-			out[select]=twoD_peak_evolution_temp_averaged_before[select]
-			return (out-twoD_peak_evolution_temp_averaged_before).flatten()
+			def gaussian_2D_fitting(spatial_coord,*args):
+				x = spatial_coord[0]	# horizontal
+				y = spatial_coord[1]	# vertical
+				out = args[1]*np.exp(- (((x-args[3])*p2d_v/p2d_h)**2 + (y-args[2])**2)/(2*(args[4]**2)) ) + args[0]
+				select = ((x-args[3])*p2d_h)**2+((y-args[2])*p2d_v)**2>(max_diameter_to_fit/2*0.7)**2
+				out[select]=twoD_peak_evolution_temp_averaged_before[select]
+				return (out-twoD_peak_evolution_temp_averaged_before).flatten()
 
-		guess = [20,twoD_peak_evolution_temp_averaged_before.max()-max(0,twoD_peak_evolution_temp_averaged_before.min()),fit1_SS[0][2],fit1_SS[0][3],IR_shape[3]]
-		bds=[[20,0,fit1_SS[0][2]-0.1,fit1_SS[0][3]-0.1,min(IR_shape[2],10)],[np.inf,np.inf,fit1_SS[0][2]+0.1,fit1_SS[0][3]+0.1,np.max(twoD_peak_evolution_temp_averaged_before.shape)/2]]
-		spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[0]))
-		fit2_SS = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_before.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
+			guess = [20,twoD_peak_evolution_temp_averaged_before.max()-max(0,twoD_peak_evolution_temp_averaged_before.min()),fit1_SS[0][2],fit1_SS[0][3],IR_shape[3]]
+			bds=[[20,0,fit1_SS[0][2]-0.1,fit1_SS[0][3]-0.1,min(IR_shape[2],10)],[np.inf,np.inf,fit1_SS[0][2]+0.1,fit1_SS[0][3]+0.1,np.max(twoD_peak_evolution_temp_averaged_before.shape)/2]]
+			spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[0]))
+			fit2_SS = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_before.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
+		else:
+			def gaussian_2D_fitting_plus_gradient_SS(full_output,data):
+				def internal(args):
+					x = spatial_coord[0]	# horizontal
+					y = spatial_coord[1]	# vertical
+					diameter_2 = ((x-args[3])*p2d_h)**2+((y-args[2])*p2d_v)**2
+					out = args[1]*np.exp(- diameter_2/(2*(args[4]**2)) ) + args[0]
+
+					select = np.exp(-(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**40)	# super gaussian that cuts at max_diameter_to_fit/2/2, the 1.4 factor is required
+					full_out = out-data
+					grad_a0 = np.sum( 2*full_out*select )
+					grad_a1 = np.sum( 2*full_out*np.exp(- diameter_2/(2*(args[4]**2)) )*select )
+					grad_a2 = -np.sum( 2*full_out*out*(-1/(2*(args[4]**2)))*2*(p2d_v**2)*(y-args[2])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**39)*(1/(2*((max_diameter_to_fit/2/2/1.4)**2)))*2*(p2d_v**2)*(y-args[2]) )
+					grad_a3 = -np.sum( 2*full_out*out*(-1/(2*(args[4]**2)))*2*(p2d_h**2)*(x-args[3])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**39)*(1/(2*((max_diameter_to_fit/2/2/1.4)**2)))*2*(p2d_h**2)*(x-args[3]) )
+					grad_a4 = np.sum( 2*full_out*out*( diameter_2/(args[4]**3))*select )
+					out = (full_out**2)*select
+					if full_output==True:
+						return np.sum(out),np.array([grad_a0,grad_a1,grad_a2,grad_a3,grad_a4])
+					else:
+						return np.sum(out)
+				return internal
+
+			if False:	# only for testinf the prob_and_gradient function
+				target = 0
+				scale = 1e-4
+				# guess[target] = 1e5
+				temp1 = gaussian_2D_fitting_plus_gradient_SS(True,twoD_peak_evolution_temp_averaged_before)(guess)
+				guess[target] +=scale
+				temp2 = gaussian_2D_fitting_plus_gradient_SS(True,twoD_peak_evolution_temp_averaged_before)(guess)
+				guess[target] += -2*scale
+				temp3 = gaussian_2D_fitting_plus_gradient_SS(True,twoD_peak_evolution_temp_averaged_before)(guess)
+				guess[target] += scale
+				print('calculated derivated of %.7g vs true of %.7g' %(temp1[1][target],((temp2[0]-temp3[0])/(2*scale))))
+
+			guess = [20,twoD_peak_evolution_temp_averaged_before.max()-max(0,twoD_peak_evolution_temp_averaged_before.min()),fit_of_plasma_centre_and_area[1],fit_of_plasma_centre_and_area[2],fit_of_plasma_centre_and_area[3]*p2d_v]
+			bds=[[20,np.inf],[0,np.inf],[max(0,IR_shape[0]-IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_before)[0],IR_shape[0]+IR_shape[3])],[max(0,IR_shape[1]-IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_before)[1],IR_shape[1]+IR_shape[3])],[min(IR_shape[2],10)*p2d_v,np.max(twoD_peak_evolution_temp_averaged_before.shape)/2*p2d_v]]
+			guess[-1] *= p2d_v
+			x_optimal, y_opt, opt_info = scipy.optimize.fmin_l_bfgs_b(gaussian_2D_fitting_plus_gradient_SS(True,twoD_peak_evolution_temp_averaged_before), x0=guess, iprint=0, factr=1e0, pgtol=1e-6,bounds=bds)#,m=1000, maxls=1000, pgtol=1e-10, factr=1e0)#,approx_grad = True)
+			fit2_SS = make_standatd_fit_output(gaussian_2D_fitting_plus_gradient_SS(False,twoD_peak_evolution_temp_averaged_before),x_optimal)
+			fit2_SS[0][-1] /= p2d_v
+			fit2_SS[1][-1,:] /= p2d_v
+			fit2_SS[1][:,-1] /= p2d_v
+
+			fit1_SS = fit2_SS
 
 
 
@@ -2172,7 +2442,9 @@ for j in all_j:
 		full_saved_file_dict['average_pulse_SS']['area_of_interest'] = area_of_interest_sigma_SS.nominal_value
 		full_saved_file_dict['average_pulse_SS']['area_of_interest_sigma'] = area_of_interest_sigma_SS.std_dev
 		SS_area_fit_ok = True
-	except:
+	except Exception as e:
+		print('FAILED SS area fit')
+		logging.exception('with error: ' + str(e))
 		full_saved_file_dict['SS_fit_of_plasma_centre_and_area'] = np.ones_like(fit1[0])*np.nan
 		full_saved_file_dict['SS_fit_of_plasma_centre_and_area_sigma'] = np.ones_like(fit1[1])*np.nan
 		full_saved_file_dict['average_pulse_SS'] = dict([])
@@ -2384,6 +2656,22 @@ for j in all_j:
 	plt.close()
 
 	plt.figure(figsize=(20, 10))
+	plt.pcolor(h_coordinates,v_coordinates,twoD_peak_evolution_temp_averaged_delta[np.abs(twoD_peak_evolution_time_averaged).argmin()],cmap='rainbow',vmax=np.median(np.sort(twoD_peak_evolution_temp_averaged_delta[np.abs(twoD_peak_evolution_time_averaged).argmin()].flatten())[-10:]))
+	plt.xlabel('horizontal coord [mm]')
+	plt.ylabel('vertical coord [mm]')
+	plt.colorbar().set_label('Temperature [°C]')
+	plt.errorbar(fit1[0][2]*p2d_h,fit1[0][1]*p2d_v,xerr=(fit1[1][2,2]**0.5)*p2d_h,yerr=(fit1[1][1,1]**0.5)*p2d_v,color='b')
+	plt.plot((fit2[0][2] + np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)*p2d_v/p2d_h)*p2d_h,(fit2[0][1] + np.abs(area_of_interest_radius**2-np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)**2)**0.5)*p2d_v,'b--')
+	plt.plot((fit2[0][2] + np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)*p2d_v/p2d_h)*p2d_h,(fit2[0][1] - np.abs(area_of_interest_radius**2-np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)**2)**0.5)*p2d_v,'b--')
+	plt.axes().set_aspect(aspect_ratio)
+	plt.legend(loc='best', fontsize='x-small')
+	plt.xlim(left=-5,right=35)
+	plt.ylim(bottom=-5,top=22)
+	plt.title(pre_title+'Temperature increase at the averaged peaks in '+str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
+	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'b.eps', bbox_inches='tight')
+	plt.close()
+
+	plt.figure(figsize=(20, 10))
 	# plt.imshow(twoD_peak_evolution_temp_averaged_delta_after_short,'rainbow',vmin=0,vmax=np.mean(np.sort(twoD_peak_evolution_temp_averaged_delta_after_short[((x-fit2[0][2])*p2d_h)**2+((y-fit2[0][1])*p2d_v)**2<(IR_shape[3]*p2d_v)**2])[-20:]))
 	# plt.plot(IR_shape[1],IR_shape[0],'k+')
 	# plt.plot(IR_shape[1] + np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10),IR_shape[0] + np.abs(IR_shape[2]**2-np.arange(-IR_shape[2],+IR_shape[2]+IR_shape[2]/10,IR_shape[2]/10)**2)**0.5,'k--',label='externally supplied')
@@ -2423,6 +2711,22 @@ for j in all_j:
 	plt.title(pre_title+'Temperature increase, average %.2g to %.2gms after the averaged peaks in ' %(after_short_start_time,after_short_end_time)+str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
 	figure_index+=1
 	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
+	plt.close()
+
+	plt.figure(figsize=(20, 10))
+	plt.pcolor(h_coordinates,v_coordinates,twoD_peak_evolution_temp_averaged_delta_after_short,cmap='rainbow',vmin=0,vmax=np.mean(np.sort(twoD_peak_evolution_temp_averaged_delta_after_short[((x-fit2[0][2])*p2d_h)**2+((y-fit2[0][1])*p2d_v)**2<(IR_shape[3]*p2d_v/2)**2])[-20:]))
+	plt.xlabel('horizontal coord [mm]')
+	plt.ylabel('vertical coord [mm]')
+	plt.colorbar().set_label('Temperature [°C] limited to 0')
+	plt.errorbar(fit1[0][2]*p2d_h,fit1[0][1]*p2d_v,xerr=(fit1[1][2,2]**0.5)*p2d_h,yerr=(fit1[1][1,1]**0.5)*p2d_v,color='b')
+	plt.plot((fit2[0][2] + np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)*p2d_v/p2d_h)*p2d_h,(fit2[0][1] + np.abs(area_of_interest_radius**2-np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)**2)**0.5)*p2d_v,'b--')
+	plt.plot((fit2[0][2] + np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)*p2d_v/p2d_h)*p2d_h,(fit2[0][1] - np.abs(area_of_interest_radius**2-np.arange(-area_of_interest_radius,+area_of_interest_radius+area_of_interest_radius/10,area_of_interest_radius/10)**2)**0.5)*p2d_v,'b--')
+	plt.axes().set_aspect(aspect_ratio)
+	plt.legend(loc='best', fontsize='x-small')
+	plt.xlim(left=-5,right=35)
+	plt.ylim(bottom=-5,top=22)
+	plt.title(pre_title+'Temperature increase, average %.2g to %.2gms after the averaged peaks in ' %(after_short_start_time,after_short_end_time)+str(j)+', IR trace '+IR_trace+'\n frequency %.3gHz, int time %.3gms' %(frequency,int_time*1000))
+	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'b.eps', bbox_inches='tight')
 	plt.close()
 
 	plt.figure(figsize=(20, 10))

@@ -74,11 +74,19 @@ for merge_ID_target in merge_ID_target_multipulse:
 		target_location_left_pixel = int(round(target_location/mm_per_pixel))-16
 		target_location_right_pixel = int(round(target_location/mm_per_pixel))-11
 		LOS_size = 3.8	# mm diameter
+		LOS_number = 40
+		LOS_interval = 1.06478505470992	# 10/02/2020 from	Calculate magnification_FF.xlsx
+		LOS_full_size = (LOS_number-1)*LOS_interval + LOS_size
+		TS_size = [-4.149230769230769056e+01, 4.416923076923076508e+01]
+		TS_LOS_full_size = TS_size[1]-TS_size[0]
+		TS_LOS_interval = (TS_size[1]-TS_size[0])/65
 		OES_location = 230*mm_per_pixel - 31.2
 		OES_location_left = 230*mm_per_pixel - 31.2 - LOS_size/2
 		OES_location_right = 230*mm_per_pixel - 31.2 + LOS_size/2
 		OES_location_left_pixel = int(round(OES_location_left/mm_per_pixel))
 		OES_location_right_pixel = int(round(OES_location_right/mm_per_pixel))
+		TS_location_left = 230*mm_per_pixel - 31.2 - TS_LOS_interval/2
+		TS_location_right = 230*mm_per_pixel - 31.2 + TS_LOS_interval/2
 
 		full_saved_file_dict['all_j'] = full_saved_file_dict['all_j']+[str(j)]
 		full_saved_file_dict[str(j)] = dict([])
@@ -437,16 +445,21 @@ for merge_ID_target in merge_ID_target_multipulse:
 
 	plt.figure(figsize=(10,3))
 	plt.imshow(averaged_profile,'rainbow',origin='lower',extent=[0,np.shape(raw_data)[1]*mm_per_pixel,0,np.shape(raw_data)[2]*mm_per_pixel])
+	global_plasma_cecntre = (np.abs(np.cumsum(np.sum(averaged_profile[:,60:],axis=1))/np.sum(averaged_profile[:,60:int(target_location//mm_per_pixel)])-0.5).argmin()+0.5) * mm_per_pixel
 	# plt.imshow(cleaned[select],'rainbow',origin='lower')
 	if overexposed:
 		plt.colorbar().set_label('average counts [au]\n%.3g%% vol overexposed' %(fraction_overexposed_volume),fontsize=13)
 	else:
 		plt.colorbar().set_label('average counts [au]')
-	plt.plot([OES_location_left,OES_location_left],[60*mm_per_pixel,200*mm_per_pixel],'b',label='OES location')
-	plt.plot([OES_location_right,OES_location_right],[60*mm_per_pixel,200*mm_per_pixel],'b')
-	plt.plot([target_location]*2,[60*mm_per_pixel,200*mm_per_pixel],'--b',label='target')
+	# plt.plot([OES_location_left,OES_location_left],[60*mm_per_pixel,200*mm_per_pixel],'k',label='OES location')
+	# plt.plot([OES_location_right,OES_location_right],[60*mm_per_pixel,200*mm_per_pixel],'k')
+	plt.plot([OES_location_left,OES_location_left,OES_location_right,OES_location_right,OES_location_left],[global_plasma_cecntre-LOS_full_size/2,global_plasma_cecntre+LOS_full_size/2,global_plasma_cecntre+LOS_full_size/2,global_plasma_cecntre-LOS_full_size/2,global_plasma_cecntre-LOS_full_size/2],'k',label='OES')
+	plt.plot([TS_location_left,TS_location_left,TS_location_right,TS_location_right,TS_location_left],[global_plasma_cecntre-TS_LOS_full_size/2,global_plasma_cecntre+TS_LOS_full_size/2,global_plasma_cecntre+TS_LOS_full_size/2,global_plasma_cecntre-TS_LOS_full_size/2,global_plasma_cecntre-TS_LOS_full_size/2],'-.k',label='TS')
+	# plt.axhline(y=global_plasma_cecntre,color='k')
+	plt.plot([target_location]*2,[60*mm_per_pixel,200*mm_per_pixel],'--k',label='target')
 	plt.ylim(bottom=30,top=65)
-	plt.xlim(left=10,right=target_location+0.5)
+	# plt.ylim(bottom=global_plasma_cecntre-LOS_full_size/2-2,top=global_plasma_cecntre+LOS_full_size/2+2)
+	plt.xlim(left=0,right=target_location+0.5)
 	plt.title('magnetic_field %.3gT,steady state pressure %.3gPa,target/OES distance %.3gmm,ELM pulse voltage %.3gV\n average profile' %(magnetic_field,SS_pressure,target_OES_distance,pulse_voltage),fontsize=12)
 	plt.legend(loc='best', fontsize='x-small')
 	plt.xlabel('longitudinal position [mm]')
@@ -465,6 +478,14 @@ for merge_ID_target in merge_ID_target_multipulse:
 	temp = np.mean(temp,axis=-1)
 	temp = temp[np.max(temp,axis=-1).argmax()]
 	plt.plot(np.arange(np.shape(raw_data)[1])*mm_per_pixel,temp,label='average restricted OES>0 times')
+	if temp.max()>0:
+		peaks = find_peaks(temp,distance=int(len(temp)/2))[0][0]
+		peaks = peaks*mm_per_pixel
+		sides = np.array([(temp>temp.max()/100).argmax(),len(temp)-np.flip((temp>temp.max()/100),axis=0).argmax()-1]).astype(float)
+		sides *= mm_per_pixel
+		plt.axvline(x=peaks,linestyle='--',color='k',label='radious = %.3gmm' %(np.abs(sides-peaks).mean()))
+		plt.axvline(x=sides[0],linestyle='--',color='g')
+		plt.axvline(x=sides[1],linestyle='--',color='g')
 	full_saved_file_dict['radial_average_brightness_OES_location_1ms_int_time'] = temp	# average restricted to times where the brightness at OES location is >0, counts are normalised for a 1ms exposure
 	plt.title('magnetic_field %.3gT,steady state pressure %.3gPa,target/OES distance %.3gmm,ELM pulse voltage %.3gV\n radial average brightness (%.3gms) at OES location (scaled to 1ms int time)' %(magnetic_field,SS_pressure,target_OES_distance,pulse_voltage,fast_camera_record_duration*1e3),fontsize=12)
 	plt.ylabel('counts [au]')
