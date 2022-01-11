@@ -142,7 +142,8 @@ for merge_ID_target in merge_ID_target_multipulse:
 	all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
 	target_chamber_pressure_2.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
 	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
-	full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2_H2p_mol_lim/bayesian_results3'+'.npz')
+	full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2_H2p_part_bal/bayesian_results3'+'.npz')
+	full_saved_file_dict.allow_pickle = True
 	# full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2p_mol_lim/bayesian_results3'+'.npz')
 
 	# (merge_folder,sequence,fname_current_trace) = df_log.loc[all_j[0],['folder','sequence','current_trace_file']]
@@ -223,6 +224,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 
 	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 	full_saved_file_dict = np.load(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'.npz')
+	full_saved_file_dict.allow_pickle = True
 	radial_average_brightness_OES_location_1ms_int_time.append(full_saved_file_dict['radial_average_brightness_OES_location_1ms_int_time'])
 	radial_average_brightness_1ms_int_time.append(full_saved_file_dict['radial_average_brightness_1ms_int_time'])
 
@@ -249,7 +251,9 @@ for merge_ID_target in merge_ID_target_multipulse:
 			j_specific_magnetic_field.append(np.float(results_summary.loc[merge_ID_target,['B']]))
 
 			path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
-			full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
+			full_saved_file_dict = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')
+			full_saved_file_dict.allow_pickle = True
+			full_saved_file_dict = dict(full_saved_file_dict)
 			# j_specific_T_pre_pulse.append(df_log.loc[j,['T_pre_pulse']])
 			# temp1.append(df_log.loc[j,['T_pre_pulse']])
 			# j_specific_DT_pulse.append(df_log.loc[j,['DT_pulse']])
@@ -992,6 +996,7 @@ for index,merge_ID_target_multipulse in enumerate(merge_ID_target_multipulse_all
 				# print(j)
 				path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 				full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
+				full_saved_file_dict.allow_pickle = True
 				j_specific_pulse_en_semi_inf.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
 				temp4.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
 				j_specific_pulse_en_semi_inf_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_sigma'])
@@ -1091,6 +1096,7 @@ for i_merge_ID_target_multipulse,merge_ID_target_multipulse in enumerate(merge_I
 		path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 		try:
 			full_saved_file_dict = np.load(path_where_to_save_everything +'/TS_data_merge_'+str(merge_ID_target) +'.npz')
+			full_saved_file_dict.allow_pickle = True
 			integrated_Bohm_adiabatic_flow = full_saved_file_dict['averaged_stats'].all()['integrated_Bohm_adiabatic_flow']
 			new_timesteps = full_saved_file_dict['averaged_stats'].all()['new_timesteps']
 			all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
@@ -1140,6 +1146,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 			j_magnetic_field.append(df_log.loc[j,['B']][0])
 			path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 			full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
+			full_saved_file_dict.allow_pickle = True
 			j_specific_pulse_en_semi_inf.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
 			j_specific_pulse_en_semi_inf_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_sigma'])
 			j_specific_energy_density.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density'])
@@ -1150,6 +1157,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 
 			path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 			full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2_H2p_mol_lim/bayesian_results3'+'.npz')
+			full_saved_file_dict.allow_pickle = True
 			net_power_removed_plasma_column.append(full_saved_file_dict['net_power_removed_plasma_column'].all()['radial_time_sum']['most_likely'])
 			net_power_removed_plasma_column_sigma.append(full_saved_file_dict['net_power_removed_plasma_column'].all()['radial_time_sum']['most_likely_sigma'])
 

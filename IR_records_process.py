@@ -48,9 +48,10 @@ exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/IR_records_p
 temp=[]
 # merge_id_all = [17,18,19,20,21,24,32,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99,101,103]
 merge_id_all = [66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99,101,103]
+merge_id_all = [66,67,68,69,70,71,72,73,74,75,76]
 # merge_id_all = [85, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99, 95]
 # merge_id_all = [85, 95, 104]
-# merge_id_all = [89]
+# merge_id_all = [88]
 for merge_id in merge_id_all:
 	temp.extend(find_index_of_file(merge_id,df_settings,df_log,only_OES=False))
 all_j=[]
@@ -73,6 +74,7 @@ for i in range(len(df_log)-1):
 all_j = np.flip(all_j,axis=0)
 
 # for j in np.flip(all_j,axis=0):
+# for j in all_j:
 for j in all_j:
 # for j in np.flip(all_j[1::2],axis=0):
 # def calc_stuff(arg):
@@ -101,6 +103,9 @@ for j in all_j:
 	else:
 		path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/'+folder+'/'+"{0:0=2g}".format(sequence)+'/IR_camera'
 	figure_index = 0
+
+	if not os.path.exists(path_where_to_save_everything):
+		os.makedirs(path_where_to_save_everything)
 
 	if isinstance(fname_current_trace,str):
 		if os.path.exists(fdir+'/'+folder+'/'+"{0:0=2d}".format(sequence)+'/'+fname_current_trace+'.tsf'):
@@ -306,7 +311,7 @@ for j in all_j:
 	dark_bad_pixels_marker = []
 	dark_bad_pixels_marker_str = []
 	for i in range(len(frames)):
-		bad_pixels_flag = coleval.find_dead_pixels([frames[i]],treshold_for_bad_low_std=-1,treshold_for_bad_std=100,treshold_for_bad_difference=30).flatten()
+		bad_pixels_flag = coleval.find_dead_pixels([frames[i]],treshold_for_bad_low_std=-1,treshold_for_bad_std=100,treshold_for_bad_difference=30,verbose=1).flatten()
 		dark_bad_pixels_marker.append(np.arange(len(bad_pixels_flag))[bad_pixels_flag>0])
 		dark_bad_pixels_marker_str.append(str(dark_bad_pixels_marker[-1]))
 	counter = collections.Counter(dark_bad_pixels_marker_str)
@@ -323,6 +328,7 @@ for j in all_j:
 			print('dark frame n'+str(i)+' discarded')
 	dark = [np.mean(dark0,axis=0),np.mean(dark1,axis=0)]
 	dark_bad_pixels_marker = most_common
+	print('dark_bad_pixels_marker '+str(dark_bad_pixels_marker))
 		# plt.figure();plt.imshow(dark),plt.colorbar();plt.pause(0.01)
 	for i in range(len(dark)):
 		plt.figure(figsize=(20, 10))
@@ -395,19 +401,57 @@ for j in all_j:
 		for i in range(header.h_firstframe,header.h_lastframe):
 			frame = ryptw.getPTWFrames(header, [i])[0][0]
 			frame = frame.flatten().reshape(np.shape(frame.T)).T
-			bad_pixels_flag = coleval.find_dead_pixels([frame],treshold_for_bad_low_std=-1,treshold_for_bad_std=100,treshold_for_bad_difference=30).flatten()
-			bad_pixels_marker = np.arange(len(bad_pixels_flag))[bad_pixels_flag>0]
-			if np.sum([value in dark_bad_pixels_marker[0] for value in bad_pixels_marker]) > np.sum([value in dark_bad_pixels_marker[1] for value in bad_pixels_marker]):
-				frames[0].append(frame)
-				frames_ordering[0].append(i)
-				discarded_frames.append(False)
-			elif np.sum([value in dark_bad_pixels_marker[1] for value in bad_pixels_marker]) > np.sum([value in dark_bad_pixels_marker[0] for value in bad_pixels_marker]):
-				frames[1].append(frame)
-				frames_ordering[1].append(i)
-				discarded_frames.append(False)
-			else:
-				print('frame n'+str(i)+' discarded')
-				discarded_frames.append(True)
+			if True:	# seems a much better way to search for it
+				shape = np.shape(frame)
+				median = median_filter(frame,footprint=[[1,1,1],[1,0,1],[1,1,1]])
+				bad_pixels_marker = [[] , []]
+				for i_ in range(len(dark_bad_pixels_marker)):
+					for i__ in dark_bad_pixels_marker[i_]:
+						i__ = np.unravel_index(i__,shape)
+						bad_pixels_marker[i_].append(np.abs(frame[i__]-median[i__]))
+				for i_ in range(len(dark_bad_pixels_marker)):
+					bad_pixels_marker[i_] = np.mean(bad_pixels_marker[i_])
+				if bad_pixels_marker[0]>bad_pixels_marker[1]:
+					frames[0].append(frame)
+					frames_ordering[0].append(i)
+					discarded_frames.append(False)
+					if len(frames_ordering[0])<2:
+						print('frame '+str(i)+' dig 0')
+					elif i!=frames_ordering[0][-2]+2:
+						print('frame '+str(i)+' dig 0')
+				elif bad_pixels_marker[1]>bad_pixels_marker[0]:
+					frames[1].append(frame)
+					frames_ordering[1].append(i)
+					discarded_frames.append(False)
+					if len(frames_ordering[1])<2:
+						print('frame '+str(i)+' dig 1')
+					elif i!=frames_ordering[1][-2]+2:
+						print('frame '+str(i)+' dig 1')
+				else:
+					print('frame n'+str(i)+' discarded')
+					discarded_frames.append(True)
+			if False:	# this approach fails to work when  there is a naturally strong variation in the image
+				bad_pixels_flag = coleval.find_dead_pixels([frame],treshold_for_bad_low_std=-1,treshold_for_bad_std=100,treshold_for_bad_difference=10,verbose=1).flatten()
+				bad_pixels_marker = np.arange(len(bad_pixels_flag))[bad_pixels_flag>0]
+				if np.sum([value in dark_bad_pixels_marker[0] for value in bad_pixels_marker]) > np.sum([value in dark_bad_pixels_marker[1] for value in bad_pixels_marker]):
+					frames[0].append(frame)
+					frames_ordering[0].append(i)
+					discarded_frames.append(False)
+					if len(frames_ordering[0])<2:
+						print('frame '+str(i)+' dig 0')
+					elif i!=frames_ordering[0][-2]+2:
+						print('frame '+str(i)+' dig 0')
+				elif np.sum([value in dark_bad_pixels_marker[1] for value in bad_pixels_marker]) > np.sum([value in dark_bad_pixels_marker[0] for value in bad_pixels_marker]):
+					frames[1].append(frame)
+					frames_ordering[1].append(i)
+					discarded_frames.append(False)
+					if len(frames_ordering[1])<2:
+						print('frame '+str(i)+' dig 1')
+					elif i!=frames_ordering[1][-2]+2:
+						print('frame '+str(i)+' dig 1')
+				else:
+					print('frame n'+str(i)+' discarded')
+					discarded_frames.append(True)
 			temp = ryptw.getPTWFrames(header, [i])[1][0]
 			yyyy.append(temp.h_FileSaveYear)
 			mm.append(temp.h_FileSaveMonth)
@@ -416,6 +460,7 @@ for j in all_j:
 			minutes.append(temp.h_frameMinute)
 			ss_sss.append(temp.h_frameSecond)
 			yyyy_mm_dd_in_ss.append(datetime.datetime(temp.h_FileSaveYear-30,temp.h_FileSaveMonth,temp.h_FileSaveDay).timestamp())	# I follow the same convention as the OES camera. t=0 is at the start of year 2000
+		print('reversals at: dig 0 '+str(np.array(frames_ordering[0])[:-1][np.diff(frames_ordering[0])!=2])+' and dig 1 '+str(np.array(frames_ordering[1])[:-1][np.diff(frames_ordering[1])!=2]))
 		yyyy = np.array(yyyy)
 		mm = np.array(mm)
 		dd = np.array(dd)
@@ -430,6 +475,8 @@ for j in all_j:
 		temp = np.mean(day_ss-np.arange(len(day_ss))*effective_dt)
 		day_ss = np.arange(len(day_ss))*effective_dt + temp
 		corrected_timestamp_ms = (yyyy_mm_dd_in_ss + day_ss)*1000
+		original_timestamp_ms = original_timestamp_ms[np.logical_not(discarded_frames)]
+		corrected_timestamp_ms = corrected_timestamp_ms[np.logical_not(discarded_frames)]
 		if os.path.exists(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'):
 			try:
 				temp = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')
@@ -439,8 +486,8 @@ for j in all_j:
 				full_saved_file_dict = dict([])
 		else:
 			full_saved_file_dict = dict([])
-		full_saved_file_dict['original_timestamp_ms'] = original_timestamp_ms[np.logical_not(discarded_frames)]
-		full_saved_file_dict['corrected_timestamp_ms'] = corrected_timestamp_ms[np.logical_not(discarded_frames)]
+		full_saved_file_dict['original_timestamp_ms'] = original_timestamp_ms
+		full_saved_file_dict['corrected_timestamp_ms'] = corrected_timestamp_ms
 	else:
 		original_timestamp_ms = full_saved_file_dict['original_timestamp_ms']
 		corrected_timestamp_ms = full_saved_file_dict['corrected_timestamp_ms']
@@ -549,7 +596,7 @@ for j in all_j:
 			# addition to manage dead pixels
 			bad_pixels_marker = []
 			for i in range(len(frames)):
-				bad_pixels_flag = coleval.find_dead_pixels([frames[i][:background_interval]],treshold_for_bad_std=100,treshold_for_bad_difference=30).flatten()
+				bad_pixels_flag = coleval.find_dead_pixels([frames[i][:background_interval]],treshold_for_bad_std=100,treshold_for_bad_difference=15,verbose=1).flatten()
 				bad_pixels_marker.append(np.arange(len(bad_pixels_flag))[bad_pixels_flag>0])
 
 			score = np.zeros((len(frames),len(frames)))
@@ -559,11 +606,15 @@ for j in all_j:
 			if score[0,1]+score[1,0]<score[0,0]+score[1,1]:
 				dark = np.flip(dark,axis=0)
 		corrected_frames = []
+		digitizer_ID = []
 		for i in range(len(frames)):
 			corrected_frames.append(frames[i]-dark[i])
-		frames_ordering = coleval.flatten(frames_ordering)
+			digitizer_ID.append(np.ones_like(frames_ordering[i])*i)
+		temp = coleval.flatten(frames_ordering)
 		corrected_frames = coleval.flatten(corrected_frames)
-		corrected_frames = np.array([y for _, y in sorted(zip(frames_ordering, corrected_frames))])
+		digitizer_ID = coleval.flatten(digitizer_ID)
+		corrected_frames = np.array([y for _, y in sorted(zip(temp, corrected_frames))])
+		digitizer_ID = np.array([y for _, y in sorted(zip(temp, digitizer_ID))])
 
 		# corrected_frames = np.array(frames)
 		# corrected_frames = corrected_frames-dark
@@ -824,6 +875,7 @@ for j in all_j:
 	plt.xlabel('time [s]')
 	plt.ylabel('Temperature [°C]')
 	plt.legend(loc='best')
+	plt.grid()
 	figure_index+=1
 	plt.savefig(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.eps', bbox_inches='tight')
 	plt.close('all')
@@ -1075,7 +1127,7 @@ for j in all_j:
 	temp_before_peaks_large_area_max = np.mean(temp5,axis=0)
 
 	if corrected_frames_generation_required:
-		ani = coleval.movie_from_data(np.array([corrected_frames[strongest_very_good_pulse-round(1/1000*frequency):strongest_very_good_pulse+round(10/1000*frequency)][::5]]), frequency/5, integration=int_time/1000,xlabel='horizontal coord [pixels]',ylabel='vertical coord [pixels]',barlabel='Net counts [au]',time_offset=-1/1000,prelude=pre_title+'Counts around the strongest peak (%.5gs) \n' %(strongest_very_good_pulse/frequency))
+		ani = coleval.movie_from_data(np.array([corrected_frames[strongest_very_good_pulse-round(1/1000*frequency):strongest_very_good_pulse+round(10/1000*frequency)]]), frequency, integration=int_time/1000,xlabel='horizontal coord [pixels]',ylabel='vertical coord [pixels]',barlabel='Net counts [au]',time_offset=-1/1000,prelude=pre_title+'Counts around the strongest peak (%.5gs) \n' %(strongest_very_good_pulse/frequency))
 		figure_index+=1
 		ani.save(path_where_to_save_everything+'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.mp4', fps=3, writer='ffmpeg',codec='mpeg4')
 		plt.close()
@@ -1083,7 +1135,7 @@ for j in all_j:
 		for i in range(strongest_very_good_pulse-round(1/1000*frequency),strongest_very_good_pulse+round(10/1000*frequency)):
 			# emissivity[i] = np.exp(counts_to_emissivity(corrected_frames[i]))
 			corrected_frames_temp_restrict[i-(strongest_very_good_pulse-round(1/1000*frequency))] = np.exp(counts_to_temperature(corrected_frames[i]))
-		ani = coleval.movie_from_data(np.array([corrected_frames_temp_restrict[::5]]), frequency/2, integration=int_time/1000,xlabel='horizontal coord [pixels]',ylabel='vertical coord [pixels]',barlabel='Temperature [°C]',time_offset=-1/1000,prelude=pre_title+'Temperature around the strongest peak (%.5gs) \n' %(strongest_very_good_pulse/frequency))
+		ani = coleval.movie_from_data(np.array([corrected_frames_temp_restrict]), frequency, integration=int_time/1000,xlabel='horizontal coord [pixels]',ylabel='vertical coord [pixels]',barlabel='Temperature [°C]',time_offset=-1/1000,prelude=pre_title+'Temperature around the strongest peak (%.5gs) \n' %(strongest_very_good_pulse/frequency))
 		figure_index+=1
 		ani.save(path_where_to_save_everything+'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.mp4', fps=3, writer='ffmpeg',codec='mpeg4')
 		plt.close()
@@ -1136,7 +1188,7 @@ for j in all_j:
 	peak_after_emissivity = np.exp(counts_to_emissivity(peak_after_image_counts))
 	peak_before_emissivity = np.exp(counts_to_emissivity(peak_before_image_counts))
 
-	ani = coleval.movie_from_data(np.array([(corrected_frames_temp_restrict-peak_before_image)[::5]]), frequency/5, integration=int_time/1000,xlabel='horizontal coord [pixels]',ylabel='vertical coord [pixels]',barlabel='Temperature increase [°C]',time_offset=-1/1000,extvmax=np.max(selected_1_max[strongest_very_good_pulse+round(1.5/1000*frequency)]-selected_1_max[strongest_very_good_pulse-15:strongest_very_good_pulse-5]),extvmin=0,prelude=pre_title+'Temperature around the strongest peak (%.5gs) - before\n' %(strongest_very_good_pulse/frequency))
+	ani = coleval.movie_from_data(np.array([(corrected_frames_temp_restrict-peak_before_image)]), frequency, integration=int_time/1000,xlabel='horizontal coord [pixels]',ylabel='vertical coord [pixels]',barlabel='Temperature increase [°C]',time_offset=-1/1000,extvmax=np.max(selected_1_max[strongest_very_good_pulse+round(1.5/1000*frequency)]-selected_1_max[strongest_very_good_pulse-15:strongest_very_good_pulse-5]),extvmin=0,prelude=pre_title+'Temperature increase around the strongest peak (%.5gs) - before\n' %(strongest_very_good_pulse/frequency))
 	figure_index+=1
 	ani.save(path_where_to_save_everything+'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.mp4', fps=3, writer='ffmpeg',codec='mpeg4')
 	plt.close()
@@ -1166,7 +1218,11 @@ for j in all_j:
 	guess = [max(0,peak_delta_image.max()),fit1[0][1],fit1[0][2],fit1[0][3]]
 	bds=[[0,fit1[0][1]-1,fit1[0][2]-1,min(IR_shape[2],10)],[np.inf,fit1[0][1]+1,fit1[0][2]+1,np.max(peak_after_image.shape)/2]]
 	spatial_coord=np.meshgrid(np.arange(np.shape(peak_after_image)[1]),np.arange(np.shape(peak_after_image)[0]))
-	fit2 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(peak_delta_image.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
+	try:
+		fit2 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(peak_delta_image.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
+	except:
+		print('fit2 row ~ 1220 failed')
+		fit2 = fit1
 	area_of_interest_sigma = np.pi*(2**0.5 * (correlated_values(fit2[0],fit2[1])[3])*p2d_v/1000)**2	# Area equivalent to all the overtemperature profile collapsed in a homogeneous circular spot
 	area_of_interest_sigma = area_of_interest_sigma + ufloat(0,0.1*area_of_interest_sigma.nominal_value)	# this to add the uncertainly coming from the method itself
 	area_of_interest_radius = 2**0.5 *fit2[0][3]
@@ -1909,11 +1965,27 @@ for j in all_j:
 			twoD_peak_evolution_counts.append(corrected_frames_no_min_zero[left:right])
 			twoD_peak_evolution_time.append(np.arange(right-left)/frequency - (real_peak_loc + int(17*frequency/1000))/frequency)
 			twoD_peak_evolution_counts_before.append(np.mean(twoD_peak_evolution_counts[-1][twoD_peak_evolution_time[-1]<-1e-3],axis=0))
-			twoD_peak_evolution_counts_delta.append(twoD_peak_evolution_counts[-1]-twoD_peak_evolution_counts_before[-1])
+			# cannot do it because of the dark subtraction is not good enough
+			# twoD_peak_evolution_counts_delta.append(twoD_peak_evolution_counts[-1]-twoD_peak_evolution_counts_before[-1])
+			temp_before = []
+			temp_delta = []
+			for i in np.unique(digitizer_ID):
+				temp_before.append( np.mean(twoD_peak_evolution_counts[-1][twoD_peak_evolution_time[-1]<-1e-3][digitizer_ID[left:right][twoD_peak_evolution_time[-1]<-1e-3] == i],axis=0) )
+				temp_delta.append( twoD_peak_evolution_counts[-1][digitizer_ID[left:right] == i] - temp_before[-1] )
+			temp = []
+			for i in range(len(twoD_peak_evolution_counts[-1])):
+				if digitizer_ID[left:right][i] == np.unique(digitizer_ID)[0]:
+					temp.append(temp_delta[int(np.unique(digitizer_ID)[0])][0])
+					temp_delta[int(np.unique(digitizer_ID)[0])] = temp_delta[int(np.unique(digitizer_ID)[0])][1:]
+				else:
+					temp.append(temp_delta[int(np.unique(digitizer_ID)[1])][0])
+					temp_delta[int(np.unique(digitizer_ID)[1])] = temp_delta[int(np.unique(digitizer_ID)[1])][1:]
+			twoD_peak_evolution_counts_delta.append(np.array(temp))
 
 		twoD_peak_evolution_time = np.array(twoD_peak_evolution_time)
 		twoD_peak_evolution_counts = np.array(twoD_peak_evolution_counts)
 		twoD_peak_evolution_counts_before = np.median(twoD_peak_evolution_counts_before,axis=0)
+		twoD_peak_evolution_counts_before_std = np.std(twoD_peak_evolution_counts_before,axis=0)
 		twoD_peak_evolution_counts_delta = np.array(twoD_peak_evolution_counts_delta)
 		twoD_first_time = np.median(twoD_peak_evolution_time[:,0])
 		twoD_peak_evolution_time_averaged = []
@@ -1975,7 +2047,8 @@ for j in all_j:
 		temporal_mean_filter_footprint = [20,1,1]
 		spatial_mean_filter_footprint = [1,7,7]
 		full_mean_filter_footprint = (np.array(temporal_mean_filter_footprint) * np.array(spatial_mean_filter_footprint)).tolist()
-		temp = cp.deepcopy(twoD_peak_evolution_counts_std)
+		# temp = cp.deepcopy(twoD_peak_evolution_counts_std)
+		temp = cp.deepcopy((twoD_peak_evolution_counts_delta_std**2 + twoD_peak_evolution_counts_before_std**2)**0.5)
 		temp[np.isnan(temp)] = np.nanmin(temp)
 		temp[temp<=0] = np.nanmax(temp)
 		temp = 1/temp**2
@@ -1988,6 +2061,16 @@ for j in all_j:
 		twoD_peak_evolution_counts_delta_std_full_mean_filter = (full_mean_filter_footprint[0]*full_mean_filter_footprint[1]*full_mean_filter_footprint[2])**0.5 * 1/(generic_filter(temp,np.sum,size=full_mean_filter_footprint)**0.5)
 		twoD_peak_evolution_counts_delta_std = (temporal_mean_filter_footprint[0]*temporal_mean_filter_footprint[1]*temporal_mean_filter_footprint[2])**0.5 * 1/(generic_filter(temp,np.sum,size=temporal_mean_filter_footprint)**0.5)
 
+		# twoD_peak_evolution_counts_averaged = median_filter(twoD_peak_evolution_counts_averaged,size=mean_filter_footprint)
+		# twoD_peak_evolution_counts_averaged_full_mean_filter = generic_filter(twoD_peak_evolution_counts_averaged,np.median,size=full_mean_filter_footprint)
+		# twoD_peak_evolution_counts_averaged = generic_filter(twoD_peak_evolution_counts_averaged,np.median,size=temporal_mean_filter_footprint)
+		# twoD_peak_evolution_counts_averaged_before_full_mean_filter = np.mean(twoD_peak_evolution_counts_averaged_full_mean_filter[:np.abs(twoD_peak_evolution_time_averaged+5/1000).argmin()],axis=0)
+		# twoD_peak_evolution_counts_averaged_before = np.mean(twoD_peak_evolution_counts_averaged[:np.abs(twoD_peak_evolution_time_averaged+5/1000).argmin()],axis=0)
+		# twoD_peak_evolution_counts_averaged_delta = twoD_peak_evolution_counts_averaged-twoD_peak_evolution_counts_averaged_before
+		twoD_peak_evolution_counts_averaged_before = cp.deepcopy(twoD_peak_evolution_counts_before)
+		twoD_peak_evolution_counts_averaged_delta = cp.deepcopy(twoD_peak_evolution_counts_delta_averaged)
+		twoD_peak_evolution_counts_averaged = twoD_peak_evolution_counts_averaged_before + twoD_peak_evolution_counts_averaged_delta
+
 		ani = coleval.movie_from_data(np.array([twoD_peak_evolution_counts_averaged[::10]]), 1/(np.median(np.diff(twoD_peak_evolution_time_averaged)))/10, integration=int_time/1000,xlabel='horizontal coord [pixels]',ylabel='vertical coord [pixels]',barlabel='Counts [au]',time_offset=np.min(twoD_peak_evolution_time_averaged),prelude=pre_title+'Counts averaged among all second half of peaks no mean filter\n')
 		figure_index+=1
 		ani.save(path_where_to_save_everything+'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.mp4', fps=3, writer='ffmpeg',codec='mpeg4')
@@ -1998,15 +2081,11 @@ for j in all_j:
 		ani.save(path_where_to_save_everything+'/file_index_' + str(j) +'_IR_trace_'+IR_trace + '_'+str(figure_index)+'.mp4', fps=3, writer='ffmpeg',codec='mpeg4')
 		plt.close()
 
-		# twoD_peak_evolution_counts_averaged = median_filter(twoD_peak_evolution_counts_averaged,size=mean_filter_footprint)
 		twoD_peak_evolution_counts_averaged_full_mean_filter = generic_filter(twoD_peak_evolution_counts_averaged,np.median,size=full_mean_filter_footprint)
 		twoD_peak_evolution_counts_averaged = generic_filter(twoD_peak_evolution_counts_averaged,np.median,size=temporal_mean_filter_footprint)
-		# twoD_peak_evolution_counts_averaged_before = np.mean(twoD_peak_evolution_counts_averaged[:np.abs(twoD_peak_evolution_time_averaged+5/1000).argmin()],axis=0)
-		# twoD_peak_evolution_counts_averaged_before_full_mean_filter = np.mean(twoD_peak_evolution_counts_averaged_full_mean_filter[:np.abs(twoD_peak_evolution_time_averaged+5/1000).argmin()],axis=0)
-		# twoD_peak_evolution_counts_averaged_delta = twoD_peak_evolution_counts_averaged-twoD_peak_evolution_counts_averaged_before
-		twoD_peak_evolution_counts_averaged_before = cp.deepcopy(twoD_peak_evolution_counts_before)
+		twoD_peak_evolution_counts_averaged_delta = generic_filter(twoD_peak_evolution_counts_averaged_delta,np.median,size=temporal_mean_filter_footprint)
 		twoD_peak_evolution_counts_averaged_before_full_mean_filter = np.mean(twoD_peak_evolution_counts_averaged_full_mean_filter[:np.abs(twoD_peak_evolution_time_averaged+5/1000).argmin()],axis=0)
-		twoD_peak_evolution_counts_averaged_delta = cp.deepcopy(twoD_peak_evolution_counts_delta_averaged)
+
 
 		# else:
 		# 	for i_t in range(np.shape(twoD_peak_evolution_time)[1]):
@@ -2029,8 +2108,6 @@ for j in all_j:
 
 		twoD_peak_evolution_counts_averaged[twoD_peak_evolution_counts_averaged<0] = 0
 		twoD_peak_evolution_counts_averaged_full_mean_filter[twoD_peak_evolution_counts_averaged_full_mean_filter<0] = 0
-		temp = twoD_peak_evolution_counts_averaged_before + twoD_peak_evolution_counts_averaged_delta
-		temp[temp<0] = 0
 		twoD_peak_evolution_temp_averaged = np.zeros_like(twoD_peak_evolution_counts_averaged)
 		twoD_peak_evolution_temp_averaged_std_up = np.zeros_like(twoD_peak_evolution_counts_averaged)
 		twoD_peak_evolution_temp_averaged_std_down = np.zeros_like(twoD_peak_evolution_counts_averaged)
@@ -2040,10 +2117,10 @@ for j in all_j:
 				twoD_peak_evolution_temp_averaged[i] = np.exp(counts_to_temperature(twoD_peak_evolution_counts_averaged[i]))
 				twoD_peak_evolution_temp_averaged_std_up[i] = np.exp(counts_to_temperature(twoD_peak_evolution_counts_averaged[i]+twoD_peak_evolution_counts_std[i]))
 				twoD_peak_evolution_temp_averaged_std_down[i] = np.exp(counts_to_temperature(np.max([np.zeros_like(twoD_peak_evolution_counts_std[i]),twoD_peak_evolution_counts_averaged[i]-twoD_peak_evolution_counts_std[i]],axis=0)))
-			elif True:	# pricess calculating the delta and the before separately. important for high temperature
-				twoD_peak_evolution_temp_averaged[i] = np.exp(counts_to_temperature(temp[i]))
-				twoD_peak_evolution_temp_averaged_std_up[i] = np.exp(counts_to_temperature(temp[i]+twoD_peak_evolution_counts_delta_std[i]))
-				twoD_peak_evolution_temp_averaged_std_down[i] = np.exp(counts_to_temperature(np.max([np.zeros_like(twoD_peak_evolution_counts_delta_std[i]),temp[i]-twoD_peak_evolution_counts_delta_std[i]],axis=0)))
+			elif True:	# process calculating the delta and the before separately. important for high temperature
+				twoD_peak_evolution_temp_averaged[i] = np.exp(counts_to_temperature(twoD_peak_evolution_counts_averaged[i]))
+				twoD_peak_evolution_temp_averaged_std_up[i] = np.exp(counts_to_temperature(twoD_peak_evolution_counts_averaged[i]+twoD_peak_evolution_counts_delta_std[i]))
+				twoD_peak_evolution_temp_averaged_std_down[i] = np.exp(counts_to_temperature(np.max([np.zeros_like(twoD_peak_evolution_counts_delta_std[i]),twoD_peak_evolution_counts_averaged[i]-twoD_peak_evolution_counts_delta_std[i]],axis=0)))
 		twoD_peak_evolution_temp_averaged_before = np.mean(twoD_peak_evolution_temp_averaged[:np.abs(twoD_peak_evolution_time_averaged+5/1000).argmin()],axis=0)
 		twoD_peak_evolution_temp_averaged_delta = twoD_peak_evolution_temp_averaged-twoD_peak_evolution_temp_averaged_before
 		twoD_peak_evolution_temp_averaged_std = (twoD_peak_evolution_temp_averaged_std_up-twoD_peak_evolution_temp_averaged_std_down)/2

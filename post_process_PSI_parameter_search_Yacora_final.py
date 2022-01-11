@@ -34,7 +34,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from functools import partial
 import traceback
 # set_start_method('spawn')
-number_cpu_available = 4	#cpu_count()
+number_cpu_available = 6	#cpu_count()
 # pool = get_context('spawn').Pool(number_cpu_available)
 print('Number of cores available: '+str(number_cpu_available))
 # number_cpu_available = 10
@@ -112,7 +112,7 @@ exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/functions/Mo
 # merge_ID_target_multipulse = np.flip([851,86,87,89,92, 93, 94],axis=0)
 # merge_ID_target_multipulse = np.flip([73,75,76,77,78,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
 # merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
-merge_ID_target_multipulse = [86]
+merge_ID_target_multipulse = [85,95]
 # merge_ID_target_multipulse = [91, 92, 93, 94]
 # merge_ID_target_multipulse = [73,75,76,77,78,79]
 # merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
@@ -126,6 +126,7 @@ merge_ID_target_multipulse = [86]
 
 # merge_ID_target_multipulse = np.flip(merge_ID_target_multipulse,axis=0)
 only_plots = False
+only_Yacora_as_molecule = False	# who knows the applicability of the RR from Amjuel and Janev to my case. let's see what appens if I only include Yacora processes, that I can also measure radiatively
 if only_plots:
 	number_cpu_available = 2
 
@@ -137,15 +138,14 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 	# 	merge_time_window = [-10,10]
 
 
-	# recorded_data_override = [True,True,True]
-	recorded_data_override = [False,False,False]
+	recorded_data_override = [True,True,True]
+	# recorded_data_override = [False,False,False]
 	# recorded_data_override = [True,True]
 	completion_loop_done = True
 	do_only_one_loop = False
 	include_particles_limitation = True
 	H2_suppression = False
 	molecular_particle_balance_enabled = True	# when the proper bounds for the density priors are used there is not much difference with or without this
-	only_Yacora_as_molecule = False	# who knows the applicability of the RR from Amjuel and Janev to my case. let's see what appens if I only include Yacora processes, that I can also measure radiatively
 
 	externally_provided_TS_Te_steps = 11
 	externally_provided_TS_Te_steps_increase = 5
@@ -157,7 +157,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 		externally_provided_H_steps = 17
 		externally_provided_H2_steps = 1
 	else:
-		externally_provided_H2p_steps = 17
+		externally_provided_H2p_steps = 13
 		externally_provided_Hn_steps = 13
 		externally_provided_H_steps = 9
 		externally_provided_H2_steps = 11
@@ -345,9 +345,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 			print('Will particles balance be included? '+str(include_particles_limitation))
 			timeout_bayesian_search = 2*60*60	# time in seconds
 			print('Timeout for bayesian search of a single point %.3g min' %(timeout_bayesian_search/60))
-			power_molecular_precision,power_atomic_precision,power_budget_precision = 0.5,0.2,0.5
+			power_molecular_precision,power_atomic_precision,power_budget_precision = 1e-10,1e-10,0.2	# 0.5,0.2,0.5
 			print('precision (sigma) for molecular elements of power balance %.3g%%, for atomic elements %.3g%%, for the budget %.3g%%' %(power_molecular_precision*100,power_atomic_precision*100,power_budget_precision*100))
-			particle_molecular_precision,particle_atomic_precision,particle_molecular_budget_precision,particle_atomic_budget_precision = 0.5,0.5,0.5,0.5	# 1,0.5,1,0.5
+			particle_molecular_precision,particle_atomic_precision,particle_molecular_budget_precision,particle_atomic_budget_precision = 1e-10,1e-10,0.04,0.4	# 0.5,0.5,0.5,0.5	# 1,0.5,1,0.5
 			if include_particles_limitation:
 				print('precision (sigma) for molecular elements of particle balance %.3g%%, for atomic elements %.3g%%, for the molecular budget %.3g%%, for the atomic budget %.3g%%' %(particle_molecular_precision*100,particle_atomic_precision*100,particle_molecular_budget_precision*100,particle_atomic_budget_precision*100))
 			print('externally_provided_H2p_steps = '+str(externally_provided_H2p_steps))
@@ -1531,7 +1531,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							if False:
 								Te_values = np.linspace(max(merge_Te_prof_multipulse_interp_crop_limited_restrict-4*merge_dTe_prof_multipulse_interp_crop_limited_restrict,min(0.1,merge_Te_prof_multipulse_interp_crop_limited_restrict/2)),merge_Te_prof_multipulse_interp_crop_limited_restrict+4*merge_dTe_prof_multipulse_interp_crop_limited_restrict,TS_Te_steps)
 							else:
-								min_Te = max(merge_Te_prof_multipulse_interp_crop_limited_restrict-3*merge_dTe_prof_multipulse_interp_crop_limited_restrict,min(0.1/2,merge_Te_prof_multipulse_interp_crop_limited_restrict/2))
+								min_Te = max(merge_Te_prof_multipulse_interp_crop_limited_restrict-4*merge_dTe_prof_multipulse_interp_crop_limited_restrict,min(0.1/2,merge_Te_prof_multipulse_interp_crop_limited_restrict/2))
 								max_Te = merge_Te_prof_multipulse_interp_crop_limited_restrict+2*merge_dTe_prof_multipulse_interp_crop_limited_restrict
 								steps_left = int(np.ceil((TS_Te_steps)/2))
 								steps_right = int(np.ceil(TS_Te_steps/2))
@@ -1624,15 +1624,15 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								excitation_full = []
 								for isel in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
 									if isel==0:
-										temp = read_adf15(pecfile_2, 1, Te_values.flatten(),(ne_values * 10 ** (- 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^-3
+										temp = read_adf15(pecfile_2, 1, Te_values.flatten(),(ne_values * 10 ** (- 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^3
 									else:
-										temp = read_adf15(pecfile, isel, Te_values.flatten(),(ne_values * 10 ** (- 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^-3
+										temp = read_adf15(pecfile, isel, Te_values.flatten(),(ne_values * 10 ** (- 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^3
 									temp[np.isnan(temp)] = 0
 									temp[np.isinf(temp)] = 0
 									# temp = temp.reshape((np.shape(merge_Te_prof_multipulse_interp_crop_limited)))
 									excitation_full.append(temp)
 								del temp
-								excitation_full = np.array(excitation_full)  # in # photons cm^-3 s^-1
+								excitation_full = np.array(excitation_full)  # in # photons cm^3 s^-1
 								excitation_full = (excitation_full.T * (10 ** -6) * (energy_difference_full / J_to_eV))  # in W m^-3 / (# / m^3)**2
 								excitation_full = (excitation_full /multiplicative_factor_full)  # in m^-3 / (# / m^3)**2
 								excitation_internal = excitation_full[:,n_list_all - 2]
@@ -1650,14 +1650,14 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								recombination_full = []
 								for isel in [0, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]:
 									if isel==0:
-										temp = read_adf15(pecfile_2, 67, Te_values.flatten(),(ne_values * 10 ** (- 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^-3
+										temp = read_adf15(pecfile_2, 67, Te_values.flatten(),(ne_values * 10 ** (- 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^3
 									else:
-										temp = read_adf15(pecfile, isel, Te_values.flatten(),(ne_values * 10 ** (- 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^-3
+										temp = read_adf15(pecfile, isel, Te_values.flatten(),(ne_values * 10 ** (- 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^3
 									temp[np.isnan(temp)] = 0
 									# temp = temp.reshape((np.shape(merge_Te_prof_multipulse_interp_crop_limited)))
 									recombination_full.append(temp)
 								del temp
-								recombination_full = np.array(recombination_full)  # in # photons cm^-3 s^-1 / (# cm^-3)**2
+								recombination_full = np.array(recombination_full)  # in # photons cm^-3 s^-1 / (# cm^3)**2
 								recombination_full = (recombination_full.T * (10 ** -6) * (energy_difference_full / J_to_eV))  # in W m^-3 / (# / m^3)**2
 								recombination_full = (recombination_full /multiplicative_factor_full)  # in # m^-3 / (# / m^3)**2
 								recombination_internal = recombination_full[:,n_list_all - 2]
@@ -1704,7 +1704,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								record_nH_ne_values = (np.array(np.transpose(record_nH_ne_values,(1,0,2))).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
 								# record_nH_ne_log_prob = (np.array([record_nH_ne_log_prob]*TS_ne_steps).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
 								record_nH_ne_log_prob = (np.array(np.transpose(record_nH_ne_log_prob,(1,0,2))).reshape((TS_ne_steps*TS_Te_steps,H_steps))).T
-								nH_ne_excited_states_atomic = [[[np.float32(record_nH_ne_values*np.sum(excitation_full,axis=-1)*ne_values.flatten()).tolist()]*H2p_to_find_steps]*H2_steps]*Hm_to_find_steps	# m^-3
+								nH_ne_excited_states_atomic = [[[np.float32(record_nH_ne_values*np.sum(excitation_full,axis=-1)*ne_values.flatten()).tolist()]*H2p_to_find_steps]*H2_steps]*Hm_to_find_steps	# m^-3/ne
 								nH_ne_excited_states_atomic = np.transpose(nH_ne_excited_states_atomic, (3,0,1,2,4))	# H, Hm, H2, H2p, ne, Te
 								nH_ne_excited_state_atomic_2 = [[[np.float32(record_nH_ne_values*excitation_full[:,0]*ne_values.flatten()).tolist()]*H2p_to_find_steps]*H2_steps]*Hm_to_find_steps
 								nH_ne_excited_state_atomic_2 = np.transpose(nH_ne_excited_state_atomic_2, (3,0,1,2,4))	# H, Hm, H2, H2p, ne, Te
@@ -1786,7 +1786,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											# nHp_ne_values[nHp_ne_mid]=1e-10
 											nHp_ne_values[nHp_ne_bad]=0
 											total_nHp_ne_values = (recombination_internal.T * nHp_ne_values).T
-											nH_ne_excited_states_atomic[:,i3,i4,i5] += np.float32(recombination_full_sum * nHp_ne_values * ne_values.flatten())
+											nH_ne_excited_states_atomic[:,i3,i4,i5] += np.float32(recombination_full_sum * nHp_ne_values * ne_values.flatten())	# m^-3/ne
 											nH_ne_excited_state_atomic_2[:,i3,i4,i5] += np.float32(recombination_full[:,0] * nHp_ne_values * ne_values.flatten())
 											nH_ne_excited_state_atomic_3[:,i3,i4,i5] += np.float32(recombination_full[:,1] * nHp_ne_values * ne_values.flatten())
 											nH_ne_excited_state_atomic_4[:,i3,i4,i5] += np.float32(recombination_full[:,2] * nHp_ne_values * ne_values.flatten())
@@ -1895,10 +1895,6 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 
 								if include_particles_limitation:
 									particles_penalty = np.zeros_like((likelihood_log_probs),dtype=np.float32)
-									particles_penalty_Hp = np.zeros_like((likelihood_log_probs),dtype=np.float32)
-									particles_penalty_e = np.zeros_like((likelihood_log_probs),dtype=np.float32)
-									particles_penalty_Hm = np.zeros_like((likelihood_log_probs),dtype=np.float32)
-									particles_penalty_H2p = np.zeros_like((likelihood_log_probs),dtype=np.float32)
 									all_net_Hp_destruction = np.zeros_like((likelihood_log_probs),dtype=np.float32)
 									all_net_e_destruction = np.zeros_like((likelihood_log_probs),dtype=np.float32)
 									all_net_Hm_destruction = np.zeros_like((likelihood_log_probs),dtype=np.float32)
@@ -1940,9 +1936,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 													# if np.sum(local_good_priors)==0:
 													# 	continue
 													# temp_nH_excited_states = nH_ne_excited_states[:,:,:,:,i5,i6]*ne_values_array[i5]*1e-20
-													temp_nH_ne_excited_state_2 = nH_ne_excited_state_2[:,:,:,:,i5,i6]
-													temp_nH_ne_excited_state_3 = nH_ne_excited_state_3[:,:,:,:,i5,i6]
-													temp_nH_ne_excited_state_4 = nH_ne_excited_state_4[:,:,:,:,i5,i6]
+													temp_nH_ne_excited_state_2 = nH_ne_excited_state_2[:,:,:,:,i5,i6]	# m^-3/ne
+													temp_nH_ne_excited_state_3 = nH_ne_excited_state_3[:,:,:,:,i5,i6]	# m^-3/ne
+													temp_nH_ne_excited_state_4 = nH_ne_excited_state_4[:,:,:,:,i5,i6]	# m^-3/ne
 													temp_nH_ne_ground_state = nH_ne_ground_state[:,:,:,:,i5,i6]
 													arguments = (temp_coord*Te_values_array[i6],temp_coord*T_Hp_values[i6],temp_coord*T_H_values[i6],temp_coord*T_H2_values[i6],temp_coord*T_Hm_values[i6],temp_coord*T_H2p_values[i6],temp_coord*ne_values_array[i5]*1e-20,all_nHp_ne_values[:,:,:,:,i5,i6],all_nH_ne_values[:,:,:,:,i5,i6],all_nH2_ne_values[:,:,:,:,i5,i6],all_nHm_ne_values[:,:,:,:,i5,i6],all_nH2p_ne_values[:,:,:,:,i5,i6],fractional_population_states_H2,temp_nH_ne_ground_state,temp_nH_ne_excited_state_2,temp_nH_ne_excited_state_3,temp_nH_ne_excited_state_4,particle_molecular_precision,particle_atomic_precision)
 													if False:
@@ -1997,49 +1993,66 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										all_net_H2p_destruction_sigma *= area*length*dt/1000
 										all_net_H2_destruction_sigma *= area*length*dt/1000
 										all_net_H_destruction_sigma *= area*length*dt/1000
-									total_removable_Hp = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*all_ne_values*all_nHp_ne_values*1e-20)	# I assume no molecules upstream >> nH+/ne~1
-									total_removable_e = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*all_ne_values*1e-20)
+									total_removable_Hp = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*all_ne_values*all_nHp_ne_values*1e-20)	# #*1e-20 	# I assume no molecules upstream -> nH+/ne~1
+									total_removable_e = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*all_ne_values*1e-20)	# #*1e-20
 									if False:
 										select = all_net_Hp_destruction>total_removable_Hp
 										particles_penalty[select] += np.float32(-0.5*((all_net_Hp_destruction[select] - total_removable_Hp[select])/total_removable_Hp[select])**2)	# 100% uncertanty
 										select = all_net_e_destruction>total_removable_e
 										particles_penalty[select] += np.float32(-0.5*((all_net_e_destruction[select] - total_removable_e[select])/total_removable_e[select])**2)	# 100% uncertanty
 									elif True:
-										particles_penalty += np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
-										particles_penalty_Hp += np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
-										particles_penalty += np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
-										particles_penalty_e += np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
+										# particles_penalty_Hp = np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
+										# particles_penalty_e = np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
+										# total_removable_Hp_sigma = np.max([total_removable_Hp*particle_atomic_budget_precision,np.ones_like(total_removable_Hp)*0.001*particle_atomic_budget_precision],axis=0)	# if total_removable_Hp~0 then the values slighttly >0 are like inf, with a massive negative weight, 0.001e20 is arbitrary
+										# total_removable_e_sigma = np.max([total_removable_e*particle_atomic_budget_precision,np.ones_like(total_removable_e)*0.001*particle_atomic_budget_precision],axis=0)	# if total_removable_e~0 then the values slighttly >0 are like inf, with a massive negative weight, 0.001e20 is arbitrary
+										total_removable_Hp_sigma = area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*max(1e18,ne)*1*1e-20*particle_atomic_budget_precision	# if total_removable_Hp~0 then the values slighttly >0 are like inf, with a massive negative weight, 1e18 is arbitrary
+										total_removable_e_sigma = area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*max(1e18,ne)*1*1e-20*particle_atomic_budget_precision	# if total_removable_e~0 then the values slighttly >0 are like inf, with a massive negative weight, 1e18 is arbitrary
+										particles_penalty_Hp = np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp_sigma)**2)**0.5)) )
+										particles_penalty_e = np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e_sigma)**2)**0.5)) )
+										particles_penalty_Hp -= np.log(np.sum(np.exp(particles_penalty_Hp)))	# normalisation for logarithmic probabilities
+										particles_penalty_e -= np.log(np.sum(np.exp(particles_penalty_e)))	# normalisation for logarithmic probabilities
+										particles_penalty += particles_penalty_Hp + particles_penalty_e
 
 									# total_removable_Hm = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nHm_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ downstream
 									# total_removable_H2p = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nH2p_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ downstream
-									# total_removable_Hm = np.float32(area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ 0
-									# total_removable_H2p = np.float32(area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ 0
-									total_removable_Hm = np.zeros_like(total_removable_Hp).astype(np.float32)	# I assume no accumulation of molecules from one time step to the next. this is justified by the fact that the lifetime of this ion is very short, much shorter than my time steps
-									total_removable_H2p = np.zeros_like(total_removable_Hp).astype(np.float32)	# I assume no accumulation of molecules from one time step to the next. this is justified by the fact that the lifetime of this ion is very short, much shorter than my time steps
+									total_removable_Hm = np.float32(area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ 0
+									total_removable_H2p = np.float32(area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ 0
+									# total_removable_Hm = np.zeros_like(total_removable_Hp).astype(np.float32)	# I assume no accumulation of molecules from one time step to the next. this is justified by the fact that the lifetime of this ion is very short, much shorter than my time steps
+									# total_removable_H2p = np.zeros_like(total_removable_Hp).astype(np.float32)	# I assume no accumulation of molecules from one time step to the next. this is justified by the fact that the lifetime of this ion is very short, much shorter than my time steps
 									if False:
 										select = all_net_Hm_destruction>total_removable_Hm
 										particles_penalty[select] += np.float32(-0.5*((all_net_Hm_destruction[select] - total_removable_Hm[select])/(total_removable_Hm[select]*2))**2)	# 200% uncertanty
 										select = all_net_H2p_destruction>total_removable_H2p
 										particles_penalty[select] += np.float32(-0.5*((all_net_H2p_destruction[select] - total_removable_H2p[select])/(total_removable_H2p[select]*2))**2)	# 200% uncertanty
 									elif True:
+										# particles_penalty_Hm = np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
+										# particles_penalty_H2p = np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
+										# total_removable_Hm_sigma = np.max([total_removable_Hm*particle_molecular_budget_precision,np.ones_like(total_removable_Hm)*0.00001],axis=0)	# if total_removable_Hm~0 then the values slighttly >0 are like inf, with a massive negative weight, 0.00001e20 is arbitrary
+										# total_removable_H2p_sigma = np.max([total_removable_H2p*particle_molecular_budget_precision,np.ones_like(total_removable_H2p)*0.00001],axis=0)	# if total_removable_H2p~0 then the values slighttly >0 are like inf, with a massive negative weight 0.00001e20 is arbitrary
+										total_removable_Hm_sigma = area*length*max(1e18,ne)*1e-20*particle_molecular_budget_precision	# if total_removable_Hm~0 then the values slighttly >0 are like inf, with a massive negative weight, 1e18 is arbitrary
+										total_removable_H2p_sigma = area*length*max(1e18,ne)*1e-20*particle_molecular_budget_precision	# if total_removable_H2p~0 then the values slighttly >0 are like inf, with a massive negative weight 1e18 is arbitrary
+										particles_penalty_Hm = np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm_sigma)**2)**0.5)) )
+										particles_penalty_H2p = np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p_sigma)**2)**0.5)) )
+										particles_penalty_Hm -= np.log(np.sum(np.exp(particles_penalty_Hm)))	# normalisation for logarithmic probabilities
+										particles_penalty_H2p -= np.log(np.sum(np.exp(particles_penalty_H2p)))	# normalisation for logarithmic probabilities
 										if molecular_particle_balance_enabled:
-											particles_penalty += np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
-											particles_penalty += np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
-										particles_penalty_Hm += np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
-										particles_penalty_H2p += np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
-									particles_penalty -= np.nanmax(particles_penalty)
+											particles_penalty += particles_penalty_Hm + particles_penalty_H2p
+									particles_penalty -= np.log(np.sum(np.exp(particles_penalty)))	# normalisation for logarithmic probabilities
+									# particles_penalty -= np.nanmax(particles_penalty)
 									# particles_penalty[np.isnan(particles_penalty)]=-np.inf
 
 									# added to limit the RR of consumprion of H and H2
 									nH2vH2_r_outer = target_chamber_pressure/(boltzmann_constant_J*300)* ( (300*boltzmann_constant_J)/ (2*hydrogen_mass))**0.5
 									nH2vH2_r_inner = all_ne_values*all_nH_ne_values* ( (300*boltzmann_constant_J)/ (2*hydrogen_mass))**0.5	# inner H density should be lower
 									total_removable_H2 = np.float32(area*length*all_ne_values*all_nH2_ne_values*1e-20 + 2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_outer*dt/1000*1e-20 + 2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_inner*dt/1000*1e-20)	# I assume molecules upstream ~ 0
-									particles_penalty += np.log( 1 + erf( (total_removable_H2-all_net_H2_destruction)/(2**0.5 * (all_net_H2_destruction_sigma**2 + (total_removable_H2*particle_molecular_budget_precision)**2)**0.5)) )
 									particles_penalty_H2 = np.log( 1 + erf( (total_removable_H2-all_net_H2_destruction)/(2**0.5 * (all_net_H2_destruction_sigma**2 + (total_removable_H2*particle_molecular_budget_precision)**2)**0.5)) )
+									particles_penalty_H2 -= np.log(np.sum(np.exp(particles_penalty_H2)))	# normalisation for logarithmic probabilities
+									# particles_penalty += particles_penalty_H2	# 2022/12/22 I don't think this is necessary
 
 									total_removable_H = np.float32(area*length*all_ne_values*all_nH_ne_values*1e-20 + 2*2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_outer*dt/1000*1e-20 + 2*2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_inner*dt/1000*1e-20)	# I assume molecules upstream ~ 0
-									particles_penalty += np.log( 1 + erf( (total_removable_H-all_net_H_destruction)/(2**0.5 * (all_net_H_destruction_sigma**2 + (total_removable_H*particle_molecular_budget_precision)**2)**0.5)) )
 									particles_penalty_H = np.log( 1 + erf( (total_removable_H-all_net_H_destruction)/(2**0.5 * (all_net_H_destruction_sigma**2 + (total_removable_H*particle_molecular_budget_precision)**2)**0.5)) )
+									particles_penalty_H -= np.log(np.sum(np.exp(particles_penalty_H)))	# normalisation for logarithmic probabilities
+									# particles_penalty += particles_penalty_H	# 2022/12/22 I don't think this is necessary
 
 									likelihood_log_probs += particles_penalty
 									# likelihood_log_probs -= np.max(likelihood_log_probs)
@@ -2054,9 +2067,11 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								else:	# here I do
 									# max_local_flow_vel = max(1,homogeneous_mach_number[my_time_pos])*upstream_adiabatic_collisional_velocity[my_time_pos,my_r_pos]
 									total_removable_power_times_volume_SS = area*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*Te_all_upstream[my_time_pos,my_r_pos] + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*max_local_flow_vel*ne_all_upstream[my_time_pos,my_r_pos]*1e20
-									total_removable_power_times_volume_dynamic = area*length/dt*1000*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*Te_values + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*ne_values
+									# total_removable_power_times_volume_dynamic = area*length/dt*1000*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*Te_values + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*ne_values
+									total_removable_power_times_volume_dynamic = area*length/dt*1000*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*merge_Te_prof_multipulse_interp_crop_limited_restrict + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*ne
 									total_removable_power_times_volume = total_removable_power_times_volume_SS + total_removable_power_times_volume_dynamic
-									total_removable_power_times_volume = np.array([[[[total_removable_power_times_volume.tolist()]*H2p_to_find_steps]*H2_steps]*Hm_to_find_steps]*H_steps,dtype=np.float32)
+									total_removable_power_times_volume = np.ones_like(total_removed_power_times_volume)*total_removable_power_times_volume
+									# total_removable_power_times_volume = np.array([[[[total_removable_power_times_volume.tolist()]*H2p_to_find_steps]*H2_steps]*Hm_to_find_steps]*H_steps,dtype=np.float32)
 									if False:
 										select = total_removed_power_times_volume>total_removable_power_times_volume
 										power_penalty[select] = np.float32(-0.5*((total_removed_power_times_volume[select] - total_removable_power_times_volume[select])/total_removable_power_times_volume[select])**2)
@@ -2080,6 +2095,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										power_penalty = np.log(power_penalty)
 										# power_penalty += -np.log( 1+ erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ) ) - np.log( 1+ erf( total_removable_power_times_volume/( 2**0.5 * total_removable_power_times_volume*0.5 ) ) )
 										power_penalty -= power_penalty.max()
+										power_penalty -= np.log(np.sum(np.exp(power_penalty)))	# normalisation for logarithmic probabilities
 										# del total_removed_power_times_volume_sigma
 
 									likelihood_log_probs += power_penalty
@@ -2173,7 +2189,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									# print(marginalised_log_prob_Te)
 									# marginalised_log_prob_ne = np.log(np.sum(np.exp(likelihood_log_probs)*hypervolume_of_each_combination,axis=(0,1,2,3,5)))	# ne, Te
 									# marginalised_log_prob_Te = np.log(np.sum(np.exp(likelihood_log_probs)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# ne, Te
-									if np.sum(marginalised_log_prob_ne>0)>=4:
+									if np.sum(marginalised_log_prob_ne>0)>=5:
+										ne_values_limits = np.sort(np.array([ne_values_array for _, ne_values_array in sorted(zip(marginalised_log_prob_ne, ne_values_array))])[-5:])
+									elif np.sum(marginalised_log_prob_ne>0)>=4:
 										ne_values_limits = np.sort(np.array([ne_values_array for _, ne_values_array in sorted(zip(marginalised_log_prob_ne, ne_values_array))])[-4:])
 									elif np.sum(marginalised_log_prob_ne>0)==3:
 										ne_values_limits = np.sort(np.array([ne_values_array for _, ne_values_array in sorted(zip(marginalised_log_prob_ne, ne_values_array))])[-3:])
@@ -2197,7 +2215,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									ne_values_array_initial = cp.deepcopy(ne_values_array)
 									ne_values_array = np.unique(np.concatenate((ne_values_array,ne_additional_values)))
 
-									if np.sum(marginalised_log_prob_Te>0)>=4:
+									if np.sum(marginalised_log_prob_Te>0)>=5:
+										Te_values_limits = np.sort(np.array([Te_values_array for _, Te_values_array in sorted(zip(marginalised_log_prob_Te, Te_values_array))])[-5:])
+									elif np.sum(marginalised_log_prob_Te>0)>=4:
 										Te_values_limits = np.sort(np.array([Te_values_array for _, Te_values_array in sorted(zip(marginalised_log_prob_Te, Te_values_array))])[-4:])
 									elif np.sum(marginalised_log_prob_Te>0)==3:
 										Te_values_limits = np.sort(np.array([Te_values_array for _, Te_values_array in sorted(zip(marginalised_log_prob_Te, Te_values_array))])[-3:])
@@ -2916,12 +2936,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								all_H2p_destruction_RR = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 								all_H2p_creation_RR = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 								if include_particles_limitation:
-									all_net_Hp_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_e_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_Hm_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_H2p_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_H2_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_net_H_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									# all_net_Hp_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									# all_net_e_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									# all_net_Hm_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									# all_net_H2p_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									# all_net_H2_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+									# all_net_H_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_net_Hp_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_net_e_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_net_Hm_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
@@ -2998,39 +3018,35 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											all_H2p_destruction_RR[:,:,:,:,i5,i6] = np.float32(rate_destruction_H2p)	# m^-3/s *1e-20
 											all_H2p_creation_RR[:,:,:,:,i5,i6] = np.float32(rate_creation_H2p)	# m^-3/s *1e-20
 											if include_particles_limitation:
-												all_net_Hp_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_Hp - rate_creation_Hp)	# m^-3/s *1e-20
-												# all_net_Hp_destruction_sigma[:,:,:,:,i5,i6] = 0.5*(rate_destruction_Hp_sigma**2 + rate_creation_Hp_sigma**2)**0.5	# m^-3/s *1e-20
-												# all_net_e_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_e - rate_creation_e)	# m^-3/s *1e-20
-												# all_net_e_destruction_sigma[:,:,:,:,i5,i6] = 0.5*(rate_destruction_e_sigma**2 + rate_creation_e_sigma**2)**0.5	# m^-3/s *1e-20
-												# all_net_Hm_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_Hm - rate_creation_Hm)	# m^-3/s *1e-20
-												# all_net_Hm_destruction_sigma[:,:,:,:,i5,i6] = 0.5*(rate_destruction_Hm_sigma**2 + rate_creation_Hm_sigma**2)**0.5	# m^-3/s *1e-20
-												# all_net_H2p_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H2p - rate_creation_H2p)	# m^-3/s *1e-20
-												# all_net_H2p_destruction_sigma[:,:,:,:,i5,i6] = 0.5*(rate_destruction_H2p_sigma**2 + rate_creation_H2p_sigma**2)**0.5	# m^-3/s *1e-20
+												# all_net_Hp_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_Hp - rate_creation_Hp)	# #m^-3/s *1e-20
 												all_net_Hp_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_Hp_sigma*1e-10)**2 + (rate_creation_Hp_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
-												all_net_e_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_e - rate_creation_e)	# m^-3/s *1e-20
+												# all_net_e_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_e - rate_creation_e)	# m^-3/s *1e-20
 												all_net_e_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_e_sigma*1e-10)**2 + (rate_creation_e_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
-												all_net_Hm_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_Hm - rate_creation_Hm)	# m^-3/s *1e-20
+												# all_net_Hm_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_Hm - rate_creation_Hm)	# m^-3/s *1e-20
 												all_net_Hm_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_Hm_sigma*1e-10)**2 + (rate_creation_Hm_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
-												all_net_H2p_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H2p - rate_creation_H2p)	# m^-3/s *1e-20
+												# all_net_H2p_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H2p - rate_creation_H2p)	# m^-3/s *1e-20
 												all_net_H2p_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H2p_sigma*1e-10)**2 + (rate_creation_H2p_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
-												all_net_H2_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H2 - rate_creation_H2)	# m^-3/s *1e-20
+												# all_net_H2_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H2 - rate_creation_H2)	# m^-3/s *1e-20
 												all_net_H2_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H2_sigma*1e-10)**2 + (rate_creation_H2_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
-												all_net_H_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H - rate_creation_H)	# m^-3/s *1e-20
+												# all_net_H_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H - rate_creation_H)	# m^-3/s *1e-20
 												all_net_H_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H_sigma*1e-10)**2 + (rate_creation_H_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
 												all_power_potential_mol[:,:,:,:,i5,i6] = np.float32(power_potential_mol)
 												all_power_potential_mol_sigma[:,:,:,:,i5,i6] = np.float32(power_potential_mol_sigma)
 												all_power_potential_mol_plasma_heating[:,:,:,:,i5,i6] = np.float32(power_potential_mol_plasma_heating)
 												all_power_potential_mol_plasma_cooling[:,:,:,:,i5,i6] = np.float32(power_potential_mol_plasma_cooling)
+								if include_particles_limitation:
+									all_net_Hp_destruction = np.float32(all_Hp_destruction_RR - all_Hp_creation_RR)	# #m^-3/s *1e-20
+									all_net_e_destruction = np.float32(all_e_destruction_RR - all_e_creation_RR)	# #m^-3/s *1e-20
+									all_net_Hm_destruction = np.float32(all_Hm_destruction_RR - all_Hm_creation_RR)	# #m^-3/s *1e-20
+									all_net_H2p_destruction = np.float32(all_H2p_destruction_RR - all_H2p_creation_RR)	# #m^-3/s *1e-20
+									all_net_H2_destruction = np.float32(all_H2_destruction_RR2 - all_H2_creation_RR)	# #m^-3/s *1e-20
+									all_net_H_destruction = np.float32(all_H_destruction_RR2 - all_H_creation_RR)	# #m^-3/s *1e-20
 								try:
 									del temp_coord,temp,temp_sigma,temp1,temp1_sigma
 								except:
 									print('worker '+str(current_process())+' marker 1-2 '+str(domain_index)+' in %.3gmin %.3gsec' %(int(time_lapsed/60),int(time_lapsed%60)) +' for some reason del temp_coord,temp,temp_sigma,temp1,temp1_sigma failed' )
 							if include_particles_limitation:
 								particles_penalty = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-								particles_penalty_Hp = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-								particles_penalty_e = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-								particles_penalty_Hm = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-								particles_penalty_H2p = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 								all_net_Hp_destruction *= area*length*dt/1000	# *1e-20
 								all_net_e_destruction *= area*length*dt/1000	# *1e-20
 								all_net_Hm_destruction *= area*length*dt/1000	# *1e-20
@@ -3053,18 +3069,25 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									particles_penalty[select] += np.float32(-0.5*((all_net_e_destruction[select] - total_removable_e[select])/total_removable_e[select])**2)	# 100% uncertanty
 									# particles_penalty[np.isnan(particles_penalty)]=-np.inf
 								elif True:
-									particles_penalty += np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
-									particles_penalty_Hp += np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
-									particles_penalty += np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
-									particles_penalty_e += np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
+									# particles_penalty_Hp = np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp*particle_atomic_budget_precision)**2)**0.5)) )
+									# particles_penalty_e = np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e*particle_atomic_budget_precision)**2)**0.5)) )
+									# total_removable_Hp_sigma = np.max([total_removable_Hp*particle_atomic_budget_precision,np.ones_like(total_removable_Hp)*0.001*particle_atomic_budget_precision],axis=0)	# if total_removable_Hp~0 then the values slighttly >0 are like inf, with a massive negative weight, 0.001e20 is arbitrary
+									# total_removable_e_sigma = np.max([total_removable_e*particle_atomic_budget_precision,np.ones_like(total_removable_e)*0.001*particle_atomic_budget_precision],axis=0)	# if total_removable_e~0 then the values slighttly >0 are like inf, with a massive negative weight, 0.001e20 is arbitrary
+									total_removable_Hp_sigma = area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*max(1e18,ne)*1*1e-20*particle_atomic_budget_precision	# if total_removable_Hp~0 then the values slighttly >0 are like inf, with a massive negative weight, 1e18 is arbitrary
+									total_removable_e_sigma = area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*max(1e18,ne)*1*1e-20*particle_atomic_budget_precision	# if total_removable_e~0 then the values slighttly >0 are like inf, with a massive negative weight, 1e18 is arbitrary
+									particles_penalty_Hp = np.log( 1 + erf( (total_removable_Hp-all_net_Hp_destruction)/(2**0.5 * (all_net_Hp_destruction_sigma**2 + (total_removable_Hp_sigma)**2)**0.5)) )
+									particles_penalty_e = np.log( 1 + erf( (total_removable_e-all_net_e_destruction)/(2**0.5 * (all_net_e_destruction_sigma**2 + (total_removable_e_sigma)**2)**0.5)) )
+									particles_penalty_Hp -= np.log(np.sum(np.exp(particles_penalty_Hp)))	# normalisation for logarithmic probabilities
+									particles_penalty_e -= np.log(np.sum(np.exp(particles_penalty_e)))	# normalisation for logarithmic probabilities
+									particles_penalty += particles_penalty_Hp + particles_penalty_e
 									del all_net_Hp_destruction_sigma,all_net_e_destruction_sigma
 
 								# total_removable_Hm = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nHm_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ downstream
 								# total_removable_H2p = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*all_nH2p_ne_values*max_local_flow_vel + area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ downstream
-								# total_removable_Hm = np.float32(area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ 0
-								# total_removable_H2p = np.float32(area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ 0
-								total_removable_Hm = np.zeros_like(total_removable_Hp).astype(np.float32)	# I assume no accumulation of molecules from one time step to the next. this is justified by the fact that the lifetime of this ion is very short, much shorter than my time steps
-								total_removable_H2p = np.zeros_like(total_removable_Hp).astype(np.float32)	# I assume no accumulation of molecules from one time step to the next. this is justified by the fact that the lifetime of this ion is very short, much shorter than my time steps
+								total_removable_Hm = np.float32(area*length*all_ne_values*all_nHm_ne_values*1e-20)	# I assume molecules upstream ~ 0
+								total_removable_H2p = np.float32(area*length*all_ne_values*all_nH2p_ne_values*1e-20)	# I assume molecules upstream ~ 0
+								# total_removable_Hm = np.zeros_like(total_removable_Hp).astype(np.float32)	# I assume no accumulation of molecules from one time step to the next. this is justified by the fact that the lifetime of this ion is very short, much shorter than my time steps
+								# total_removable_H2p = np.zeros_like(total_removable_Hp).astype(np.float32)	# I assume no accumulation of molecules from one time step to the next. this is justified by the fact that the lifetime of this ion is very short, much shorter than my time steps
 								if False:
 									select = all_net_Hm_destruction>total_removable_Hm
 									particles_penalty[select] += np.float32(-0.5*((all_net_Hm_destruction[select] - total_removable_Hm[select])/(total_removable_Hm[select]*2))**2)	# 200% uncertanty
@@ -3073,24 +3096,33 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									particles_penalty[select] += np.float32(-0.5*((all_net_H2p_destruction[select] - total_removable_H2p[select])/(total_removable_H2p[select]*2))**2)	# 200% uncertanty
 									particles_penalty[np.isnan(particles_penalty)]=-np.inf
 								elif True:
+									# particles_penalty_Hm = np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
+									# particles_penalty_H2p = np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
+									# total_removable_Hm_sigma = np.max([total_removable_Hm*particle_molecular_budget_precision,np.ones_like(total_removable_Hm)*0.00001],axis=0)	# if total_removable_Hm~0 then the values slighttly >0 are like inf, with a massive negative weight, 0.00001e20 is arbitrary
+									# total_removable_H2p_sigma = np.max([total_removable_H2p*particle_molecular_budget_precision,np.ones_like(total_removable_H2p)*0.00001],axis=0)	# if total_removable_H2p~0 then the values slighttly >0 are like inf, with a massive negative weight 0.00001e20 is arbitrary
+									total_removable_Hm_sigma = area*length*max(1e18,ne)*1e-20*particle_molecular_budget_precision	# if total_removable_Hm~0 then the values slighttly >0 are like inf, with a massive negative weight, 1e18 is arbitrary
+									total_removable_H2p_sigma = area*length*max(1e18,ne)*1e-20*particle_molecular_budget_precision	# if total_removable_H2p~0 then the values slighttly >0 are like inf, with a massive negative weight 1e18 is arbitrary
+									particles_penalty_Hm = np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm_sigma)**2)**0.5)) )
+									particles_penalty_H2p = np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p_sigma)**2)**0.5)) )
+									particles_penalty_Hm -= np.log(np.sum(np.exp(particles_penalty_Hm)))	# normalisation for logarithmic probabilities
+									particles_penalty_H2p -= np.log(np.sum(np.exp(particles_penalty_H2p)))	# normalisation for logarithmic probabilities
 									if molecular_particle_balance_enabled:
-										particles_penalty += np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
-										particles_penalty += np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
-									particles_penalty_Hm += np.log( 1 + erf( (total_removable_Hm-all_net_Hm_destruction)/(2**0.5 * (all_net_Hm_destruction_sigma**2 + (total_removable_Hm*particle_molecular_budget_precision)**2)**0.5)) )
-									particles_penalty_H2p += np.log( 1 + erf( (total_removable_H2p-all_net_H2p_destruction)/(2**0.5 * (all_net_H2p_destruction_sigma**2 + (total_removable_H2p*particle_molecular_budget_precision)**2)**0.5)) )
+										particles_penalty += particles_penalty_Hm + particles_penalty_H2p
 									del all_net_Hm_destruction_sigma,all_net_H2p_destruction_sigma
-								particles_penalty -= np.nanmax(particles_penalty)
+								# particles_penalty -= np.nanmax(particles_penalty)
 								# particles_penalty[np.isnan(particles_penalty)] = -np.inf
 
 								# added to limit the RR of consumprion of H and H2
 								nH2vH2_r_inner = all_ne_values*all_nH_ne_values* ( (300*boltzmann_constant_J)/ (2*hydrogen_mass))**0.5	# inner H density should be lower
 								total_removable_H2 = np.float32(area*length*all_ne_values*all_nH2_ne_values*1e-20 + 2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_outer*dt/1000*1e-20 + 2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_inner*dt/1000*1e-20)	# I assume molecules upstream ~ 0
-								particles_penalty += np.log( 1 + erf( (total_removable_H2-all_net_H2_destruction)/(2**0.5 * (all_net_H2_destruction_sigma**2 + (total_removable_H2*particle_molecular_budget_precision)**2)**0.5)) )
 								particles_penalty_H2 = np.log( 1 + erf( (total_removable_H2-all_net_H2_destruction)/(2**0.5 * (all_net_H2_destruction_sigma**2 + (total_removable_H2*particle_molecular_budget_precision)**2)**0.5)) )
+								particles_penalty_H2 -= np.log(np.sum(np.exp(particles_penalty_H2)))	# normalisation for logarithmic probabilities
+								# particles_penalty += particles_penalty_H2	# 2022/12/22 I don't think this is necessary
 
 								total_removable_H = np.float32(area*length*all_ne_values*all_nH_ne_values*1e-20 + 2*2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_outer*dt/1000*1e-20 + 2*2*np.pi*r_crop[my_r_pos]*length*nH2vH2_r_inner*dt/1000*1e-20)	# I assume molecules upstream ~ 0
-								particles_penalty += np.log( 1 + erf( (total_removable_H-all_net_H_destruction)/(2**0.5 * (all_net_H_destruction_sigma**2 + (total_removable_H*particle_molecular_budget_precision)**2)**0.5)) )
 								particles_penalty_H = np.log( 1 + erf( (total_removable_H-all_net_H_destruction)/(2**0.5 * (all_net_H_destruction_sigma**2 + (total_removable_H*particle_molecular_budget_precision)**2)**0.5)) )
+								particles_penalty_H -= np.log(np.sum(np.exp(particles_penalty_H)))	# normalisation for logarithmic probabilities
+								# particles_penalty += particles_penalty_H	# 2022/12/22 I don't think this is necessary
 								del all_net_H2_destruction_sigma,all_net_H_destruction_sigma,all_net_H_destruction,all_net_H2_destruction
 
 								# likelihood_log_probs += particles_penalty
@@ -3108,11 +3140,13 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								power_penalty[select] = np.float32(-0.5*((total_removed_power_times_volume[select] - interpolated_power_pulse_shape(time_crop[my_time_pos])/source_power_spread)/(interpolated_power_pulse_shape_std(time_crop[my_time_pos])))**2)
 							else:	# H, Hm, H2, H2p, ne, Te
 								# max_local_flow_vel = max(1,homogeneous_mach_number[my_time_pos])*upstream_adiabatic_collisional_velocity[my_time_pos,my_r_pos]
-								max_local_flow_vel = homogeneous_mach_number[my_time_pos]*upstream_adiabatic_collisional_velocity[my_time_pos,my_r_pos]
+								# max_local_flow_vel = homogeneous_mach_number[my_time_pos]*upstream_adiabatic_collisional_velocity[my_time_pos,my_r_pos]
 								total_removable_power_times_volume_SS = area*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*Te_all_upstream[my_time_pos,my_r_pos] + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*max_local_flow_vel*ne_all_upstream[my_time_pos,my_r_pos]*1e20
-								total_removable_power_times_volume_dynamic = area*length/dt*1000*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*Te_values + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*ne_values
+								# total_removable_power_times_volume_dynamic = area*length/dt*1000*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*Te_values + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*ne_values
+								total_removable_power_times_volume_dynamic = area*length/dt*1000*(0.5*hydrogen_mass*(max_local_flow_vel**2) + (5*merge_Te_prof_multipulse_interp_crop_limited_restrict + ionisation_potential + dissociation_potential)/eV_to_K*boltzmann_constant_J)*ne
 								total_removable_power_times_volume = total_removable_power_times_volume_SS + total_removable_power_times_volume_dynamic
-								total_removable_power_times_volume = np.array([[[[total_removable_power_times_volume.tolist()]*H2p_steps]*H2_steps]*Hm_steps]*H_steps,dtype=np.float32)
+								# total_removable_power_times_volume = np.array([[[[total_removable_power_times_volume.tolist()]*H2p_steps]*H2_steps]*Hm_steps]*H_steps,dtype=np.float32)
+								total_removable_power_times_volume = np.ones_like(total_removed_power_times_volume)*total_removable_power_times_volume
 								if False:
 									select = total_removed_power_times_volume>total_removable_power_times_volume
 									power_penalty[select] = np.float32(-0.5*((total_removed_power_times_volume[select] - total_removable_power_times_volume[select])/total_removable_power_times_volume[select])**2)
@@ -3137,6 +3171,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									# power_penalty += -np.log( 1+ erf( total_removed_power_times_volume/( 2**0.5 * total_removed_power_times_volume_sigma ) ) ) - np.log( 1+ erf( total_removable_power_times_volume/( 2**0.5 * total_removable_power_times_volume*0.5 ) ) )
 									del total_removed_power_times_volume_sigma
 								power_penalty -= power_penalty.max()
+								power_penalty -= np.log(np.sum(np.exp(power_penalty)))	# normalisation for logarithmic probabilities
 							#
 							# nH_ne_excited_states = nH_ne_excited_states_atomic + nH_ne_excited_states_mol.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps*TS_Te_steps))
 							# nH_ne_excited_state_2 = nH_ne_excited_state_atomic_2 + nH_ne_excited_state_mol_2.reshape((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps*TS_Te_steps))
@@ -4136,11 +4171,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4152,7 +4188,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index],np.polyval(fit_average,record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index]),'k--')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4177,11 +4213,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4190,7 +4227,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4216,11 +4253,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nH_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nH_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4229,7 +4267,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4254,11 +4292,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nH_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nH_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4267,7 +4306,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-')
 										ax[plot_index,1].set_ylabel('nH/ne index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4293,11 +4332,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH_ne_values_full),np.polyval(fit1,np.sort(nH_ne_values_full)),'b')
@@ -4306,7 +4346,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH/ne')
@@ -4331,11 +4371,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH_ne_values_full),np.polyval(fit1,np.sort(nH_ne_values_full)),'b')
@@ -4344,7 +4385,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH/ne index')
@@ -4389,11 +4430,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4405,7 +4447,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index],np.polyval(fit_average,record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index]),'k--')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4430,11 +4472,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4443,7 +4486,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4469,11 +4512,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nH_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nH_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4482,7 +4526,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4507,11 +4551,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nH_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nH_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4520,7 +4565,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-')
 										ax[plot_index,1].set_ylabel('nH/ne index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4546,11 +4591,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH_ne_values_full),np.polyval(fit1,np.sort(nH_ne_values_full)),'b')
@@ -4559,7 +4605,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH/ne')
@@ -4584,11 +4630,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH_ne_values_full),np.polyval(fit1,np.sort(nH_ne_values_full)),'b')
@@ -4597,7 +4644,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_1.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH/ne index')
@@ -4642,11 +4689,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4658,7 +4706,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index],np.polyval(fit_average,record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index]),'k--')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4683,11 +4731,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4696,7 +4745,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4722,11 +4771,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nH_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nH_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4735,7 +4785,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4760,11 +4810,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nH_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nH_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4773,7 +4824,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-')
 										ax[plot_index,1].set_ylabel('nH/ne index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4799,11 +4850,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH_ne_values_full),np.polyval(fit1,np.sort(nH_ne_values_full)),'b')
@@ -4812,7 +4864,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH/ne')
@@ -4837,11 +4889,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH_ne_values_full),np.polyval(fit1,np.sort(nH_ne_values_full)),'b')
@@ -4850,7 +4903,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_2.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH/ne index')
@@ -4895,11 +4948,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4911,7 +4965,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index],np.polyval(fit_average,record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index]),'k--')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -4936,11 +4990,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4949,7 +5004,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -4975,11 +5030,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nH_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nH_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -4988,7 +5044,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -5013,11 +5069,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nH_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nH_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -5026,7 +5083,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-')
 										ax[plot_index,1].set_ylabel('nH/ne index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -5052,11 +5109,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH_ne_values_full),np.polyval(fit1,np.sort(nH_ne_values_full)),'b')
@@ -5065,7 +5123,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH/ne')
@@ -5090,11 +5148,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH_ne_values_full),np.polyval(fit1,np.sort(nH_ne_values_full)),'b')
@@ -5103,7 +5162,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_3.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH/ne index')
@@ -5148,11 +5207,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -5164,7 +5224,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index],np.polyval(fit_average,record_nH2p_ne_values[most_likely_nH2_ne_index,:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index]),'k--')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H\nM=marginalised best, X=unmarginalised best, --=samples')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -5189,11 +5249,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -5202,7 +5263,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H\nblue=fit H-/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -5228,11 +5289,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nH_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nH_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -5241,7 +5303,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H-\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH/ne')
 										ax[plot_index,0].set_xlabel('nH2+/ne')
@@ -5266,11 +5328,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nH_ne_values_full.flatten(),nH2p_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH2p_ne_values_full-np.polyval(fit2,nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH2p_ne_values_full-np.mean(nH2p_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH2p_ne_values_full = nH2p_ne_values_full[temp>np.max(temp)*start]
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH2p_ne_values_full,nH_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit1,nH2p_ne_values_full)))**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH2p_ne_values_full),np.polyval(fit1,np.sort(nH2p_ne_values_full)),'b')
@@ -5279,7 +5342,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nH_ne_values_full)),np.sort(nH_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-\nblue=fit H/H2+ (%.3g,%.3g)R2 %.3g\nfit H2+/H (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H-')
 										ax[plot_index,1].set_ylabel('nH/ne index')
 										ax[plot_index,1].set_xlabel('nH2+/nH2 index')
@@ -5305,11 +5368,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,0].plot(np.sort(nH_ne_values_full),np.polyval(fit1,np.sort(nH_ne_values_full)),'b')
@@ -5318,7 +5382,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,0].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/post_process_mega_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps'+' fits failed')
 											ax[plot_index,0].set_title('PDF at most likely H2, Te, ne, H2+\nM=marginalised best, X=unmarginalised best')
 										ax[plot_index,0].set_ylabel('nH-/ne')
 										ax[plot_index,0].set_xlabel('nH/ne')
@@ -5343,11 +5407,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# fit2 = curve_fit(line,nHm_ne_values_full.flatten(),nH_ne_values_full.flatten(),p0=[1,1],sigma=(1/temp).flatten())[0]
 										# R2_fit2 = 1-(np.sum(((nH_ne_values_full-np.polyval(fit2,nHm_ne_values_full))*temp)**2)/np.sum(1*temp**2))/(np.sum(((nH_ne_values_full-np.mean(nH_ne_values_full))*temp)**2)/np.sum(1*temp**2))
 										start = 0.8
-										while (np.sum(temp>np.max(temp)*start)<5 and start>0):
+										while (np.sum(temp>np.max(temp)*start)<min(5+1,np.sum(np.unique(temp)>0)) and start>0):
 											start/=1.1
 										nH_ne_values_full = nH_ne_values_full[temp>np.max(temp)*start]
 										nHm_ne_values_full = nHm_ne_values_full[temp>np.max(temp)*start]
 										try:
+											gna = sbla	# I want an error to occour
 											fit1 = np.polyfit(nH_ne_values_full,nHm_ne_values_full,1)
 											R2_fit1 = 1-(np.sum(((nHm_ne_values_full-np.polyval(fit1,nH_ne_values_full)))**2))/(np.sum(((nHm_ne_values_full-np.mean(nHm_ne_values_full)))**2))
 											im = ax[plot_index,1].plot(np.sort(nH_ne_values_full),np.polyval(fit1,np.sort(nH_ne_values_full)),'b')
@@ -5356,7 +5421,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].plot(np.polyval(fit2,np.sort(nHm_ne_values_full)),np.sort(nHm_ne_values_full),'b')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+\nblue=fit H-/H (%.3g,%.3g)R2 %.3g\nfit H/H- (%.3g,%.3g)R2 %.3g' %(*fit1,R2_fit1,*fit2,R2_fit2))
 										except:
-											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps'+'fits failed')
+											print(path_where_to_save_everything + mod4 + '/merge'+str(merge_ID_target)+'_global_fit_pass'+str(pass_index)+'_Bayesian_search_' + str(my_time_pos)+'_'+str(my_r_pos)+ '_first_4.eps'+' fits failed')
 											ax[plot_index,1].set_title('PDF marginalised on H2, Te, ne, most likely H2+')
 										ax[plot_index,1].set_ylabel('nH-/nH2 index')
 										ax[plot_index,1].set_xlabel('nH/ne index')

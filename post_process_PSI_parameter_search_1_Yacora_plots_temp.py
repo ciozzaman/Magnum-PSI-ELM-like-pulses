@@ -1088,9 +1088,10 @@ if initial_conditions:
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
 
+	# this is used for the determination of the ranges of H (it fits better in post_process_PSI_parameter_search_Yacora_final.py, but it's here...)
 	max_H2_available = (source_flow_rate + feed_rate_SLM) /60/1000 * 101325/(273*boltzmann_constant_J) * 0.001 + np.pi*(0.25**2)*target_chamber_length*target_chamber_pressure/(273*boltzmann_constant_J)	# #
 	max_H2_density_available = max_H2_available/(np.pi*(0.02**2)*length)	# #/m3
-	max_H_density_available = 2*max_H2_density_available	# #/m3
+	max_H_density_available = 3*max_H2_density_available	# #/m3
 
 else:
 
@@ -5127,7 +5128,10 @@ else:
 		def make_plot_type_1(most_likely_something,label,label_units,figure_index,ext_vmin=0.1,logaritmic=True):
 			plt.figure(figsize=(8, 5));
 			if logaritmic:
-				plt.pcolor(temp_t, temp_r, most_likely_something,cmap='rainbow',vmin=max(max(ext_vmin,np.nanmin(most_likely_something)),np.nanmax(most_likely_something)*1e-6), norm=LogNorm());
+				temp = np.nanmax([np.zeros_like(most_likely_something),most_likely_something],axis=0)
+				if np.nanmax(temp)<=0:
+					temp = np.nanmax([np.ones_like(most_likely_something)*1e-20,most_likely_something],axis=0)
+				plt.pcolor(temp_t, temp_r, temp,cmap='rainbow',vmin=max(max(ext_vmin,np.nanmin(temp)),np.nanmax(temp)*1e-6), norm=LogNorm());
 			else:
 				plt.pcolor(temp_t, temp_r, most_likely_something,cmap='rainbow',vmin=max(max(ext_vmin,np.nanmin(most_likely_something)),np.nanmax(most_likely_something)*1e-6));
 			plt.colorbar(orientation="horizontal").set_label(label_units)  # ;plt.pause(0.01)
@@ -7276,28 +7280,20 @@ else:
 		plt.close('all')
 
 		plt.figure(figsize=(20, 10));
-		plt.plot(np.sort((1e20*intervals_H_destruction_RR2_tr).tolist()*2)[1:-1],100*np.array([prob_H_destruction_RR2_tr]*2).T.flatten(),label='H_destruction_RR2 ML=%.3g+/-%.3g#' %((1e20*ML_H_destruction_RR2),(1e20*ML_H_destruction_RR2_sigma)))
-
-
-
-
-
-
-
-
-
-		plt.plot(np.sort((1e20*intervals_Hp_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hp_destruction_RR_tr]*2).T.flatten(),label='Hp_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hp_destruction_RR),(1e20*ML_Hp_destruction_RR_sigma)))
-		plt.plot(np.sort((1e20*intervals_Hp_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hp_creation_RR_tr]*2).T.flatten(),label='Hp_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hp_creation_RR),(1e20*ML_Hp_creation_RR_sigma)))
-		plt.plot(np.sort((1e20*intervals_e_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_e_destruction_RR_tr]*2).T.flatten(),label='e_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_e_destruction_RR),(1e20*ML_e_destruction_RR_sigma)))
-		plt.plot(np.sort((1e20*intervals_e_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_e_creation_RR_tr]*2).T.flatten(),label='e_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_e_creation_RR),(1e20*ML_e_creation_RR_sigma)))
-		plt.plot(np.sort((1e20*intervals_Hm_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hm_destruction_RR_tr]*2).T.flatten(),label='Hm_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hm_destruction_RR),(1e20*ML_Hm_destruction_RR_sigma)))
-		plt.plot(np.sort((1e20*intervals_Hm_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hm_creation_RR_tr]*2).T.flatten(),label='Hm_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hm_creation_RR),(1e20*ML_Hm_creation_RR_sigma)))
-		plt.plot(np.sort((1e20*intervals_H2p_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2p_destruction_RR_tr]*2).T.flatten(),label='H2p_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2p_destruction_RR),(1e20*ML_H2p_destruction_RR_sigma)))
-		plt.plot(np.sort((1e20*intervals_H2p_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2p_creation_RR_tr]*2).T.flatten(),label='H2p_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2p_creation_RR),(1e20*ML_H2p_creation_RR_sigma)))
-		plt.plot(np.sort((1e20*intervals_H2_destruction_RR2_tr).tolist()*2)[1:-1],100*np.array([prob_H2_destruction_RR2_tr]*2).T.flatten(),label='H2_destruction_RR2 ML=%.3g+/-%.3g#' %((1e20*ML_H2_destruction_RR2),(1e20*ML_H2_destruction_RR2_sigma)))
+		plt.plot(np.sort((1e20*intervals_H_destruction_RR2_tr).tolist()*2)[1:-1],100*np.array([prob_H_destruction_RR2_tr]*2).T.flatten(),'-',color=color[0],label='H_destruction_RR2 ML=%.3g+/-%.3g#' %((1e20*ML_H_destruction_RR2),(1e20*ML_H_destruction_RR2_sigma)))
 		if latest_version:
-			plt.plot(np.sort((1e20*intervals_H_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H_creation_RR_tr]*2).T.flatten(),label='H_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H_creation_RR),(1e20*ML_H_creation_RR_sigma)))
-			plt.plot(np.sort((1e20*intervals_H2_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2_creation_RR_tr]*2).T.flatten(),label='H2_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2_creation_RR),(1e20*ML_H2_creation_RR_sigma)))
+			plt.plot(np.sort((1e20*intervals_H_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H_creation_RR_tr]*2).T.flatten(),'--',color=color[0],label='H_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H_creation_RR),(1e20*ML_H_creation_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_Hp_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hp_destruction_RR_tr]*2).T.flatten(),'-',color=color[1],label='Hp_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hp_destruction_RR),(1e20*ML_Hp_destruction_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_Hp_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hp_creation_RR_tr]*2).T.flatten(),'--',color=color[1],label='Hp_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hp_creation_RR),(1e20*ML_Hp_creation_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_e_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_e_destruction_RR_tr]*2).T.flatten(),'-',color=color[2],label='e_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_e_destruction_RR),(1e20*ML_e_destruction_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_e_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_e_creation_RR_tr]*2).T.flatten(),'--',color=color[2],label='e_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_e_creation_RR),(1e20*ML_e_creation_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_Hm_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hm_destruction_RR_tr]*2).T.flatten(),'-',color=color[3],label='Hm_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hm_destruction_RR),(1e20*ML_Hm_destruction_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_Hm_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hm_creation_RR_tr]*2).T.flatten(),'--',color=color[3],label='Hm_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hm_creation_RR),(1e20*ML_Hm_creation_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_H2p_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2p_destruction_RR_tr]*2).T.flatten(),'-',color=color[4],label='H2p_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2p_destruction_RR),(1e20*ML_H2p_destruction_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_H2p_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2p_creation_RR_tr]*2).T.flatten(),'--',color=color[4],label='H2p_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2p_creation_RR),(1e20*ML_H2p_creation_RR_sigma)))
+		plt.plot(np.sort((1e20*intervals_H2_destruction_RR2_tr).tolist()*2)[1:-1],100*np.array([prob_H2_destruction_RR2_tr]*2).T.flatten(),'-',color=color[5],label='H2_destruction_RR2 ML=%.3g+/-%.3g#' %((1e20*ML_H2_destruction_RR2),(1e20*ML_H2_destruction_RR2_sigma)))
+		if latest_version:
+			plt.plot(np.sort((1e20*intervals_H2_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2_creation_RR_tr]*2).T.flatten(),'--',color=color[5],label='H2_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2_creation_RR),(1e20*ML_H2_creation_RR_sigma)))
 		plt.plot([H2_pre_ELMlike_pulse]*2,[0,100],'--',label='H2 in the plasma volume before the pulse = %.3g#' %(H2_pre_ELMlike_pulse));
 		plt.plot([H2_inflow_sides_plasma_column]*2,[0,100],'--',label='H2 incoming from sides during pulse (fixed pressure=%.3gPa) = %.3g#' %(target_chamber_pressure,H2_inflow_sides_plasma_column));
 		plt.plot([source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,[0,100],'--',label='H2 flow to the source = %.3g#' %(source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000));
