@@ -46,12 +46,14 @@ exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/IR_records_p
 
 
 temp=[]
-# merge_id_all = [17,18,19,20,21,24,32,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99,101,103]
-merge_id_all = [66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99,101,103]
-merge_id_all = [66,67,68,69,70,71,72,73,74,75,76]
+# merge_id_all = [17,18,19,20,21,24,32,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99,101,103,104]
+# merge_id_all = [66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85, 95, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99,101,103]
+# merge_id_all = [66,67,68,69,70,71,72,73,74,75,76]
 # merge_id_all = [85, 86, 87, 89, 90, 91, 92, 93, 94, 96, 97, 98, 88, 99, 95]
 # merge_id_all = [85, 95, 104]
-# merge_id_all = [88]
+# merge_id_all = [75,104]
+merge_id_all = [80]
+merge_id_all = [21]
 for merge_id in merge_id_all:
 	temp.extend(find_index_of_file(merge_id,df_settings,df_log,only_OES=False))
 all_j=[]
@@ -71,7 +73,7 @@ for i in range(len(df_log)-1):
 # all_j = [227,232,247,250]
 # all_j = [*np.arange(267,270+1),*np.arange(272,275+1),*np.arange(277,286+1),393,394,*np.arange(396,403+1)]
 
-all_j = np.flip(all_j,axis=0)
+# all_j = np.flip(all_j,axis=0)
 
 # for j in np.flip(all_j,axis=0):
 # for j in all_j:
@@ -295,39 +297,57 @@ for j in all_j:
 
 	print('mark7')
 
-	# frames = frames.flatten().reshape((np.shape(frames)[1],np.shape(frames)[2],np.shape(frames)[0])).T
-	# frames = [[],[]]	# this does not work because during the recording the sequence of the digitizers can and does change, so I cannot assume that it is regular
-	frames = []
-	for i in range(1,background_interval):
-		frame = ryptw.getPTWFrames(header, [i])[0][0]
-		# if i%2:
-		# 	frames[0].append(frame.flatten().reshape(np.shape(frame.T)).T)
-		# else:
-		# 	frames[1].append(frame.flatten().reshape(np.shape(frame.T)).T)
-		frames.append(frame.flatten().reshape(np.shape(frame.T)).T)
-	print('mark6')
+	try:
+		test = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace +'.npz')
+		test.allow_pickle = True
+		test = dict(test)
+		dark = list(test['dark'].all()['dark_frames'])
+		dark_bad_pixels_marker = list(test['dark'].all()['dark_bad_pixels_marker'])
+	except:
+		print('dark info generated')
 
-	# dark = np.mean(frames,axis=0)
-	dark_bad_pixels_marker = []
-	dark_bad_pixels_marker_str = []
-	for i in range(len(frames)):
-		bad_pixels_flag = coleval.find_dead_pixels([frames[i]],treshold_for_bad_low_std=-1,treshold_for_bad_std=100,treshold_for_bad_difference=30,verbose=1).flatten()
-		dark_bad_pixels_marker.append(np.arange(len(bad_pixels_flag))[bad_pixels_flag>0])
-		dark_bad_pixels_marker_str.append(str(dark_bad_pixels_marker[-1]))
-	counter = collections.Counter(dark_bad_pixels_marker_str)
-	most_common_str = [counter.most_common()[0][0],counter.most_common()[1][0]]
-	most_common = [dark_bad_pixels_marker[(np.array(dark_bad_pixels_marker_str)==most_common_str[0]).argmax()],dark_bad_pixels_marker[(np.array(dark_bad_pixels_marker_str)==most_common_str[1]).argmax()]]
-	dark0 = []
-	dark1 = []
-	for i in range(len(frames)):
-		if np.sum([value in most_common[0] for value in dark_bad_pixels_marker[i]]) > np.sum([value in most_common[1] for value in dark_bad_pixels_marker[i]]):
-			dark0.append(frames[i])
-		elif np.sum([value in most_common[1] for value in dark_bad_pixels_marker[i]]) > np.sum([value in most_common[0] for value in dark_bad_pixels_marker[i]]):
-			dark1.append(frames[i])
-		else:
-			print('dark frame n'+str(i)+' discarded')
-	dark = [np.mean(dark0,axis=0),np.mean(dark1,axis=0)]
-	dark_bad_pixels_marker = most_common
+		# frames = frames.flatten().reshape((np.shape(frames)[1],np.shape(frames)[2],np.shape(frames)[0])).T
+		# frames = [[],[]]	# this does not work because during the recording the sequence of the digitizers can and does change, so I cannot assume that it is regular
+		frames = []
+		for i in range(1,background_interval):
+			frame = ryptw.getPTWFrames(header, [i])[0][0]
+			# if i%2:
+			# 	frames[0].append(frame.flatten().reshape(np.shape(frame.T)).T)
+			# else:
+			# 	frames[1].append(frame.flatten().reshape(np.shape(frame.T)).T)
+			frames.append(frame.flatten().reshape(np.shape(frame.T)).T)
+		print('mark6')
+
+		# dark = np.mean(frames,axis=0)
+		bad_pixels_marker_2 = []
+		dark_bad_pixels_marker_str = []
+		for i in range(len(frames)):
+			bad_pixels_flag = coleval.find_dead_pixels([frames[i]],treshold_for_bad_low_std=-1,treshold_for_bad_std=100,treshold_for_bad_difference=30,verbose=1).flatten()
+			bad_pixels_marker_2.append(np.arange(len(bad_pixels_flag))[bad_pixels_flag>0])
+			dark_bad_pixels_marker_str.append(str(bad_pixels_marker_2[-1]))
+		counter = collections.Counter(dark_bad_pixels_marker_str)
+		most_common_str = [counter.most_common()[0][0],counter.most_common()[1][0]]
+		dark_bad_pixels_marker = [bad_pixels_marker_2[(np.array(dark_bad_pixels_marker_str)==most_common_str[0]).argmax()],bad_pixels_marker_2[(np.array(dark_bad_pixels_marker_str)==most_common_str[1]).argmax()]]
+		temp=0
+		while len(dark_bad_pixels_marker[0])*0.8 < np.sum([value in dark_bad_pixels_marker[1] for value in dark_bad_pixels_marker[0]]):	# safety clause in case by mistake it is used twice the same pattern of dewad pixels for both digitizers
+			most_common_str = [counter.most_common()[0][0],counter.most_common()[temp+1+1][0]]
+			dark_bad_pixels_marker = [bad_pixels_marker_2[(np.array(dark_bad_pixels_marker_str)==most_common_str[0]).argmax()],bad_pixels_marker_2[(np.array(dark_bad_pixels_marker_str)==most_common_str[1]).argmax()]]
+			temp+=1
+			print('pattern of dead pixels shifted of '+str(temp))
+
+		# most_common_str = [counter.most_common()[0][0],counter.most_common()[1][0]]
+		# most_common = [dark_bad_pixels_marker[(np.array(dark_bad_pixels_marker_str)==most_common_str[0]).argmax()],dark_bad_pixels_marker[(np.array(dark_bad_pixels_marker_str)==most_common_str[1]).argmax()]]
+		dark0 = []
+		dark1 = []
+		for i in range(len(frames)):
+			if np.sum([value in bad_pixels_marker_2[0] for value in bad_pixels_marker_2[i]]) > np.sum([value in bad_pixels_marker_2[1] for value in bad_pixels_marker_2[i]]):
+				dark0.append(frames[i])
+			elif np.sum([value in bad_pixels_marker_2[1] for value in bad_pixels_marker_2[i]]) > np.sum([value in bad_pixels_marker_2[0] for value in bad_pixels_marker_2[i]]):
+				dark1.append(frames[i])
+			else:
+				print('dark frame n'+str(i)+' discarded')
+		dark = [np.mean(dark0,axis=0),np.mean(dark1,axis=0)]
+		# dark_bad_pixels_marker = most_common
 	print('dark_bad_pixels_marker '+str(dark_bad_pixels_marker))
 		# plt.figure();plt.imshow(dark),plt.colorbar();plt.pause(0.01)
 	for i in range(len(dark)):
@@ -489,8 +509,14 @@ for j in all_j:
 		full_saved_file_dict['original_timestamp_ms'] = original_timestamp_ms
 		full_saved_file_dict['corrected_timestamp_ms'] = corrected_timestamp_ms
 	else:
+		temp = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')
+		temp.allow_pickle=True
+		full_saved_file_dict = dict(temp)
 		original_timestamp_ms = full_saved_file_dict['original_timestamp_ms']
 		corrected_timestamp_ms = full_saved_file_dict['corrected_timestamp_ms']
+	full_saved_file_dict['dark'] = dict([])
+	full_saved_file_dict['dark']['dark_frames'] = dark
+	full_saved_file_dict['dark']['dark_bad_pixels_marker'] = dark_bad_pixels_marker
 	# np.savez_compressed(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace,**full_saved_file_dict)
 
 	print('mark3')
@@ -685,13 +711,13 @@ for j in all_j:
 			thermal_conductivity = Moly_thermal_conductivity_interp	# W/mK
 			heat_capacity = Moly_heat_capacity_interp	# J/kg k
 			density = Moly_density_interp(20)	# kg/m3
-			de=0.15
+			de= 0.3#0.15
 			target_thickness = 9e-3	# m
 		elif target_material in ['TZM thin','TZM thick']:
 			thermal_conductivity = TZM_thermal_conductivity_interp	# W/mK
 			heat_capacity = TZM_heat_capacity_interp	# J/kg k
 			density = TZM_density_interp(20)	# kg/m3
-			de=0.15
+			de= 0.3#0.15
 			if target_material == 'TZM thin':
 				target_thickness = 9e-3	# m
 			else:
@@ -2214,19 +2240,29 @@ for j in all_j:
 		out[select]=twoD_peak_evolution_temp_averaged_delta_after_short[select]
 		return (out-twoD_peak_evolution_temp_averaged_delta_after_short).flatten()
 
+
 	spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[0]))
+	def select_circulra_region(args,sigma=max_diameter_to_fit/2/1.5/1.4):
+		x = spatial_coord[0]	# horizontal
+		y = spatial_coord[1]	# vertical
+		diameter_2 = ((x-args[1])*p2d_h)**2+((y-args[0])*p2d_v)**2
+		# sigma = max_diameter_to_fit/2/1.5/1.4	# the 1.4 factor is required
+		select = np.exp(-(diameter_2 / (2*((sigma)**2)))**40)	# super gaussian that cuts at max_diameter_to_fit/2/2, the 1.4 factor is required
+		return select
+
 	def gaussian_2D_fitting_plus_gradient(full_output,data):
 		def internal(args):
 			x = spatial_coord[0]	# horizontal
 			y = spatial_coord[1]	# vertical
 			diameter_2 = ((x-args[2])*p2d_h)**2+((y-args[1])*p2d_v)**2
 			out = args[0]*np.exp(- diameter_2/(2*(args[3]**2)) )
+			sigma = max_diameter_to_fit/2/2/1.4	# the 1.4 factor is required
 
-			select = np.exp(-(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**40)	# super gaussian that cuts at max_diameter_to_fit/2/2, the 1.4 factor is required
+			select = np.exp(-(diameter_2 / (2*((sigma)**2)))**40)	# super gaussian that cuts at max_diameter_to_fit/2/2, the 1.4 factor is required
 			full_out = out-data
 			grad_a0 = np.sum( 2*full_out*np.exp(- diameter_2/(2*(args[3]**2)) )*select )
-			grad_a1 = -np.sum( 2*full_out*out*(-1/(2*(args[3]**2)))*2*(p2d_v**2)*(y-args[1])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**39)*(1/(2*((max_diameter_to_fit/2/2/1.4)**2)))*2*(p2d_v**2)*(y-args[1]) )
-			grad_a2 = -np.sum( 2*full_out*out*(-1/(2*(args[3]**2)))*2*(p2d_h**2)*(x-args[2])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**39)*(1/(2*((max_diameter_to_fit/2/2/1.4)**2)))*2*(p2d_h**2)*(x-args[2]) )
+			grad_a1 = -np.sum( 2*full_out*out*(-1/(2*(args[3]**2)))*2*(p2d_v**2)*(y-args[1])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((sigma)**2)))**39)*(1/(2*((sigma)**2)))*2*(p2d_v**2)*(y-args[1]) )
+			grad_a2 = -np.sum( 2*full_out*out*(-1/(2*(args[3]**2)))*2*(p2d_h**2)*(x-args[2])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((sigma)**2)))**39)*(1/(2*((sigma)**2)))*2*(p2d_h**2)*(x-args[2]) )
 			grad_a3 = np.sum( 2*full_out*out*( diameter_2/(args[3]**3))*select )
 			out = (full_out**2)*select
 			if full_output==True:
@@ -2262,7 +2298,7 @@ for j in all_j:
 		spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[0]))
 		fit1 = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_delta_after_short.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
 	else:
-		guess = np.array([twoD_peak_evolution_temp_averaged_delta_after_short.max()-max(0,twoD_peak_evolution_temp_averaged_delta_after_short.min()),IR_shape[0],IR_shape[1],IR_shape[3]*p2d_v])
+		guess = np.array([(twoD_peak_evolution_temp_averaged_delta_after_short*select_circulra_region([IR_shape[0],IR_shape[1]])).max()-max(0,(twoD_peak_evolution_temp_averaged_delta_after_short*select_circulra_region([IR_shape[0],IR_shape[1]])).min()),IR_shape[0],IR_shape[1],IR_shape[3]*p2d_v])
 		bds=[[0,np.inf],[max(0,IR_shape[0]-IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[0],IR_shape[0]+IR_shape[3])],[max(0,IR_shape[1]-IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_delta_after_short)[1],IR_shape[1]+IR_shape[3])],[min(IR_shape[2],10)*p2d_v,np.max(twoD_peak_evolution_temp_averaged_delta_after_short.shape)/2*p2d_v]]
 		x_optimal, y_opt, opt_info = scipy.optimize.fmin_l_bfgs_b(gaussian_2D_fitting_plus_gradient(True,twoD_peak_evolution_temp_averaged_delta_after_short), x0=guess, iprint=0, factr=1e0, pgtol=1e-6,bounds=bds)#,m=1000, maxls=1000, pgtol=1e-10, factr=1e0)#,approx_grad = True)
 		fit1 = make_standatd_fit_output(gaussian_2D_fitting_plus_gradient(False,twoD_peak_evolution_temp_averaged_delta_after_short),x_optimal)
@@ -2301,8 +2337,8 @@ for j in all_j:
 		# area_of_interest_sigma = area_of_interest_sigma + ufloat(0,0.1*area_of_interest_sigma.nominal_value)	# this to add the uncertainly coming from the method itself
 		# area_of_interest_radius = 2**0.5 *fit2[0][3]	# pixels
 	else:
-		temp = max(1,np.median(np.sort(twoD_peak_evolution_temp_averaged_delta_after_long[((x-fit1[0][1])*p2d_v)**2+((y-fit1[0][2])*p2d_v)**2<(max_diameter_to_fit/2)**2])[:10]))
-		guess = [max(0,twoD_peak_evolution_temp_averaged_delta_after_long.max()-temp),fit1[0][1],fit1[0][2],x_optimal[3]]
+		temp = max(1,np.median(np.sort(twoD_peak_evolution_temp_averaged_delta_after_long*select_circulra_region([IR_shape[0],IR_shape[1]]))[:10]))
+		guess = [max(0,twoD_peak_evolution_temp_averaged_delta_after_long.max()-temp),fit1[0][1],fit1[0][2],fit1[0][3]]
 		bds=[[0,np.inf],[fit1[0][1]-0.1,fit1[0][1]+0.1],[fit1[0][2]-0.1,fit1[0][2]+0.1],[min(IR_shape[2],10)*p2d_v,np.max(twoD_peak_evolution_temp_averaged_delta_after_long.shape)/2*p2d_v]]
 		x_optimal, y_opt, opt_info = scipy.optimize.fmin_l_bfgs_b(gaussian_2D_fitting_plus_gradient(True,twoD_peak_evolution_temp_averaged_delta_after_long), x0=guess, iprint=0, factr=1e0, pgtol=1e-6,bounds=bds)#,m=1000, maxls=1000, pgtol=1e-10, factr=1e0)#,approx_grad = True)
 		fit2 = make_standatd_fit_output(gaussian_2D_fitting_plus_gradient(False,twoD_peak_evolution_temp_averaged_delta_after_long),x_optimal)
@@ -2446,7 +2482,7 @@ for j in all_j:
 				out[select]=twoD_peak_evolution_temp_averaged_before[select]
 				return (out-twoD_peak_evolution_temp_averaged_before).flatten()
 
-			guess = [20,twoD_peak_evolution_temp_averaged_before.max()-max(0,twoD_peak_evolution_temp_averaged_before.min()),fit_of_plasma_centre_and_area[1],fit_of_plasma_centre_and_area[2],fit_of_plasma_centre_and_area[3]]
+			guess = [20,(twoD_peak_evolution_temp_averaged_before*select_circulra_region([IR_shape[0],IR_shape[1]])).max()-max(0,(twoD_peak_evolution_temp_averaged_before*select_circulra_region([IR_shape[0],IR_shape[1]])).min()),fit_of_plasma_centre_and_area[1],fit_of_plasma_centre_and_area[2],fit_of_plasma_centre_and_area[3]]
 			bds=[[20,0,max(0,IR_shape[0]-IR_shape[3]),max(0,IR_shape[1]-IR_shape[3]),min(IR_shape[2],10)],[np.inf,np.inf,min(np.shape(twoD_peak_evolution_temp_averaged_before)[0],IR_shape[0]+IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_before)[1],IR_shape[1]+IR_shape[3]),np.max(twoD_peak_evolution_temp_averaged_before.shape)/2]]
 			spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[0]))
 			fit1_SS = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_before.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
@@ -2459,7 +2495,7 @@ for j in all_j:
 				out[select]=twoD_peak_evolution_temp_averaged_before[select]
 				return (out-twoD_peak_evolution_temp_averaged_before).flatten()
 
-			guess = [20,twoD_peak_evolution_temp_averaged_before.max()-max(0,twoD_peak_evolution_temp_averaged_before.min()),fit1_SS[0][2],fit1_SS[0][3],IR_shape[3]]
+			guess = [20,(twoD_peak_evolution_temp_averaged_before*select_circulra_region([IR_shape[0],IR_shape[1]])).max()-max(0,(twoD_peak_evolution_temp_averaged_before*select_circulra_region([IR_shape[0],IR_shape[1]])).min()),fit1_SS[0][2],fit1_SS[0][3],IR_shape[3]]
 			bds=[[20,0,fit1_SS[0][2]-0.1,fit1_SS[0][3]-0.1,min(IR_shape[2],10)],[np.inf,np.inf,fit1_SS[0][2]+0.1,fit1_SS[0][3]+0.1,np.max(twoD_peak_evolution_temp_averaged_before.shape)/2]]
 			spatial_coord=np.meshgrid(np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[1]),np.arange(np.shape(twoD_peak_evolution_temp_averaged_before)[0]))
 			fit2_SS = curve_fit(gaussian_2D_fitting, spatial_coord, np.zeros_like(twoD_peak_evolution_temp_averaged_before.flatten()), guess,absolute_sigma=True,bounds=bds,maxfev=int(1e4))
@@ -2470,13 +2506,15 @@ for j in all_j:
 					y = spatial_coord[1]	# vertical
 					diameter_2 = ((x-args[3])*p2d_h)**2+((y-args[2])*p2d_v)**2
 					out = args[1]*np.exp(- diameter_2/(2*(args[4]**2)) ) + args[0]
+					sigma = max_diameter_to_fit/2/1.5/1.4	# the 1.4 factor is required
 
-					select = np.exp(-(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**40)	# super gaussian that cuts at max_diameter_to_fit/2/2, the 1.4 factor is required
+
+					select = np.exp(-(diameter_2 / (2*((sigma)**2)))**40)	# super gaussian that cuts at max_diameter_to_fit/2/2, the 1.4 factor is required
 					full_out = out-data
 					grad_a0 = np.sum( 2*full_out*select )
 					grad_a1 = np.sum( 2*full_out*np.exp(- diameter_2/(2*(args[4]**2)) )*select )
-					grad_a2 = -np.sum( 2*full_out*out*(-1/(2*(args[4]**2)))*2*(p2d_v**2)*(y-args[2])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**39)*(1/(2*((max_diameter_to_fit/2/2/1.4)**2)))*2*(p2d_v**2)*(y-args[2]) )
-					grad_a3 = -np.sum( 2*full_out*out*(-1/(2*(args[4]**2)))*2*(p2d_h**2)*(x-args[3])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((max_diameter_to_fit/2/2/1.4)**2)))**39)*(1/(2*((max_diameter_to_fit/2/2/1.4)**2)))*2*(p2d_h**2)*(x-args[3]) )
+					grad_a2 = -np.sum( 2*full_out*out*(-1/(2*(args[4]**2)))*2*(p2d_v**2)*(y-args[2])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((sigma)**2)))**39)*(1/(2*((sigma)**2)))*2*(p2d_v**2)*(y-args[2]) )
+					grad_a3 = -np.sum( 2*full_out*out*(-1/(2*(args[4]**2)))*2*(p2d_h**2)*(x-args[3])*select + (full_out**2)*select*(-40*(diameter_2 / (2*((sigma)**2)))**39)*(1/(2*((sigma)**2)))*2*(p2d_h**2)*(x-args[3]) )
 					grad_a4 = np.sum( 2*full_out*out*( diameter_2/(args[4]**3))*select )
 					out = (full_out**2)*select
 					if full_output==True:
@@ -2497,7 +2535,7 @@ for j in all_j:
 				guess[target] += scale
 				print('calculated derivated of %.7g vs true of %.7g' %(temp1[1][target],((temp2[0]-temp3[0])/(2*scale))))
 
-			guess = [20,twoD_peak_evolution_temp_averaged_before.max()-max(0,twoD_peak_evolution_temp_averaged_before.min()),fit_of_plasma_centre_and_area[1],fit_of_plasma_centre_and_area[2],fit_of_plasma_centre_and_area[3]*p2d_v]
+			guess = [20,(twoD_peak_evolution_temp_averaged_before*select_circulra_region([IR_shape[0],IR_shape[1]])).max()-max(0,(twoD_peak_evolution_temp_averaged_before*select_circulra_region([IR_shape[0],IR_shape[1]])).min()),fit_of_plasma_centre_and_area[1],fit_of_plasma_centre_and_area[2],fit_of_plasma_centre_and_area[3]*p2d_v]
 			bds=[[20,np.inf],[0,np.inf],[max(0,IR_shape[0]-IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_before)[0],IR_shape[0]+IR_shape[3])],[max(0,IR_shape[1]-IR_shape[3]),min(np.shape(twoD_peak_evolution_temp_averaged_before)[1],IR_shape[1]+IR_shape[3])],[min(IR_shape[2],10)*p2d_v,np.max(twoD_peak_evolution_temp_averaged_before.shape)/2*p2d_v]]
 			guess[-1] *= p2d_v
 			x_optimal, y_opt, opt_info = scipy.optimize.fmin_l_bfgs_b(gaussian_2D_fitting_plus_gradient_SS(True,twoD_peak_evolution_temp_averaged_before), x0=guess, iprint=0, factr=1e0, pgtol=1e-6,bounds=bds)#,m=1000, maxls=1000, pgtol=1e-10, factr=1e0)#,approx_grad = True)

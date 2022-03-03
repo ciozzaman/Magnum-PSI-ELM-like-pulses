@@ -116,7 +116,7 @@ if False:
 			# 1 E.M. Hollmann, N.A. Pablant, D.L. Rudakov, J.A. Boedo, N.H. Brooks, T.C. Jernigan, and A.Y.P. Pigarov, J. Nucl. Mater. 390–391, 597 (2009).
 			moly_emissivity_interp = lambda T_C: 0.0288 + 1e-5 * (T_C - 273.15)	# [°C]
 
-		T_ref = np.arange(300,30000,1);                                                     # [K]
+		T_ref = np.arange(293,30000,1);                                                     # [K]
 
 		e_cal = np.zeros_like(T_ref,dtype=np.float)
 		phi_bb = np.zeros_like(T_ref,dtype=np.float)
@@ -137,7 +137,7 @@ if False:
 		# to convert photon fluence into digital level,
 		# coefficients come from the dl2fluence script, with raw data from Jordy
 		dl_real = phi_real * 6.9825e-16 -3.74;
-		# to substract the bb @ T==300 K
+		# to substract the bb @ T==293 K
 		dl_real = dl_real - dl_real[0];
 
 		# the Table
@@ -157,7 +157,7 @@ else:
 
 all_j = [231,232,233,234,411,244,245,275,393,394,305,306,416]
 time_shift = [1562076516.351,1562076678.708+4,1562077276.157,1562077372.031,(1562077372.031+1562080690.253)/2,1562080690.253,1562080859.278,1562157127.002,1562165683.122,1562165819.007,1562169014.003,1562169074.379,1562251726.311]
-de = [0.035,0.035,0.035,0.035,0.035,  0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15]                                                                           # emissivity offset, -0.03 for polished tungsten
+de = [0.035,0.035,0.035,0.035,0.035,  0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3]                                                                           # emissivity offset, -0.03 for polished tungsten
 fig, ax = plt.subplots(len(de),1,figsize=(15, 9*len(de)))
 for i_j,j in enumerate(all_j):
 
@@ -383,7 +383,7 @@ fig.suptitle('window transmissivity %.3g' %(tau))
 # plt.pause(0.1)
 # plt.show()
 path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data'
-plt.savefig(path_where_to_save_everything +'/pyrometer_IRcamera_comparison_7.eps', bbox_inches='tight')
+plt.savefig(path_where_to_save_everything +'/pyrometer_IRcamera_comparison_8.eps', bbox_inches='tight')
 plt.close()
 
 

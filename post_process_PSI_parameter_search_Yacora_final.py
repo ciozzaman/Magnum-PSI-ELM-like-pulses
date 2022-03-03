@@ -34,7 +34,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from functools import partial
 import traceback
 # set_start_method('spawn')
-number_cpu_available = 6	#cpu_count()
+number_cpu_available = 8	#cpu_count()
 # pool = get_context('spawn').Pool(number_cpu_available)
 print('Number of cores available: '+str(number_cpu_available))
 # number_cpu_available = 10
@@ -111,8 +111,8 @@ exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/functions/Mo
 
 # merge_ID_target_multipulse = np.flip([851,86,87,89,92, 93, 94],axis=0)
 # merge_ID_target_multipulse = np.flip([73,75,76,77,78,79,85, 95, 86, 87, 88, 89, 92, 93, 94, 96, 97, 98, 99],axis=0)
-# merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
-merge_ID_target_multipulse = [85,95]
+# merge_ID_target_multipulse = [95, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
+merge_ID_target_multipulse = [85]
 # merge_ID_target_multipulse = [91, 92, 93, 94]
 # merge_ID_target_multipulse = [73,75,76,77,78,79]
 # merge_ID_target_multipulse = [85, 95, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99]
@@ -125,10 +125,16 @@ merge_ID_target_multipulse = [85,95]
 # merge_ID_target_multipulse = [87]
 
 # merge_ID_target_multipulse = np.flip(merge_ID_target_multipulse,axis=0)
-only_plots = False
+only_plots = True
 only_Yacora_as_molecule = False	# who knows the applicability of the RR from Amjuel and Janev to my case. let's see what appens if I only include Yacora processes, that I can also measure radiatively
+linear_nH2_nH_probabilities = False
+if linear_nH2_nH_probabilities:
+	nHm_nH2_values_Te = nHm_nH2_values_Te_2
+	nHm_nH2_values_Te_expanded = nHm_nH2_values_Te_expanded_2
+	nH2p_nH2_values_Te_ne = nH2p_nH2_values_Te_ne_2
+	nH2p_nH2_values_Te_ne_expanded = nH2p_nH2_values_Te_ne_expanded_2
 if only_plots:
-	number_cpu_available = 2
+	number_cpu_available = int(number_cpu_available/2)
 
 for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don't have a temperature profile
 	merge_time_window = [-1,2]
@@ -160,7 +166,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 		externally_provided_H2p_steps = 13
 		externally_provided_Hn_steps = 13
 		externally_provided_H_steps = 9
-		externally_provided_H2_steps = 11
+		externally_provided_H2_steps = 23
 
 	# merge_ID_target = 85
 
@@ -345,9 +351,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 			print('Will particles balance be included? '+str(include_particles_limitation))
 			timeout_bayesian_search = 2*60*60	# time in seconds
 			print('Timeout for bayesian search of a single point %.3g min' %(timeout_bayesian_search/60))
-			power_molecular_precision,power_atomic_precision,power_budget_precision = 1e-10,1e-10,0.2	# 0.5,0.2,0.5
+			power_molecular_precision,power_atomic_precision,power_budget_precision = 1e-20,1e-20,0.1	# 0.5,0.2,0.5
 			print('precision (sigma) for molecular elements of power balance %.3g%%, for atomic elements %.3g%%, for the budget %.3g%%' %(power_molecular_precision*100,power_atomic_precision*100,power_budget_precision*100))
-			particle_molecular_precision,particle_atomic_precision,particle_molecular_budget_precision,particle_atomic_budget_precision = 1e-10,1e-10,0.04,0.4	# 0.5,0.5,0.5,0.5	# 1,0.5,1,0.5
+			particle_molecular_precision,particle_atomic_precision,particle_molecular_budget_precision,particle_atomic_budget_precision = 1e-20,1e-20,0.001,0.1	# 0.5,0.5,0.5,0.5	# 1,0.5,1,0.5
 			if include_particles_limitation:
 				print('precision (sigma) for molecular elements of particle balance %.3g%%, for atomic elements %.3g%%, for the molecular budget %.3g%%, for the atomic budget %.3g%%' %(particle_molecular_precision*100,particle_atomic_precision*100,particle_molecular_budget_precision*100,particle_atomic_budget_precision*100))
 			print('externally_provided_H2p_steps = '+str(externally_provided_H2p_steps))
@@ -782,6 +788,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							mod3 = mod3 + '_only_Yacora_as_molecule'
 					else:
 						mod3 = 'only_Hm_H2_H2p'
+					if linear_nH2_nH_probabilities:
+						mod3 = mod3 + '_nH2_nH_linear'
 					mod4 = mod2 +'/' +mod3
 
 
@@ -1531,8 +1539,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							if False:
 								Te_values = np.linspace(max(merge_Te_prof_multipulse_interp_crop_limited_restrict-4*merge_dTe_prof_multipulse_interp_crop_limited_restrict,min(0.1,merge_Te_prof_multipulse_interp_crop_limited_restrict/2)),merge_Te_prof_multipulse_interp_crop_limited_restrict+4*merge_dTe_prof_multipulse_interp_crop_limited_restrict,TS_Te_steps)
 							else:
-								min_Te = max(merge_Te_prof_multipulse_interp_crop_limited_restrict-4*merge_dTe_prof_multipulse_interp_crop_limited_restrict,min(0.1/2,merge_Te_prof_multipulse_interp_crop_limited_restrict/2))
-								max_Te = merge_Te_prof_multipulse_interp_crop_limited_restrict+2*merge_dTe_prof_multipulse_interp_crop_limited_restrict
+								min_Te = max(merge_Te_prof_multipulse_interp_crop_limited_restrict-7*merge_dTe_prof_multipulse_interp_crop_limited_restrict,min(0.1,merge_Te_prof_multipulse_interp_crop_limited_restrict/2))
+								max_Te = merge_Te_prof_multipulse_interp_crop_limited_restrict+4*merge_dTe_prof_multipulse_interp_crop_limited_restrict
 								steps_left = int(np.ceil((TS_Te_steps)/2))
 								steps_right = int(np.ceil(TS_Te_steps/2))
 								Te_values = [*np.linspace(min_Te,merge_Te_prof_multipulse_interp_crop_limited_restrict,num=steps_left)[:-1],*np.linspace(merge_Te_prof_multipulse_interp_crop_limited_restrict,max_Te,num=steps_right)]
@@ -1552,7 +1560,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							# ne_values = ne+np.linspace(-2,+6,TS_ne_steps)*merge_dne_prof_multipulse_interp_crop_limited_restrict*1e20
 							# ne_values = np.logspace(np.log10(max(ne-2*merge_dne_prof_multipulse_interp_crop_limited_restrict*1e20,1e20*np.min(merge_ne_prof_multipulse_interp_crop[merge_ne_prof_multipulse_interp_crop>0])/10)),np.log10(ne+8*merge_dne_prof_multipulse_interp_crop_limited_restrict*1e20),num=TS_ne_steps)
 							# min_ne = max(ne-4*merge_dne_prof_multipulse_interp_crop_limited_restrict*1e20,min(0.1*1e20,ne/10))
-							min_ne = max(ne-4*merge_dne_prof_multipulse_interp_crop_limited_restrict*1e20,min(0.01*1e20,ne/40))
+							min_ne = max(ne-4*merge_dne_prof_multipulse_interp_crop_limited_restrict*1e20,min(0.002*1e20,ne/40))
 							max_ne = ne+6*merge_dne_prof_multipulse_interp_crop_limited_restrict*1e20
 							if False:	# if ne and min_ne are close it end up doing too few steps there, so I force it to be more regular
 								steps_left = np.ceil(1.5*(TS_ne_steps-1)*(ne-min_ne)/(max_ne-min_ne))
@@ -1693,7 +1701,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									record_nH_ne_values.append(nH_ne_values)
 									# nH_ne_log_probs = nH_ne_log_probs_Te(Te_for_nH_ne,nH_ne_values)
 									# nH_ne_log_probs = nH_ne_log_probs_Te_2(Te_for_nH_ne,nH_ne_values)
-									nH_ne_log_probs = nH_ne_log_probs_Te_3(Te_for_nH_ne,nH_ne_values)
+									if linear_nH2_nH_probabilities:
+										nH_ne_log_probs = nH_ne_log_probs_Te_4(Te_for_nH_ne,nH_ne_values)
+									else:
+										nH_ne_log_probs = nH_ne_log_probs_Te_3(Te_for_nH_ne,nH_ne_values)
 									record_nH_ne_log_prob.append(nH_ne_log_probs)
 								# total_nH_ne_value = multiplicative_factor*np.array([[record_nH_ne_values]*TS_ne_steps]*len(n_list_all)).T	# H, Te, ne, lines
 								total_nH_ne_value = multiplicative_factor*np.array([np.transpose(record_nH_ne_values,(1,0,2))]*len(n_list_all)).T	# H, Te, ne, lines
@@ -1725,10 +1736,16 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								record_nH2_ne_values = []
 								record_nH2_ne_log_prob = []
 								for i_Te_for_nH2_ne,Te_for_nH2_ne in enumerate(Te_values_array):
-									nH2_ne_values = nH2_ne_values_Te_2(Te_for_nH2_ne,H2_steps)
+									if linear_nH2_nH_probabilities:
+										nH2_ne_values = nH2_ne_values_Te_4(Te_for_nH2_ne,H2_steps)
+									else:
+										nH2_ne_values = nH2_ne_values_Te_2(Te_for_nH2_ne,H2_steps)
 									record_nH2_ne_values.append(nH2_ne_values)
 									# nH2_ne_log_probs = nH2_ne_log_probs_Te_2(Te_for_nH2_ne,nH2_ne_values)
-									nH2_ne_log_probs = nH2_ne_log_probs_Te_3(Te_for_nH2_ne,nH2_ne_values)
+									if linear_nH2_nH_probabilities:
+										nH2_ne_log_probs = nH2_ne_log_probs_Te_4(Te_for_nH2_ne,nH2_ne_values)
+									else:
+										nH2_ne_log_probs = nH2_ne_log_probs_Te_3(Te_for_nH2_ne,nH2_ne_values)
 									record_nH2_ne_log_prob.append(nH2_ne_log_probs)
 								total_nH2_ne_value = multiplicative_factor*np.array([[record_nH2_ne_values]*TS_ne_steps]*len(n_list_all)).T	# H2, Te, ne, lines
 								total_nH2_ne_value = np.transpose(total_nH2_ne_value, (0,1,3,2))*(ne_values_array ** 2)	# H2, Te, lines, ne
@@ -1909,6 +1926,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									all_net_H_destruction_sigma = np.ones_like((likelihood_log_probs),dtype=np.float32)
 									all_power_potential_mol = np.zeros_like((likelihood_log_probs),dtype=np.float32)
 									all_power_potential_mol_sigma = np.ones_like((likelihood_log_probs),dtype=np.float32)
+									all_power_e_H__Hm_pv = np.zeros_like((likelihood_log_probs),dtype=np.float32)
+									all_power_e_H__Hm_pv_sigma = np.ones_like((likelihood_log_probs),dtype=np.float32)
 									if False:
 										x_full =np.array([all_nH_ne_values[np.isfinite(likelihood_log_probs)],all_nHm_nH2_values[np.isfinite(likelihood_log_probs)],all_nH2_ne_values[np.isfinite(likelihood_log_probs)],all_nH2p_nH2_values[np.isfinite(likelihood_log_probs)],1e-20*all_ne_values[np.isfinite(likelihood_log_probs)],all_Te_values[np.isfinite(likelihood_log_probs)]]).T
 										all_net_Hp_destruction[np.isfinite(likelihood_log_probs)] = area*length*dt/1000*(interpolate.interpn((np.log(samples_nH_ne_array),np.log(samples_nHm_nH2_array),np.log(samples_nH2_ne_array),np.log(samples_nH2p_nH2_array),np.log(samples_ne_array),np.log(samples_Te_array)),net_rate_Hp_destruction,np.log(x_full), bounds_error=False,fill_value=None))
@@ -1959,7 +1978,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 														all_net_H2p_destruction[:,:,:,:,i5,i6] = np.float32(temp - temp1)
 														all_net_H2p_destruction_sigma[:,:,:,:,i5,i6] = 0.5*(temp_sigma**2 + temp1_sigma**2)**0.5
 													else:	# this method avoid redudancies in calculating each term and calculates the contribution to the change in potential energy too
-														rate_creation_Hm,rate_creation_Hm_sigma,rate_destruction_Hm,rate_destruction_Hm_sigma,rate_creation_H2p,rate_creation_H2p_sigma,rate_destruction_H2p,rate_destruction_H2p_sigma,rate_creation_H2,rate_creation_H2_sigma,rate_destruction_H2,rate_destruction_H2_sigma,rate_creation_H,rate_creation_H_sigma,rate_destruction_H,rate_destruction_H_sigma,rate_creation_Hp,rate_creation_Hp_sigma,rate_destruction_Hp,rate_destruction_Hp_sigma,rate_creation_e,rate_creation_e_sigma,rate_destruction_e,rate_destruction_e_sigma,power_potential_mol,power_potential_mol_sigma,power_potential_mol_plasma_heating,power_potential_mol_plasma_cooling = all_RR_and_power_balance(*arguments,only_Yacora_as_molecule=only_Yacora_as_molecule)
+														rate_creation_Hm,rate_creation_Hm_sigma,rate_destruction_Hm,rate_destruction_Hm_sigma,rate_creation_H2p,rate_creation_H2p_sigma,rate_destruction_H2p,rate_destruction_H2p_sigma,rate_creation_H2,rate_creation_H2_sigma,rate_destruction_H2,rate_destruction_H2_sigma,rate_creation_H,rate_creation_H_sigma,rate_destruction_H,rate_destruction_H_sigma,rate_creation_Hp,rate_creation_Hp_sigma,rate_destruction_Hp,rate_destruction_Hp_sigma,rate_creation_e,rate_creation_e_sigma,rate_destruction_e,rate_destruction_e_sigma,power_potential_mol,power_potential_mol_sigma,power_potential_mol_plasma_heating,power_potential_mol_plasma_cooling,e_H__Hm_pv_energy,e_H__Hm_pv_energy_sigma = all_RR_and_power_balance(*arguments,only_Yacora_as_molecule=only_Yacora_as_molecule)
 														all_net_Hp_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_Hp - rate_creation_Hp)
 														all_net_Hp_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_Hp_sigma*1e-10)**2 + (rate_creation_Hp_sigma*1e-10)**2)**0.5 *1e10)
 														all_net_e_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_e - rate_creation_e)
@@ -1974,7 +1993,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 														all_net_H_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H_sigma*1e-10)**2 + (rate_creation_H_sigma*1e-10)**2)**0.5 *1e10)
 														all_power_potential_mol[:,:,:,:,i5,i6] = np.float32(power_potential_mol)
 														all_power_potential_mol_sigma[:,:,:,:,i5,i6] = np.float32(power_potential_mol_sigma)
-
+														all_power_e_H__Hm_pv[:,:,:,:,i5,i6] = np.float32(e_H__Hm_pv_energy)
+														all_power_e_H__Hm_pv_sigma[:,:,:,:,i5,i6] = np.float32(e_H__Hm_pv_energy_sigma)
 										try:
 											del temp_coord#,temp,temp_sigma,temp1,temp1_sigma
 										except:
@@ -1993,6 +2013,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										all_net_H2p_destruction_sigma *= area*length*dt/1000
 										all_net_H2_destruction_sigma *= area*length*dt/1000
 										all_net_H_destruction_sigma *= area*length*dt/1000
+
+										#	IMPORTANT!!
+										tot_rad_power += all_power_e_H__Hm_pv
 									total_removable_Hp = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*all_ne_values*all_nHp_ne_values*1e-20)	# #*1e-20 	# I assume no molecules upstream -> nH+/ne~1
 									total_removable_e = np.float32(area*dt/1000*ne_all_upstream[my_time_pos,my_r_pos]*max_local_flow_vel + area*length*all_ne_values*1e-20)	# #*1e-20
 									if False:
@@ -2058,7 +2081,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									# likelihood_log_probs -= np.max(likelihood_log_probs)
 									# likelihood_log_probs -= np.log(np.sum(np.exp(likelihood_log_probs)))	# normalisation for logarithmic probabilities
 
-								total_removed_power = total_removed_power_atomic + power_rad_mol + all_power_potential_mol
+								total_removed_power = total_removed_power_atomic + power_rad_mol + all_power_potential_mol + all_power_e_H__Hm_pv
 								total_removed_power_times_volume = total_removed_power * area*length
 								# power_penalty = np.zeros_like((total_removed_power_times_volume),dtype=np.float32)
 								if False:	# here I do not use any info on the shape of the plasma upstream
@@ -2078,7 +2101,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									elif True:	# real formula for the probability of an inequality
 										# total_removed_power_times_volume_sigma = (0.2*total_removed_power_atomic + 0.5*power_rad_mol) * area*length
 										# total_removed_power_times_volume_sigma = (( (power_atomic_precision**2)*((power_via_ionisation*1e-10)**2 + (power_rad_excit*1e-10)**2 + (power_via_recombination*1e-10)**2 + (power_rec_neutral*1e-10)**2 + (power_via_brem*1e-10)**2 + (power_heating_rec*1e-10)**2) + (power_molecular_precision**2)*((power_rad_Hm*1e-10)**2 + (power_rad_H2*1e-10)**2 + (power_rad_H2p*1e-10)**2) + (all_power_potential_mol_sigma*1e-10)**2)**0.5) *1e10 * area*length	#this properly adds in quadrature all the uncertanties
-										total_removed_power_times_volume_sigma = (( (power_atomic_precision**2)*((power_via_ionisation*1e-10)**2 + (power_rad_excit*1e-10)**2 + (power_via_recombination*1e-10)**2 + (power_rec_neutral*1e-10)**2 + (power_via_brem*1e-10)**2) + (power_molecular_precision**2)*((power_rad_Hm*1e-10)**2 + (power_rad_H2*1e-10)**2 + (power_rad_H2p*1e-10)**2) + (all_power_potential_mol_sigma*1e-10)**2)**0.5) *1e10 * area*length	#this properly adds in quadrature all the uncertanties
+										total_removed_power_times_volume_sigma = (( (power_atomic_precision**2)*((power_via_ionisation*1e-10)**2 + (power_rad_excit*1e-10)**2 + (power_via_recombination*1e-10)**2 + (power_rec_neutral*1e-10)**2 + (power_via_brem*1e-10)**2) + (power_molecular_precision**2)*((power_rad_Hm*1e-10)**2 + (power_rad_H2*1e-10)**2 + (power_rad_H2p*1e-10)**2) + (all_power_potential_mol_sigma*1e-10)**2 + (all_power_e_H__Hm_pv_sigma*1e-10)**2)**0.5) *1e10 * area*length	#this properly adds in quadrature all the uncertanties
 										total_removable_power_times_volume_sigma = (total_removable_power_times_volume*power_budget_precision)
 										# power_penalty = np.log( 1 + erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removed_power_times_volume_sigma**2 + (total_removable_power_times_volume*0.5)**2)**0.5)) )
 										if False:	# this is for only positive values of power dissipated
@@ -2133,9 +2156,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										if H2_steps==1:
 											d_nH2_ne_values = np.array([1])
 										else:
-											# d_nH2_ne_values = np.array([*np.diff(nH2_ne_values[[0,1]]),*(np.diff(nH2_ne_values)[:-1]/2+np.diff(nH2_ne_values)[1:]/2),*np.diff(nH2_ne_values[[-2,-1]])])
-											# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
-											temp = np.log(nH2_ne_values)
+											if linear_nH2_nH_probabilities:
+												temp = np.array(nH2_ne_values)
+											else:
+												# d_nH2_ne_values = np.array([*np.diff(nH2_ne_values[[0,1]]),*(np.diff(nH2_ne_values)[:-1]/2+np.diff(nH2_ne_values)[1:]/2),*np.diff(nH2_ne_values[[-2,-1]])])
+												# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
+												temp = np.log(nH2_ne_values)
 											d_nH2_ne_values = np.array([*np.diff(temp[[0,1]]),*(np.diff(temp)[:-1]/2+np.diff(temp)[1:]/2),*np.diff(temp[[-2,-1]])])
 										all_d_nH2_ne_values[:,:,:,i6] *= d_nH2_ne_values/np.sum(d_nH2_ne_values)
 									hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_nH2_ne_values
@@ -2157,9 +2183,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									all_d_nH_ne_values = np.ones_like(hypervolume_of_each_combination)
 									for i6 in range(TS_ne_steps*TS_Te_steps):
 										nH_ne_values = record_nH_ne_values[:,i6]
-										# d_nH_ne_values = np.array([*np.diff(nH_ne_values[[0,1]]),*(np.diff(nH_ne_values)[:-1]/2+np.diff(nH_ne_values)[1:]/2),*np.diff(nH_ne_values[[-2,-1]])])
-										# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
-										temp = np.log(nH_ne_values)
+										if linear_nH2_nH_probabilities:
+											temp = np.array(nH_ne_values)
+										else:
+											# d_nH_ne_values = np.array([*np.diff(nH_ne_values[[0,1]]),*(np.diff(nH_ne_values)[:-1]/2+np.diff(nH_ne_values)[1:]/2),*np.diff(nH_ne_values[[-2,-1]])])
+											# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
+											temp = np.log(nH_ne_values)
 										d_nH_ne_values = np.array([*np.diff(temp[[0,1]]),*(np.diff(temp)[:-1]/2+np.diff(temp)[1:]/2),*np.diff(temp[[-2,-1]])])
 										all_d_nH_ne_values[:,:,:,i6] *= d_nH_ne_values/np.sum(d_nH_ne_values)
 									hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_nH_ne_values
@@ -2167,33 +2196,36 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									hypervolume_of_each_combination = hypervolume_of_each_combination.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps,TS_Te_steps))	# H, Hm, H2, H2p, ne, Te
 									all_d_Te_values_array = np.ones_like(hypervolume_of_each_combination)
 									d_Te_values_array = np.array([*np.diff(Te_values_array[[0,1]]),*(np.diff(Te_values_array)[:-1]/2+np.diff(Te_values_array)[1:]/2),*np.diff(Te_values_array[[-2,-1]])])
-									all_d_Te_values_array *= d_Te_values_array/np.sum(d_Te_values_array)
-									# hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_Te_values_array	# excluded because it's one of the dimentions I want left
+									# all_d_Te_values_array *= d_Te_values_array/np.sum(d_Te_values_array)
+									hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_Te_values_array	# excluded because it's one of the dimentions I want left
 									hypervolume_of_each_combination = np.transpose(hypervolume_of_each_combination, (0,1,2,3,5,4))	# H, Hm, H2, H2p, Te, ne
 									all_d_ne_values_array = np.ones_like(hypervolume_of_each_combination)
 									d_ne_values_array = np.array([*np.diff(ne_values_array[[0,1]]),*(np.diff(ne_values_array)[:-1]/2+np.diff(ne_values_array)[1:]/2),*np.diff(ne_values_array[[-2,-1]])])
-									all_d_ne_values_array *= d_ne_values_array/np.sum(d_ne_values_array)
-									# hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_ne_values_array	# excluded because it's one of the dimentions I want left
+									# all_d_ne_values_array *= d_ne_values_array/np.sum(d_ne_values_array)
+									hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_ne_values_array	# excluded because it's one of the dimentions I want left
 									hypervolume_of_each_combination = np.transpose(hypervolume_of_each_combination, (0,1,2,3,5,4))	# H, Hm, H2, H2p, ne, Te
 
-									marginalised_log_prob_ne_Te = np.sum(np.exp(likelihood_log_probs)*hypervolume_of_each_combination,axis=(0,1,2,3))	# ne, Te
+									marginalised_log_prob_ne_Te = np.log(np.sum(np.exp(likelihood_log_probs)*hypervolume_of_each_combination,axis=(0,1,2,3)))	# ne, Te
 									del hypervolume_of_each_combination
 									# print(marginalised_log_prob_ne_Te)
 									index_most_likely_marginalised = marginalised_log_prob_ne_Te.argmax()
 									# print(index_most_likely_marginalised)
-									most_likely_Te_index = index_most_likely_marginalised%TS_Te_steps
-									most_likely_ne_index = (index_most_likely_marginalised-most_likely_Te_index)//TS_Te_steps%TS_ne_steps
-									marginalised_log_prob_ne = marginalised_log_prob_ne_Te[:,most_likely_Te_index]
-									marginalised_log_prob_Te = marginalised_log_prob_ne_Te[most_likely_ne_index]
+									# most_likely_Te_index = index_most_likely_marginalised%TS_Te_steps
+									# most_likely_ne_index = (index_most_likely_marginalised-most_likely_Te_index)//TS_Te_steps%TS_ne_steps
+									most_likely_ne_index,most_likely_Te_index = np.unravel_index(index_most_likely_marginalised,marginalised_log_prob_ne_Te.shape)
+									# marginalised_log_prob_ne = marginalised_log_prob_ne_Te[:,most_likely_Te_index]
+									# marginalised_log_prob_Te = marginalised_log_prob_ne_Te[most_likely_ne_index]
+									marginalised_log_prob_ne = np.log(np.sum((np.exp(marginalised_log_prob_ne_Te)*d_Te_values_array/np.sum(d_Te_values_array)),axis=1))
+									marginalised_log_prob_Te = np.log(np.sum((np.exp(marginalised_log_prob_ne_Te).T*d_ne_values_array/np.sum(d_ne_values_array)).T,axis=0))
 									# print(marginalised_log_prob_ne)
 									# print(marginalised_log_prob_Te)
 									# marginalised_log_prob_ne = np.log(np.sum(np.exp(likelihood_log_probs)*hypervolume_of_each_combination,axis=(0,1,2,3,5)))	# ne, Te
 									# marginalised_log_prob_Te = np.log(np.sum(np.exp(likelihood_log_probs)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# ne, Te
-									if np.sum(marginalised_log_prob_ne>0)>=5:
+									if np.sum(np.isfinite(marginalised_log_prob_ne))>=5:
 										ne_values_limits = np.sort(np.array([ne_values_array for _, ne_values_array in sorted(zip(marginalised_log_prob_ne, ne_values_array))])[-5:])
-									elif np.sum(marginalised_log_prob_ne>0)>=4:
+									elif np.sum(np.isfinite(marginalised_log_prob_ne))>=4:
 										ne_values_limits = np.sort(np.array([ne_values_array for _, ne_values_array in sorted(zip(marginalised_log_prob_ne, ne_values_array))])[-4:])
-									elif np.sum(marginalised_log_prob_ne>0)==3:
+									elif np.sum(np.isfinite(marginalised_log_prob_ne))==3:
 										ne_values_limits = np.sort(np.array([ne_values_array for _, ne_values_array in sorted(zip(marginalised_log_prob_ne, ne_values_array))])[-3:])
 									else:
 										temp = np.abs(np.log(ne_values_array/ne_values_array[marginalised_log_prob_ne.argmax()]))
@@ -2215,11 +2247,11 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									ne_values_array_initial = cp.deepcopy(ne_values_array)
 									ne_values_array = np.unique(np.concatenate((ne_values_array,ne_additional_values)))
 
-									if np.sum(marginalised_log_prob_Te>0)>=5:
+									if np.sum(np.isfinite(marginalised_log_prob_Te))>=5:
 										Te_values_limits = np.sort(np.array([Te_values_array for _, Te_values_array in sorted(zip(marginalised_log_prob_Te, Te_values_array))])[-5:])
-									elif np.sum(marginalised_log_prob_Te>0)>=4:
+									elif np.sum(np.isfinite(marginalised_log_prob_Te))>=4:
 										Te_values_limits = np.sort(np.array([Te_values_array for _, Te_values_array in sorted(zip(marginalised_log_prob_Te, Te_values_array))])[-4:])
-									elif np.sum(marginalised_log_prob_Te>0)==3:
+									elif np.sum(np.isfinite(marginalised_log_prob_Te))==3:
 										Te_values_limits = np.sort(np.array([Te_values_array for _, Te_values_array in sorted(zip(marginalised_log_prob_Te, Te_values_array))])[-3:])
 									else:
 										temp = np.abs(Te_values_array - Te_values_array[marginalised_log_prob_Te.argmax()])
@@ -2249,9 +2281,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										if H2_steps==1:
 											d_nH2_ne_values = np.array([1])
 										else:
-											# d_nH2_ne_values = np.array([*np.diff(nH2_ne_values[[0,1]]),*(np.diff(nH2_ne_values)[:-1]/2+np.diff(nH2_ne_values)[1:]/2),*np.diff(nH2_ne_values[[-2,-1]])])
-											# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
-											temp = np.log(nH2_ne_values)
+											if linear_nH2_nH_probabilities:
+												temp = np.array(nH2_ne_values)
+											else:
+												# d_nH2_ne_values = np.array([*np.diff(nH2_ne_values[[0,1]]),*(np.diff(nH2_ne_values)[:-1]/2+np.diff(nH2_ne_values)[1:]/2),*np.diff(nH2_ne_values[[-2,-1]])])
+												# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
+												temp = np.log(nH2_ne_values)
 											d_nH2_ne_values = np.array([*np.diff(temp[[0,1]]),*(np.diff(temp)[:-1]/2+np.diff(temp)[1:]/2),*np.diff(temp[[-2,-1]])])
 										all_d_nH2_ne_values[:,:,:,i6] *= d_nH2_ne_values/np.sum(d_nH2_ne_values)
 									# hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_nH2_ne_values	# excluded because it's one of the dimentions I want left
@@ -2273,9 +2308,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									all_d_nH_ne_values = np.ones_like(hypervolume_of_each_combination)
 									for i6 in range(TS_ne_steps*TS_Te_steps):
 										nH_ne_values = record_nH_ne_values[:,i6]
-										# d_nH_ne_values = np.array([*np.diff(nH_ne_values[[0,1]]),*(np.diff(nH_ne_values)[:-1]/2+np.diff(nH_ne_values)[1:]/2),*np.diff(nH_ne_values[[-2,-1]])])
-										# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
-										temp = np.log(nH_ne_values)
+										if linear_nH2_nH_probabilities:
+											temp = np.array(nH_ne_values)
+										else:
+											# d_nH_ne_values = np.array([*np.diff(nH_ne_values[[0,1]]),*(np.diff(nH_ne_values)[:-1]/2+np.diff(nH_ne_values)[1:]/2),*np.diff(nH_ne_values[[-2,-1]])])
+											# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
+											temp = np.log(nH_ne_values)
 										d_nH_ne_values = np.array([*np.diff(temp[[0,1]]),*(np.diff(temp)[:-1]/2+np.diff(temp)[1:]/2),*np.diff(temp[[-2,-1]])])
 										all_d_nH_ne_values[:,:,:,i6] *= d_nH_ne_values/np.sum(d_nH_ne_values)
 									hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_nH_ne_values
@@ -2393,6 +2431,64 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 												marginalised_calculated_emission_log_probs_only_nH_ne_first = np.log(np.sum(np.exp(calculated_emission_log_probs)*hypervolume_of_each_combination,axis=(1,2,3,4,5)))	# H, Hm, H2, H2p, ne, Te
 												marginalised_calculated_emission_log_probs_only_nH_ne_first = marginalised_calculated_emission_log_probs_only_nH_ne_first-np.max(marginalised_calculated_emission_log_probs_only_nH_ne_first)
 												marginalised_calculated_emission_log_probs_only_nH_ne_first = marginalised_calculated_emission_log_probs_only_nH_ne_first-np.log(np.sum(np.exp(marginalised_calculated_emission_log_probs_only_nH_ne_first)))	# normalisation for logarithmic probabilities
+
+												hypervolume_of_each_combination = np.ones((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps*TS_Te_steps),dtype=np.float32)	# H, Hm, H2, H2p, ne*Te
+												hypervolume_of_each_combination = np.transpose(hypervolume_of_each_combination, (0,1,3,4,2))	# H, Hm, H2p, ne*Te, H2
+												hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_nH2_ne_values
+												hypervolume_of_each_combination = np.transpose(hypervolume_of_each_combination, (0,4,2,3,1))	# H, H2, H2p, ne*Te, Hm
+												hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_nHm_nH2_values
+												hypervolume_of_each_combination = np.transpose(hypervolume_of_each_combination, (0,4,1,3,2))	# H, Hm, H2, ne*Te, H2p
+												hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_nH2p_nH2_values
+												hypervolume_of_each_combination = np.transpose(hypervolume_of_each_combination, (1,2,4,3,0))	# Hm, H2, H2p, ne*Te, H
+												hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_nH_ne_values	# excluded because it's one of the dimentions I want left
+												hypervolume_of_each_combination = np.transpose(hypervolume_of_each_combination, (4,0,1,2,3))	# H, Hm, H2, H2p, ne*Te
+												hypervolume_of_each_combination = hypervolume_of_each_combination.reshape((H_steps,Hm_to_find_steps,H2_steps,H2p_to_find_steps,TS_ne_steps,TS_Te_steps))	# H, Hm, H2, H2p, ne, Te
+												# hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_Te_values_array
+												hypervolume_of_each_combination = np.transpose(hypervolume_of_each_combination, (0,1,2,3,5,4))	# H, Hm, H2, H2p, Te, ne
+												hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_ne_values_array
+												hypervolume_of_each_combination = np.transpose(hypervolume_of_each_combination, (0,1,2,3,5,4))	# H, Hm, H2, H2p, ne, Te
+
+												marginalised_likelihood_log_probs_only_Te_first = np.log(np.sum(np.exp(likelihood_log_probs)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_likelihood_log_probs_only_Te_first = marginalised_likelihood_log_probs_only_Te_first-np.max(marginalised_likelihood_log_probs_only_Te_first)
+												marginalised_likelihood_log_probs_only_Te_first = marginalised_likelihood_log_probs_only_Te_first-np.log(np.sum(np.exp(marginalised_likelihood_log_probs_only_Te_first)))	# normalisation for logarithmic probabilities
+												marginalised_particles_penalty_only_Te_first = np.log(np.sum(np.exp(particles_penalty)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_particles_penalty_only_Te_first = marginalised_particles_penalty_only_Te_first-np.max(marginalised_particles_penalty_only_Te_first)
+												marginalised_particles_penalty_only_Te_first = marginalised_particles_penalty_only_Te_first-np.log(np.sum(np.exp(marginalised_particles_penalty_only_Te_first)))	# normalisation for logarithmic probabilities
+												marginalised_particles_penalty_Hp_only_Te_first = np.log(np.sum(np.exp(particles_penalty_Hp)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_particles_penalty_Hp_only_Te_first = marginalised_particles_penalty_Hp_only_Te_first-np.max(marginalised_particles_penalty_Hp_only_Te_first)
+												marginalised_particles_penalty_Hp_only_Te_first = marginalised_particles_penalty_Hp_only_Te_first-np.log(np.sum(np.exp(marginalised_particles_penalty_Hp_only_Te_first)))	# normalisation for logarithmic probabilities
+												marginalised_particles_penalty_e_only_Te_first = np.log(np.sum(np.exp(particles_penalty_e)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_particles_penalty_e_only_Te_first = marginalised_particles_penalty_e_only_Te_first-np.max(marginalised_particles_penalty_e_only_Te_first)
+												marginalised_particles_penalty_e_only_Te_first = marginalised_particles_penalty_e_only_Te_first-np.log(np.sum(np.exp(marginalised_particles_penalty_e_only_Te_first)))	# normalisation for logarithmic probabilities
+												marginalised_particles_penalty_Hm_only_Te_first = np.log(np.sum(np.exp(particles_penalty_Hm)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_particles_penalty_Hm_only_Te_first = marginalised_particles_penalty_Hm_only_Te_first-np.max(marginalised_particles_penalty_Hm_only_Te_first)
+												marginalised_particles_penalty_Hm_only_Te_first = marginalised_particles_penalty_Hm_only_Te_first-np.log(np.sum(np.exp(marginalised_particles_penalty_Hm_only_Te_first)))	# normalisation for logarithmic probabilities
+												marginalised_particles_penalty_H2p_only_Te_first = np.log(np.sum(np.exp(particles_penalty_H2p)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_particles_penalty_H2p_only_Te_first = marginalised_particles_penalty_H2p_only_Te_first-np.max(marginalised_particles_penalty_H2p_only_Te_first)
+												marginalised_particles_penalty_H2p_only_Te_first = marginalised_particles_penalty_H2p_only_Te_first-np.log(np.sum(np.exp(marginalised_particles_penalty_H2p_only_Te_first)))	# normalisation for logarithmic probabilities
+												marginalised_particles_penalty_H2_only_Te_first = np.log(np.sum(np.exp(particles_penalty_H2)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2, ne, Te
+												marginalised_particles_penalty_H2_only_Te_first = marginalised_particles_penalty_H2_only_Te_first-np.max(marginalised_particles_penalty_H2_only_Te_first)
+												marginalised_particles_penalty_H2_only_Te_first = marginalised_particles_penalty_H2_only_Te_first-np.log(np.sum(np.exp(marginalised_particles_penalty_H2_only_Te_first)))	# normalisation for logarithmic probabilities
+												marginalised_particles_penalty_H_only_Te_first = np.log(np.sum(np.exp(particles_penalty_H)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H, ne, Te
+												marginalised_particles_penalty_H_only_Te_first = marginalised_particles_penalty_H_only_Te_first-np.max(marginalised_particles_penalty_H_only_Te_first)
+												marginalised_particles_penalty_H_only_Te_first = marginalised_particles_penalty_H_only_Te_first-np.log(np.sum(np.exp(marginalised_particles_penalty_H_only_Te_first)))	# normalisation for logarithmic probabilities
+												temp = calculated_emission_log_probs + np.float32(Te_log_probs) + (np.ones((TS_Te_steps,TS_ne_steps),dtype=np.float32)*np.float32(ne_log_probs)).T
+												emission_Te_ne_best = np.unravel_index(temp.argmax(), temp.shape)
+												marginalised_emission_Te_ne_H2p_only_Te_first = np.log(np.sum(np.exp(temp)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_emission_Te_ne_H2p_only_Te_first = marginalised_emission_Te_ne_H2p_only_Te_first-np.max(marginalised_emission_Te_ne_H2p_only_Te_first)
+												marginalised_emission_Te_ne_H2p_only_Te_first = marginalised_emission_Te_ne_H2p_only_Te_first-np.log(np.sum(np.exp(marginalised_emission_Te_ne_H2p_only_Te_first)))	# normalisation for logarithmic probabilities
+												marginalised_nH_ne_penalty_only_Te_first = np.log(np.sum(np.exp(nH_ne_penalty)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_nH_ne_penalty_only_Te_first = marginalised_nH_ne_penalty_only_Te_first-np.max(marginalised_nH_ne_penalty_only_Te_first)
+												marginalised_nH_ne_penalty_only_Te_first = marginalised_nH_ne_penalty_only_Te_first-np.log(np.sum(np.exp(marginalised_nH_ne_penalty_only_Te_first)))	# normalisation for logarithmic probabilities
+												marginalised_nHp_ne_penalty_only_Te_first = np.log(np.sum(np.exp(nHp_ne_penalty)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_nHp_ne_penalty_only_Te_first = marginalised_nHp_ne_penalty_only_Te_first-np.max(marginalised_nHp_ne_penalty_only_Te_first)
+												marginalised_nHp_ne_penalty_only_Te_first = marginalised_nHp_ne_penalty_only_Te_first-np.log(np.sum(np.exp(marginalised_nHp_ne_penalty_only_Te_first)))	# normalisation for logarithmic probabilities
+												marginalised_power_penalty_only_Te_first = np.log(np.sum(np.exp(power_penalty)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_power_penalty_only_Te_first = marginalised_power_penalty_only_Te_first-np.max(marginalised_power_penalty_only_Te_first)
+												marginalised_power_penalty_only_Te_first = marginalised_power_penalty_only_Te_first-np.log(np.sum(np.exp(marginalised_power_penalty_only_Te_first)))	# normalisation for logarithmic probabilities
+												marginalised_calculated_emission_log_probs_only_Te_first = np.log(np.sum(np.exp(calculated_emission_log_probs)*hypervolume_of_each_combination,axis=(0,1,2,3,4)))	# H, Hm, H2, H2p, ne, Te
+												marginalised_calculated_emission_log_probs_only_Te_first = marginalised_calculated_emission_log_probs_only_Te_first-np.max(marginalised_calculated_emission_log_probs_only_Te_first)
+												marginalised_calculated_emission_log_probs_only_Te_first = marginalised_calculated_emission_log_probs_only_Te_first-np.log(np.sum(np.exp(marginalised_calculated_emission_log_probs_only_Te_first)))	# normalisation for logarithmic probabilities
 
 												del particles_penalty,nH_ne_penalty,nHp_ne_penalty,power_penalty
 
@@ -2680,7 +2776,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								record_nH_ne_values.append(nH_ne_values)
 								# nH_ne_log_probs = nH_ne_log_probs_Te(Te_for_nH_ne,nH_ne_values)
 								# nH_ne_log_probs = nH_ne_log_probs_Te_2(Te_for_nH_ne,nH_ne_values)
-								nH_ne_log_probs = nH_ne_log_probs_Te_3(Te_for_nH_ne,nH_ne_values)
+								if linear_nH2_nH_probabilities:
+									nH_ne_log_probs = nH_ne_log_probs_Te_4(Te_for_nH_ne,nH_ne_values)
+								else:
+									nH_ne_log_probs = nH_ne_log_probs_Te_3(Te_for_nH_ne,nH_ne_values)
 								record_nH_ne_log_prob.append(nH_ne_log_probs)
 							# total_nH_ne_value = multiplicative_factor*np.array([[record_nH_ne_values]*TS_ne_steps]*len(n_list_all)).T	# H, Te, ne, lines
 							total_nH_ne_value = multiplicative_factor*np.array([np.transpose(record_nH_ne_values,(1,0,2))]*len(n_list_all)).T	# H, Te, ne, lines
@@ -2935,6 +3034,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								all_Hm_creation_RR = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 								all_H2p_destruction_RR = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 								all_H2p_creation_RR = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+								all_power_e_H__Hm_pv = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+								all_power_e_H__Hm_pv_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+								all_power_potential_mol = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+								all_power_potential_mol_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+								all_power_potential_mol_plasma_heating = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
+								all_power_potential_mol_plasma_cooling = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 								if include_particles_limitation:
 									# all_net_Hp_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									# all_net_e_destruction = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
@@ -2948,10 +3053,6 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									all_net_H2p_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_net_H2_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									all_net_H_destruction_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_power_potential_mol = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_power_potential_mol_sigma = np.ones_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_power_potential_mol_plasma_heating = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
-									all_power_potential_mol_plasma_cooling = np.zeros_like((calculated_emission_log_probs_expanded),dtype=np.float32)
 									# selected_part_balance = np.zeros_like(calculated_emission_log_probs_expanded,dtype=bool)
 								temp_coord = np.ones_like(calculated_emission_log_probs_expanded[:,:,:,:,0,0])
 								for i6 in range(TS_Te_steps):
@@ -2997,7 +3098,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 												all_net_H2p_destruction[:,:,:,:,i5,i6] = np.float32(temp - temp1)	# m^-3/s *1e-20
 												all_net_H2p_destruction_sigma[:,:,:,:,i5,i6] = 0.5*(temp_sigma**2 + temp1_sigma**2)**0.5	# m^-3/s *1e-20
 										else:
-											rate_creation_Hm,rate_creation_Hm_sigma,rate_destruction_Hm,rate_destruction_Hm_sigma,rate_creation_H2p,rate_creation_H2p_sigma,rate_destruction_H2p,rate_destruction_H2p_sigma,rate_creation_H2,rate_creation_H2_sigma,rate_destruction_H2,rate_destruction_H2_sigma,rate_creation_H,rate_creation_H_sigma,rate_destruction_H,rate_destruction_H_sigma,rate_creation_Hp,rate_creation_Hp_sigma,rate_destruction_Hp,rate_destruction_Hp_sigma,rate_creation_e,rate_creation_e_sigma,rate_destruction_e,rate_destruction_e_sigma,power_potential_mol,power_potential_mol_sigma,power_potential_mol_plasma_heating,power_potential_mol_plasma_cooling,strongest_potential_mol_plasma_heating,strongest_potential_mol_plasma_cooling,strongest_rate,strongest_rate_description = all_RR_and_power_balance(*arguments,require_strongest=True,only_Yacora_as_molecule=only_Yacora_as_molecule)
+											rate_creation_Hm,rate_creation_Hm_sigma,rate_destruction_Hm,rate_destruction_Hm_sigma,rate_creation_H2p,rate_creation_H2p_sigma,rate_destruction_H2p,rate_destruction_H2p_sigma,rate_creation_H2,rate_creation_H2_sigma,rate_destruction_H2,rate_destruction_H2_sigma,rate_creation_H,rate_creation_H_sigma,rate_destruction_H,rate_destruction_H_sigma,rate_creation_Hp,rate_creation_Hp_sigma,rate_destruction_Hp,rate_destruction_Hp_sigma,rate_creation_e,rate_creation_e_sigma,rate_destruction_e,rate_destruction_e_sigma,power_potential_mol,power_potential_mol_sigma,power_potential_mol_plasma_heating,power_potential_mol_plasma_cooling,strongest_potential_mol_plasma_heating,strongest_potential_mol_plasma_cooling,strongest_rate,strongest_rate_description,e_H__Hm_pv_energy,e_H__Hm_pv_energy_sigma = all_RR_and_power_balance(*arguments,require_strongest=True,only_Yacora_as_molecule=only_Yacora_as_molecule)
 											all_H_destruction_RR[:,:,:,:,i5,i6] = np.float32(rate_destruction_H*1e20/(all_nH_ne_values[:,:,:,:,i5,i6]*ne_values_array[i5]))	# m^-3/s / nH
 											all_H_destruction_RR2[:,:,:,:,i5,i6] = np.float32(rate_destruction_H)	# m^-3/s *1e-20
 											all_H_creation_RR[:,:,:,:,i5,i6] = np.float32(rate_creation_H)	# m^-3/s *1e-20
@@ -3017,6 +3118,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											all_Hm_creation_RR[:,:,:,:,i5,i6] = np.float32(rate_creation_Hm)	# m^-3/s *1e-20
 											all_H2p_destruction_RR[:,:,:,:,i5,i6] = np.float32(rate_destruction_H2p)	# m^-3/s *1e-20
 											all_H2p_creation_RR[:,:,:,:,i5,i6] = np.float32(rate_creation_H2p)	# m^-3/s *1e-20
+											all_power_potential_mol[:,:,:,:,i5,i6] = np.float32(power_potential_mol)
+											all_power_potential_mol_sigma[:,:,:,:,i5,i6] = np.float32(power_potential_mol_sigma)
+											all_power_potential_mol_plasma_heating[:,:,:,:,i5,i6] = np.float32(power_potential_mol_plasma_heating)
+											all_power_potential_mol_plasma_cooling[:,:,:,:,i5,i6] = np.float32(power_potential_mol_plasma_cooling)
+											all_power_e_H__Hm_pv[:,:,:,:,i5,i6] = np.float32(e_H__Hm_pv_energy)
+											all_power_e_H__Hm_pv_sigma[:,:,:,:,i5,i6] = np.float32(e_H__Hm_pv_energy_sigma)
 											if include_particles_limitation:
 												# all_net_Hp_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_Hp - rate_creation_Hp)	# #m^-3/s *1e-20
 												all_net_Hp_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_Hp_sigma*1e-10)**2 + (rate_creation_Hp_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
@@ -3030,10 +3137,6 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 												all_net_H2_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H2_sigma*1e-10)**2 + (rate_creation_H2_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
 												# all_net_H_destruction[:,:,:,:,i5,i6] = np.float32(rate_destruction_H - rate_creation_H)	# m^-3/s *1e-20
 												all_net_H_destruction_sigma[:,:,:,:,i5,i6] = np.float32(((rate_destruction_H_sigma*1e-10)**2 + (rate_creation_H_sigma*1e-10)**2)**0.5 *1e10)	# m^-3/s *1e-20
-												all_power_potential_mol[:,:,:,:,i5,i6] = np.float32(power_potential_mol)
-												all_power_potential_mol_sigma[:,:,:,:,i5,i6] = np.float32(power_potential_mol_sigma)
-												all_power_potential_mol_plasma_heating[:,:,:,:,i5,i6] = np.float32(power_potential_mol_plasma_heating)
-												all_power_potential_mol_plasma_cooling[:,:,:,:,i5,i6] = np.float32(power_potential_mol_plasma_cooling)
 								if include_particles_limitation:
 									all_net_Hp_destruction = np.float32(all_Hp_destruction_RR - all_Hp_creation_RR)	# #m^-3/s *1e-20
 									all_net_e_destruction = np.float32(all_e_destruction_RR - all_e_creation_RR)	# #m^-3/s *1e-20
@@ -3041,6 +3144,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									all_net_H2p_destruction = np.float32(all_H2p_destruction_RR - all_H2p_creation_RR)	# #m^-3/s *1e-20
 									all_net_H2_destruction = np.float32(all_H2_destruction_RR2 - all_H2_creation_RR)	# #m^-3/s *1e-20
 									all_net_H_destruction = np.float32(all_H_destruction_RR2 - all_H_creation_RR)	# #m^-3/s *1e-20
+
+								#	IMPORTANT!!
+								tot_rad_power += all_power_e_H__Hm_pv
 								try:
 									del temp_coord,temp,temp_sigma,temp1,temp1_sigma
 								except:
@@ -3123,7 +3229,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								particles_penalty_H = np.log( 1 + erf( (total_removable_H-all_net_H_destruction)/(2**0.5 * (all_net_H_destruction_sigma**2 + (total_removable_H*particle_molecular_budget_precision)**2)**0.5)) )
 								particles_penalty_H -= np.log(np.sum(np.exp(particles_penalty_H)))	# normalisation for logarithmic probabilities
 								# particles_penalty += particles_penalty_H	# 2022/12/22 I don't think this is necessary
-								del all_net_H2_destruction_sigma,all_net_H_destruction_sigma,all_net_H_destruction,all_net_H2_destruction
+								del all_net_H2_destruction_sigma,all_net_H_destruction_sigma
 
 								# likelihood_log_probs += particles_penalty
 								# likelihood_log_probs -= np.max(likelihood_log_probs)
@@ -3132,8 +3238,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								del all_nHp_ne_values
 								# del particles_penalty
 
-							total_removed_power = np.float32(total_removed_power_atomic + power_rad_mol + all_power_potential_mol)
-							total_removed_power_times_volume = np.float32((total_removed_power_atomic + power_rad_mol + all_power_potential_mol) * area*length)
+							total_removed_power = np.float32(total_removed_power_atomic + power_rad_mol + all_power_potential_mol + all_power_e_H__Hm_pv)
+							total_removed_power_times_volume = np.float32(total_removed_power * area*length)
 							# power_penalty = np.zeros_like((total_removed_power_times_volume),dtype=np.float32)
 							if False:	# here I do not use any info on the shape of the plasma upstream
 								select = total_removed_power_times_volume>interpolated_power_pulse_shape(time_crop[my_time_pos])/source_power_spread
@@ -3153,7 +3259,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								elif True:	# real formula for the probability of an inequality
 									# total_removed_power_times_volume_sigma = (0.2*total_removed_power_atomic + 0.5*power_rad_mol) * area*length
 									# total_removed_power_times_volume_sigma = (( (power_atomic_precision**2)*((power_via_ionisation*1e-10)**2 + (power_rad_excit*1e-10)**2 + (power_via_recombination*1e-10)**2 + (power_rec_neutral*1e-10)**2 + (power_via_brem*1e-10)**2 + (power_heating_rec*1e-10)**2) + (power_molecular_precision**2)*((power_rad_Hm*1e-10)**2 + (power_rad_H2*1e-10)**2 + (power_rad_H2p*1e-10)**2) + (all_power_potential_mol_sigma*1e-10)**2)**0.5) *1e10 * area*length	#this properly adds in quadrature all the uncertanties
-									total_removed_power_times_volume_sigma = (( (power_atomic_precision**2)*((power_via_ionisation*1e-10)**2 + (power_rad_excit*1e-10)**2 + (power_via_recombination*1e-10)**2 + (power_rec_neutral*1e-10)**2 + (power_via_brem*1e-10)**2) + (power_molecular_precision**2)*((power_rad_Hm*1e-10)**2 + (power_rad_H2*1e-10)**2 + (power_rad_H2p*1e-10)**2) + (all_power_potential_mol_sigma*1e-10)**2)**0.5) *1e10 * area*length	#this properly adds in quadrature all the uncertanties
+									total_removed_power_times_volume_sigma = (( (power_atomic_precision**2)*((power_via_ionisation*1e-10)**2 + (power_rad_excit*1e-10)**2 + (power_via_recombination*1e-10)**2 + (power_rec_neutral*1e-10)**2 + (power_via_brem*1e-10)**2) + (power_molecular_precision**2)*((power_rad_Hm*1e-10)**2 + (power_rad_H2*1e-10)**2 + (power_rad_H2p*1e-10)**2) + (all_power_potential_mol_sigma*1e-10)**2 + (all_power_e_H__Hm_pv_sigma*1e-10)**2)**0.5) *1e10 * area*length	#this properly adds in quadrature all the uncertanties
 									total_removable_power_times_volume_sigma = (total_removable_power_times_volume*power_budget_precision)
 									# power_penalty = np.log( 1 + erf( (total_removable_power_times_volume-total_removed_power_times_volume)/(2**0.5 * (total_removed_power_times_volume_sigma**2 + (total_removable_power_times_volume*0.5)**2)**0.5)) )
 									if False:	# this is for only positive values of power dissipated
@@ -3289,6 +3395,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								most_likely_total_removable_Hm = total_removable_Hm[most_likely_nH_ne_index,most_likely_nHm_nH2_index,most_likely_nH2_ne_index,most_likely_nH2p_nH2_index,most_likely_ne_index,most_likely_Te_index]
 								most_likely_net_H2p_destruction = all_net_H2p_destruction[most_likely_nH_ne_index,most_likely_nHm_nH2_index,most_likely_nH2_ne_index,most_likely_nH2p_nH2_index,most_likely_ne_index,most_likely_Te_index]
 								most_likely_total_removable_H2p = total_removable_H2p[most_likely_nH_ne_index,most_likely_nHm_nH2_index,most_likely_nH2_ne_index,most_likely_nH2p_nH2_index,most_likely_ne_index,most_likely_Te_index]
+								most_likely_net_H2_destruction = all_net_H2_destruction[most_likely_nH_ne_index,most_likely_nHm_nH2_index,most_likely_nH2_ne_index,most_likely_nH2p_nH2_index,most_likely_ne_index,most_likely_Te_index]
+								most_likely_total_removable_H2 = total_removable_H2[most_likely_nH_ne_index,most_likely_nHm_nH2_index,most_likely_nH2_ne_index,most_likely_nH2p_nH2_index,most_likely_ne_index,most_likely_Te_index]
+								most_likely_net_H_destruction = all_net_H_destruction[most_likely_nH_ne_index,most_likely_nHm_nH2_index,most_likely_nH2_ne_index,most_likely_nH2p_nH2_index,most_likely_ne_index,most_likely_Te_index]
+								most_likely_total_removable_H = total_removable_H[most_likely_nH_ne_index,most_likely_nHm_nH2_index,most_likely_nH2_ne_index,most_likely_nH2p_nH2_index,most_likely_ne_index,most_likely_Te_index]
 
 							# now I marginalise H2, Te, ne in order to find the most likely Hm, H2p for the next step
 							hypervolume_of_each_combination = np.ones((H_steps,Hm_steps,H2_steps,H2p_steps,TS_ne_steps*TS_Te_steps),dtype=np.float32)	# H, Hm, H2, H2p, ne*Te
@@ -3299,9 +3409,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								if H2_steps==1:
 									d_nH2_ne_values = np.array([1])
 								else:
-									# d_nH2_ne_values = np.array([*np.diff(nH2_ne_values[[0,1]]),*(np.diff(nH2_ne_values)[:-1]/2+np.diff(nH2_ne_values)[1:]/2),*np.diff(nH2_ne_values[[-2,-1]])])
-									# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
-									temp = np.log(nH2_ne_values)
+									if linear_nH2_nH_probabilities:
+										temp = np.array(nH2_ne_values)
+									else:
+										# d_nH2_ne_values = np.array([*np.diff(nH2_ne_values[[0,1]]),*(np.diff(nH2_ne_values)[:-1]/2+np.diff(nH2_ne_values)[1:]/2),*np.diff(nH2_ne_values[[-2,-1]])])
+										# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
+										temp = np.log(nH2_ne_values)
 									d_nH2_ne_values = np.array([*np.diff(temp[[0,1]]),*(np.diff(temp)[:-1]/2+np.diff(temp)[1:]/2),*np.diff(temp[[-2,-1]])])
 								all_d_nH2_ne_values[:,:,:,i6] *= d_nH2_ne_values/np.sum(d_nH2_ne_values)
 							hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_nH2_ne_values
@@ -3323,9 +3436,12 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 							all_d_nH_ne_values = np.ones_like(hypervolume_of_each_combination)
 							for i6 in range(TS_ne_steps*TS_Te_steps):
 								nH_ne_values = record_nH_ne_values[:,i6]
-								# d_nH_ne_values = np.array([*np.diff(nH_ne_values[[0,1]]),*(np.diff(nH_ne_values)[:-1]/2+np.diff(nH_ne_values)[1:]/2),*np.diff(nH_ne_values[[-2,-1]])])
-								# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
-								temp = np.log(nH_ne_values)
+								if linear_nH2_nH_probabilities:
+									temp = np.array(nH_ne_values)
+								else:
+									# d_nH_ne_values = np.array([*np.diff(nH_ne_values[[0,1]]),*(np.diff(nH_ne_values)[:-1]/2+np.diff(nH_ne_values)[1:]/2),*np.diff(nH_ne_values[[-2,-1]])])
+									# the probability is assigned logaritmically for this, so surely I have to keep the intervals logaritmic too
+									temp = np.log(nH_ne_values)
 								d_nH_ne_values = np.array([*np.diff(temp[[0,1]]),*(np.diff(temp)[:-1]/2+np.diff(temp)[1:]/2),*np.diff(temp[[-2,-1]])])
 								all_d_nH_ne_values[:,:,:,i6] *= d_nH_ne_values/np.sum(d_nH_ne_values)
 							# hypervolume_of_each_combination = hypervolume_of_each_combination*all_d_nH_ne_values	# excluded because it's one of the dimentions I want left
@@ -3856,6 +3972,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								power_balance_data_dict['power_via_recombination'] = dict([('intervals',intervals_power_via_recombination),('prob',prob_power_via_recombination),('actual_values',actual_values_power_via_recombination)])
 								intervals_tot_rad_power,prob_tot_rad_power,actual_values_tot_rad_power = build_log_PDF(tot_rad_power)
 								power_balance_data_dict['tot_rad_power'] = dict([('intervals',intervals_tot_rad_power),('prob',prob_tot_rad_power),('actual_values',actual_values_tot_rad_power)])
+								intervals_e_H__Hm_pv_power,prob_e_H__Hm_pv_power,actual_values_e_H__Hm_pv_power = build_log_PDF(all_power_e_H__Hm_pv)
+								power_balance_data_dict['e_H__Hm_pv_power'] = dict([('intervals',intervals_e_H__Hm_pv_power),('prob',prob_e_H__Hm_pv_power),('actual_values',actual_values_e_H__Hm_pv_power)])
 								intervals_power_rad_Hm,prob_power_rad_Hm,actual_values_power_rad_Hm = build_log_PDF(power_rad_Hm)
 								power_balance_data_dict['power_rad_Hm'] = dict([('intervals',intervals_power_rad_Hm),('prob',prob_power_rad_Hm),('actual_values',actual_values_power_rad_Hm)])
 								intervals_power_rad_Hm_H2p,prob_power_rad_Hm_H2p,actual_values_power_rad_Hm_H2p = build_log_PDF(power_rad_Hm_H2p)
@@ -3929,6 +4047,10 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 									power_balance_data_dict['net_Hp_destruction'] = dict([('intervals',[0]),('prob',[0]),('actual_values',[0])])
 									power_balance_data_dict['net_Hm_destruction'] = dict([('intervals',[0]),('prob',[0]),('actual_values',[0])])
 									power_balance_data_dict['net_H2p_destruction'] = dict([('intervals',[0]),('prob',[0]),('actual_values',[0])])
+								intervals_net_H_destruction,prob_net_H_destruction,actual_values_net_H_destruction = build_log_PDF(all_net_H_destruction)
+								power_balance_data_dict['net_H_destruction'] = dict([('intervals',intervals_net_H_destruction),('prob',prob_net_H_destruction),('actual_values',actual_values_net_H_destruction)])
+								intervals_net_H2_destruction,prob_net_H2_destruction,actual_values_net_H2_destruction = build_log_PDF(all_net_H2_destruction)
+								power_balance_data_dict['net_H2_destruction'] = dict([('intervals',intervals_net_H2_destruction),('prob',prob_net_H2_destruction),('actual_values',actual_values_net_H2_destruction)])
 								# intervals_H_destruction_RR,prob_H_destruction_RR,actual_values_H_destruction_RR = build_log_PDF(all_H_destruction_RR)
 								power_balance_data_dict['H_destruction_RR'] = build_log_PDF(all_H_destruction_RR,require_dict=True)
 								power_balance_data_dict['H_destruction_RR2'] = build_log_PDF(all_H_destruction_RR2,require_dict=True)
@@ -4391,6 +4513,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										ax[plot_index,1].set_xlabel('nH/ne index')
 										# ax[plot_index,1].set_xscale('log')
 										# ax[plot_index,1].set_yscale('log')
+
 										save_done = 0
 										save_index=1
 										try:	# All this trie are because of a known issues when saving lots of figure inside of multiprocessor
@@ -5827,6 +5950,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										most_likely_power_rad_H2 = power_rad_H2.flatten()[index_most_likely]
 										most_likely_power_rad_H2p = power_rad_H2p.flatten()[index_most_likely]
 										most_likely_tot_rad_power = tot_rad_power.flatten()[index_most_likely]
+										most_likely_e_H__Hm_pv_power = all_power_e_H__Hm_pv.flatten()[index_most_likely]
 										most_likely_power_via_brem = power_via_brem.flatten()[index_most_likely]
 										most_likely_power_heating_rec = power_heating_rec.flatten()[index_most_likely]
 										most_likely_power_rec_neutral = power_rec_neutral.flatten()[index_most_likely]
@@ -5872,6 +5996,8 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										im = ax[plot_index,0].plot(most_likely_power_potential_mol_plasma_heating,100,'o',color=color[14],markersize=30,fillstyle='none');
 										im = ax[plot_index,0].plot(all_power_potential_mol_plasma_cooling[select],100*temp_prob/max_temp_prob,'+',color=color[15],label='power_potential_mol\nplasma_cooling');
 										im = ax[plot_index,0].plot(most_likely_power_potential_mol_plasma_cooling,100,'o',color=color[15],markersize=30,fillstyle='none');
+										im = ax[plot_index,0].plot(all_power_e_H__Hm_pv[select],100*temp_prob/max_temp_prob,'+',color=color[16],label='e_H__Hm_pv_power');
+										im = ax[plot_index,0].plot(most_likely_e_H__Hm_pv_power,100,'o',color=color[16],markersize=30,fillstyle='none');
 										im = ax[plot_index,0].plot([most_likely_total_removable_power_times_volume]*2,[0,100],'k--');
 										im = ax[plot_index,0].plot([max_total_removable_power_times_volume]*2,[0,100],'--',color='gray');
 										im = ax[plot_index,0].plot([min_total_removable_power_times_volume]*2,[0,100],'--',color='gray');
@@ -5879,7 +6005,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										ax[plot_index,0].set_ylabel('normalised likelihood')
 										ax[plot_index,0].set_xlabel('Power [W/m3]')
 										ax[plot_index,0].set_xscale('log')
-										ax[plot_index,0].set_xlim(left=max(1,1e-1*np.min([most_likely_power_potential_mol_plasma_heating,most_likely_power_potential_mol_plasma_cooling,most_likely_power_potential_mol,most_likely_power_rad_excit,most_likely_power_rad_rec_bremm,most_likely_power_rad_mol,most_likely_power_via_ionisation,most_likely_power_via_recombination,most_likely_tot_rad_power,most_likely_power_heating_rec,most_likely_power_via_brem,most_likely_total_removed_power,most_likely_power_rec_neutral])))
+										ax[plot_index,0].set_xlim(left=max(1,1e-1*np.min([most_likely_power_potential_mol_plasma_heating,most_likely_power_potential_mol_plasma_cooling,most_likely_power_potential_mol,most_likely_power_rad_excit,most_likely_power_rad_rec_bremm,most_likely_power_rad_mol,most_likely_power_via_ionisation,most_likely_power_via_recombination,most_likely_tot_rad_power,most_likely_e_H__Hm_pv_power,most_likely_power_heating_rec,most_likely_power_via_brem,most_likely_total_removed_power,most_likely_power_rec_neutral])))
 										ax[plot_index,0].legend(loc='best', fontsize='x-small')
 										ax[plot_index,0].grid()
 
@@ -5895,16 +6021,20 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 
 										plot_index += 1
 										im = ax[plot_index,0].plot(nH_ne_values_full,100*temp_prob/max_temp_prob,color[0]+'+',label='nH_ne');
-										im = ax[plot_index,0].plot(record_nH_ne_log_prob[:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index].argmax(),100,color[0]+'x',markersize=30);
-										im = ax[plot_index,0].plot(most_likely_nH_ne_index,100,color[0]+'o',markersize=30,fillstyle='none');
+										im = ax[plot_index,0].axvline(x=record_nH_ne_log_prob[:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index].argmax(),linestyle='-',color=color[0])
+										im = ax[plot_index,0].axvline(x=most_likely_nH_ne_index,linestyle='--',color=color[0])
+										im = ax[plot_index,0].axvline(x=H_steps,linestyle='-.',color=color[0])
 										im = ax[plot_index,0].plot(nHm_ne_values_full,100*temp_prob/max_temp_prob,color[1]+'+',label='nHm_nH2');
-										im = ax[plot_index,0].plot(most_likely_nHm_nH2_index,100,color[1]+'o',markersize=30,fillstyle='none');
+										im = ax[plot_index,0].axvline(x=most_likely_nHm_nH2_index,linestyle='--',color=color[1])
+										im = ax[plot_index,0].axvline(x=Hm_steps,linestyle='-.',color=color[1])
 										im = ax[plot_index,0].plot(nH2_ne_values_full,100*temp_prob/max_temp_prob,color[2]+'+',label='nH2_ne');
-										im = ax[plot_index,0].plot(record_nH_ne_log_prob[:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index].argmax(),100,color[2]+'x',markersize=30);
-										im = ax[plot_index,0].plot(most_likely_nH2_ne_index,100,color[2]+'o',markersize=30,fillstyle='none');
+										im = ax[plot_index,0].axvline(x=record_nH2_ne_log_prob[:,most_likely_ne_index*TS_Te_steps + most_likely_Te_index].argmax(),linestyle='-',color=color[2])
+										im = ax[plot_index,0].axvline(x=most_likely_nH2_ne_index,linestyle='--',color=color[2])
+										im = ax[plot_index,0].axvline(x=H2_steps,linestyle='-.',color=color[2])
 										im = ax[plot_index,0].plot(nH2p_ne_values_full,100*temp_prob/max_temp_prob,color[3]+'+',label='nH2p_nH2');
-										im = ax[plot_index,0].plot(most_likely_nH2p_nH2_index,100,color[3]+'o',markersize=30,fillstyle='none');
-										ax[plot_index,0].set_title('Relative densities for likelihood above %.3g' %(100/fraction_of_max_prob_selected) +'%'+' of of the PDF peak, O=ML, X=central')
+										im = ax[plot_index,0].axvline(x=most_likely_nH2p_nH2_index,linestyle='--',color=color[3])
+										im = ax[plot_index,0].axvline(x=H2p_steps,linestyle='-.',color=color[3])
+										ax[plot_index,0].set_title('Relative densities for likelihood above %.3g' %(100/fraction_of_max_prob_selected) +'%'+" of of the PDF peak, '--'=ML, '-'=central, '-.'=max")
 										ax[plot_index,0].set_ylabel('normalised likelihood')
 										ax[plot_index,0].set_xlabel('index')
 										# ax[plot_index,0].set_xscale('log')
@@ -6207,7 +6337,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 								if my_r_pos in sample_radious:
 									if to_print:
 										# tm.sleep(np.random.random()*10)
-										fig, ax = plt.subplots( 4,2,figsize=(25, 40), squeeze=False)
+										fig, ax = plt.subplots( 5,2,figsize=(25, 60), squeeze=False)
 										fig.suptitle('first scan\nmost_likely_nH_ne_value %.3g,most_likely_nHm_ne_value %.3g,most_likely_nH2_ne_value %.3g,most_likely_nH2p_ne_value %.3g' %(most_likely_nH_ne_value*most_likely_ne_value,most_likely_nHm_ne_value*most_likely_ne_value,most_likely_nH2_ne_value*most_likely_ne_value,most_likely_nH2p_ne_value*most_likely_ne_value) +'\nlines '+str(n_list_all)+'\nlocation [time, r]'+ ' [%.3g ms, ' % time_crop[my_time_pos] + ' %.3g mm]' % (1000*r_crop[my_r_pos]) +' , [TS Te, TS ne] '+ ' [%.3g(ML %.3g) eV, ' %(merge_Te_prof_multipulse_interp_crop_limited_restrict,most_likely_Te_value) + '%.3g(ML %.3g) #10^20/m^3]' %(merge_ne_prof_multipulse_interp_crop_limited_restrict,most_likely_ne_value*1e-20) +'\nfit [nH/ne, nH+/ne, nH-/ne, nH2/ne, nH2+/ne, nH3+/ne] , '+ '[%.3g, ' % most_likely_nH_ne_value + '%.3g, ' %(1 - most_likely_nH2p_ne_value + most_likely_nHm_ne_value)+ '%.3g, ' % most_likely_nHm_ne_value+ '%.3g, ' % most_likely_nH2_ne_value+ '%.3g, ' % most_likely_nH2p_ne_value+ '%.3g]' % 0+'\nBest index: [nH/ne,nH-/ne,nH2/ne,nH2+/ne,ne,Te] [%.3g,%.3g,%.3g,%.3g,%.3g,%.3g]' %(most_likely_nH_ne_index,most_likely_nHm_nH2_index,most_likely_nH2_ne_index,most_likely_nH2p_nH2_index,most_likely_ne_index,most_likely_Te_index)+'\nMarginalised best index: [nH/ne,nH-/ne,nH2+/ne] [%.3g,%.3g,%.3g]' %(most_likely_marginalised_nH_ne_index,most_likely_marginalised_nHm_nH2_index,most_likely_marginalised_nH2p_nH2_index))
 										plot_index = 0
 										# color = ['b', 'r', 'm', 'y', 'g', 'c', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
@@ -6280,6 +6410,9 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										# im = ax[plot_index,0].plot(most_likely_power_potential_mol_plasma_cooling,100,'o',color=color[15],markersize=10,fillstyle='none');
 										im = ax[plot_index,0].axvline(x=most_likely_power_potential_mol_plasma_cooling,linestyle='--',color=color[15])
 										# im = ax[plot_index,0].plot([interpolated_power_pulse_shape(time_crop[my_time_pos])/source_power_spread/area/length]*2,[0,100],'k--');
+										im = ax[plot_index,0].plot(np.sort(intervals_e_H__Hm_pv_power.tolist()*2)[1:-1],100*np.array([prob_e_H__Hm_pv_power.tolist()]*2).T.flatten(),color=color[16],label='e_H__Hm_pv_power');
+										im = ax[plot_index,0].plot(actual_values_e_H__Hm_pv_power,100*prob_e_H__Hm_pv_power,'+',color=color[16],markersize=5);
+										# im = ax[plot_index,0].plot(most_likely_e_H__Hm_pv_power,100,color[16]+'o',markersize=10,fillstyle='none');
 										im = ax[plot_index,0].axvline(x=most_likely_total_removable_power_times_volume,linestyle='--',color='k');
 										im = ax[plot_index,0].axvline(x=max_total_removable_power_times_volume,linestyle='--',color='gray');
 										im = ax[plot_index,0].axvline(x=min_total_removable_power_times_volume,linestyle='--',color='gray');
@@ -6289,7 +6422,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										ax[plot_index,0].set_xscale('log')
 										ax[plot_index,0].legend(loc='best', fontsize='x-small')
 										# ax[plot_index,0].set_xlim(left=1e-1*np.min([most_likely_power_rad_excit,most_likely_power_rad_rec_bremm,most_likely_power_rad_mol,most_likely_power_via_ionisation,most_likely_power_via_recombination,most_likely_tot_rad_power]))
-										temp = [most_likely_total_removed_power,most_likely_power_potential_mol_plasma_heating,most_likely_power_potential_mol_plasma_cooling,most_likely_power_potential_mol,most_likely_power_rad_excit,most_likely_power_rad_rec_bremm,most_likely_power_rad_mol,most_likely_power_via_ionisation,most_likely_power_via_recombination,most_likely_tot_rad_power,most_likely_power_heating_rec,most_likely_power_rec_neutral,most_likely_power_via_brem,most_likely_total_removed_power]
+										temp = [most_likely_total_removed_power,most_likely_power_potential_mol_plasma_heating,most_likely_power_potential_mol_plasma_cooling,most_likely_power_potential_mol,most_likely_power_rad_excit,most_likely_power_rad_rec_bremm,most_likely_power_rad_mol,most_likely_power_via_ionisation,most_likely_power_via_recombination,most_likely_tot_rad_power,most_likely_e_H__Hm_pv_power,most_likely_power_heating_rec,most_likely_power_rec_neutral,most_likely_power_via_brem,most_likely_total_removed_power]
 										ax[plot_index,0].set_xlim(left=np.max([1,1e-1*np.min(temp),1e2*np.max(temp)*1e-5]),right=1e2*np.max(temp))
 										ax[plot_index,0].grid()
 
@@ -6297,6 +6430,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										temp_2 = np.exp(temp_2-np.log(np.sum(np.exp(temp_2))))
 										im = ax[plot_index,1].plot(Te_values_array,100*temp_2,'b');
 										im = ax[plot_index,1].plot(Te_values_array,100*temp_2,'xb');
+										im = ax[plot_index,1].plot(Te_values_array_initial,100*np.exp(marginalised_log_prob_Te)/np.sum(np.exp(marginalised_log_prob_Te)),'r');
 										im = ax[plot_index,1].plot(Te_additional_values,np.zeros_like(Te_additional_values),'ob');
 										# im = ax[plot_index,1].plot(most_likely_Te_value,100,'ko',markersize=30,fillstyle='none');
 										# im = ax[plot_index,1].plot(merge_Te_prof_multipulse_interp_crop_limited_restrict,100,'kx',markersize=30);
@@ -6309,7 +6443,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										im = ax[plot_index,1].axvline(x=np.max(Te_values_limits),linestyle='--',color='y')
 										im = ax[plot_index,1].plot(np.sort(intervals_Te_values.tolist()*2)[1:-1],100*np.array([prob_Te_values.tolist()]*2).T.flatten(),color='m');
 										im = ax[plot_index,1].plot(actual_values_Te_values,100*prob_Te_values,'+',color='m',markersize=5);
-										ax[plot_index,1].set_title('Te at highest likelihood with precision\n :=prior PDF, "--"=ML+sigma, "-."=TS')
+										ax[plot_index,1].set_title('Te at highest likelihood with precision\n :=prior PDF, "--"=ML+sigma, "-."=TS, "r"=first loop marg.')
 										ax[plot_index,1].set_ylabel('normalised likelihood')
 										ax[plot_index,1].set_xlabel('temperature [eV]')
 										# ax[plot_index,0].set_xscale('log')
@@ -6372,6 +6506,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										temp_2 = np.exp(temp_2-np.log(np.sum(np.exp(temp_2))))
 										im = ax[plot_index,1].plot(ne_values_array,100*temp_2,'b');
 										im = ax[plot_index,1].plot(ne_values_array,100*temp_2,'xb');
+										im = ax[plot_index,1].plot(ne_values_array_initial,100*np.exp(marginalised_log_prob_ne)/np.sum(np.exp(marginalised_log_prob_ne)),'r');
 										im = ax[plot_index,1].plot(ne_additional_values,np.zeros_like(ne_additional_values),'ob');
 										im = ax[plot_index,1].axvline(x=most_likely_ne_value,linestyle='--',color='k')
 										im = ax[plot_index,1].axvline(x=merge_ne_prof_multipulse_interp_crop_limited_restrict*1e20,linestyle='-.',color='k')
@@ -6382,7 +6517,7 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 										im = ax[plot_index,1].axvline(x=np.max(ne_values_limits),linestyle='--',color='y');
 										im = ax[plot_index,1].plot(np.sort(intervals_ne_values.tolist()*2)[1:-1],100*np.array([prob_ne_values.tolist()]*2).T.flatten(),color='m');
 										im = ax[plot_index,1].plot(actual_values_ne_values,100*prob_ne_values,'+',color='m',markersize=5);
-										ax[plot_index,1].set_title('ne at highest likelihood with precision\n :=prior PDF, "--"=ML+sigma, "-."=TS')
+										ax[plot_index,1].set_title('ne at highest likelihood with precision\n :=prior PDF, "--"=ML+sigma, "-."=TS, "r"=first loop marg.')
 										ax[plot_index,1].set_ylabel('normalised likelihood')
 										ax[plot_index,1].set_xlabel('density [#/m3]')
 										ax[plot_index,1].set_xscale('log')
@@ -6466,6 +6601,47 @@ for merge_ID_target in merge_ID_target_multipulse:  # 88 excluded because I don'
 											im = ax[plot_index,1].axvline(x=total_removable_H2p[non_zero_prob_select].max(),linestyle='--',color='gray');
 											im = ax[plot_index,1].axvline(x=total_removable_H2p[non_zero_prob_select].min(),linestyle='--',color='gray');
 											ax[plot_index,1].set_title('H2+ balance within time and volume step\ngreen=creation, red=destruction\nsigma: molecular %.3g%%, atomic %.3g%%, budget %.3g%%' %(particle_molecular_precision*100,particle_atomic_precision*100,particle_molecular_budget_precision*100))
+											ax[plot_index,1].set_ylabel('normalised likelihood PDF')
+											ax[plot_index,1].set_xlabel('particles [#*10^20]')
+											ax[plot_index,1].set_xscale('log')
+											# ax[plot_index,0].legend(loc='best', fontsize='x-small')
+											ax[plot_index,1].grid()
+
+											plot_index += 1
+											if most_likely_net_H_destruction<=0:
+												im = ax[plot_index,0].axvline(x=-most_likely_net_H_destruction,linestyle='--',color='g')
+											else:
+												im = ax[plot_index,0].axvline(x=most_likely_net_H_destruction,linestyle='--',color='r')
+											# im = ax[plot_index,0].plot(np.sort(intervals_net_H_destruction.tolist()*2)[1:-1],100*np.array([prob_net_H_destruction.tolist()]*2).T.flatten(),color='m');
+											# im = ax[plot_index,0].plot(actual_values_net_H_destruction,100*prob_net_H_destruction,'+',color='m',markersize=5);
+											im = ax[plot_index,0].plot(np.sort(intervals_net_H_destruction[intervals_net_H_destruction>=0].tolist()*2)[1:-1],100*np.array([prob_net_H_destruction[(intervals_net_H_destruction>=0)[:-1]].tolist()]*2).T.flatten(),color='r');
+											im = ax[plot_index,0].plot(-np.sort(intervals_net_H_destruction[intervals_net_H_destruction<=0].tolist()*2)[1:-1],100*np.array([prob_net_H_destruction[(intervals_net_H_destruction<=0)[1:]].tolist()]*2).T.flatten(),color='g');
+											im = ax[plot_index,0].plot(-actual_values_net_H_destruction[actual_values_net_H_destruction<=0],100*prob_net_H_destruction[actual_values_net_H_destruction<=0],'+',color='g',markersize=5);
+											im = ax[plot_index,0].plot(actual_values_net_H_destruction[actual_values_net_H_destruction>=0],100*prob_net_H_destruction[actual_values_net_H_destruction>=0],'+',color='r',markersize=5);
+											im = ax[plot_index,0].axvline(x=most_likely_total_removable_H,linestyle='--',color='k');
+											im = ax[plot_index,0].axvline(x=total_removable_H[non_zero_prob_select].max(),linestyle='--',color='gray');
+											im = ax[plot_index,0].axvline(x=total_removable_H[non_zero_prob_select].min(),linestyle='--',color='gray');
+											ax[plot_index,0].set_title('H balance within time and volume step\ngreen=creation, red=destruction')
+											ax[plot_index,0].set_ylabel('normalised likelihood')
+											ax[plot_index,0].set_xlabel('particles [#*10^20]')
+											ax[plot_index,0].set_xscale('log')
+											# ax[plot_index,0].legend(loc='best', fontsize='x-small')
+											ax[plot_index,0].grid()
+
+											if most_likely_net_H2_destruction<=0:
+												im = ax[plot_index,1].axvline(x=-most_likely_net_H2_destruction,linestyle='--',color='g')
+											else:
+												im = ax[plot_index,1].axvline(x=most_likely_net_H2_destruction,linestyle='--',color='r')
+											# im = ax[plot_index,1].plot(np.sort(intervals_net_H2_destruction.tolist()*2)[1:-1],100*np.array([prob_net_H2_destruction.tolist()]*2).T.flatten(),color='m');
+											# im = ax[plot_index,1].plot(actual_values_net_H2_destruction,100*prob_net_H2_destruction,'+',color='m',markersize=5);
+											im = ax[plot_index,1].plot(np.sort(intervals_net_H2_destruction[intervals_net_H2_destruction>=0].tolist()*2)[1:-1],100*np.array([prob_net_H2_destruction[(intervals_net_H2_destruction>=0)[:-1]].tolist()]*2).T.flatten(),color='r');
+											im = ax[plot_index,1].plot(-np.sort(intervals_net_H2_destruction[intervals_net_H2_destruction<=0].tolist()*2)[1:-1],100*np.array([prob_net_H2_destruction[(intervals_net_H2_destruction<=0)[1:]].tolist()]*2).T.flatten(),color='g');
+											im = ax[plot_index,1].plot(-actual_values_net_H2_destruction[actual_values_net_H2_destruction<=0],100*prob_net_H2_destruction[actual_values_net_H2_destruction<=0],'+',color='g',markersize=5);
+											im = ax[plot_index,1].plot(actual_values_net_H2_destruction[actual_values_net_H2_destruction>=0],100*prob_net_H2_destruction[actual_values_net_H2_destruction>=0],'+',color='r',markersize=5);
+											im = ax[plot_index,1].axvline(x=most_likely_total_removable_H2,linestyle='--',color='k');
+											im = ax[plot_index,1].axvline(x=total_removable_H2[non_zero_prob_select].max(),linestyle='--',color='gray');
+											im = ax[plot_index,1].axvline(x=total_removable_H2[non_zero_prob_select].min(),linestyle='--',color='gray');
+											ax[plot_index,1].set_title('H2 balance within time and volume step\ngreen=creation, red=destruction')
 											ax[plot_index,1].set_ylabel('normalised likelihood PDF')
 											ax[plot_index,1].set_xlabel('particles [#*10^20]')
 											ax[plot_index,1].set_xscale('log')

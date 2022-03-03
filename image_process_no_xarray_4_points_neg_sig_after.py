@@ -1783,6 +1783,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 					try:
 						if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
 							fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7,maxfev=1e5)
+							# verified 2022/01/17. it could be sped up with scipy.optimize.fmin_l_bfgs_b but it actually works fine, so I won't
 						else:
 							fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5,maxfev=1e5)
 						return z,fit[0][-1],fit[1][-1,-1]**0.5,output(fit[0])
@@ -1805,7 +1806,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 						# guess = fit.x
 						# print(fit.x)
 						# plt.figure();plt.tricontourf(merge_time_selected,merge_row_selected,values);plt.colorbar();plt.plot(merge_time_selected,merge_row_selected,'+k');index+=1;plt.savefig('/home/ffederic/work/Collaboratory/image'+str(index)+ '.eps',bbox_inches='tight');plt.close()
-						# plt.figure();plt.tricontourf(merge_time_selected,merge_row_selected,polynomial_2D([merge_time_selected,merge_row_selected],fit.x));plt.colorbar();plt.plot(merge_time_selected,merge_row_selected,'+k');index+=1;plt.savefig('/home/ffederic/work/Collaboratory/image'+str(index)+ '.eps',bbox_inches='tight');plt.close()
+						# plt.figure();plt.tricontourf(merge_time_selected,merge_row_selected,polynomial_2D_1([merge_time_selected,merge_row_selected,interpolated_time,interpolated_row],fit[0]).astype(float));plt.colorbar();plt.plot(merge_time_selected,merge_row_selected,'+k');index+=1;plt.savefig('/home/ffederic/work/Collaboratory/image'+str(index)+ '.eps',bbox_inches='tight');plt.close()
 						# # plt.pause(0.01)
 						# composed_array[i,j,z] = polynomial_2D([interpolated_time,interpolated_row],fit.x)
 						return z,fit.x[-1],pcov[-1,-1]**0.5,output(fit.x)

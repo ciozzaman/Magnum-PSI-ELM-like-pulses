@@ -8,7 +8,7 @@ number_cpu_available = 8	#cpu_count()
 import numpy as np
 
 # overwrite_everything = [False, False, False, False, False]
-overwrite_everything = [True, True, True, True, True]
+overwrite_everything = [False, True, True, True, True]
 # this is for, in order:
 # ... merge_tot.npz'
 # ... composed_array.npy' and ...new_timesteps

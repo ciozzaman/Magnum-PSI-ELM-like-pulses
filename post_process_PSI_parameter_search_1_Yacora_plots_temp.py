@@ -2,8 +2,8 @@
 # This is an extract from post_process_PSI_parameter_search_1_Yacora.py
 # only to have them in a separate place.
 
-# TEMPORARY!
-number_cpu_available = 8
+# # TEMPORARY!
+# number_cpu_available = 8
 
 mkl.set_num_threads(number_cpu_available)
 for i in range(2):
@@ -1091,7 +1091,7 @@ if initial_conditions:
 	# this is used for the determination of the ranges of H (it fits better in post_process_PSI_parameter_search_Yacora_final.py, but it's here...)
 	max_H2_available = (source_flow_rate + feed_rate_SLM) /60/1000 * 101325/(273*boltzmann_constant_J) * 0.001 + np.pi*(0.25**2)*target_chamber_length*target_chamber_pressure/(273*boltzmann_constant_J)	# #
 	max_H2_density_available = max_H2_available/(np.pi*(0.02**2)*length)	# #/m3
-	max_H_density_available = 3*max_H2_density_available	# #/m3
+	max_H_density_available = 1e25	# I want to get rid of this without changing the code	#	10*max_H2_density_available	# #/m3
 
 else:
 

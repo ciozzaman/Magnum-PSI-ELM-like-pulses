@@ -944,14 +944,18 @@ plt.pause(0.001)
 # Here I want to parametrise the ELMs to compare them with tokamaks
 color = ['b', 'r', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
 
-merge_ID_target_multipulse_all = [[99,98,96,97],[95,89,88,87,86,85,90,91,92],[75,76,77,78,79,80,81,82,83,101],[66,67,68,69,70,74]]
-# merge_ID_target_multipulse_all = [[99,98,96,97],[95,89,88,87,86,85,90,91,92],[75,76,77,78,79,80,81,82,83,101]]
-# merge_ID_target_multipulse = [99,98,96,97]
+# merge_ID_target_multipulse_all = [[99,98,96,97],[95,89,88,87,86,85,90,91,92],[75,76,77,78,79,80,81,82,83,101],[66,67,68,69,70,74]]
+merge_ID_target_multipulse_all = [[99,98,96,97],[95,89,88,87,86,85,92],[75,76,77,78,79,80,83,101],[68,69,70,74]]	# cases where the area could be calculated
+# merge_ID_target_multipulse_all = [[99,98,96,97]]
 fig, ax = plt.subplots( 3,1,figsize=(10, 12), squeeze=False, sharex=True)
 fig4, ax4 = plt.subplots( 2,1,figsize=(10, 9), squeeze=False, sharex=True)
 fig2, ax2 = plt.subplots( 1,1,figsize=(10, 9), squeeze=False)
 fig3, ax3 = plt.subplots( 1,1,figsize=(10, 9), squeeze=False)
-
+fig5, ax5 = plt.subplots( 1,1,figsize=(10, 9), squeeze=False)
+j_specific_CB_voltage = []
+j_specific_magnetic_field = []
+j_specific_pulse_en_semi_inf3 = []
+j_specific_target_chamber_pressure2 = []
 for index,merge_ID_target_multipulse in enumerate(merge_ID_target_multipulse_all):
 	j_specific_pulse_en_semi_inf = []
 	j_specific_pulse_en_semi_inf_sigma = []
@@ -971,12 +975,13 @@ for index,merge_ID_target_multipulse in enumerate(merge_ID_target_multipulse_all
 	j_specific_target_chamber_pressure = []
 	j_specific_area_ratio_IR = []
 	j_specific_area_ratio_IR_sigma = []
+	j_specific_SS_area = []
+	j_specific_SS_area_sigma = []
 
 	for merge_ID_target in merge_ID_target_multipulse:
-		print('Looking at '+str(merge_ID_target))
 		all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
 
-		if merge_ID_target != 88:
+		if merge_ID_target != 88 and False:	# TEMPORARY, because it takes too long
 			temp = energy_flow_from_TS_at_sound_speed(merge_ID_target,interpolated_TS=True)
 			temp[1][temp[1]>0]-=np.mean(temp[1][temp[0]<=0])
 			temp1=np.cumsum(temp[1])
@@ -993,11 +998,14 @@ for index,merge_ID_target_multipulse in enumerate(merge_ID_target_multipulse_all
 			IR_trace, = df_log.loc[j,['IR_trace']]
 			magnetic_field.append(df_log.loc[j,['B']][0])
 			if isinstance(IR_trace,str):
+				print('Looking at '+str(merge_ID_target)+' j='+str(j))
 				# print(j)
 				path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
-				full_saved_file_dict = dict(np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz'))
+				full_saved_file_dict = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')
 				full_saved_file_dict.allow_pickle = True
+				full_saved_file_dict = dict(full_saved_file_dict)
 				j_specific_pulse_en_semi_inf.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
+				j_specific_pulse_en_semi_inf3.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
 				temp4.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
 				j_specific_pulse_en_semi_inf_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_sigma'])
 				j_specific_energy_density.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density'])
@@ -1009,11 +1017,18 @@ for index,merge_ID_target_multipulse in enumerate(merge_ID_target_multipulse_all
 				j_specific_area_of_interest_IR_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_sigma'])
 				if not np.isnan(full_saved_file_dict['average_pulse_SS'].all()['area_of_interest']):
 					if (full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'] / full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'] >0.5):
+					# if full_saved_file_dict['average_pulse_SS'].all()['area_of_interest']>1e-5:
+					# 	if full_saved_file_dict['average_pulse_SS'].all()['area_of_interest_sigma']>1e-5:
 						j_specific_area_ratio_IR.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'] / full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'])
 						j_specific_area_ratio_IR_sigma.append( full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'] / full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'] *( (full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_sigma']/full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'])**2 + (full_saved_file_dict['average_pulse_SS'].all()['area_of_interest_sigma']/full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'])**2 )**0.5)
+						j_specific_SS_area.append(full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'])
+						j_specific_SS_area_sigma.append(full_saved_file_dict['average_pulse_SS'].all()['area_of_interest_sigma'])
 						j_specific_pulse_en_semi_inf2.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
 						j_specific_pulse_en_semi_inf_sigma2.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_sigma'])
 				j_specific_target_chamber_pressure.append(df_log.loc[j,['p_n [Pa]']][0])
+				j_specific_target_chamber_pressure2.append(df_log.loc[j,['p_n [Pa]']][0])
+				j_specific_CB_voltage.append(df_log.loc[all_j[0],['Vc']][0])
+				j_specific_magnetic_field.append(df_log.loc[j,['B']][0])
 				temp1.append(df_log.loc[j,['p_n [Pa]']][0])
 		target_chamber_pressure_2.append(np.nanmedian(temp1))
 		pulse_energy_density2.append(np.nanmedian(temp2))
@@ -1036,6 +1051,7 @@ for index,merge_ID_target_multipulse in enumerate(merge_ID_target_multipulse_all
 		ax4[1,0].errorbar(j_specific_pulse_en_semi_inf,1e6*np.array(j_specific_area_of_interest_IR),xerr=j_specific_pulse_en_semi_inf_sigma,yerr=1e6*np.array(j_specific_area_of_interest_IR_sigma),fmt='+',color=color[index],capsize=5)
 		temp = np.polyfit(j_specific_pulse_en_semi_inf,j_specific_area_of_interest_IR,1)
 		ax4[1,0].plot(np.sort(j_specific_pulse_en_semi_inf),1e6*np.polyval(temp,np.sort(j_specific_pulse_en_semi_inf)),'--',linewidth=4,color=color[index])
+		# ax4[1,0].errorbar(j_specific_pulse_en_semi_inf2,1e6*np.array(j_specific_SS_area),xerr=j_specific_pulse_en_semi_inf_sigma2,yerr=j_specific_SS_area_sigma,fmt='o',color=color[index],capsize=5)
 
 	ax2[0,0].errorbar(j_specific_target_chamber_pressure,1e-6*np.array(j_specific_energy_density)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),yerr=1e-6*np.array(j_specific_energy_density_sigma)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),fmt='+',color=color[index],capsize=5)
 	temp = np.array([y for _, y in sorted(zip(target_chamber_pressure_2, 1e-6*np.array(pulse_energy_density2)/np.array(TS_pulse_duration_at_max_power2)**0.5))])
@@ -1044,6 +1060,11 @@ for index,merge_ID_target_multipulse in enumerate(merge_ID_target_multipulse_all
 	ax3[0,0].errorbar(j_specific_target_chamber_pressure,j_specific_pulse_en_semi_inf,yerr=j_specific_pulse_en_semi_inf_sigma,fmt='+',color=color[index],capsize=5)
 	temp = np.array([y for _, y in sorted(zip(target_chamber_pressure_2, pulse_energy))])
 	ax3[0,0].plot(np.sort(target_chamber_pressure_2),temp,color=color[index],label='B=%.3gT' %(np.nanmedian(magnetic_field)))
+
+im = ax5[0,0].scatter(j_specific_magnetic_field,j_specific_target_chamber_pressure2,c=np.array(j_specific_pulse_en_semi_inf3)/(0.5*(np.array(j_specific_CB_voltage)**2)*150e-6),s=100,marker='s',cmap='rainbow')
+ax5[0,0].set_xlabel('Magnetic field [T]')
+ax5[0,0].set_ylabel('Target chamber pressure [Pa]')
+fig5.colorbar(im).set_label('Etarget/Epulse')
 
 ax[0,0].grid()
 ax[0,0].legend(loc='best', fontsize='small')
@@ -1066,6 +1087,7 @@ ax4[1,0].grid()
 ax4[0,0].set_ylabel('Heat flux factor\n[MJ/m2 s^-1/2]')
 ax4[1,0].set_ylabel('Interested area\nfound [mm2]')
 ax4[1,0].ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+ax4[1,0].set_xlabel('Pulse delivered energy [J]')
 ax4[0,0].set_xlim(left=-0.2,right=16)
 # ax4[1,0].set_xlim(left=0,right=15)
 ax4[0,0].set_ylim(bottom=-0.2,top=9)
