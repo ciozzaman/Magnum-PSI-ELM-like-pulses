@@ -284,13 +284,13 @@ for merge_ID_target in merge_ID_target_multipulse:
 			temp3.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
 			j_specific_pulse_en_semi_inf_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_sigma'])
 			temp5.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_sigma'])
-			j_specific_area_of_interest_IR.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'])
-			j_specific_area_of_interest_IR_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_sigma'])
+			j_specific_area_of_interest_IR.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit'])
+			j_specific_area_of_interest_IR_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit_sigma'])
 			j_specific_energy_density.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density'])
 			j_specific_energy_density_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density_sigma'])
 			temp10.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density'])
 			temp11.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density_sigma'])
-			temp4.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'])
+			temp4.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit'])
 			j_specific_pulse_t0_semi_inf.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_t0_semi_inf'])
 			j_specific_pulse_t0_semi_inf_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_t0_semi_inf_sigma'])
 			temp6.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_t0_semi_inf'])
@@ -339,6 +339,117 @@ for merge_ID_target in merge_ID_target_multipulse:
 # plt.pause(0.001)
 
 if True:	#			PLOTS FOR THE PAPER
+
+	# merge_ID_target_multipulse = [95,89,88,87,86]
+	merge_ID_target_multipulse = [95,89,88,87,86,85]
+	# merge_ID_target_multipulse = [99,98,96,97]
+	# merge_ID_target_multipulse = [66,67,68,69,70,74]
+
+	j_specific_target_chamber_pressure = []
+	j_specific_T_pre_pulse = []
+	target_chamber_pressure_2 = []
+	T_pre_pulse = []
+	j_specific_DT_pulse_late = []
+	j_specific_DT_pulse_late_sigma = []
+	DT_pulse_late = []
+	j_specific_pulse_en_semi_inf = []
+	j_specific_pulse_en_semi_inf_sigma = []
+	j_specific_pulse_en_SS = []
+	pulse_en_SS2 = []
+	pulse_en_semi_inf2 = []
+	magnetic_field = []
+	target_OES_distance = []
+	CB_pulse_energy = []
+	j_specific_energy_density = []
+	j_specific_energy_density_sigma = []
+	pulse_energy_density2 = []
+	pulse_energy_density_sigma2 = []
+	TS_pulse_duration_at_max_power = []
+	TS_pulse_duration_at_max_power2 = []
+	j_TS_pulse_duration_at_max_power = []
+	TS_time = []
+	energy_flow = []
+	TS_time_interp = []
+	energy_flow_interp = []
+	time_source_power = []
+	power_pulse_shape = []
+	j_specific_area_of_interest_IR = []
+	j_specific_area_of_interest_IR_sigma = []
+
+	for merge_ID_target in merge_ID_target_multipulse:
+		print('Looking at '+str(merge_ID_target))
+		all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
+		target_chamber_pressure_2.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
+		path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
+		full_saved_file_dict = np.load(path_where_to_save_everything+'/input_data'+'.npz')
+		full_saved_file_dict.allow_pickle = True
+		# full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2p_mol_lim/bayesian_results3'+'.npz')
+		if merge_ID_target != 88:
+			magnetic_field.append(np.float(results_summary.loc[merge_ID_target,['B']]))
+			target_OES_distance.append(np.float(results_summary.loc[merge_ID_target,['T_axial']]))
+			CB_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['CB energy [J]']]))
+			temp = energy_flow_from_TS_at_sound_speed(merge_ID_target,interpolated_TS=False)
+			TS_time.append(temp[0])
+			energy_flow.append(temp[1])
+			temp = energy_flow_from_TS_at_sound_speed(merge_ID_target,interpolated_TS=True)
+			TS_time_interp.append(temp[0])
+			energy_flow_interp.append(temp[1])
+			temp[1][temp[1]>0]-=np.mean(temp[1][temp[0]<=0])
+			temp1=np.cumsum(temp[1])
+			TS_pulse_duration_at_max_power.append(temp1.max()/np.max(temp[1])*np.median(np.diff(temp[0]))*1e-3)
+			TS_pulse_duration_at_max_power2.append(temp1.max()/np.max(temp[1])*np.median(np.diff(temp[0]))*1e-3)
+		else:
+			TS_pulse_duration_at_max_power.append(0.4e-3)
+
+
+		path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
+		full_saved_file_dict = np.load(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'.npz')
+		full_saved_file_dict.allow_pickle = True
+
+		temp1=[]
+		temp3=[]
+		temp5=[]
+		temp8=[]
+		temp9=[]
+		temp10=[]
+		temp11=[]
+		for j in all_j:
+			IR_trace, = df_log.loc[j,['IR_trace']]
+			if isinstance(IR_trace,str):
+				j_specific_target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
+
+				path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
+				full_saved_file_dict = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')
+				full_saved_file_dict.allow_pickle = True
+				full_saved_file_dict = dict(full_saved_file_dict)
+
+				j_specific_T_pre_pulse.append(full_saved_file_dict['average_pulse_peak_data'].all()['temperature']['steady_state'])
+				j_specific_DT_pulse_late.append(full_saved_file_dict['average_pulse_peak_data'].all()['temperature']['peak_plus_10_11'])
+				j_specific_DT_pulse_late_sigma.append(full_saved_file_dict['average_pulse_peak_data'].all()['temperature']['peak_plus_10_11_sigma'])
+				j_specific_pulse_en_semi_inf.append(full_saved_file_dict['average_pulse_peak_data'].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy'])
+				j_specific_pulse_en_semi_inf_sigma.append(full_saved_file_dict['average_pulse_peak_data'].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy_sigma'])
+				j_specific_pulse_en_SS.append(full_saved_file_dict['average_pulse_fitted_data'].all()['SS_Energy'])
+				temp1.append(full_saved_file_dict['average_pulse_peak_data'].all()['temperature']['steady_state'])
+				temp3.append(full_saved_file_dict['average_pulse_peak_data'].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy'])
+				temp5.append(full_saved_file_dict['average_pulse_peak_data'].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy_sigma'])
+				temp8.append(full_saved_file_dict['average_pulse_peak_data'].all()['temperature']['peak_plus_10_11'])
+				temp9.append(full_saved_file_dict['average_pulse_fitted_data'].all()['SS_Energy'])
+				j_specific_energy_density.append(full_saved_file_dict['average_pulse_peak_data'].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy_density'])
+				j_specific_energy_density_sigma.append(full_saved_file_dict['average_pulse_peak_data'].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy_density_sigma'])
+				temp10.append(full_saved_file_dict['average_pulse_peak_data'].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy_density'])
+				temp11.append(full_saved_file_dict['average_pulse_peak_data'].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy_density_sigma'])
+				j_TS_pulse_duration_at_max_power.append(TS_pulse_duration_at_max_power[-1])
+				j_specific_area_of_interest_IR.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit'])
+				j_specific_area_of_interest_IR_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit_sigma'])
+
+
+		T_pre_pulse.append(np.nanmean(temp1))
+		pulse_en_semi_inf2.append(np.nansum(np.divide(temp3,temp5))/np.nansum(np.divide(1,temp5)))
+		DT_pulse_late.append(np.nanmean(temp8))
+		pulse_en_SS2.append(np.nanmean(temp9))
+		pulse_energy_density2.append(np.nanmean(temp10))
+		pulse_energy_density_sigma2.append((np.nansum(np.isfinite(np.array(temp11,dtype=float)))/(np.nansum(np.divide(1,temp11))**2))**0.5)
+
 	fig, ax1 = plt.subplots(figsize=(12, 5))
 	fig.subplots_adjust(right=0.77)
 	ax1.set_title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field[0],target_OES_distance[0],(2*CB_pulse_energy[0]/150e-6)**0.5)+'\nIR data analysis\n ')
@@ -377,7 +488,7 @@ if True:	#			PLOTS FOR THE PAPER
 	handles, labels = ax2.get_legend_handles_labels()
 	handles.append(a3a)
 	labels.append(a3a.get_label())
-	ax2.legend(handles=handles, labels=labels, loc='upper center', fontsize='x-small')
+	ax2.legend(handles=handles, labels=labels, loc='upper right', fontsize='x-small')
 	ax1.set_ylim(bottom=0)
 	ax2.set_ylim(bottom=0)
 	ax3.set_ylim(bottom=0)
@@ -390,14 +501,16 @@ if True:	#			PLOTS FOR THE PAPER
 	fig, ax = plt.subplots( 2,1,figsize=(10, 9), squeeze=False, sharex=True)
 	fig.suptitle('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ\n ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
 	ax[0,0].errorbar(j_specific_pulse_en_semi_inf,1e-6*np.array(j_specific_energy_density)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),xerr=j_specific_pulse_en_semi_inf_sigma,yerr=1e-6*np.array(j_specific_energy_density_sigma)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),fmt='+',color='b',capsize=5)
+	ax[0,0].plot(j_specific_pulse_en_semi_inf,1e-6*np.array(j_specific_energy_density)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),'o',color='b')
 	temp = np.polyfit(j_specific_pulse_en_semi_inf,1e-6*np.array(j_specific_energy_density)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),1)
 	ax[0,0].plot(np.sort(j_specific_pulse_en_semi_inf),np.polyval(temp,np.sort(j_specific_pulse_en_semi_inf)),'--b')
 	ax[1,0].errorbar(j_specific_pulse_en_semi_inf,j_specific_area_of_interest_IR,xerr=j_specific_pulse_en_semi_inf_sigma,yerr=j_specific_area_of_interest_IR_sigma,fmt='+',color='r',capsize=5)
+	ax[1,0].plot(j_specific_pulse_en_semi_inf,j_specific_area_of_interest_IR,'o',color='r')
 	temp = np.polyfit(j_specific_pulse_en_semi_inf,j_specific_area_of_interest_IR,1)
 	ax[1,0].plot(np.sort(j_specific_pulse_en_semi_inf),np.polyval(temp,np.sort(j_specific_pulse_en_semi_inf)),'--r')
 	ax[0,0].grid()
 	ax[1,0].grid()
-	ax[0,0].set_ylabel('Heat flux factor [MJ s^-1/2]')
+	ax[0,0].set_ylabel('Heat flux factor [MJ m^-2 s^-1/2]')
 	ax[1,0].set_ylabel('Interested area found [mm2]')
 	ax[1,0].ticklabel_format(axis="y", style="sci", scilimits=(0,0))
 	ax[1,0].set_xlabel('Pulse energy [J]')
@@ -866,6 +979,37 @@ plt.ylabel('power-power SS [W]')
 plt.xlabel('time from the beginning of the pulse [ms]')
 plt.pause(0.001)
 
+# merge_ID_target_multipulse = [95,89,88,87,86]
+merge_ID_target_multipulse = [95,89,88,87,86,85]
+# merge_ID_target_multipulse = [99,98,96,97]
+# merge_ID_target_multipulse = [66,67,68,69,70,74]
+
+target_chamber_pressure = []
+TS_time = []
+energy_flow = []
+TS_time_interp = []
+energy_flow_interp = []
+time_source_power = []
+power_pulse_shape = []
+
+for merge_ID_target in merge_ID_target_multipulse:
+	print('Looking at '+str(merge_ID_target))
+	all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
+	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
+	full_saved_file_dict = np.load(path_where_to_save_everything+'/input_data'+'.npz')
+	full_saved_file_dict.allow_pickle = True
+	if merge_ID_target != 88:
+		target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
+		time_source_power.append(full_saved_file_dict['input_power'].all()['TS']['time_source_power'])
+		power_pulse_shape.append(full_saved_file_dict['input_power'].all()['TS']['power_pulse_shape'])
+		temp = energy_flow_from_TS_at_sound_speed(merge_ID_target,interpolated_TS=False)
+		TS_time.append(temp[0])
+		energy_flow.append(temp[1])
+		temp = energy_flow_from_TS_at_sound_speed(merge_ID_target,interpolated_TS=True)
+		TS_time_interp.append(temp[0])
+		energy_flow_interp.append(temp[1])
+
+
 record=[]
 record_interp=[]
 plt.figure(figsize=(10, 5))
@@ -873,15 +1017,16 @@ for index in range(len(target_chamber_pressure)):
 	temp=cp.deepcopy(energy_flow[index])/np.median(np.diff(TS_time[index]))*1e3
 	# temp[temp>0]-=np.mean(energy_flow[index][TS_time[index]<=0])/np.median(np.diff(TS_time[index]))*1e3
 	temp[temp<1e-6]=0
-	temp[(temp>0).argmax()-1]=0.1
-	record.append(np.interp(10e3,temp[temp>0][:(np.diff(temp[temp>0])<0).argmax()],TS_time[index][temp>0][:(np.diff(temp[temp>0])<0).argmax()]))
-	plt.plot(TS_time[index],temp,color=color[index],label='%.3gPa' %(target_chamber_pressure[index]))
+	# temp[(temp>0).argmax()-1]=0.1
+	record.append(np.interp(5e3,temp[temp>0][:(np.diff(temp[temp>0])<0).argmax()]-temp[0],TS_time[index][temp>0][:(np.diff(temp[temp>0])<0).argmax()]))
+	plt.plot(TS_time[index],temp-temp[0],color=color[index],label='%.3gPa' %(target_chamber_pressure[index]))
 	temp=cp.deepcopy(energy_flow_interp[index])/np.median(np.diff(TS_time[index]))*1e3
 	# temp[temp>0]-=np.mean(energy_flow_interp[index][TS_time_interp[index]<=0])/np.median(np.diff(TS_time_interp[index]))*1e3
 	temp[temp<1e-6]=0
-	temp[(temp>0).argmax()-1]=0.1
-	record_interp.append(np.interp(10e3,temp[temp>0][:(np.diff(temp[temp>0])<0).argmax()],TS_time_interp[index][temp>0][:(np.diff(temp[temp>0])<0).argmax()]))
-	plt.plot(TS_time_interp[index],temp,'--',color=color[index])
+	# temp[(temp>0).argmax()-1]=0.1
+	temp[0] = temp[1]*0.999
+	record_interp.append(np.interp(5e3,temp[temp>0][:(np.diff(temp[temp>0])<0).argmax()]-temp[0],TS_time_interp[index][temp>0][:(np.diff(temp[temp>0])<0).argmax()]))
+	plt.plot(TS_time_interp[index],temp-temp[0],'--',color=color[index])
 plt.legend()
 plt.legend(loc='best', fontsize='small')
 plt.title('en=(1/2m*cs^2 + 5kTe +diss+ioniz)*ne*cs*1')
@@ -892,11 +1037,14 @@ plt.grid()
 plt.pause(0.001)
 
 plt.figure(figsize=(10, 5))
-plt.plot(target_chamber_pressure,record)
-plt.plot(target_chamber_pressure,record_interp,'--')
-plt.title('-=untreated TS, --=interpolated TS')
-plt.ylabel('time delay to reach 200W [ms]')
+plt.plot(target_chamber_pressure,record,'C0',label='raw TS')
+plt.plot(target_chamber_pressure,record,'+C0')
+plt.plot(target_chamber_pressure,record_interp,'--C1',label='smoothed TS')
+plt.plot(target_chamber_pressure,record_interp,'+C1')
+plt.title('time delay to increase energy flow of 5kW over steady state')
+plt.ylabel('time delay [ms]')
 plt.xlabel('Target chamber pressure [Pa]')
+plt.legend(loc='best', fontsize='small')
 plt.grid()
 plt.pause(0.001)
 
@@ -945,7 +1093,8 @@ plt.pause(0.001)
 color = ['b', 'r', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
 
 # merge_ID_target_multipulse_all = [[99,98,96,97],[95,89,88,87,86,85,90,91,92],[75,76,77,78,79,80,81,82,83,101],[66,67,68,69,70,74]]
-merge_ID_target_multipulse_all = [[99,98,96,97],[95,89,88,87,86,85,92],[75,76,77,78,79,80,83,101],[68,69,70,74]]	# cases where the area could be calculated
+merge_ID_target_multipulse_all = [[99,98,96,97],[95,89,88,87,86,85,92],[75,76,77,78,79,101],[66,67,68,69,70],[74]]	# cases where the area could be calculated
+data_type = 'average_pulse_peak_data'	# 'average_pulse_fitted_data'
 # merge_ID_target_multipulse_all = [[99,98,96,97]]
 fig, ax = plt.subplots( 3,1,figsize=(10, 12), squeeze=False, sharex=True)
 fig4, ax4 = plt.subplots( 2,1,figsize=(10, 9), squeeze=False, sharex=True)
@@ -995,36 +1144,40 @@ for index,merge_ID_target_multipulse in enumerate(merge_ID_target_multipulse_all
 		temp4 = []
 
 		for j in all_j:
+			target_type, = df_log.loc[j,['Target']]
 			IR_trace, = df_log.loc[j,['IR_trace']]
 			magnetic_field.append(df_log.loc[j,['B']][0])
 			if isinstance(IR_trace,str):
 				print('Looking at '+str(merge_ID_target)+' j='+str(j))
 				# print(j)
 				path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
-				full_saved_file_dict = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')
+				try:
+					full_saved_file_dict = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')
+				except:
+					continue
 				full_saved_file_dict.allow_pickle = True
 				full_saved_file_dict = dict(full_saved_file_dict)
-				j_specific_pulse_en_semi_inf.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
-				j_specific_pulse_en_semi_inf3.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
-				temp4.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
-				j_specific_pulse_en_semi_inf_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_sigma'])
-				j_specific_energy_density.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density'])
-				temp2.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density'])
-				j_specific_energy_density_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density_sigma'])
+				j_specific_pulse_en_semi_inf.append(full_saved_file_dict[data_type].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy'])
+				j_specific_pulse_en_semi_inf3.append(full_saved_file_dict[data_type].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy'])
+				temp4.append(full_saved_file_dict[data_type].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy'])
+				j_specific_pulse_en_semi_inf_sigma.append(full_saved_file_dict[data_type].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy_sigma'])
+				j_specific_energy_density.append(full_saved_file_dict[data_type].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy_density'])
+				temp2.append(full_saved_file_dict[data_type].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy_density'])
+				j_specific_energy_density_sigma.append(full_saved_file_dict[data_type].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy_density_sigma'])
 				j_TS_pulse_duration_at_max_power.append(TS_pulse_duration_at_max_power[-1])
 				temp3.append(TS_pulse_duration_at_max_power[-1])
-				j_specific_area_of_interest_IR.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'])
-				j_specific_area_of_interest_IR_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_sigma'])
+				j_specific_area_of_interest_IR.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit'])
+				j_specific_area_of_interest_IR_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit_sigma'])
 				if not np.isnan(full_saved_file_dict['average_pulse_SS'].all()['area_of_interest']):
-					if (full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'] / full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'] >0.5):
+					if (full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit'] / full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'] >0.5):
 					# if full_saved_file_dict['average_pulse_SS'].all()['area_of_interest']>1e-5:
 					# 	if full_saved_file_dict['average_pulse_SS'].all()['area_of_interest_sigma']>1e-5:
-						j_specific_area_ratio_IR.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'] / full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'])
-						j_specific_area_ratio_IR_sigma.append( full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'] / full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'] *( (full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_sigma']/full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'])**2 + (full_saved_file_dict['average_pulse_SS'].all()['area_of_interest_sigma']/full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'])**2 )**0.5)
+						j_specific_area_ratio_IR.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit'] / full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'])
+						j_specific_area_ratio_IR_sigma.append( full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit'] / full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'] *( (full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit_sigma']/full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit'])**2 + (full_saved_file_dict['average_pulse_SS'].all()['area_of_interest_sigma']/full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'])**2 )**0.5)
 						j_specific_SS_area.append(full_saved_file_dict['average_pulse_SS'].all()['area_of_interest'])
 						j_specific_SS_area_sigma.append(full_saved_file_dict['average_pulse_SS'].all()['area_of_interest_sigma'])
-						j_specific_pulse_en_semi_inf2.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy'])
-						j_specific_pulse_en_semi_inf_sigma2.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_sigma'])
+						j_specific_pulse_en_semi_inf2.append(full_saved_file_dict[data_type].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy'])
+						j_specific_pulse_en_semi_inf_sigma2.append(full_saved_file_dict[data_type].all()['energy_fit_gaussian_beam_truangular_wave_only_after']['pulse_energy_sigma'])
 				j_specific_target_chamber_pressure.append(df_log.loc[j,['p_n [Pa]']][0])
 				j_specific_target_chamber_pressure2.append(df_log.loc[j,['p_n [Pa]']][0])
 				j_specific_CB_voltage.append(df_log.loc[all_j[0],['Vc']][0])
@@ -1055,11 +1208,11 @@ for index,merge_ID_target_multipulse in enumerate(merge_ID_target_multipulse_all
 
 	ax2[0,0].errorbar(j_specific_target_chamber_pressure,1e-6*np.array(j_specific_energy_density)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),yerr=1e-6*np.array(j_specific_energy_density_sigma)/(np.array(j_TS_pulse_duration_at_max_power)**0.5),fmt='+',color=color[index],capsize=5)
 	temp = np.array([y for _, y in sorted(zip(target_chamber_pressure_2, 1e-6*np.array(pulse_energy_density2)/np.array(TS_pulse_duration_at_max_power2)**0.5))])
-	ax2[0,0].plot(np.sort(target_chamber_pressure_2),temp,color=color[index],label='B=%.3gT' %(np.nanmedian(magnetic_field)))
+	ax2[0,0].plot(np.sort(target_chamber_pressure_2),temp,color=color[index],label='B=%.3gT, CB=%.3gV, target ' %(np.nanmedian(magnetic_field),j_specific_CB_voltage[-1]) + str(target_type)+', cases '+str(merge_ID_target_multipulse))
 
 	ax3[0,0].errorbar(j_specific_target_chamber_pressure,j_specific_pulse_en_semi_inf,yerr=j_specific_pulse_en_semi_inf_sigma,fmt='+',color=color[index],capsize=5)
 	temp = np.array([y for _, y in sorted(zip(target_chamber_pressure_2, pulse_energy))])
-	ax3[0,0].plot(np.sort(target_chamber_pressure_2),temp,color=color[index],label='B=%.3gT' %(np.nanmedian(magnetic_field)))
+	ax3[0,0].plot(np.sort(target_chamber_pressure_2),temp,color=color[index],label='B=%.3gT, CB=%.3gV, target ' %(np.nanmedian(magnetic_field),j_specific_CB_voltage[-1]) + str(target_type)+', cases '+str(merge_ID_target_multipulse))
 
 im = ax5[0,0].scatter(j_specific_magnetic_field,j_specific_target_chamber_pressure2,c=np.array(j_specific_pulse_en_semi_inf3)/(0.5*(np.array(j_specific_CB_voltage)**2)*150e-6),s=100,marker='s',cmap='rainbow')
 ax5[0,0].set_xlabel('Magnetic field [T]')
@@ -1173,8 +1326,8 @@ for merge_ID_target in merge_ID_target_multipulse:
 			j_specific_pulse_en_semi_inf_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_sigma'])
 			j_specific_energy_density.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density'])
 			j_specific_energy_density_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density_sigma'])
-			j_specific_area_of_interest_IR.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest'])
-			j_specific_area_of_interest_IR_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_sigma'])
+			j_specific_area_of_interest_IR.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit'])
+			j_specific_area_of_interest_IR_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit_sigma'])
 			j_delivered_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['Delivered energy [J]']]))
 
 			path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)

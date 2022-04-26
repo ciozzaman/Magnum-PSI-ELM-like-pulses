@@ -116,7 +116,7 @@ if False:
 			# 1 E.M. Hollmann, N.A. Pablant, D.L. Rudakov, J.A. Boedo, N.H. Brooks, T.C. Jernigan, and A.Y.P. Pigarov, J. Nucl. Mater. 390–391, 597 (2009).
 			moly_emissivity_interp = lambda T_C: 0.0288 + 1e-5 * (T_C - 273.15)	# [°C]
 
-		T_ref = np.arange(293,30000,1);                                                     # [K]
+		T_ref = np.arange(273,30000,1);                                                     # [K]
 
 		e_cal = np.zeros_like(T_ref,dtype=np.float)
 		phi_bb = np.zeros_like(T_ref,dtype=np.float)
@@ -125,7 +125,7 @@ if False:
 				e_cal[ii] = np.mean(np.min([specemi(lambda_cam*1e6,T_ref[ii],de),np.ones_like(lambda_cam)],axis=0))
 			else:
 				# https://www.plansee.com/en/materials/molybdenum.html
-				e_cal[ii] = moly_emissivity_interp(T_ref[ii]+273.15)+de
+				e_cal[ii] = moly_emissivity_interp(T_ref[ii]-273.15)+de
 			# spectral radiance, [W/Sr/m3] to average photon fluence including emissivity
 			phi_bb[ii] = e_cal[ii] * np.mean(2 * h * c**2 /(lambda_cam**5) *  ((np.exp(h * c / (lambda_cam * k * T_ref[ii])) - 1)**-1) /(h * c /lambda_cam) * lambda_cam ) * t_exp/1e6
 
@@ -157,7 +157,7 @@ else:
 
 all_j = [231,232,233,234,411,244,245,275,393,394,305,306,416]
 time_shift = [1562076516.351,1562076678.708+4,1562077276.157,1562077372.031,(1562077372.031+1562080690.253)/2,1562080690.253,1562080859.278,1562157127.002,1562165683.122,1562165819.007,1562169014.003,1562169074.379,1562251726.311]
-de = [0.035,0.035,0.035,0.035,0.035,  0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3]                                                                           # emissivity offset, -0.03 for polished tungsten
+de = [0.034,0.034,0.034,0.034,0.034,  0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05]                                                                           # emissivity offset, -0.03 for polished tungsten
 fig, ax = plt.subplots(len(de),1,figsize=(15, 9*len(de)))
 for i_j,j in enumerate(all_j):
 
@@ -312,16 +312,16 @@ for i_j,j in enumerate(all_j):
 	# if i_j==0:
 	ax[i_j].plot(time_IR,temp_sub_center,'C0',label='temp_sub_center')
 	# plt.plot(np.arange(0,len(temp_sub_center))/f,temp_sub_edge,label='temp_sub_edge')
-	ax[i_j].plot(time_IR,selected_1_mean_temp,'C1',label='selected_1_mean_temp')
-	ax[i_j].plot(time_IR,selected_1_max_temp,'--C2',label='selected_1_max_temp')
-	ax[i_j].plot(time_IR,selected_2_mean_temp,'C3',label='selected_2_mean_temp')
-	ax[i_j].plot(time_IR,selected_2_max_temp,'--C4',label='selected_2_max_temp')
+	ax[i_j].plot(time_IR,selected_1_mean_temp,'C1',label='selected_1_mean_temp'+' max='+str(np.nanmax(selected_1_mean_temp)-273.15)+'°C')
+	ax[i_j].plot(time_IR,selected_1_max_temp,'--C2',label='selected_1_max_temp'+' max='+str(np.nanmax(selected_1_max_temp)-273.15)+'°C')
+	ax[i_j].plot(time_IR,selected_2_mean_temp,'C3',label='selected_2_mean_temp'+' max='+str(np.nanmax(selected_2_mean_temp)-273.15)+'°C')
+	ax[i_j].plot(time_IR,selected_2_max_temp,'--C4',label='selected_2_max_temp'+' max='+str(np.nanmax(selected_2_max_temp)-273.15)+'°C')
 	ax[i_j].set_xlim(left=np.min(time_IR)-20,right=np.max(time_IR)+20)
 
-	ax[i_j].plot(time_IR,selected_3_mean_temp,'C5',label='selected_3_mean_temp')
-	ax[i_j].plot(time_IR,selected_4_mean_temp,'C6',label='selected_4_mean_temp')
-	ax[i_j].plot(time_IR,selected_5_mean_temp,'C7',label='selected_5_mean_temp')
-	ax[i_j].plot(time_IR,selected_6_mean_temp,'C8',label='selected_6_mean_temp')
+	ax[i_j].plot(time_IR,selected_3_mean_temp,'C5',label='selected_3_mean_temp'+' max='+str(np.nanmax(selected_3_mean_temp)-273.15)+'°C')
+	ax[i_j].plot(time_IR,selected_4_mean_temp,'C6',label='selected_4_mean_temp'+' max='+str(np.nanmax(selected_4_mean_temp)-273.15)+'°C')
+	ax[i_j].plot(time_IR,selected_5_mean_temp,'C7',label='selected_5_mean_temp'+' max='+str(np.nanmax(selected_5_mean_temp)-273.15)+'°C')
+	ax[i_j].plot(time_IR,selected_6_mean_temp,'C8',label='selected_6_mean_temp'+' max='+str(np.nanmax(selected_6_mean_temp)-273.15)+'°C')
 	ax[i_j].set_ylim(top = selected_2_max_temp.max()+100)
 	# 	# plt.plot([time_IR.min(),time_IR.max()],[T_pyro]*2,'C5',label='T_pyro')
 	# else:
@@ -361,12 +361,12 @@ for i_j,j in enumerate(all_j):
 		# temp -= temp[376]
 		# date_time_stamp2time = [dt.datetime.fromtimestamp(int(_)) for _ in date_time_stamp2sec//1 ]
 		# if i_date_label==0:
-		ax[i_j].errorbar(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,yerr=multi_1[multi_1.keys()[i_index*3+2+3]][:len(date_time_stamp2time)],label=index[i_index*3+2])
-		ax[i_j].plot(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,'o',label=index[i_index*3+2])
+		ax[i_j].errorbar(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,yerr=multi_1[multi_1.keys()[i_index*3+2+3]][:len(date_time_stamp2time)],label=index[i_index*3+2]+' max='+str(np.nanmax(multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]))+'°C')
+		ax[i_j].plot(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,'x',label=index[i_index*3+2])
 		# else:
 		# 	ax[i_j].errorbar(temp,multi_1[multi_1.keys()[i_index*3+2]][:len(date_time_stamp2time)]+273.15,yerr=multi_1[multi_1.keys()[i_index*3+2+3]][:len(date_time_stamp2time)])
-	ax[i_j].axhline(y=3422+273,label='tungsten melting')
-	ax[i_j].axhline(y=2623+273,label='molybdenum melting')
+	ax[i_j].axhline(y=3422+273,label='tungsten melting (3422°C)',linestyle='--')
+	ax[i_j].axhline(y=2623+273,label='molybdenum melting (2623°C)',linestyle='--')
 	ax[i_j].legend(loc='best', fontsize='xx-small')
 	ax[i_j].grid()
 	ax[i_j].set_title(pre_title+str([folder,sequence,untitled,' ',j])+' material '+str(target_material)+' de=%.3g, window transmissivity %.3g' %(de[i_j],tau))
@@ -383,7 +383,7 @@ fig.suptitle('window transmissivity %.3g' %(tau))
 # plt.pause(0.1)
 # plt.show()
 path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data'
-plt.savefig(path_where_to_save_everything +'/pyrometer_IRcamera_comparison_8.eps', bbox_inches='tight')
+plt.savefig(path_where_to_save_everything +'/pyrometer_IRcamera_comparison_10.eps', bbox_inches='tight')
 plt.close()
 
 

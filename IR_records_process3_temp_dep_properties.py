@@ -38,9 +38,9 @@ exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/IR_records_p
 figure_index=0
 
 # molybdenum data
-thermal_conductivity = TZM_thermal_conductivity_interp	# W/mK
-heat_capacity = TZM_heat_capacity_interp	# J/kg k
-density = TZM_density_interp(20)	# kg/m3
+thermal_conductivity = TZM_thermal_conductivity_interp_simple	# W/mK
+heat_capacity = TZM_heat_capacity_interp_simple	# J/kg k
+density = TZM_density_interp_simple(20)	# kg/m3
 de=0.05
 color = ['b', 'r', 'm', 'y', 'g', 'c', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
 
@@ -56,6 +56,36 @@ def semi_infinite_sink_full_increase_K(max_total_time):
 		return np.nanmax([np.ones_like(out)*args[0],out],axis=0)
 	return function
 
+# this comes from the analytical solution in Laser Processing and Chemistry, Bäuerle, Dieter, 1996
+def semi_infinite_sink_gaussian_beam_square_wave_increase_K(max_total_time,beam_width):
+	def function(time,*args):
+		diffusivity = thermal_conductivity(args[0]-273.15)/(heat_capacity(args[0]-273.15)*density)
+		time_adimensional = (time-args[3])*diffusivity/(beam_width**2)
+		duration_adimentional = (max_total_time-args[3])*args[2]*diffusivity/(beam_width**2)
+		theta_c = (np.pi**0.5)*beam_width*args[1]/(2*(max_total_time-args[3])*args[2]*thermal_conductivity(args[0]-273.15))
+		out = 2/np.pi *theta_c * ( np.arctan(2*(time_adimensional**0.5)) ) + args[0]
+		# print(out)
+		# return np.nanmax([np.ones_like(out)*args[0],out],axis=0)
+		return out
+	return function
+
+# this comes from the analytical solution in Laser Processing and Chemistry, Bäuerle, Dieter, 1996
+def semi_infinite_sink_gaussian_beam_triangular_wave_increase_K(max_total_time,beam_width):
+	def function(time,*args):
+		diffusivity = thermal_conductivity(args[0]-273.15)/(heat_capacity(args[0]-273.15)*density)
+		time_adimensional = (time-args[3])*diffusivity/(beam_width**2)
+		increase_duration_adimentional = (max_total_time-args[3])*args[2]*diffusivity/(beam_width**2)
+		decrease_duration_adimentional = (max_total_time-args[3])*(1-args[2])*args[4]*diffusivity/(beam_width**2)
+		theta_c = (np.pi**0.5)*beam_width*args[1]*2/(2*((max_total_time-args[3])*args[2] + (max_total_time-args[3])*(1-args[2])*args[4])*thermal_conductivity(args[0]-273.15))	# the first *2 comes from the fact that in a triangle the area is half of a rectangle. power density*duration/2=energy
+		out = np.zeros_like(time_adimensional)
+		out[time_adimensional<=increase_duration_adimentional] = 2/(np.pi) *theta_c * ( 1/increase_duration_adimentional * solution_for_ramp(time_adimensional[time_adimensional<=increase_duration_adimentional],0) ) + args[0]
+		out[time_adimensional>increase_duration_adimentional] = 2/(np.pi) *theta_c * ( 1/increase_duration_adimentional * solution_for_ramp(time_adimensional[time_adimensional>increase_duration_adimentional],0) - 1/increase_duration_adimentional * solution_for_ramp(time_adimensional[time_adimensional>increase_duration_adimentional],increase_duration_adimentional) - 1/decrease_duration_adimentional * solution_for_ramp(time_adimensional[time_adimensional>increase_duration_adimentional],increase_duration_adimentional) ) + args[0]
+		# print(out)
+		# return np.nanmax([np.ones_like(out)*args[0],out],axis=0)
+		return out
+	return function
+
+
 def semi_infinite_sink_full_decrease_K(max_total_time):
 	def function(time,*args):
 		out = (args[1]/((max_total_time-args[3])*args[2]))*2/((np.pi*thermal_conductivity(args[0]-273.15)*heat_capacity(args[0]-273.15)*density)**0.5) *((time-args[3])**0.5 - (time-args[3]-(max_total_time-args[3])*args[2])**0.5) + args[0]
@@ -63,11 +93,74 @@ def semi_infinite_sink_full_decrease_K(max_total_time):
 		return np.nanmax([np.zeros_like(out),out],axis=0)
 	return function
 
+# this comes from the analytical solution in Laser Processing and Chemistry, Bäuerle, Dieter, 1996
+def semi_infinite_sink_gaussian_beam_square_wave_decrease_K(max_total_time,beam_width):
+	def function(time,*args):
+		diffusivity = thermal_conductivity(args[0]-273.15)/(heat_capacity(args[0]-273.15)*density)
+		time_adimensional = (time-args[3])*diffusivity/(beam_width**2)
+		duration_adimentional = (max_total_time-args[3])*args[2]*diffusivity/(beam_width**2)
+		theta_c = (np.pi**0.5)*beam_width*args[1]/(2*(max_total_time-args[3])*args[2]*thermal_conductivity(args[0]-273.15))
+		out = 2/np.pi *theta_c * ( np.arctan(2*(time_adimensional**0.5)) - np.arctan(2*((time_adimensional-duration_adimentional)**0.5)) ) + args[0]
+		# print(out)
+		# return np.nanmax([np.ones_like(out)*args[0],out],axis=0)
+		return out
+	return function
+
+# this comes from the analytical solution in Laser Processing and Chemistry, Bäuerle, Dieter, 1996
+solution_for_ramp = lambda t, t0: (t-t0)*np.arctan(2*((t-t0)**0.5)) - (2*((t-t0)**0.5) - np.arctan(2*((t-t0)**0.5)))/4
+def semi_infinite_sink_gaussian_beam_triangular_wave_decrease_K(max_total_time,beam_width):
+	def function(time,*args):
+		diffusivity = thermal_conductivity(args[0]-273.15)/(heat_capacity(args[0]-273.15)*density)
+		time_adimensional = (time-args[3])*diffusivity/(beam_width**2)
+		increase_duration_adimentional = (max_total_time-args[3])*args[2]*diffusivity/(beam_width**2)
+		decrease_duration_adimentional = (max_total_time-args[3])*(1-args[2])*args[4]*diffusivity/(beam_width**2)
+		theta_c = (np.pi**0.5)*beam_width*args[1]*2/(2*((max_total_time-args[3])*args[2] + (max_total_time-args[3])*(1-args[2])*args[4])*thermal_conductivity(args[0]-273.15))	# the first *2 comes from the fact that in a triangle the area is half of a rectangle. power density*duration/2=energy
+		out = 2/(np.pi) *theta_c * ( 1/increase_duration_adimentional * solution_for_ramp(time_adimensional,0) - 1/increase_duration_adimentional * solution_for_ramp(time_adimensional,increase_duration_adimentional) - 1/decrease_duration_adimentional * solution_for_ramp(time_adimensional,increase_duration_adimentional) + 1/decrease_duration_adimentional * solution_for_ramp(time_adimensional,increase_duration_adimentional+decrease_duration_adimentional) ) + args[0]
+		# print(out)
+		# return np.nanmax([np.ones_like(out)*args[0],out],axis=0)
+		return out
+	return function
+
+
+def semi_infinite_sink_gaussian_beam_square_wave_increase_and_decrease_K(max_total_time,beam_width):
+	def function(time,*args):
+		diffusivity = thermal_conductivity(args[0]-273.15)/(heat_capacity(args[0]-273.15)*density)
+		time_adimensional = (time-args[3])*diffusivity/(beam_width**2)
+		duration_adimentional = (max_total_time-args[3])*args[2]*diffusivity/(beam_width**2)
+		output = np.zeros_like(time)+args[0]
+		output[np.logical_and(time_adimensional>0,time_adimensional<=duration_adimentional)] = semi_infinite_sink_gaussian_beam_square_wave_increase_K(max_total_time,beam_width)(time[np.logical_and(time_adimensional>0,time_adimensional<=duration_adimentional)],*args)
+		output[time_adimensional>duration_adimentional] = semi_infinite_sink_gaussian_beam_square_wave_decrease_K(max_total_time,beam_width)(time[time_adimensional>duration_adimentional],*args)
+		return output
+	return function
+
+def semi_infinite_sink_gaussian_beam_triangular_wave_increase_and_decrease_K(max_total_time,beam_width):
+	def function(time,*args):
+		diffusivity = thermal_conductivity(args[0]-273.15)/(heat_capacity(args[0]-273.15)*density)
+		time_adimensional = (time-args[3])*diffusivity/(beam_width**2)
+		increase_duration_adimentional = (max_total_time-args[3])*args[2]*diffusivity/(beam_width**2)
+		decrease_duration_adimentional = (max_total_time-args[3])*(1-args[2])*args[4]*diffusivity/(beam_width**2)
+		output = np.zeros_like(time)+args[0]
+		output[np.logical_and(time_adimensional>0,time_adimensional<=increase_duration_adimentional+decrease_duration_adimentional)] = semi_infinite_sink_gaussian_beam_triangular_wave_increase_K(max_total_time,beam_width)(time[np.logical_and(time_adimensional>0,time_adimensional<=increase_duration_adimentional+decrease_duration_adimentional)],*args)
+		output[time_adimensional>increase_duration_adimentional+decrease_duration_adimentional] = semi_infinite_sink_gaussian_beam_triangular_wave_decrease_K(max_total_time,beam_width)(time[time_adimensional>increase_duration_adimentional+decrease_duration_adimentional],*args)
+		return output
+	return function
+
+def semi_infinite_sink_full_increase_and_decrease_K(max_total_time):
+	def function(time,*args):
+		time_adimensional = time-args[3]
+		duration_adimentional = (max_total_time-args[3])*args[2]
+		output = np.zeros_like(time)+args[0]
+		output[np.logical_and(time_adimensional>0,time_adimensional<=duration_adimentional)] = semi_infinite_sink_full_increase_K(max_total_time)(time[np.logical_and(time_adimensional>0,time_adimensional<=duration_adimentional)],*args)
+		output[time_adimensional>duration_adimentional] = semi_infinite_sink_full_decrease_K(max_total_time)(time[time_adimensional>duration_adimentional],*args)
+		return output
+	return function
+
+
 def gaussian_1D_fitting(spatial_coord,*args):
 	out = args[1]*np.exp(- (spatial_coord**2)/(2*(args[2]**2)) ) + args[0]
 	return out
 
-def power_input(time,r):
+def power_input(time,r):	# in W/m2
 	out = 8e8*np.exp(-(r**2)/(2*(0.005**2)))*(0.0917*0.1+0.5*0.7*np.exp(-((time-0.00033)**2)/(2*(0.000144**2)))+0.5*0.208*np.exp(-((time-0.000457)**2)/(2*(0.000218**2))))
 	return out
 
@@ -108,26 +201,94 @@ plt.close('all')
 # plt.pause(0.01)
 
 
+a = np.array(np.linspace(-0.02,-1e-4,20).tolist() + a.tolist())
+b = np.array([b[0]]*20 + b.tolist())
 
-plt.figure(figsize=(20, 10))
-plt.plot(a*1e3,b,color=color[0],label='full simulated temperature')
+fig3, ax3 = plt.subplots( 2,2,figsize=(25, 18), squeeze=False)
+ax3[1,1].plot(a*1e3,b,'k',linewidth=2,label='full simulated temperature')#\nEdens=%.3gJ/m2' %(np.trapz(power_input(a,0)-power_input(np.inf,0),x=a)))
+ax3[1,0].plot(a*1e3,(power_input(a,0)-power_input(np.inf,0))*1e-3,'k',linewidth=2,label='simulation input')
+
 time_after_peak=1.5e-3
-plt.plot([a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]*1e3]*2,[b.min(),b.max()],'--k')
-bds = [[20,1e-3,3e-1,0],[np.inf,np.inf,1,a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]]]
+ax3[1,1].axvline(x=a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]*1e3,linestyle='--',color='m',linewidth=1)
+bds = [[20,0,1e-1,0],[np.inf,np.inf,1,a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]]]
 guess=[b[0],1,0.5,0.]
 fit = curve_fit(semi_infinite_sink_full_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]), a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():], b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():], guess,bounds=bds,x_scale=[100,1e5,1e-3,1e-4],maxfev=int(1e4),ftol=1e-15,xtol=1e-15)
 fit_wit_errors = correlated_values(fit[0],fit[1])
 energy = fit_wit_errors[1]*2*np.pi*(0.005**2)
 pulse_duration_ms = 1e3*(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]-fit_wit_errors[3])*fit_wit_errors[2]
 R2 = 1-np.sum(((b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():]-semi_infinite_sink_full_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()])(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():],*fit[0]))**2)/np.sum(((b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():]-np.mean(b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():]))**2)))
-plt.plot(a[a-fit[0][3]>nominal_values(pulse_duration_ms)*1e-3]*1e3,semi_infinite_sink_full_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()])(a[a-fit[0][3]>nominal_values(pulse_duration_ms)*1e-3],*fit[0]),color=color[1],label='double root, E='+str(energy)+'J, t0=%.3g+/-%.3gms, tau=%.3g+/-%.3gms, T0=%.3g+/-%.3gK, F0=%.3g+/-%.3gW/m2, R2=%.3g' %(nominal_values(fit_wit_errors[3]*1e3),std_devs(fit_wit_errors[3]*1e3),nominal_values(pulse_duration_ms),std_devs(pulse_duration_ms),nominal_values(fit_wit_errors[0]),std_devs(fit_wit_errors[0]),nominal_values(fit_wit_errors[1]*1e3/pulse_duration_ms),std_devs(fit_wit_errors[1]*1e3/pulse_duration_ms),R2))
-plt.plot(a[a-fit[0][3]<=nominal_values(pulse_duration_ms)*1e-3]*1e3,semi_infinite_sink_full_increase_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()])(a[a-fit[0][3]<=nominal_values(pulse_duration_ms)*1e-3],*fit[0]),color=color[1])
-plt.legend(loc='best')
-plt.xlabel('time [ms]')
-plt.ylabel('temperature [K]')
-# plt.ylim(bottom=b.min()*0.9,top=b.max()*1.2)
-plt.xlim(right=10)
-plt.grid()
+ax3[1,1].plot(a*1e3,semi_infinite_sink_full_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()])(a,*fit[0]),'--r',linewidth=1,label='t>1.5ms fit homogen. square wave')#\nEdens=%.3g+/-%.3gJ/m2\nR2=%.3g' %(nominal_values(fit_wit_errors[1]),std_devs(fit_wit_errors[1]),R2))
+ax3[1,0].plot([-100,1000*fit[0][-1],1000*fit[0][-1],1000*fit[0][-1]+pulse_duration_ms.nominal_value,1000*fit[0][-1]+pulse_duration_ms.nominal_value,100],[0,0,(fit_wit_errors[1]/pulse_duration_ms).nominal_value,(fit_wit_errors[1]/pulse_duration_ms).nominal_value,0,0],'--r',linewidth=1,label='t>1.5ms fit homogen. square wave')
+
+# ax3[1,1].plot(a[a-fit[0][3]<=nominal_values(pulse_duration_ms)*1e-3]*1e3,semi_infinite_sink_full_increase_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()])(a[a-fit[0][3]<=nominal_values(pulse_duration_ms)*1e-3],*fit[0]),color=color[1])
+bds = [[20,0,1e-1,0],[np.inf,np.inf,1,a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]]]
+guess=[b[0],1,0.5,0.]
+fit = curve_fit(semi_infinite_sink_full_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]), a, b, guess,bounds=bds,x_scale=[100,1e5,1e-3,1e-4],maxfev=int(1e4),ftol=1e-15,xtol=1e-15)
+fit_wit_errors = correlated_values(fit[0],fit[1])
+energy = fit_wit_errors[1]*2*np.pi*(0.005**2)
+pulse_duration_ms = 1e3*(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]-fit_wit_errors[3])*fit_wit_errors[2]
+R2 = 1-np.sum(((b-semi_infinite_sink_full_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()])(a,*fit[0]))**2)/np.sum(((b-np.mean(b))**2)))
+ax3[1,1].plot(a*1e3,semi_infinite_sink_full_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()])(a,*fit[0]),'r',linewidth=1,label='full fit homogen. square wave')#\nEdens=%.3g+/-%.3gJ/m2\nR2=%.3g' %(nominal_values(fit_wit_errors[1]),std_devs(fit_wit_errors[1]),R2))
+ax3[1,0].plot([-100,1000*fit[0][-1],1000*fit[0][-1],1000*fit[0][-1]+pulse_duration_ms.nominal_value,1000*fit[0][-1]+pulse_duration_ms.nominal_value,100],[0,0,(fit_wit_errors[1]/pulse_duration_ms).nominal_value,(fit_wit_errors[1]/pulse_duration_ms).nominal_value,0,0],'r',linewidth=1,label='full fit homogen. square wave')
+
+bds = [[20,0,1e-1,0],[np.inf,np.inf,1,a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]]]
+guess=[b[0],1,0.5,0.]
+fit = curve_fit(semi_infinite_sink_gaussian_beam_square_wave_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005), a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():], b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():], guess,bounds=bds,x_scale=[100,1e5,1e-3,1e-4],maxfev=int(1e4),ftol=1e-15,xtol=1e-15)
+fit_wit_errors = correlated_values(fit[0],fit[1])
+energy = fit_wit_errors[1]*2*np.pi*(0.005**2)
+pulse_duration_ms = 1e3*(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]-fit_wit_errors[3])*fit_wit_errors[2]
+R2 = 1-np.sum(((b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():]-semi_infinite_sink_gaussian_beam_square_wave_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005)(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():],*fit[0]))**2)/np.sum(((b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():]-np.mean(b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():]))**2)))
+ax3[1,1].plot(a*1e3,semi_infinite_sink_gaussian_beam_square_wave_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005)(a,*fit[0]),'--b',linewidth=1,label='t>1.5ms fit gaussian beam square wave')#\nEdens=%.3g+/-%.3gJ/m2\nR2=%.3g' %(nominal_values(fit_wit_errors[1]),std_devs(fit_wit_errors[1]),R2))
+ax3[1,0].plot([-100,1000*fit[0][-1],1000*fit[0][-1],1000*fit[0][-1]+pulse_duration_ms.nominal_value,1000*fit[0][-1]+pulse_duration_ms.nominal_value,100],[0,0,(fit_wit_errors[1]/pulse_duration_ms).nominal_value,(fit_wit_errors[1]/pulse_duration_ms).nominal_value,0,0],'--b',linewidth=1,label='t>1.5ms fit gaussian beam square wave')
+
+# ax3[1,1].plot(a[a-fit[0][3]<=nominal_values(pulse_duration_ms)*1e-3]*1e3,semi_infinite_sink_full_increase_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005)(a[a-fit[0][3]<=nominal_values(pulse_duration_ms)*1e-3],*fit[0]),color=color[1])
+bds = [[20,0,1e-1,0],[np.inf,np.inf,1,a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]]]
+guess=[b[0],1,0.5,0.]
+fit = curve_fit(semi_infinite_sink_gaussian_beam_square_wave_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005), a, b, guess,bounds=bds,x_scale=[100,1e5,1e-3,1e-4],maxfev=int(1e4),ftol=1e-15,xtol=1e-15)
+fit_wit_errors = correlated_values(fit[0],fit[1])
+energy = fit_wit_errors[1]*2*np.pi*(0.005**2)
+pulse_duration_ms = 1e3*(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]-fit_wit_errors[3])*fit_wit_errors[2]
+R2 = 1-np.sum(((b-semi_infinite_sink_gaussian_beam_square_wave_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005)(a,*fit[0]))**2)/np.sum(((b-np.mean(b))**2)))
+ax3[1,1].plot(a*1e3,semi_infinite_sink_gaussian_beam_square_wave_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005)(a,*fit[0]),'b',linewidth=1,label='full fit gaussian beam square wave')#\nEdens=%.3g+/-%.3gJ/m2\nR2=%.3g' %(nominal_values(fit_wit_errors[1]),std_devs(fit_wit_errors[1]),R2))
+ax3[1,0].plot([-100,1000*fit[0][-1],1000*fit[0][-1],1000*fit[0][-1]+pulse_duration_ms.nominal_value,1000*fit[0][-1]+pulse_duration_ms.nominal_value,100],[0,0,(fit_wit_errors[1]/pulse_duration_ms).nominal_value,(fit_wit_errors[1]/pulse_duration_ms).nominal_value,0,0],'b',linewidth=1,label='full fit gaussian beam square wave')
+
+bds = [[20,0,1e-1,0,1e-1],[np.inf,np.inf,1,a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],1]]
+guess=[b[0],1,0.5,0.,0.5]
+fit = curve_fit(semi_infinite_sink_gaussian_beam_triangular_wave_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005), a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():], b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():], guess,bounds=bds,x_scale=[100,1e5,1e-3,1e-4,1e-3],maxfev=int(1e4),ftol=1e-15,xtol=1e-15)
+fit_wit_errors = correlated_values(fit[0],fit[1])
+energy = fit_wit_errors[1]*2*np.pi*(0.005**2)
+pulse_duration_ms_up = 1e3*((a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]-fit_wit_errors[3])*fit_wit_errors[2])
+pulse_duration_ms_down = 1e3*((a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]-fit_wit_errors[3])*(1-fit_wit_errors[2])*fit_wit_errors[4])
+pulse_duration_ms = pulse_duration_ms_up + pulse_duration_ms_down
+R2 = 1-np.sum(((b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():]-semi_infinite_sink_gaussian_beam_triangular_wave_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005)(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():],*fit[0]))**2)/np.sum(((b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():]-np.mean(b[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin():]))**2)))
+ax3[1,1].plot(a*1e3,semi_infinite_sink_gaussian_beam_triangular_wave_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005)(a,*fit[0]),'--g',linewidth=1,label='t>1.5ms fit gaussian beam triangular wave')#\nEdens=%.3g+/-%.3gJ/m2\nR2=%.3g' %(nominal_values(fit_wit_errors[1]),std_devs(fit_wit_errors[1]),R2))
+ax3[1,0].plot([-100,1000*fit[0][-2],1000*fit[0][-2]+pulse_duration_ms_up.nominal_value,1000*fit[0][-2]+pulse_duration_ms.nominal_value,100],[0,0,2*(fit_wit_errors[1]/pulse_duration_ms).nominal_value,0,0],'--g',linewidth=1,label='t>1.5ms fit gaussian beam triangular wave')
+
+# ax3[1,1].plot(a[a-fit[0][3]<=nominal_values(pulse_duration_ms)*1e-3]*1e3,semi_infinite_sink_full_increase_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005)(a[a-fit[0][3]<=nominal_values(pulse_duration_ms)*1e-3],*fit[0]),color=color[1])
+bds = [[20,0,1e-1,0,1e-1],[np.inf,np.inf,1,a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],1]]
+guess=[b[0],1,0.5,0.,0.5]
+fit = curve_fit(semi_infinite_sink_gaussian_beam_triangular_wave_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005), a, b, guess,bounds=bds,x_scale=[100,1e5,1e-3,1e-4,1e-3],maxfev=int(1e4),ftol=1e-15,xtol=1e-15)
+fit_wit_errors = correlated_values(fit[0],fit[1])
+energy = fit_wit_errors[1]*2*np.pi*(0.005**2)
+pulse_duration_ms_up = 1e3*((a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]-fit_wit_errors[3])*fit_wit_errors[2])
+pulse_duration_ms_down = 1e3*((a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()]-fit_wit_errors[3])*(1-fit_wit_errors[2])*fit_wit_errors[4])
+pulse_duration_ms = pulse_duration_ms_up + pulse_duration_ms_down
+R2 = 1-np.sum(((b-semi_infinite_sink_gaussian_beam_triangular_wave_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005)(a,*fit[0]))**2)/np.sum(((b-np.mean(b))**2)))
+ax3[1,1].plot(a*1e3,semi_infinite_sink_gaussian_beam_triangular_wave_increase_and_decrease_K(a[np.abs(a-(a[b.argmax()]+time_after_peak)).argmin()],0.005)(a,*fit[0]),'g',linewidth=1,label='full fit gaussian beam triangular wave')#\nEdens=%.3g+/-%.3gJ/m2\nR2=%.3g' %(nominal_values(fit_wit_errors[1]),std_devs(fit_wit_errors[1]),R2))
+ax3[1,0].plot([-100,1000*fit[0][-2],1000*fit[0][-2]+pulse_duration_ms_up.nominal_value,1000*fit[0][-2]+pulse_duration_ms.nominal_value,100],[0,0,2*(fit_wit_errors[1]/pulse_duration_ms).nominal_value,0,0],'g',linewidth=1,label='full fit gaussian beam triangular wave')
+
+ax3[1,1].legend(loc='best', fontsize='x-small')
+ax3[1,1].set_xlabel('time [ms]')
+ax3[1,1].set_ylabel('temperature [K]')
+# ax3[1,1].ylim(bottom=b.min()*0.9,top=b.max()*1.2)
+ax3[1,1].set_xlim(left=-1,right=6)
+ax3[1,1].grid()
+ax3[1,0].legend(loc='best', fontsize='x-small')
+ax3[1,0].set_xlabel('time [ms]')
+ax3[1,0].set_ylabel('power density [kW/m2]')
+# ax3[1,1].ylim(bottom=b.min()*0.9,top=b.max()*1.2)
+ax3[1,0].set_xlim(left=-0.25,right=1)
+ax3[1,0].grid()
 figure_index+=1
 plt.savefig(path_where_to_save_everything +'Figure_'+str(figure_index)+'.png', bbox_inches='tight')
 plt.close('all')

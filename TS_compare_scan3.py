@@ -58,8 +58,11 @@ for i_to_scan,to_scan in enumerate([[99,98,96,97],[95,89,87,86,85]]):
 
 
 	a1, = ax1.plot(target_chamber_pressure_2,average_Te,ls=line_style[i_to_scan],color='r',label='Te B=%.3gT' %(np.mean(magnetic_field_all)))
+	a1, = ax1.plot(target_chamber_pressure_2,average_Te,ls=line_style[i_to_scan],color='r',marker='x')
 	a2, = ax2.plot(target_chamber_pressure_2,average_ne,ls=line_style[i_to_scan],color='b',label='ne B=%.3gT' %(np.mean(magnetic_field_all)))
+	a2, = ax2.plot(target_chamber_pressure_2,average_ne,ls=line_style[i_to_scan],color='b',marker='x')
 	a3, = ax3.plot(target_chamber_pressure_2,average_static_pressure,ls=line_style[i_to_scan],color='g',label='pressure B=%.3gT' %(np.mean(magnetic_field_all)))
+	a3, = ax3.plot(target_chamber_pressure_2,average_static_pressure,ls=line_style[i_to_scan],color='g',marker='x')
 	# ax1.plot(target_chamber_pressure_SS_all,np.max(merge_Te_SS_all,axis=(1)),ls=line_style[i_to_scan],color='r',label='SS Te B=%.3gT' %(np.mean(magnetic_field_all)))
 	# ax2.plot(target_chamber_pressure_SS_all,np.max(merge_ne_SS_all,axis=(1)),ls=line_style[i_to_scan],color='c',label='SS ne B=%.3gT' %(np.mean(magnetic_field_all)))
 

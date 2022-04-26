@@ -68,7 +68,7 @@ def DOM52sec(value):
 	else:
 		return np.nan
 
-file_full_path = '/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-02/20190702_3.csv'
+file_full_path = '/home/ffederic/work/Collaboratory/test/experimental_data/2019-07-03/20190703_1.csv'
 multi_1 = pd.read_csv(file_full_path,index_col=False,sep='|')
 index1 = list(multi_1.head(0))
 for index in range(len(index1)//3):
@@ -146,9 +146,11 @@ if False:	# I don't think this code is usefull anymore
 	plt.figure()
 	plt.plot(np.array(date_time_stamp2time)[np.isfinite(multi_1[multi_1.keys()[26]])],multi_1[multi_1.keys()[26]][np.isfinite(multi_1[multi_1.keys()[26]])])
 	plt.pause(0.1)
+else:
+	pass
 
 plt.close('all')
-for i_index in [4,11]:#range(0,13):
+for i_index in range(0,13):
 	plt.figure()
 	plt.title(index[i_index*3+2])
 	date_time_stamp = multi_1[multi_1.keys()[i_index*3]]

@@ -60,7 +60,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 		(file_index,target_OES_distance,magnetic_field,SS_pressure,pulse_voltage) = df_log.loc[j,['fast_camera_trace','T_axial','B','p_n [Pa]','Vc']]
 		if np.isnan(file_index):
 			continue
-		full_folder = '/home/ffederic/work/Collaboratory/test/experimental_data/'+folder+'/'+"{0:0=2d}".format(sequence)+'/fast_camera/'
+		full_folder = '/home/ffederic/work/Collaboratory/test/experimental_data/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/fast_camera/'
 		type = '.cine'
 		filenames = np.array(all_file_names(full_folder, type))
 		# select = [name[:2]==str(file_index) for name in filenames]

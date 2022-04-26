@@ -53,7 +53,7 @@ if initial_conditions:
 
 	profile_centres_score[np.abs(profile_centres_score)>np.max(TS_r/1000)] = np.max(TS_r/1000)
 	plt.figure(figsize=(7, 10));
-	plt.pcolor(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])], TS_r/1000, merge_ne_prof_multipulse[np.logical_and(merge_time_original>=time_crop[0]-1e-5,merge_time_original<=time_crop[-1]+1e-5)].T, cmap='rainbow');
+	plt.pcolor(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]-TS_dt/2, TS_r/1000-TS_dr/2, merge_ne_prof_multipulse[np.logical_and(merge_time_original>=time_crop[0]-1e-5,merge_time_original<=time_crop[-1]+1e-5)].T, cmap='rainbow');
 	plt.colorbar(orientation="horizontal").set_label('density [10^20 # m^-3]')  # ;plt.pause(0.01)
 	plt.errorbar(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])],profile_centres[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,yerr=profile_centres_score[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,color='b',label='local centre')
 	plt.plot(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])],(profile_centres+profile_sigma*2.355/2)[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,'--',color='grey',label='density FWHM\n(gaussian fit)')
@@ -70,7 +70,7 @@ if initial_conditions:
 	plt.close()
 
 	plt.figure(figsize=(7, 10));
-	plt.pcolor(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])], TS_r/1000, merge_Te_prof_multipulse[np.logical_and(merge_time_original>=time_crop[0]-1e-5,merge_time_original<=time_crop[-1]+1e-5)].T, cmap='rainbow');
+	plt.pcolor(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]-TS_dt/2, TS_r/1000-TS_dr/2, merge_Te_prof_multipulse[np.logical_and(merge_time_original>=time_crop[0]-1e-5,merge_time_original<=time_crop[-1]+1e-5)].T, cmap='rainbow');
 	plt.colorbar(orientation="horizontal").set_label('temperature [eV]')  # ;plt.pause(0.01)
 	plt.errorbar(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])],profile_centres[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,yerr=profile_centres_score[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,color='b',label='local centre')
 	plt.plot(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])],(profile_centres+profile_sigma*2.355/2)[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,'--',color='grey',label='density FWHM\n(gaussian fit)')
@@ -337,7 +337,7 @@ if initial_conditions:
 		max_nH2_from_pressure_at_the_target = target_chamber_pressure_at_the_target/(boltzmann_constant_J*300)	# [#/m^3] I suppose ambient temp is ~ 300K
 
 		merge_Te_prof_multipulse_target,merge_dTe_multipulse_target,merge_ne_prof_multipulse_target,merge_dne_multipulse_target,centre_target,profile_target_centres,profile_target_sigma,profile_target_centres_score,TS_r_target,trash,TS_dt_target,trash,TS_dr_target,TS_r_new_target,merge_time_target,trash,merge_time_original_target = load_TS(merge_ID_target_at_the_target,new_timesteps,r,spatial_factor=spatial_factor,time_shift_factor=time_shift_factor)
-		merge_Te_prof_multipulse_interp_target_crop,merge_dTe_prof_multipulse_interp_target_crop,merge_ne_prof_multipulse_interp_target_crop,merge_dne_prof_multipulse_interp_target_crop,interp_range_r_target = average_TS_around_axis(merge_Te_prof_multipulse_target,merge_dTe_multipulse_target,merge_ne_prof_multipulse_target,merge_dne_multipulse_target,r,TS_r_target,TS_dt_target,TS_r_new_target,merge_time_target,new_timesteps,number_of_radial_divisions,start_time=start_time,end_time=end_time)
+		merge_Te_prof_multipulse_interp_target_crop,merge_dTe_prof_multipulse_interp_target_crop,merge_ne_prof_multipulse_interp_target_crop,merge_dne_prof_multipulse_interp_target_crop,interp_range_r_target = average_TS_around_axis(merge_Te_prof_multipulse_target,merge_dTe_multipulse_target,merge_ne_prof_multipulse_target,merge_dne_multipulse_target,r,TS_r_target,TS_dt_target,TS_r_new_target,merge_time_target,new_timesteps,number_of_radial_divisions,profile_target_centres,start_time=start_time,end_time=end_time)
 
 		gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
 		averaged_profile_sigma_target = []
@@ -517,7 +517,7 @@ if initial_conditions:
 		max_nH2_from_pressure_at_the_upstream = target_chamber_pressure_case_upstream/(boltzmann_constant_J*300)	# [#/m^3] I suppose ambient temp is ~ 300K
 
 		merge_Te_prof_multipulse_upstream,merge_dTe_multipulse_upstream,merge_ne_prof_multipulse_upstream,merge_dne_multipulse_upstream,centre_upstream,profile_upstream_centres,profile_upstream_sigma,profile_upstream_centres_score,TS_r_upstream,trash,TS_dt_upstream,trash,TS_dr_upstream,TS_r_new_upstream,merge_time_upstream,trash,merge_time_original_upstream = load_TS(merge_ID_target_at_the_upstream,new_timesteps,r,spatial_factor=spatial_factor,time_shift_factor=time_shift_factor)
-		merge_Te_prof_multipulse_interp_upstream_crop,merge_dTe_prof_multipulse_interp_upstream_crop,merge_ne_prof_multipulse_interp_upstream_crop,merge_dne_prof_multipulse_interp_upstream_crop,interp_range_r_upstream = average_TS_around_axis(merge_Te_prof_multipulse_upstream,merge_dTe_multipulse_upstream,merge_ne_prof_multipulse_upstream,merge_dne_multipulse_upstream,r,TS_r_upstream,TS_dt_upstream,TS_r_new_upstream,merge_time_upstream,new_timesteps,number_of_radial_divisions,start_time=start_time,end_time=end_time)
+		merge_Te_prof_multipulse_interp_upstream_crop,merge_dTe_prof_multipulse_interp_upstream_crop,merge_ne_prof_multipulse_interp_upstream_crop,merge_dne_prof_multipulse_interp_upstream_crop,interp_range_r_upstream = average_TS_around_axis(merge_Te_prof_multipulse_upstream,merge_dTe_multipulse_upstream,merge_ne_prof_multipulse_upstream,merge_dne_multipulse_upstream,r,TS_r_upstream,TS_dt_upstream,TS_r_new_upstream,merge_time_upstream,new_timesteps,number_of_radial_divisions,profile_upstream_centres,start_time=start_time,end_time=end_time)
 
 		gauss = lambda x, A, sig, x0: A * np.exp(-(((x - x0) / sig) ** 2)/2)
 		averaged_profile_sigma_upstream = []
@@ -831,6 +831,17 @@ if initial_conditions:
 	plt.close()
 
 	area_equivalent_to_downstream_peak_pressure = merge_ne_prof_multipulse_interp_crop*1e20*( (nHp_ne_all*merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J))
+	plt.figure(figsize=(8, 5));
+	plt.pcolor(temp_t, temp_r, area_equivalent_to_downstream_peak_pressure, cmap='rainbow');
+	plt.colorbar(orientation="horizontal").set_label('Pressure [Pa]')  # ;plt.pause(0.01)
+	plt.axes().set_aspect(20)
+	plt.xlabel('time [ms]')
+	plt.ylabel('radial location [m]      ')
+	plt.title(pre_title+'Downstream static pressure')
+	figure_index += 1
+	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+		figure_index) + '.eps', bbox_inches='tight')
+	plt.close()
 	temp_index = np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1).argmax()
 	temp = np.nanmax(np.sum(area_equivalent_to_downstream_peak_pressure*area,axis=-1)/sum(area))
 	temp2 = np.max(area_equivalent_to_downstream_peak_pressure,axis=-1)
@@ -842,7 +853,7 @@ if initial_conditions:
 	radious_equivalent_to_downstream_peak_pressure = (area_equivalent_to_downstream_peak_pressure/3.14)**0.5
 
 	results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
-	fast_camera_record_duration = results_summary.loc[merge_ID_target,['fast_camera_record_duration_OES']][0]	# [s]
+	fast_camera_record_duration = results_summary.loc[merge_ID_target,['fast_camera_record_duration_long']][0]	# [s]
 	fast_camera_record_duration_dt = max(1,int(round(fast_camera_record_duration*1e3/dt)))
 	temp2 = generic_filter(temp2,np.mean,size=[fast_camera_record_duration_dt])
 	temp3 = generic_filter(temp3,np.mean,size=[fast_camera_record_duration_dt])
@@ -1091,7 +1102,47 @@ if initial_conditions:
 	# this is used for the determination of the ranges of H (it fits better in post_process_PSI_parameter_search_Yacora_final.py, but it's here...)
 	max_H2_available = (source_flow_rate + feed_rate_SLM) /60/1000 * 101325/(273*boltzmann_constant_J) * 0.001 + np.pi*(0.25**2)*target_chamber_length*target_chamber_pressure/(273*boltzmann_constant_J)	# #
 	max_H2_density_available = max_H2_available/(np.pi*(0.02**2)*length)	# #/m3
-	max_H_density_available = 1e25	# I want to get rid of this without changing the code	#	10*max_H2_density_available	# #/m3
+	max_H_density_available = 100*max_H2_density_available	# #/m3
+
+
+	input_data_dict = dict([])
+	input_data_dict['miscellaneous'] = dict([])
+	# input_data_dict['miscellaneous']['H2_inflow_sides_plasma_column'] = H2_inflow_sides_plasma_column
+	# input_data_dict['miscellaneous']['H2_pre_ELMlike_pulse'] = H2_pre_ELMlike_pulse
+	input_data_dict['miscellaneous']['coord_info'] = dict([('r_crop',r_crop),('time_crop',time_crop),('area',area),('length',length)])
+	input_data_dict['miscellaneous']['homogeneous_mach_number'] = homogeneous_mach_number
+	input_data_dict['miscellaneous']['homogeneous_flow_vel'] = homogeneous_flow_vel
+	input_data_dict['miscellaneous']['shift_TS_to_power_source'] = dict([('internal',internal_shift_TS_to_power_source),('upstream',shift_TS_to_power_source)])
+	input_data_dict['input_power'] = dict([])
+	# input_data_dict['input_power']['energy'] = (np.sum(power_pulse_shape_crop[conventional_start_pulse:conventional_end_pulse])+np.sum(power_pulse_shape_std_crop[conventional_start_pulse:conventional_end_pulse]**2)**0.5)*dt/1000
+	input_data_dict['input_power']['TS'] = dict([])
+	input_data_dict['input_power']['TS']['upstream_power_density_distribution_uniform_mach'] = dict([])
+	input_data_dict['input_power']['TS']['upstream_power_density_distribution_uniform_mach']['full'] = upstream_power_density_distribution_uniform_mach
+	input_data_dict['input_power']['TS']['upstream_power_density_distribution_uniform_mach']['radial_sum'] = np.sum(upstream_power_density_distribution_uniform_mach*area,axis=1)
+	input_data_dict['input_power']['TS']['upstream_power_density_distribution_uniform_flow_velocity'] = dict([])
+	input_data_dict['input_power']['TS']['upstream_power_density_distribution_uniform_flow_velocity']['full'] = upstream_power_density_distribution_uniform_flow_velocity
+	input_data_dict['input_power']['TS']['upstream_power_density_distribution_uniform_flow_velocity']['radial_sum'] = np.sum(upstream_power_density_distribution_uniform_flow_velocity*area,axis=1)
+	input_data_dict['input_power']['TS']['power_density_distribution_uniform_mach'] = dict([])
+	input_data_dict['input_power']['TS']['power_density_distribution_uniform_mach']['full'] = power_density_distribution_uniform_mach
+	input_data_dict['input_power']['TS']['power_density_distribution_uniform_mach']['radial_sum'] = np.sum(power_density_distribution_uniform_mach*area,axis=1)
+	input_data_dict['input_power']['TS']['power_density_distribution_uniform_flow_velocity'] = dict([])
+	input_data_dict['input_power']['TS']['power_density_distribution_uniform_flow_velocity']['full'] = power_density_distribution_uniform_flow_velocity
+	input_data_dict['input_power']['TS']['power_density_distribution_uniform_flow_velocity']['radial_sum'] = np.sum(power_density_distribution_uniform_flow_velocity*area,axis=1)
+	input_data_dict['input_power']['TS']['steady_state_power'] = steady_state_power
+	input_data_dict['input_power']['TS']['time_source_power'] = time_source_power
+	input_data_dict['input_power']['TS']['power_pulse_shape'] = power_pulse_shape
+	input_data_dict['input_power']['TS']['flow'] = dict([])
+	input_data_dict['input_power']['TS']['flow']['Bohm_adiabatic_flow'] = Bohm_adiabatic_flow
+	input_data_dict['input_power']['TS']['flow']['upstream_Bohm_adiabatic_flow'] = upstream_Bohm_adiabatic_flow
+	input_data_dict['input_power']['TS']['flow']['plasma_inflow_upstream_homogeneous_mach_number'] = plasma_inflow_upstream_homogeneous_mach_number
+	input_data_dict['input_power']['TS']['flow']['plasma_inflow_TS_location_homogeneous_mach_number'] = plasma_inflow_TS_location_homogeneous_mach_number
+	input_data_dict['input_power']['TS']['flow']['plasma_inflow_TS_location_sonic'] = plasma_inflow_TS_location_sonic
+	input_data_dict['input_power']['TS']['flow']['plasma_inflow_upstream_max'] = plasma_inflow_upstream_max
+	input_data_dict['input_power']['TS']['flow']['plasma_inflow_upstream_min'] = plasma_inflow_upstream_min
+	input_data_dict['input_power']['TS']['flow']['H2_source_inflow'] = source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J)
+	input_data_dict['input_power']['TS']['flow']['H2_target_inflow'] = feed_rate_SLM /60/1000 * 101325/(273*boltzmann_constant_J)
+	np.savez_compressed(path_where_to_save_everything +'/input_data', **input_data_dict)
+
 
 else:
 

@@ -485,6 +485,9 @@ y_calibration=np.array([  80.        ,   80.4040404 ,   80.80808081,   81.212121
     118.78787879,  119.19191919,  119.5959596 ,  120.        ])
 # y_calibration = y_calibration - 100
 
+# correlation found with examine_sensitivity_12_only_for_noise_vs_signal.py
+std_vs_counts = lambda x, a,b,x0: np.maximum(2,a*(np.maximum(0,x-x0)**b))
+std_vs_counts_fit = np.array([ 1.77615007,  0.45271138, 94.47173805])
 
 # Here I put multiple pictures together to form a full image in time
 
@@ -534,6 +537,7 @@ merge_Gain = []
 merge_Noise = []
 merge_overexposed = []
 merge_wavelengths = []
+# step to merge together all the time depemdent camera images
 path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everything + '/merge'+str(merge_ID_target)+'_merge_tot.npz')) or (time_resolution_scan and not os.path.exists(path_where_to_save_everything+'/merge'+str(merge_ID_target)+'_skip_of_'+str(time_resolution_extra_skip+1)+'row_merge_tot.npz'))) or overwrite_everything[0]):
 # if True:
@@ -746,7 +750,8 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 			im = Image.open(fname)
 			data = np.array(im)
 
-			data_sigma=np.sqrt(data)
+			# data_sigma=np.sqrt(data)	# theoretical value for counted things
+			data_sigma = std_vs_counts(data,*std_vs_counts_fit)	# correlation found with examine_sensitivity_12_only_for_noise_vs_signal.py
 			additive_factor,additive_factor_sigma = fix_minimum_signal_experiment(data,intermediate_wavelength,last_wavelength,tilt_intermediate_column,tilt_last_column,counts_treshold_fixed_increase=106,dx_to_etrapolate_to=dx_to_etrapolate_to)
 			data = (data.T + additive_factor).T
 			data_sigma = np.sqrt((data_sigma**2).T + (additive_factor_sigma**2)).T
@@ -1284,6 +1289,7 @@ time_range_for_interp = min(time_range_for_interp,conventional_time_step)
 interpolation_borders_expanded_row = np.zeros((len(new_timesteps),roi_tr[1]))
 interpolation_borders_expanded_time = np.zeros((len(new_timesteps),roi_tr[1]))
 number_of_points_for_interpolation = np.zeros((len(new_timesteps),roi_tr[1]))
+# step to buid images relative to a single time step at the time
 if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everything+'/merge'+str(merge_ID_target)+'_composed_array.npy')) or (time_resolution_scan and not os.path.exists(path_where_to_save_everything+'/merge'+str(merge_ID_target)+'_skip_of_'+str(time_resolution_extra_skip+1)+'row_composed_array.npy'))) or overwrite_everything[1]):
 
 
@@ -2354,7 +2360,7 @@ plt.close()
 # 	# plt.show()
 # 	ani.save('/home/ffederic/work/Collaboratory/test/experimental_data/merge'+str(merge_ID_target)+'_composed_array' + '.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
 
-
+# step to correct the gain to compensate for non linearity in the sensitivity
 if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everything +'/merge'+str(merge_ID_target)+'_gain_scaled_composed_array.npy')) or (time_resolution_scan and not os.path.exists(path_where_to_save_everything +'/merge'+str(merge_ID_target)+'_gain_scaled_composed_array.npy'))) or overwrite_everything[4]):
 	if len(np.unique(merge_Gain))>1:
 		print('there must be an error, multiple valies of gain detected')
@@ -2460,7 +2466,7 @@ ani.save(path_where_to_save_everything+'/merge'+str(merge_ID_target)+'_noise' + 
 plt.close()
 
 
-
+# step to do the LOS binning
 if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everything +'/merge'+str(merge_ID_target)+'_binned_data.npy')) or (time_resolution_scan and not os.path.exists(path_where_to_save_everything +'/merge'+str(merge_ID_target)+'_binned_data.npy'))) or overwrite_everything[2]):
 # if True:
 #	all_angles = []
@@ -2592,6 +2598,7 @@ else:
 #	for j in range(np.shape(composed_array)[1]):
 #		data_to_interpolate = merge.sel(time_row_to_start_pulse=slice(i*conventional_time_step-time_range_for_interp,i*conventional_time_step-time_range_for_interp),row=slice(i-rows_range_for_interp,i-rows_range_for_interp))
 
+# step to do the line integration (wavelength)
 if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everything +'/merge'+str(merge_ID_target)+'_all_fits.npy')) or (time_resolution_scan and not os.path.exists(path_where_to_save_everything +'/merge'+str(merge_ID_target)+'_all_fits.npy'))) or overwrite_everything[3]):
 
 	# fit = doSpecFit_single_frame(np.array(binned_data[0]), df_settings, df_log, geom, waveLcoefs, binnedSens)
