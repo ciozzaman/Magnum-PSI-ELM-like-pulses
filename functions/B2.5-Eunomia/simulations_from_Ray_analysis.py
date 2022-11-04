@@ -97,8 +97,12 @@ def read_triangle(nodes,elements):
     return r,z,tri
 
 Data = '/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/'
-file_array = ['027.dat','053.dat','10.dat','20.dat','44.dat']
-pressure = [0.27,0.53,1.0,2.0,4.4]
+# file_array = ['027.dat','053.dat','10.dat','20.dat','44.dat']
+# pressure = [0.27,0.53,1.0,2.0,4.4]
+# data_tria = ['low_tria.1','low_tria.1','low_tria.1','low_tria.1','low_tria.1']
+file_array = ['low_053.dat','low_20.dat','low_44.dat','high_045.dat','high_20.dat','high_43.dat']
+pressure = [0.53,2.0,4.4,0.45,2.0,4.3]
+data_tria = ['low_tria.1','low_tria.1','low_tria.1','high_tria.1','high_tria.1','high_tria.1']
 boltzmann_constant_J = 1.380649e-23	# J/K
 eV_to_K = 8.617333262145e-5	# eV/K
 hydrogen_mass = 1.008*1.660*1e-27	# kg
@@ -106,84 +110,84 @@ ionisation_potential = 13.6	# eV
 dissociation_potential = 2.2	# eV
 J_to_eV = 6.242e18
 print('Reading data file..')
+ccdfile = '/home/ffederic/work/Collaboratory/test/experimental_data/functions/ccd96_h.dat'
+from adas import read_adf15,read_adf11
 
 figure_index=0
 plt.close('all')
-
+plt.rcParams.update({'font.size': 18})
 
 '''Data read only 1 time'''
-data_tria = '/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/'
-list, grid_cells, data_grid = read_first(Data+file_array[0])
-data_matrix = read_data([Data+file_array[0]], list, grid_cells)
-z_data = data_grid.sel(axis='z').values
-r_data = data_grid.sel(axis='r').values
-r_tri, z_tri, tri = read_triangle(data_tria+'tria.1.node',data_tria+'tria.1.ele')
+data_tria_loc = '/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/'
 color = ['b', 'r', 'm', 'y', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise']
 figure_index +=1
 figure_1 = figure_index
-plt.figure(figure_1)
+plt.figure(figure_1,figsize=(8.5, 6.5))
 figure_index +=1
 figure_2 = figure_index
-plt.figure(figure_2)
+plt.figure(figure_2,figsize=(8.5, 6.5))
 figure_index +=1
 figure_3 = figure_index
-plt.figure(figure_3)
+plt.figure(figure_3,figsize=(8.5, 6.5))
 figure_index +=1
 figure_4 = figure_index
-plt.figure(figure_4)
+plt.figure(figure_4,figsize=(8.5, 6.5))
+figure_index +=1
+figure_4_1 = figure_index
+plt.figure(figure_4_1,figsize=(8.5, 6.5))
 figure_index +=1
 figure_5 = figure_index
-plt.figure(figure_5)
+plt.figure(figure_5,figsize=(8.5, 6.5))
 figure_index +=1
 figure_6 = figure_index
-plt.figure(figure_6)
+plt.figure(figure_6,figsize=(8.5, 6.5))
 figure_index +=1
 figure_7 = figure_index
-plt.figure(figure_7)
+plt.figure(figure_7,figsize=(8.5, 6.5))
 figure_index +=1
 figure_8 = figure_index
-plt.figure(figure_8)
+plt.figure(figure_8,figsize=(8.5, 6.5))
 figure_index +=1
 figure_9 = figure_index
-plt.figure(figure_9)
+plt.figure(figure_9,figsize=(8.5, 6.5))
 figure_index +=1
 figure_10 = figure_index
-plt.figure(figure_10)
+plt.figure(figure_10,figsize=(8.5, 6.5))
 figure_index +=1
 figure_11 = figure_index
-plt.figure(figure_11)
+plt.figure(figure_11,figsize=(8.5, 6.5))
 figure_index +=1
 figure_12 = figure_index
-plt.figure(figure_12)
+plt.figure(figure_12,figsize=(8.5, 6.5))
 figure_index +=1
 figure_13 = figure_index
-plt.figure(figure_13)
+plt.figure(figure_13,figsize=(8.5, 6.5))
 figure_index +=1
 figure_14 = figure_index
-plt.figure(figure_14)
+plt.figure(figure_14,figsize=(8.5, 6.5))
 figure_index +=1
 figure_15 = figure_index
-plt.figure(figure_15)
+plt.figure(figure_15,figsize=(8.5, 6.5))
 figure_index +=1
 figure_16 = figure_index
-plt.figure(figure_16)
 figure_index +=1
+plt.figure(figure_16,figsize=(8.5, 6.5))
 figure_17 = figure_index
-plt.figure(figure_17)
+plt.figure(figure_17,figsize=(8.5, 6.5))
 figure_index +=1
 figure_18 = figure_index
-plt.figure(figure_18)
+plt.figure(figure_18,figsize=(8.5, 6.5))
 figure_index +=1
 figure_19 = figure_index
-plt.figure(figure_19)
+plt.figure(figure_19,figsize=(8.5, 6.5))
 figure_index +=1
 figure_20 = figure_index
-plt.figure(figure_20)
+plt.figure(figure_20,figsize=(8.5, 6.5))
 figure_index +=1
 figure_21 = figure_index
-plt.figure(figure_21)
+plt.figure(figure_21,figsize=(8.5, 6.5))
 figure_22 = figure_index
-plt.figure(figure_22)
+plt.figure(figure_22,figsize=(8.5, 6.5))
 collect_x = []
 collect_y = []
 collect_x1 = []
@@ -194,17 +198,29 @@ collect_temp_H2 = []
 collect_dens_H2 = []
 collect_temp_H = []
 collect_dens_H = []
+collect_temp_fit_H2_Te = []
+fit_TH_TE_all = []
+fit_TH2_TE_all = []
+fit_nH_ne_TE_all = []
+fit_nH2_ne_TE_all = []
+all_local_CX_sum = []
 for index in range(len(file_array)):
+	list, grid_cells, data_grid = read_first(Data+file_array[index])
+	data_matrix = read_data([Data+file_array[index]], list, grid_cells)
+	z_data = data_grid.sel(axis='z').values
+	r_data = data_grid.sel(axis='r').values
+	r_tri, z_tri, tri = read_triangle(data_tria_loc+data_tria[index]+'.node',data_tria_loc+data_tria[index]+'.ele')
+
 	r_tri = np.asarray(r_tri)
 	r_tri2 = -r_tri
 	data_matrix = read_data([Data+file_array[index]], list, grid_cells)
-	temp_e = data_matrix.sel(quantity='t', species='e', filename=Data+file_array[index]).values
+	temp_e = data_matrix.sel(quantity='t', species='e', filename=Data+file_array[index]).values	# eV
 	dens_e = data_matrix.sel(quantity='n', species='e', filename=Data+file_array[index]).values
-	temp_H2 = (data_matrix.sel(quantity='t', species='H_2', filename=Data+file_array[index]).values)[0]
+	temp_H2 = (data_matrix.sel(quantity='t', species='H_2', filename=Data+file_array[index]).values)[0]	# eV
 	dens_H2 = (data_matrix.sel(quantity='n', species='H_2', filename=Data+file_array[index]).values)[0]
-	temp_H = (data_matrix.sel(quantity='t', species='H', filename=Data+file_array[index]).values)
+	temp_H = (data_matrix.sel(quantity='t', species='H', filename=Data+file_array[index]).values)	# eV
 	dens_H = (data_matrix.sel(quantity='n', species='H', filename=Data+file_array[index]).values)
-	temp_Hp = (data_matrix.sel(quantity='t', species='H^+', filename=Data+file_array[index]).values)
+	temp_Hp = (data_matrix.sel(quantity='t', species='H^+', filename=Data+file_array[index]).values)	# eV
 	dens_Hp = (data_matrix.sel(quantity='n', species='H^+', filename=Data+file_array[index]).values)
 	v_e = (data_matrix.sel(quantity='vz', species='e', filename=Data+file_array[index]).values)
 	vz_Hp = (data_matrix.sel(quantity='vz', species='H^+', filename=Data+file_array[index]).values)
@@ -213,8 +229,14 @@ for index in range(len(file_array)):
 	v_Hp = ((data_matrix.sel(quantity='vz', species='H^+', filename=Data+file_array[index]).values)**2 + (data_matrix.sel(quantity='vy', species='H^+', filename=Data+file_array[index]).values)**2 + (data_matrix.sel(quantity='vx', species='H^+', filename=Data+file_array[index]).values)**2)**0.5
 	v_H = ((data_matrix.sel(quantity='vz', species='H', filename=Data+file_array[index]).values)**2 + (data_matrix.sel(quantity='vy', species='H', filename=Data+file_array[index]).values)**2 + (data_matrix.sel(quantity='vx', species='H', filename=Data+file_array[index]).values)**2)**0.5
 	v_H2 = ((data_matrix.sel(quantity='vz', species='H_2', filename=Data+file_array[index]).values)[0]**2 + (data_matrix.sel(quantity='vy', species='H_2', filename=Data+file_array[index]).values)[0]**2 + (data_matrix.sel(quantity='vx', species='H_2', filename=Data+file_array[index]).values)[0]**2)**0.5
+
+	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,z_data>-0.35))
+	border_region_strong_recycling = z_data[select].max()-0.0035
+	full_pure_geometrical_selection = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,z_data<border_region_strong_recycling)))
+	axis_pure_geometrical_selection = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,z_data<border_region_strong_recycling)))
+
 	ratio = dens_H2/dens_e
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),ratio<1e5))))
+	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),ratio<1e5))
 	collect_x.append(temp_e[select])
 	collect_y.append(ratio[select])
 	collect_temp_e.append(temp_e[select])
@@ -224,7 +246,10 @@ for index in range(len(file_array)):
 	collect_temp_H.append(temp_H[select])
 	collect_dens_H.append(dens_H[select])
 	plt.figure(figure_1)
-	plt.plot(temp_e[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	p1 = plt.plot(temp_e[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
+	fit = np.polyfit(np.log(temp_e[select]),np.log(ratio[select]),1)
+	fit_nH2_ne_TE_all.append(fit)
+	plt.plot(np.sort((temp_e)),np.exp(np.polyval(fit,np.sort(np.log(temp_e)))),'--',linewidth=1,color=p1[0].get_color())
 	plt.plot(temp_e,ratio,',',color=color[index])
 	if False:
 		fit = np.polyfit(np.log(temp_e[select]),np.log(ratio[select]),2)
@@ -235,107 +260,129 @@ for index in range(len(file_array)):
 	# plt.plot(temp_e[select],0.1*np.exp(np.polyval(fit,np.log(temp_e[select]))),'k--')
 	plt.figure(figure_2)
 	ratio = (dens_H)/dens_e
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))))
+	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))
 	collect_x1.append(temp_e[select])
 	collect_y1.append(ratio[select])
-	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	p1 = plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
+	fit = np.polyfit(np.log(temp_e[select]),np.log(ratio[select]),1)
+	fit_nH_ne_TE_all.append(fit)
+	plt.plot(np.sort((temp_e)),np.exp(np.polyval(fit,np.sort(np.log(temp_e)))),'--',linewidth=1,color=p1[0].get_color())
 	plt.plot(temp_e,ratio,',',color=color[index])
 	plt.figure(figure_3)
 	ratio = temp_H
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	p1=plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
+	fit = np.polyfit(np.log(temp_e[select]),np.log(ratio[select]),1)
+	fit_TH_TE_all.append(fit)
+	plt.plot(np.sort((temp_e)),np.exp(np.polyval(fit,np.sort(np.log(temp_e)))),'--',linewidth=1,color=p1[0].get_color())
 	plt.plot(temp_e,ratio,',',color=color[index])
 	plt.figure(figure_4)
 	ratio = temp_H2
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	p1=plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
+	# plt.scatter((temp_e)[select],ratio[select],marker='x',c=np.log10(dens_e[select]),label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
+	fit = np.polyfit(np.log(temp_e[select]),np.log(ratio[select]),1)
+	fit_TH2_TE_all.append(fit)
+	plt.plot(np.sort((temp_e)),np.exp(np.polyval(fit,np.sort(np.log(temp_e)))),'--',linewidth=1,color=p1[0].get_color())
 	plt.plot(temp_e,ratio,',',color=color[index])
+	try:
+		plt.figure(figure_4_1)
+		plt.plot((dens_e)[select],ratio[select]/np.exp(np.polyval(fit_TH2_TE,np.log((temp_e)[select]))),'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
+		# plt.scatter((dens_e)[select],ratio[select]/np.exp(np.polyval(fit_TH2_TE,np.log((temp_e)[select]))),marker='x',c=np.log10(temp_e[select]),label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
+		collect_temp_fit_H2_Te.append(ratio[select]/np.exp(np.polyval(fit_TH2_TE,np.log((temp_e)[select]))))
+	except:
+		print('first loop where fit_TH2_TE is yet not defined')
+		pass
 	plt.figure(figure_5)
 	ratio = temp_e
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_6)
 	ratio = dens_e
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_7)
 	ratio = temp_Hp
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(temp_e,ratio,',',color=color[index])
 	plt.figure(figure_8)
 	ratio = v_e
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_9)
 	ratio = vz_Hp
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_10)
 	ratio = (vz_Hp**2)*dens_Hp*hydrogen_mass + dens_Hp*temp_Hp/eV_to_K*boltzmann_constant_J + dens_e*temp_e/eV_to_K*boltzmann_constant_J
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_11)
 	ratio = (vz_Hp**2)*dens_Hp*hydrogen_mass
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_12)
 	ratio = vz_Hp/(((temp_e + 5/3*temp_Hp)/eV_to_K*boltzmann_constant_J/hydrogen_mass)**0.5)
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_13)
 	ratio = vz_H
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_14)
 	ratio = vz_H2
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_15)
 	ratio = (vz_H)/vz_Hp
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),np.logical_and(ratio<100,True)))))
-	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),np.logical_and(ratio<100,True)))
+	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(temp_e,ratio,',',color=color[index])
 	plt.figure(figure_16)
 	ratio = (vz_H2)/vz_Hp
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),np.logical_and(ratio<100,True)))))
-	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),np.logical_and(ratio<100,True)))
+	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(temp_e,ratio,',',color=color[index])
 	plt.figure(figure_17)
 	ratio = vz_H/v_H
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_18)
 	ratio = vz_H2/v_H2
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.001,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),True))))
-	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
+	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_19)
 	ratio = (dens_H)*temp_H2
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))))
-	plt.plot((temp_e*dens_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))
+	plt.plot((temp_e*dens_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(temp_e*dens_e,ratio,',',color=color[index])
 	plt.figure(figure_20)
 	ratio = dens_e
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))))
-	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))
+	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(temp_e,ratio,',',color=color[index])
 	plt.figure(figure_21)
 	ratio = (0.5*(v_Hp**2)*hydrogen_mass + 5*temp_e/eV_to_K*boltzmann_constant_J + ionisation_potential/J_to_eV + 	dissociation_potential/J_to_eV)*dens_e*vz_Hp
-	# select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))))
-	# plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
-	temp1 = ratio[np.logical_and(z_data>-1.19867,z_data<-1.1982)]
-	temp2 = r_data[np.logical_and(z_data>-1.19867,z_data<-1.1982)]
+	# select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))
+	# plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
+	if file_array[index][:file_array[index].find('_')] == 'low':
+		temp1 = ratio[np.logical_and(z_data>-1.19867,z_data<-1.1982)]
+		temp2 = r_data[np.logical_and(z_data>-1.19867,z_data<-1.1982)]
+	else:
+		temp1 = ratio[np.logical_and(z_data>-1.29867,z_data<-1.2982)]
+		temp2 = r_data[np.logical_and(z_data>-1.29867,z_data<-1.2982)]
 	temp1 = np.array([x for _, x in sorted(zip(temp2, temp1))])
 	temp2 = np.sort(temp2)
 	temp3 = np.array([[temp2[0]+np.diff(temp2)[0]/2]+(np.diff(temp2)[:-1]/2+np.diff(temp2)[1:]/2).tolist()+[np.diff(temp2)[-1]]])
@@ -343,10 +390,34 @@ for index in range(len(file_array)):
 	plt.plot(z_data,ratio,'x',color=color[index],label='pressure %.3gPa, Power %.3gW' %(pressure[index],temp))
 	plt.figure(figure_22)
 	ratio = (dens_H)/dens_H2
-	select = np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))))
-	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]))
+	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),np.logical_and(True,True)))
+	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(temp_e,ratio,',',color=color[index])
-
+	# here I want to check how much would be CX if I overestimate it with my super simple method
+	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),ratio<1e5))
+	temp = read_adf11(ccdfile, 'ccd', 1, 1, 1, temp_e,(dens_e * 10 ** (0 - 6)))
+	temp[np.isnan(temp)] = 0
+	eff_CX_RR = temp * (10 ** -6)  # in CX m^-3 s-1 / (# / m^3)**2
+	eff_CX_RR_int = eff_CX_RR * dens_H * dens_Hp
+	delta_t = (temp_Hp - temp_H)
+	delta_t[delta_t<0] = 0
+	local_CX = np.float32(3/2* delta_t * eff_CX_RR_int / J_to_eV)	# W / m^3
+	# plt.figure()
+	# plt.scatter(r_data[select],z_data[select],marker='o',c=(dens_H/dens_e)[select])
+	r_resampled = np.arange(r_data[select].min(),r_data[select].max(),0.0002)
+	dr=np.mean(np.diff(r_resampled))
+	z_resampled = np.arange(z_data[select].min(),z_data[select].max(),0.0005)
+	dz=np.mean(np.diff(z_resampled))
+	r_resampled,z_resampled = np.meshgrid(r_resampled,z_resampled)
+	shape = np.shape(r_resampled)
+	r_resampled = r_resampled.flatten()
+	z_resampled = z_resampled.flatten()
+	local_CX_resampled = []
+	for i_ in range(len(r_resampled)):
+		local_CX_resampled.append(local_CX[np.abs((r_resampled[i_] - r_data)**2 + (z_resampled[i_] - z_data)**2).argmin()])
+	# plt.figure()
+	# plt.scatter(r_resampled,z_resampled,marker='o',c=local_CX_resampled)
+	all_local_CX_sum.append(np.sum(np.array(local_CX_resampled) * dr*dz*2*np.pi*r_resampled))
 # plt.plot([0.1,4],[1,1e-3],'k--')
 # plt.plot([0.1,4],[1000,1],'k--')
 collect_x = [item for sublist in collect_x for item in sublist]
@@ -370,51 +441,77 @@ if False:	# a linead dependency is more representative of a pure dilution due to
 	plt.plot(collect_x,10*temp2,'k--',label='*10 and /10 of log log fit\n'+str(fit))
 	plt.plot(collect_x,0.1*temp2,'k--')
 	plt.plot(collect_x,temp2,'k')
-else:
+elif False:
 	temp2 = np.exp(np.polyval(fit2,np.log(collect_x)))
 	# collect_x_max = np.exp(-fit[1]/(2*fit[0]))
 	# temp2[collect_x<collect_x_max]=temp2.max()
 	plt.plot(collect_x,10*temp2,'k--',label='*10 and /10 of log log fit\n'+str(fit2))
 	plt.plot(collect_x,0.1*temp2,'k--')
 	plt.plot(collect_x,temp2,'k')
+else:
+	fit_nH2_ne_TE = np.mean(fit_nH2_ne_TE_all,axis=0)
+	plt.plot(np.linspace(0.1,10,100),np.exp(np.polyval(fit_nH2_ne_TE,np.log(np.linspace(0.1,10,100)))),'k',label=r'$%.3g \cdot e^{%.3g \cdot ln(T_e)}$' %(np.exp(fit_nH2_ne_TE[1]),fit_nH2_ne_TE[0]))
+	plt.plot(np.linspace(0.1,10,100),np.exp(np.polyval(fit_nH2_ne_TE,np.log(np.linspace(0.1,10,100))))*0.01,'k--',label='x100 and /100 from scaling')
+	plt.plot(np.linspace(0.1,10,100),np.exp(np.polyval(fit_nH2_ne_TE,np.log(np.linspace(0.1,10,100))))*100,'--k')
 plt.xlabel(r'$T_e$'+' [eV]')
 plt.ylabel(r'$n_{H_2} / n_e$')
-plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
-plt.legend(loc='best', fontsize='small'),plt.semilogy(),plt.semilogx()
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy(),plt.semilogx()
+plt.ylim(top=1e4,bottom=5e-6)
 plt.grid()
 plt.figure(figure_2)
-fit = np.polyfit(np.log(collect_x1),np.log(collect_y1),2)
-collect_x1 = np.sort(collect_x1)
-temp2 = np.exp(np.polyval(fit,np.log(collect_x1)))
-limit_H_down = interpolate.interp1d(np.log([1e-5,0.1,0.5,2,4]),np.log([0.2,0.2,0.006,0.003,0.003]),fill_value='extrapolate')
-temp2 = np.max([temp2,5*np.exp(limit_H_down(np.log(collect_x1)))],axis=0)
-plt.plot(collect_x1,temp2,'k--',label='log log fit\n'+str(fit))
+if False:
+	fit = np.polyfit(np.log(collect_x1),np.log(collect_y1),2)
+	collect_x1 = np.sort(collect_x1)
+	temp2 = np.exp(np.polyval(fit,np.log(collect_x1)))
+	limit_H_down = interpolate.interp1d(np.log([1e-5,0.1,0.5,2,4]),np.log([0.2,0.2,0.006,0.003,0.003]),fill_value='extrapolate')
+	temp2 = np.max([temp2,5*np.exp(limit_H_down(np.log(collect_x1)))],axis=0)
+	plt.plot(collect_x1,temp2,'k--',label='log log fit\n'+str(fit))
+	plt.plot([0.1,4],[20,20],'k:',label='boundaries')
+	# plt.plot([0.1,0.5,1.1,4],[7,5,0.3,0.3],'r:',label='excluding 1mm close to target')
+	plt.plot([0.1,0.5,2,4],[0.2,0.006,0.003,0.003],'k:')
+else:
+	fit_nH_ne_TE = np.mean(fit_nH_ne_TE_all,axis=0)
+	plt.plot(np.linspace(0.1,10,100),np.exp(np.polyval(fit_nH_ne_TE,np.log(np.linspace(0.1,10,100)))),'k',label=r'$%.3g \cdot e^{%.3g \cdot ln(T_e)}$' %(np.exp(fit_nH_ne_TE[1]),fit_nH_ne_TE[0]))
+	plt.plot(np.linspace(0.1,10,100),np.exp(np.polyval(fit_nH_ne_TE,np.log(np.linspace(0.1,10,100))))*0.1,'k--',label='x100 and /10 from scaling')
+	plt.plot(np.linspace(0.1,10,100),np.exp(np.polyval(fit_nH_ne_TE,np.log(np.linspace(0.1,10,100))))*100,'--k')
 plt.xlabel(r'$T_e$'+' [eV]')
 plt.ylabel(r'$n_H / n_e$')
-plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
-plt.plot([0.1,4],[20,20],'k:',label='boundaries')
-# plt.plot([0.1,0.5,1.1,4],[7,5,0.3,0.3],'r:',label='excluding 1mm close to target')
-plt.plot([0.1,0.5,2,4],[0.2,0.006,0.003,0.003],'k:')
-plt.legend(loc='best', fontsize='small'),plt.semilogy(),plt.semilogx()
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
+plt.ylim(top=1e4,bottom=5e-5)
 plt.grid()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy(),plt.semilogx()
 plt.pause(0.01)
 plt.figure(figure_3)
 plt.xlabel(r'$T_e$'+' [eV]')
 plt.ylabel(r'$T_H$'+' [eV]')
-plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
-plt.plot([0.1,3],[0.1,1.4],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy(),plt.semilogx()
+# plt.plot([0.1,3],[0.1,1.4],'k--')
+fit_TH_TE = np.mean(fit_TH_TE_all,axis=0)
+plt.plot(np.linspace(0.1,10,100),np.exp(np.polyval(fit_TH_TE,np.log(np.linspace(0.1,10,100)))),'--k',label=r'$%.3g \cdot e^{%.3g \cdot ln(T_e)}$' %(np.exp(fit_TH_TE[1]),fit_TH_TE[0]))
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy(),plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_4)
 plt.xlabel(r'$T_e$'+' [eV]')
 plt.ylabel(r'$T_{H_2}$'+' [eV]')
-plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.plot([0.1,2,4],[0.1,0.3,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy(),plt.semilogx()
+# plt.plot([0.1,2,4],[0.1,0.3,0.3],'k--')
+fit_TH2_TE = np.mean(fit_TH2_TE_all,axis=0)
+plt.plot(np.linspace(0.1,10,100),np.exp(np.polyval(fit_TH2_TE,np.log(np.linspace(0.1,10,100)))),'--k',label=r'$%.3g \cdot e^{%.3g \cdot ln(T_e)}$' %(np.exp(fit_TH2_TE[1]),fit_TH2_TE[0]))
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy(),plt.semilogx()
+plt.grid()
+plt.pause(0.01)
+plt.figure(figure_4_1)
+plt.xlabel(r'$n_e$'+' [eV]')
+plt.ylabel(r'${T_{H_2}} / {(%.3g \cdot e^{%.3g \cdot ln(T_e)})}$'  %(np.exp(fit_TH2_TE[1]),fit_TH2_TE[0]) +' [au]')
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
+fit_TH2_TE_ne=np.polyfit(np.log(collect_dens_e/1e20),np.log(np.concatenate(collect_temp_fit_H2_Te)),1)
+plt.plot(10**np.linspace(18,21.5,10) ,np.exp(np.polyval(fit_TH2_TE_ne,np.log(10**np.linspace(18,21.5,10) / 1e20))),'--k',label=r'$%.3g \cdot e^{%.3g \cdot ln(n_e/10^{20})}$' %(np.exp(fit_TH2_TE_ne[1]),fit_TH2_TE_ne[0]))
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy(),plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_5)
@@ -423,7 +520,7 @@ plt.ylabel(r'$T_e$'+' [eV]')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_6)
@@ -432,16 +529,16 @@ plt.ylabel(r'$n_e$')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
 plt.pause(0.01)
 plt.grid()
 plt.figure(figure_7)
 plt.xlabel(r'$T_e$'+' [eV]')
 plt.ylabel(r'$T_{H^+}$'+' [eV]')
-plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
-plt.plot([0.1,4],[0.1,4],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy(),plt.semilogx()
+plt.plot([0.1,10],[0.1,10],'k--',label=r'$T_{H^+} = T_e$')
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy(),plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_8)
@@ -450,7 +547,7 @@ plt.ylabel(r'$v_e$'+' [m/s]')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_9)
@@ -459,7 +556,7 @@ plt.ylabel(r'$vz_{H^+}$'+' [m/s]')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_10)
@@ -468,7 +565,7 @@ plt.ylabel('total pressure [Pa]')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_11)
@@ -477,7 +574,7 @@ plt.ylabel('dynamic pressure [Pa]')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_12)
@@ -486,7 +583,7 @@ plt.ylabel('Mach number [au]')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_13)
@@ -495,7 +592,7 @@ plt.ylabel(r'$vz_H$'+' [m/s]')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_14)
@@ -504,21 +601,21 @@ plt.ylabel(r'$vz_{H_2}$'+' [m/s]')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_15)
 plt.xlabel(r'$T_e$'+' [eV]')
 plt.ylabel(r'$vz_H / vz_{H^+}$')
-plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
-plt.legend(loc='best', fontsize='small'),plt.semilogy(),plt.semilogx()
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy(),plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_16)
 plt.xlabel(r'$T_e$'+' [eV]')
 plt.ylabel(r'$vz_{H_2} / vz_{H^+}$')
-plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
-plt.legend(loc='best', fontsize='small'),plt.semilogy(),plt.semilogx()
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy(),plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_17)
@@ -527,7 +624,7 @@ plt.ylabel(r'$vz_H / v_H$'+' [m/s]')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_18)
@@ -536,37 +633,103 @@ plt.ylabel(r'$vz_{H_2}/v_{H_2}$'+' [m/s]')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_19)
 plt.xlabel(r'$T_e * n_e$'+' [eV]')
 plt.ylabel(r'$n_{H_2} * T_{H_2}$')
-plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
-plt.legend(loc='best', fontsize='small'),plt.semilogy(),plt.semilogx()
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy(),plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_20)
 plt.xlabel(r'$n_e$'+' [#/m3]')
 plt.ylabel(r'$T_e$'+' [eV]')
-plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
-plt.legend(loc='best', fontsize='small'),plt.semilogy(),plt.semilogx()
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
+plt.legend(loc='best', fontsize='x-small'),plt.semilogy(),plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_21)
 plt.xlabel('z[mm]')
 plt.ylabel('power flow'+' [W/m2]')
-plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
-plt.legend(loc='best', fontsize='small')
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
+plt.legend(loc='best', fontsize='x-small')
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_22)
 plt.xlabel(r'$T_e * n_e$'+' [eV]')
 plt.ylabel(r'$n_{H} / n_{H_2}$')
-plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
-plt.legend(loc='best', fontsize='small')
+plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
+plt.legend(loc='best', fontsize='x-small')
 plt.grid()
 plt.pause(0.01)
+
+
+# this bit is to read the full output from Ray's simulations. the goal is to compare the CX RR with ADAS
+if False:
+	import xarray as xr
+	from adas import read_adf15,read_adf11
+	figure_index=0
+	plt.close('all')
+
+	figure_index+=1
+	figure_1 = figure_index
+	plt.figure(figure_1)
+	figure_index+=1
+	figure_2 = figure_index
+	plt.figure(figure_2)
+	file_array = ['low_053.dat','low_20.dat','low_44.dat','high_045.dat','high_20.dat','high_43.dat']
+	pressure = [0.53,2.0,4.4,0.45,2.0,4.3]
+	data_tria = ['low_tria.1','low_tria.1','low_tria.1','high_tria.1','high_tria.1','high_tria.1']
+	average = []
+	for i in range(len(file_array)):
+		rate_storage = xr.open_dataset('/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/Paper replication package/replication_package/netcdf_data/netcdf_target_'+file_array[i][:file_array[i].find('_')]+'_density_rates.nc')
+		if file_array[i][:file_array[i].find('_')] == 'low':
+			person = 'gijs'
+		else:
+			person = 'mike'
+		CX_RR = rate_storage.sel(collision=4,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['Data'].data
+		cellIndex = rate_storage.sel(collision=4,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['cellIndex'].data
+		r = rate_storage.sel(collision=4,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['r'].data
+		z = rate_storage.sel(collision=4,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['z'].data
+		select = np.logical_and(r>0,np.logical_and(r<0.02,z>-0.35))
+		CX_RR = CX_RR[select]
+		cellIndex = cellIndex[select]
+		density_storage = xr.open_dataset('/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/Paper replication package/replication_package/netcdf_data/netcdf_'+file_array[i][:file_array[i].find('_')]+'_density.nc')
+		nH = density_storage.sel(quantity='n',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H',index=cellIndex)['Data'].data
+		nHp = density_storage.sel(quantity='n',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H^+',index=cellIndex)['Data'].data
+		ne = density_storage.sel(quantity='n',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='e',index=cellIndex)['Data'].data
+		Te = density_storage.sel(quantity='t',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='e',index=cellIndex)['Data'].data
+		THp = density_storage.sel(quantity='t',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H^+',index=cellIndex)['Data'].data
+		TH = density_storage.sel(quantity='t',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H',index=cellIndex)['Data'].data
+		ADAS_RR = read_adf11(ccdfile, 'ccd', 1, 1, 1, Te,(ne * 10 ** (0 - 6))) * (10 ** -6)  # in CX m^-3 s-1 / (# / m^3)**2
+
+		power_storage = xr.open_dataset('/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/Paper replication package/replication_package/netcdf_data/netcdf_full_'+file_array[i][:file_array[i].find('_')]+'_density_rates.nc')
+		CX_power = np.mean(power_storage.sel(collision=4,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')],cellIndex=cellIndex)['Data'].data,axis=0)
+
+
+		# plt.scatter(r,z,marker='o',c=CX_power)
+		average.append(np.median(ADAS_RR/(CX_RR/(nH*nHp))))
+		plt.figure(figure_1)
+		plt.plot(ne,ADAS_RR/(CX_RR/(nH*nHp)),'+',label='pressure %.3gPa' %(pressure[i]) +' '+file_array[i][:file_array[i].find('_')] + ' dens')
+		plt.figure(figure_2)
+		plt.plot((THp-TH),(THp-TH)/(2/3*(CX_power/CX_RR)),'+',label='pressure %.3gPa' %(pressure[i]) +' '+file_array[i][:file_array[i].find('_')] + ' dens')
+	plt.figure(figure_1)
+	plt.axhline(y=1,color='k',linestyle='--')
+	plt.ylabel('ADAS_RR/(CX_RR/(nH*nHp))')
+	plt.xlabel('ne')
+	plt.semilogy()
+	plt.semilogx()
+	plt.legend(loc='best', fontsize='x-small')
+
+	plt.figure(figure_2)
+	plt.axhline(y=1,color='k',linestyle='--')
+	# plt.plot([0,5],[0,5],color='k',linestyle='--')
+	plt.ylabel('(THp-TH)/(2/3*(CX_power/CX_RR))')
+	plt.xlabel('THp-TH')
+	plt.legend(loc='best', fontsize='x-small')
+	plt.pause(0.01)
 
 
 
@@ -763,7 +926,7 @@ dissociation_potential = 2.2	# eV
 # Example points
 
 ne_values = np.array([1e20,4e21,2e21])
-Te_values = np.array([0.5,2,8])
+Te_values = np.array([0.5,1,8])
 
 
 multiplicative_factor_full = energy_difference_full * einstein_coeff_full / J_to_eV
@@ -801,7 +964,7 @@ recombination_full = (recombination_full /multiplicative_factor_full)  # in # m^
 total_wavelengths = np.unique(excited_states_From_Hn_with_Hp)
 T_Hp_values = Te_values/eV_to_K	# K
 T_Hp_values[T_Hp_values<300]=300
-T_Hm_values = np.exp(TH2_fit_from_simulations(np.log(Te_values)))/eV_to_K	# K
+T_Hm_values = (np.exp(TH2_fit_from_simulations(np.log(Te_values)))+2.2)/eV_to_K	# K
 T_Hm_values[T_Hm_values<300]=300
 T_H2p_values = np.exp(TH2_fit_from_simulations(np.log(Te_values)))/eV_to_K	# K
 T_H2p_values[T_H2p_values<300]=300
@@ -823,13 +986,13 @@ nH_ne_nH_excited_states_atomic_excit = excitation_full
 
 record_nH2_ne_values = []
 for i_Te_for_nH2_ne,Te_for_nH2_ne in enumerate(Te_values):
-	nH2_ne_values = nH2_ne_values_Te(Te_for_nH2_ne,1)[0]
+	nH2_ne_values = nH2_ne_fit_from_simulations(Te_for_nH2_ne)
 	record_nH2_ne_values.append(nH2_ne_values)
 record_nH2_ne_values = np.array(record_nH2_ne_values)
 
-record_nH2p_nH2_values = nH2p_nH2_values_Te_ne(Te_values,ne_values,1)[0]
+record_nH2p_nH2_values = H2p_H2_v_ratio_AMJUEL(ne_values,Te_values)
 nH2p_ne_values = record_nH2_ne_values * record_nH2p_nH2_values
-record_nHm_nH2_values = nHm_nH2_values_Te(Te_values,1)[0]
+record_nHm_nH2_values = Hm_H2_v0_ratio_AMJUEL(Te_values)
 nHm_ne_values = record_nH2_ne_values * record_nHm_nH2_values
 
 nHp_ne_values = 1 - nH2p_ne_values + nHm_ne_values
@@ -885,11 +1048,13 @@ plt.semilogy()
 plt.grid()
 plt.pause(0.01)
 
-linestyle = ['-','--','-.']
-plt.figure()
-for index in range(len(ne_values)):
+
+linestyle = ['-','-','-.']
+plt.figure(figsize=(12, 8))
+# for index in range(len(ne_values)):
+for index in [1]:	# Bruce says that it's clearer with only one set of lines
 	# max_nH_ne = np.max([nH_ne_excited_states_atomic_recomb[index],nH_ne_excited_states_atomic_excit[index],nH_ne_excited_states_mol_H2p[index],nH_ne_excited_states_mol_H2[index],nH_ne_excited_states_mol_Hn_with_Hp[index],nH_ne_excited_states_mol_Hn_with_H2p[index]])
-	if index == 0:
+	if index == 1:
 		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_atomic_recomb[index][:6+1]/(nH_ne_excited_states_atomic_recomb[index][2]),color=color[0],linestyle=linestyle[index],label='recombination (ADAS)\n'+r'$H^+ + e^- → H(p) + hν$'+'\n'+r'$H^+ + 2e^- → H(p) + e^-$')
 		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_atomic_excit[index][:6+1]/(nH_ne_excited_states_atomic_excit[index][2]),color=color[1],linestyle=linestyle[index],label='direct excitation (ADAS)\n'+r'$H(q) + e^- → H(p>q) + e^-$')
 		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_mol_H2p[index][:6+1]/(nH_ne_excited_states_mol_H2p[index][2]),color=color[2],linestyle=linestyle[index],label='H2+ dissociation (Yacora)\n'+r'${H_2}^+ + e^- → H(p) + H^+ + e^-$')
@@ -965,7 +1130,7 @@ plt.pause(0.01)
 #
 # plt.xlabel('atomic hydrogen excited state')
 # plt.ylabel('relative '+r'$n_{H(p)} / n_e$')
-# # plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
+# # plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
 # plt.legend(loc='best', fontsize='x-small')
 # plt.semilogy()
 # # plt.semilogx()
@@ -992,7 +1157,7 @@ plt.pause(0.01)
 #
 # plt.xlabel('atomic hydrogen excited state')
 # plt.ylabel('relative '+r'$n_{H(p)} / n_e$')
-# # plt.title('B = 1.2T, Plasma source of 4 slm , 120A')
+# # plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n')
 # plt.legend(loc='best', fontsize='x-small')
 # plt.semilogy()
 # # plt.semilogx()

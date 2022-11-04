@@ -57,8 +57,8 @@ gauss3_bias = lambda x, A1, sig1, A2, sig2, A3, sig3, x0,m,q: gauss(x, A1, sig1,
 gaussJac = lambda x, A, sig, x0: np.array([gauss(x, 1, sig, x0), gauss(x, A, sig, x0) * 2 * (x - x0) ** 2 / sig ** 3,gauss(x, A, sig, x0) * 2 * (x - x0) / sig ** 2])
 gauss3Jac = lambda x, A1, sig1, A2, sig2, A3, sig3, x0: [np.concatenate([a[:2], a[3:5], a[6:8], [sum(a[2::3])]]) for a in [np.concatenate([gaussJac(x, A1, sig1, x0), gaussJac(x, A2, sig2, x0), gaussJac(x, A3, sig3, x0)])]][0]
 AInvgauss = lambda x, A, sig, x0: gauss(x, A / sig / np.sqrt(np.pi), sig, 0)
-AInvgauss_with_error_included = lambda x, A, sig, x0: gauss_with_error_included(x, A / sig / np.sqrt(np.pi), sig, 0)
-AInvgauss_with_error_included_2 = lambda x, A, sig, x0: gauss_with_error_included(x, A * sig / np.sqrt(np.pi), sig, 0)
+AInvgauss_with_error_included = lambda x, A, sig, x0: gauss_with_error_included(x, A / sig / np.sqrt(np.pi), sig, x0)
+AInvgauss_with_error_included_2 = lambda x, A, sig, x0: gauss_with_error_included(x, A * sig / np.sqrt(np.pi), sig, x0)
 AInvgauss3 = lambda x, A1, sig1, A2, sig2, A3, sig3, x0: AInvgauss(x, A1, sig1, 0) + AInvgauss(x, A2, sig2,0) + AInvgauss(x, A3,sig3,0)
 AInvgaussJac = lambda x, A, sig, x0: np.array([gauss(x, 1 / np.sqrt(np.pi) / sig, sig, 0),gauss(x, A, sig, 0) * (2 * x ** 2 - sig ** 2) / sig ** 4 / np.sqrt(np.pi), gauss(x, A, sig, 0) * 2 * x / sig ** 3 / np.sqrt(np.pi)])
 AInvgauss3Jac = lambda x, A1, sig1, A2, sig2, A3, sig3, x0: [np.concatenate([a[:2], a[3:5], a[6:8], [sum(a[2::3])]]) for a in [np.concatenate([AInvgaussJac(x, A1, sig1, 0), AInvgaussJac(x, A2, sig2, 0), AInvgaussJac(x, A3, sig3, 0)])]][0]
@@ -66,7 +66,7 @@ LRvecmul = lambda vec, mat: np.dot(vec, np.matmul(mat, vec))
 gauss3_2 = lambda x, A1, sig1, c_A2, c_sig2, c_A3, c_sig3,x0: gauss(x, A1, sig1, x0) + gauss(x,A1*c_A2,c_sig2*sig1,x0) + gauss(x, c_A3*c_sig3*(A1 +A1*c_A2/c_sig2), c_sig3*sig1, x0)
 AInvgauss3_locked_2 = lambda x, A1, sig1, c_A2, c_sig2, c_A3, c_sig3: AInvgauss(x, A1, sig1, 0) + AInvgauss(x, A1*c_A2,c_sig2*sig1,0) + AInvgauss(x, c_A3*c_sig3*(A1 +A1*c_A2/c_sig2), c_sig3*sig1, 0)
 AInvgauss3_locked_2_with_error_included = lambda x, A1, sig1, A2, c_sig2, c_A3, c_sig3: AInvgauss_with_error_included(x, A1, sig1, 0) + AInvgauss_with_error_included(x, A2,c_sig2*sig1,0) + AInvgauss_with_error_included(x, c_A3*c_sig3*(A1 +A2/c_sig2), c_sig3*sig1, 0)
-AInvgauss3_locked_3_with_error_included = lambda x, A1, sig1, A2, c_sig2, c_A3, c_sig3: AInvgauss_with_error_included_2(x, A1, sig1, 0) + AInvgauss_with_error_included_2(x, A2,c_sig2*sig1,0) + AInvgauss_with_error_included_2(x, c_A3*c_sig3*(A1 +A2/c_sig2), c_sig3*sig1, 0)
+AInvgauss3_locked_3_with_error_included = lambda x, A1, sig1, A2, c_sig2, c_A3, c_sig3, x0: AInvgauss_with_error_included_2(x, A1, sig1, x0) + AInvgauss_with_error_included_2(x, A2,c_sig2*sig1,x0) + AInvgauss_with_error_included_2(x, c_A3*c_sig3*(A1 +A2/c_sig2), c_sig3*sig1, x0)
 gauss_sigma = lambda x, A, gaus_sig, x0,A_sig,gaus_sig_sig,x0_sig:gauss(x, A, gaus_sig, x0) * np.sqrt( (A_sig/A)**2 + (2*(x-x0)*x0_sig/(gaus_sig**2))**2 + (2*((x-x0)**2)*gaus_sig_sig/(gaus_sig**3))**2 )
 AInvgauss_sigma_1 = lambda x, A1, sig1, A1_sigma, sig1_sigma: AInvgauss(x, A1, sig1, 0) * np.sqrt( (A1_sigma/A1)**2 + (1+4*(x**4)/(sig1**4))*(sig1_sigma/sig1)**2 )
 AInvgauss_sigma_2 = lambda x, sig1, A2, c_sig2, sig1_sigma, A2_sigma, c_sig2_sigma: AInvgauss(x, A2, c_sig2*sig1, 0) * np.sqrt( (A2_sigma/A2)**2 + (1+4*(x**4)/((c_sig2*sig1)**4))*((sig1_sigma/sig1)**2 + (c_sig2_sigma/c_sig2)**2) )
@@ -503,7 +503,7 @@ class calc_stuff_output:
 		self.iSet = iSet
 		self.iR = iR
 		self.fit = fit
-
+max_centre_location_variability = 0.2*dx
 def calc_stuff(arg):
 	iSet = arg[0]
 	iR = arg[1]
@@ -560,15 +560,15 @@ def calc_stuff(arg):
 	# inner_dip_sig = 0.9e-3
 	inner_dip_sig = 0.15
 	# bds = [[0, 0, 0, 0, -max(yy)*10, 0],[max(yy)*100, np.inf, max(yy)*100, np.inf, 0, np.inf]]
-	bds = [[0, 0, 0, 1, max_central_depression_amplitude, min_central_depression_sigma,profile_centre[iSet,iR]-0.2*dx],[max(yy)*100, np.inf, 10, np.inf, 0, 1,profile_centre[iSet,iR]+0.2*dx]]
+	bds = [[0, 0, 0, 1, max_central_depression_amplitude, min_central_depression_sigma,profile_centre[iSet,iR]-max_centre_location_variability],[max(yy)*100, np.inf, 10, np.inf, 0, 1,profile_centre[iSet,iR]+max_centre_location_variability]]
 	# p0 = [ym / 5, 20e-3, ym * .8, 4e-1, -ym / 2, 0.9e-3]
 	# p0 = [ym *0.9, 6e-3, ym * .05, 4e-1, -ym / 4, inner_dip_sig]
 	if iR>0:
-		bds = [[0, 0, 0, 1, max_central_depression_amplitude, min_central_depression_sigma,profile_centre[iSet,iR]-0.2*dx],[max(yy)*100, np.inf, 10, max(20,1.5*example_fit[min(2,iR-1)][3]), 0, 1,profile_centre[iSet,iR]+0.2*dx]]
+		bds = [[0, 0, 0, 1, max_central_depression_amplitude, min_central_depression_sigma,profile_centre[iSet,iR]-max_centre_location_variability],[max(yy)*100, np.inf, 10, max(20,1.5*example_fit[min(2,iR-1)][3]), 0, 1,profile_centre[iSet,iR]+max_centre_location_variability]]
 		p0 = [example_fit[min(2,iR-1)][0]*ym/np.nanmax(all_fits[iSet, :, min(2,iR-1)]), *example_fit[min(2,iR-1)][1:]]
 		x_scale = [p0[0]*0.2,dx,0.1,1,1,1,profile_centre[iSet,iR]]
 	else:
-		bds = [[0, 0, 0, 1, max_central_depression_amplitude, min_central_depression_sigma,profile_centre[iSet,iR]-0.2*dx],[max(yy)*100, np.inf, 10, np.inf, 0, 1,profile_centre[iSet,iR]+0.2*dx]]
+		bds = [[0, 0, 0, 1, max_central_depression_amplitude, min_central_depression_sigma,profile_centre[iSet,iR]-max_centre_location_variability],[max(yy)*100, np.inf, 10, np.inf, 0, 1,profile_centre[iSet,iR]+max_centre_location_variability]]
 		p0 = [ym *0.9, 6*dx, .05, 10, -0.25, inner_dip_sig,profile_centre[iSet,iR]]
 		x_scale = [p0[0]*0.2,dx,0.1,1,1,1,profile_centre[iSet,iR]]
 	# p0 = [ym / 5, 20e-3, ym * .8, 4e-3, -ym / 5, 1e-3,profile_centre[iSet]]
@@ -731,7 +731,9 @@ for iSet in range(len(all_fits)):
 		# temp = AInvgauss3_locked_2_with_error_included(r, *correlated_values(fit[0][:-1],fit[1][:-1,:-1]) )
 		# temp = A_erf_3_locked_2_with_error_included(np.array([0,*(r+dx/2)]), *correlated_values(fit[0][:-1],fit[1][:-1,:-1]) )
 		# temp = np.diff(temp)/np.array([dx/2,*np.diff(r)])
-		temp = AInvgauss3_locked_3_with_error_included(np.array([0,*(r+dx/2)]), *correlated_values(fit[0][:-1],fit[1][:-1,:-1]) )
+		fit_wit_no_axis = fit[0]
+		fit_wit_no_axis[-1] = 0
+		temp = AInvgauss3_locked_3_with_error_included(np.array([0,*(r+dx/2)]), *correlated_values(fit_wit_no_axis,fit[1]) )
 		temp = -np.diff(temp)/np.diff(np.array([0,*(r+dx/2)])**2)
 		inverted_profiles[iSet, iR] = nominal_values(temp)
 		inverted_profiles_sigma[iSet, iR] = std_devs(temp)
@@ -900,10 +902,10 @@ for iR in range(nLine):
 	vmax=np.nanmax(np.mean(np.sort(all_fits_sigma[:,:,iR],axis=-1)[:,-10:-1],axis=-1))
 	# IM = ax.imshow(all_fits_sigma[:,:,iR],'rainbow',vmin=0,vmax=np.nanmax(np.mean(np.sort(all_fits_sigma[:,:,iR],axis=-1)[:,-10:-1],axis=-1)),extent=[1000*min(xx-dx/2),1000*max(xx+dx/2),last_time+conventional_time_step/2,first_time-conventional_time_step/2],aspect=20)
 	IM = ax.imshow(all_fits_sigma[:,:,iR],'rainbow',vmax=vmax,extent=[1000*min(xx-dx/2),1000*max(xx+dx/2),last_time+conventional_time_step/2,first_time-conventional_time_step/2],aspect=20)
-	ax.plot(1000*profile_centre[:,iR], np.linspace(first_time, last_time, (last_time -first_time) // time_res + 2), 'k', linewidth=0.4,label='used centre')
+	ax.plot(1000*profile_centre[:,iR], np.linspace(first_time, last_time, int((last_time -first_time) // time_res + 2)), 'k', linewidth=0.4,label='used centre')
 	plt.title('Line n='+str(iR+4) + r'$\to$' + '2\nuncertainty' +'\n used centre black (mean '+str(np.around(1000*np.nanmean(profile_centre[:,iR],axis=(0)), decimals=1))+'mm)')
 	if np.sum(np.array(profile_centres)!=0)>0:
-		ax.plot(1000*profile_centres[:,iR], np.linspace(first_time, last_time, (last_time -first_time) // time_res + 2), '--r', linewidth=0.4, label='local centre')
+		ax.plot(1000*profile_centres[:,iR], np.linspace(first_time, last_time, int((last_time -first_time) // time_res + 2)), '--r', linewidth=0.4, label='local centre')
 		plt.title('Line n='+str(iR+4) + r'$\to$' + '2\nuncertainty' +'\n local centre red (mean '+str(np.around(1000*np.nanmean(profile_centres[:,iR],axis=(0)), decimals=1))+'mm) \n used centre black (mean '+str(np.around(1000*np.nanmean(profile_centre[:,iR],axis=(0)), decimals=1))+'mm)')
 	cbar = fig.colorbar(IM)
 	cbar.set_label('Line integrated brightness sigma[W m^-2 sr^-1]')
@@ -917,10 +919,10 @@ for iR in range(nLine):
 	fig,ax = plt.subplots(figsize=(10 , 10))
 	vmax = max(all_fits_fitted[:,:,iR].max(),max(all_fits_sigma[:,:,iR].max(),all_fits[:,:,iR].max()))
 	IM = ax.imshow(all_fits_fitted[:,:,iR],'rainbow',vmax=vmax,extent=[1000*min(xx-dx/2),1000*max(xx+dx/2),last_time+conventional_time_step/2,first_time-conventional_time_step/2],aspect=20)
-	ax.plot(1000*profile_centre[:,iR], np.linspace(first_time, last_time, (last_time -first_time) // time_res + 2), 'k', linewidth=0.4,label='used centre')
+	ax.plot(1000*profile_centre[:,iR], np.linspace(first_time, last_time, int((last_time -first_time) // time_res + 2)), 'k', linewidth=0.4,label='used centre')
 	plt.title('Fitting of Line n='+str(iR+4) + r'$\to$' + '2' +'\n used centre black (mean '+str(np.around(1000*np.nanmean(profile_centre[:,iR],axis=(0)), decimals=1))+'mm)')
 	if np.sum(np.array(profile_centres)!=0)>0:
-		ax.plot(1000*profile_centres[:,iR], np.linspace(first_time, last_time, (last_time -first_time) // time_res + 2), '--r', linewidth=0.4, label='local centre')
+		ax.plot(1000*profile_centres[:,iR], np.linspace(first_time, last_time, int((last_time -first_time) // time_res + 2)), '--r', linewidth=0.4, label='local centre')
 		plt.title('Fitting of Line n='+str(iR+4) + r'$\to$' + '2' +'\n local centre red (mean '+str(np.around(1000*np.nanmean(profile_centres[:,iR],axis=(0)), decimals=1))+'mm) \n used centre black (mean '+str(np.around(1000*np.nanmean(profile_centre[:,iR],axis=(0)), decimals=1))+'mm)')
 	cbar = fig.colorbar(IM)
 	cbar.set_label('Line integrated brightness [W m^-2 sr^-1]')
@@ -933,10 +935,10 @@ for iR in range(nLine):
 for iR in range(nLine):
 	fig,ax = plt.subplots(figsize=(10 , 10))
 	IM = ax.imshow(all_fits_residuals[:,:,iR],'rainbow',extent=[1000*min(xx-dx/2),1000*max(xx+dx/2),last_time+conventional_time_step/2,first_time-conventional_time_step/2],aspect=20)
-	ax.plot(1000*profile_centre[:,iR], np.linspace(first_time, last_time, (last_time -first_time) // time_res + 2), 'k', linewidth=0.4,label='used centre')
+	ax.plot(1000*profile_centre[:,iR], np.linspace(first_time, last_time, int((last_time -first_time) // time_res + 2)), 'k', linewidth=0.4,label='used centre')
 	plt.title('Fitting residuals of Line n='+str(iR+4) + r'$\to$' + '2' +'\n used centre black (mean '+str(np.around(1000*np.nanmean(profile_centre[:,iR],axis=(0)), decimals=1))+'mm)')
 	if np.sum(np.array(profile_centres)!=0)>0:
-		ax.plot(1000*profile_centres[:,iR], np.linspace(first_time, last_time, (last_time -first_time) // time_res + 2), '--r', linewidth=0.4, label='local centre')
+		ax.plot(1000*profile_centres[:,iR], np.linspace(first_time, last_time, int((last_time -first_time) // time_res + 2)), '--r', linewidth=0.4, label='local centre')
 		plt.title('Fitting residuals of Line n='+str(iR+4) + r'$\to$' + '2' +'\n local centre red (mean '+str(np.around(1000*np.nanmean(profile_centres[:,iR],axis=(0)), decimals=1))+'mm) \n used centre black (mean '+str(np.around(1000*np.nanmean(profile_centre[:,iR],axis=(0)), decimals=1))+'mm)')
 	cbar = fig.colorbar(IM)
 	cbar.set_label('Deviation from fit [au]')# over maximum fitted value [au]')
@@ -950,10 +952,10 @@ for iR in range(nLine):
 	fig,ax = plt.subplots(figsize=(10 , 10))
 	max_value = np.median(np.max(all_fits[:6,:,iR], axis=1))
 	IM = ax.imshow(all_fits[:,:,iR],'rainbow',vmin=0,vmax=max_value,extent=[1000*min(xx-dx/2),1000*max(xx+dx/2),last_time+conventional_time_step/2,first_time-conventional_time_step/2],aspect=20)
-	ax.plot(1000*profile_centre[:,iR], np.linspace(first_time, last_time, (last_time -first_time) // time_res + 2), 'k', linewidth=0.4,label='used centre')
+	ax.plot(1000*profile_centre[:,iR], np.linspace(first_time, last_time, int((last_time -first_time) // time_res + 2)), 'k', linewidth=0.4,label='used centre')
 	plt.title('Line n='+str(iR+4) + r'$\to$' + '2' +'\n used centre black (mean '+str(np.around(1000*np.nanmean(profile_centre[:,iR],axis=(0)), decimals=1))+'mm)')
 	if np.sum(np.array(profile_centres)!=0)>0:
-		ax.plot(1000*profile_centres[:,iR], np.linspace(first_time, last_time, (last_time -first_time) // time_res + 2), '--r', linewidth=0.4, label='local centre')
+		ax.plot(1000*profile_centres[:,iR], np.linspace(first_time, last_time, int((last_time -first_time) // time_res + 2)), '--r', linewidth=0.4, label='local centre')
 		plt.title('Line n='+str(iR+4) + r'$\to$' + '2' +'\n local centre red (mean '+str(np.around(1000*np.nanmean(profile_centre[:,iR],axis=(0)), decimals=1))+'mm) \n used centre black (mean '+str(np.around(1000*np.nanmean(profile_centre[:,iR],axis=(0)), decimals=1))+'mm)')
 	cbar = fig.colorbar(IM)
 	cbar.set_label('SS Line integrated brightness [W m^-2 sr^-1]')

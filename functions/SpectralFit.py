@@ -866,25 +866,25 @@ def doSpecFit_single_frame_with_sigma(binnedData,binnedData_sigma,df_settings, d
 
     linesSeen = [range(2), range(1, 11), range(1, 11)]
     iSens = [[np.abs(lamb[i] - waveLengths[line]).argmin() for line in lines] for i, lines in enumerate(linesSeen)]  # Indexes of peaks where we check sensitivity
-    dfs_lineRads = [pd.DataFrame(index=range(nCh), columns=['n3', 'n4']),
+    dfs_lineRads = [pd.DataFrame(index=range(nCh), columns=['n3', 'n4'],dtype=float),
                     # Fitted radiance of each line for the different exposure types
-                    pd.DataFrame(index=range(nCh), columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12']),
-                    pd.DataFrame(index=range(nCh), columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12'])]
+                    pd.DataFrame(index=range(nCh), columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12'],dtype=float),
+                    pd.DataFrame(index=range(nCh), columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12'],dtype=float)]
 
-    df_lineRad = pd.DataFrame(index=range(nCh), columns=['n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11','n12'])  # Fitted radiance of each line, combined between different exposure types
+    df_lineRad = pd.DataFrame(index=range(nCh), columns=['n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11','n12'],dtype=float)  # Fitted radiance of each line, combined between different exposure types
 
-    dfs_lineRads_sigma = [pd.DataFrame(index=range(nCh), columns=['n3', 'n4']),
+    dfs_lineRads_sigma = [pd.DataFrame(index=range(nCh), columns=['n3', 'n4'],dtype=float),
                     # Fitted radiance of each line for the different exposure types
-                    pd.DataFrame(index=range(nCh), columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12']),
-                    pd.DataFrame(index=range(nCh), columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12'])]
+                    pd.DataFrame(index=range(nCh), columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12'],dtype=float),
+                    pd.DataFrame(index=range(nCh), columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12'],dtype=float)]
 
-    df_lineRad_sigma = pd.DataFrame(index=range(nCh), columns=['n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11','n12'])  # Fitted radiance of each line, combined between different exposure types
+    df_lineRad_sigma = pd.DataFrame(index=range(nCh), columns=['n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11','n12'],dtype=float)  # Fitted radiance of each line, combined between different exposure types
 
-    dfs_totIntens = [pd.DataFrame(index=range(len(df_settings)), columns=['n3', 'n4']),
+    dfs_totIntens = [pd.DataFrame(index=range(len(df_settings)), columns=['n3', 'n4'],dtype=float),
                      pd.DataFrame(index=range(len(df_settings)),
-                                  columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12']),
+                                  columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12'],dtype=float),
                      pd.DataFrame(index=range(len(df_settings)),
-                                  columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12'])]
+                                  columns=['n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12'],dtype=float)]
 
     iSet=0
     # for iSet in range(len(df_settings)):
