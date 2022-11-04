@@ -30,8 +30,12 @@ df_settings = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_d
 results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
 color = ['b', 'r', 'm', 'y', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
 
+# type_of_analysis = 'only_Hm_H2_H2p_mol_lim'
+type_of_analysis = 'only_Hm_H2_H2p_part_bal_only_Yacora_as_molecule_nH2_nH_linear'
+# type_of_analysis = 'only_Hm_H2_H2p_part_bal'
+
 # merge_ID_target_multipulse = [95,89,88,87,86]
-merge_ID_target_multipulse = [95,89,88,87,86,85]
+merge_ID_target_multipulse = [95,89,87,86,85]
 # merge_ID_target_multipulse = [99,98,96,97]
 # merge_ID_target_multipulse = [66,67,68,69,70,74]
 
@@ -58,6 +62,8 @@ area_of_interest_IR = []
 
 net_power_removed_plasma_column = []
 net_power_removed_plasma_column_sigma = []
+power_potential = []
+power_potential_sigma = []
 tot_rad_power = []
 tot_rad_power_sigma = []
 power_rec_neutral = []
@@ -142,7 +148,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 	all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
 	target_chamber_pressure_2.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
 	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
-	full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2_H2p_part_bal/bayesian_results3'+'.npz')
+	full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/'+type_of_analysis+'/bayesian_results3'+'.npz')
 	full_saved_file_dict.allow_pickle = True
 	# full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2p_mol_lim/bayesian_results3'+'.npz')
 
@@ -176,6 +182,8 @@ for merge_ID_target in merge_ID_target_multipulse:
 		# net_power_removed_plasma_column_sigma.append(np.float(results_summary.loc[merge_ID_target,['net_power_removed_plasma_column_sigma']]))
 		net_power_removed_plasma_column.append(full_saved_file_dict['net_power_removed_plasma_column'].all()['radial_time_sum']['most_likely'])
 		net_power_removed_plasma_column_sigma.append(full_saved_file_dict['net_power_removed_plasma_column'].all()['radial_time_sum']['most_likely_sigma'])
+		power_potential.append(full_saved_file_dict['power_potential'].all()['radial_time_sum']['most_likely'])
+		power_potential_sigma.append(full_saved_file_dict['power_potential'].all()['radial_time_sum']['most_likely_sigma'])
 		tot_rad_power.append(full_saved_file_dict['tot_rad_power'].all()['radial_time_sum']['most_likely'])
 		# tot_rad_power_sigma.append(np.float(results_summary.loc[merge_ID_target,['tot_rad_power_sigma']]))
 		tot_rad_power_sigma.append(full_saved_file_dict['tot_rad_power'].all()['radial_time_sum']['most_likely_sigma'])
@@ -660,11 +668,13 @@ if True:	#			PLOTS FOR THE PAPER
 	ax[0,0].grid()
 	ax[0,0].set_ylabel('Energy [J]')
 	ax[1,0].plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{upstream}$')
-	ax[1,0].errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),capsize=5,color=color[2],label=r'$E_{radiated}$')
-	# ax[1,0].errorbar(target_chamber_pressure,power_rec_neutral,yerr=np.array(power_rec_neutral_sigma),capsize=5,color=color[3],label=r'$E_{neutral \: from \: recombination}$')
-	ax[1,0].errorbar(target_chamber_pressure,power_via_ionisation,yerr=np.array(power_via_ionisation_sigma),capsize=5,color=color[14],label=r'$E_{ionisation \: (only \: potential)}$')
-	ax[1,0].errorbar(target_chamber_pressure,power_via_recombination,yerr=np.array(power_via_recombination_sigma),capsize=5,color=color[9],label=r'$E_{recombination \: (only \: potential)}$')
-	ax[1,0].errorbar(target_chamber_pressure,net_recombination,yerr=np.array(net_recombination_sigma),capsize=5,color=color[4],label=r'$E_{recombination \: (radiated \: & \: bremm \: - \: heating)}$')
+	ax[1,0].errorbar(target_chamber_pressure,power_potential,yerr=np.array(power_potential_sigma),color=color[2],capsize=5,label=r'$E_{potential}$')
+	ax[1,0].errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{radiated}$')
+	ax[1,0].errorbar(target_chamber_pressure,power_rec_neutral,yerr=np.array(power_rec_neutral_sigma),capsize=5,color=color[3],label=r'$E_{neutral \: from \: recombination}$')
+	ax[1,0].errorbar(target_chamber_pressure,power_via_ionisation,yerr=np.array(power_via_ionisation_sigma),capsize=5,color=color[4],linestyle='--',label=r'$E_{ionisation \: (only \: potential)}$')
+	# ax[1,0].errorbar(target_chamber_pressure,power_rad_excit,yerr=np.array(power_rad_excit_sigma),capsize=5,color=color[14],label=r'$E_{direct excitation}$')
+	ax[1,0].errorbar(target_chamber_pressure,power_via_recombination,yerr=np.array(power_via_recombination_sigma),capsize=5,color=color[5],linestyle='--',label=r'$E_{recombination \: (only \: potential)}$')
+	# ax[1,0].errorbar(target_chamber_pressure,net_recombination,yerr=np.array(net_recombination_sigma),capsize=5,color=color[4],label=r'$E_{recombination \: (radiated \: & \: bremm \: - \: heating)}$')
 	ax[1,0].legend(loc=0, fontsize='small',framealpha=0.5)
 	ax[1,0].grid()
 	ax[1,0].set_ylabel('Energy [J]')

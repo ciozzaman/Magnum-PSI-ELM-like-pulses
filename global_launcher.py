@@ -7,8 +7,8 @@ mkl.set_num_threads(1)
 number_cpu_available = 8	#cpu_count()
 import numpy as np
 
-overwrite_everything = [False, False, False, False, False]
-# overwrite_everything = [True, True, True, True, True]
+# overwrite_everything = [False, False, False, False, False]
+overwrite_everything = [False, True, True, True, True]
 # this is for, in order:
 # ... merge_tot.npz'
 # ... composed_array.npy' and ...new_timesteps
@@ -42,7 +42,7 @@ perform_convolution = True
 # for merge_ID_target in np.flip([851,86,87,88,89,90,91,92,93,94,95],axis=0):
 # for merge_ID_target in np.flip([99,85,97,89,92, 93,95,94],axis=0):
 # for merge_ID_target in np.flip([90,91,89,99,85,97],axis=0):
-merge_ID_target_all = [85]
+merge_ID_target_all = [95]
 
 merge_ID_target_all = np.flip(merge_ID_target_all,axis=0)
 

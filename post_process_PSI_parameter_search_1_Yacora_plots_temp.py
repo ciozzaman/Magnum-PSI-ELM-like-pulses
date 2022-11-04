@@ -30,13 +30,14 @@ if False:
 elif True:
 	# Te_all[Te_all<300*eV_to_K]=300*eV_to_K
 	Te_all[nH_ne_all==0]=merge_Te_prof_multipulse_interp_crop[nH_ne_all==0]
+	ne_all[nH_ne_all==0]=merge_ne_prof_multipulse_interp_crop[nH_ne_all==0]
 	T_Hp = Te_all/eV_to_K	# K
 	T_Hp[T_Hp<300]=300
-	T_Hm = np.exp(TH2_fit_from_simulations(np.log(Te_all)))/eV_to_K	# K
+	T_Hm = (((np.exp(TH2_fit_from_simulations(np.log(Te_all),np.log(ne_all*1e20)))+2.2)/eV_to_K)).reshape(np.shape(Te_all))	# K
 	T_Hm[T_Hm<300]=300
-	T_H2p = np.exp(TH2_fit_from_simulations(np.log(Te_all)))/eV_to_K	# K
+	T_H2p = ((np.exp(TH2_fit_from_simulations(np.log(Te_all.flatten()),np.log(ne_all.flatten()*1e20)))/eV_to_K)).reshape(np.shape(Te_all))	# K
 	T_H2p[T_H2p<300]=300
-	T_H2 = np.exp(TH2_fit_from_simulations(np.log(Te_all)))/eV_to_K	# K
+	T_H2 = ((np.exp(TH2_fit_from_simulations(np.log(Te_all.flatten()),np.log(ne_all.flatten()*1e20)))/eV_to_K)).reshape(np.shape(Te_all))	# K
 	T_H2[T_H2<300]=300
 	T_H = np.exp(TH_fit_from_simulations(np.log(Te_all)))/eV_to_K	# K
 	T_H[T_H<300]=300
@@ -477,8 +478,8 @@ if initial_conditions:
 		label_ion_sink_at_target = "ion sink at the target using it's own TS Te and ne at %.3g mm from it" %target_OES_distance
 
 	plt.figure(figsize=(8, 5));
-	plt.errorbar(time_crop,target_voltage_shape_crop,yerr=target_voltage_shape_std_crop,label='target voltage transient')
-	plt.errorbar(time_crop,voltage_shape_crop,yerr=voltage_shape_std_crop,label='source voltage transient')
+	plt.errorbar(time_crop,target_voltage_shape_crop,yerr=target_voltage_shape_std_crop,label='target voltage - %.3gV' %(mean_steady_state_target_voltage))
+	plt.errorbar(time_crop,voltage_shape_crop,yerr=voltage_shape_std_crop,label='source voltage - %.3gV' %(mean_steady_state_voltage))
 	plt.plot(time_crop,target_voltage_shape_crop-voltage_shape_crop,label='target-source')
 	plt.plot(time_crop,np.min(total_wall_potential,axis=-1),label='min plasma wall potential')
 	plt.plot(time_crop,np.min(corrected_total_wall_potential,axis=-1),label='min "real" plasma wall potential')
@@ -859,7 +860,7 @@ if initial_conditions:
 	temp3 = generic_filter(temp3,np.mean,size=[fast_camera_record_duration_dt])
 	temp4 = generic_filter(temp4,np.mean,size=[fast_camera_record_duration_dt])
 	results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
-	results_summary.loc[merge_ID_target,['area_equiv_max_static_pressure','max_average_static_pressure','average_static_pressure','average_Te','average_ne']]=area_equivalent_to_downstream_peak_pressure[temp_index],temp,np.max(temp2),np.max(temp3),np.max(temp4)
+	results_summary.loc[merge_ID_target,['area_equiv_max_static_pressure','max_average_static_pressure','average_static_pressure','average_Te','average_ne','peak_static_pressure','peak_Te','peak_ne']]=area_equivalent_to_downstream_peak_pressure[temp_index],temp,np.max(temp2),np.max(temp3),np.max(temp4),np.nanmax(merge_ne_prof_multipulse_interp_crop*1e20*( (nHp_ne_all*merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J + merge_Te_prof_multipulse_interp_crop/eV_to_K*boltzmann_constant_J))),np.nanmax(merge_Te_prof_multipulse_interp_crop),np.nanmax(merge_ne_prof_multipulse_interp_crop)
 	results_summary.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv')
 
 	plt.figure(figsize=(8, 5));
@@ -970,7 +971,7 @@ if initial_conditions:
 	plt.plot(time_crop, plasma_inflow_TS_location_sonic,label='TS location flow Mach=1');
 	plt.plot(time_crop, np.sum(upstream_Bohm_adiabatic_flow*area,axis=1),label='Bohm flow upstream');
 	plt.plot(time_crop, np.sum(Bohm_adiabatic_flow*area,axis=1),'--',label='Bohm flow TS location');
-	plt.plot(time_crop, np.array(plasma_inflow_upstream_max),'k--',label='upstrem inflow fixed velocity range')
+	plt.plot(time_crop, np.array(plasma_inflow_upstream_max),'k--',label='upstream inflow fixed velocity range')
 	plt.plot(time_crop, np.array(plasma_inflow_upstream_min),'k--')
 	plt.plot(np.sort(time_crop)[[0,-1]],[source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J)]*2,'--',label='H2 flow to the source')
 	plt.plot(np.sort(time_crop)[[0,-1]],[feed_rate_SLM /60/1000 * 101325/(273*boltzmann_constant_J)]*2,'--',label='H2 flow to the target chamber')
@@ -1036,7 +1037,7 @@ if initial_conditions:
 	im = ax[plot_index,0].errorbar(temp_time_crop, interpolated_power_pulse_shape(temp_time_crop)/1000,yerr=interpolated_power_pulse_shape_std(temp_time_crop)/1000)
 	ax[plot_index,0].set_ylabel('source power [kW]')
 	ax[plot_index,0].set_ylim(bottom=0,top=150)
-	ax[plot_index,0].grid()
+	# ax[plot_index,0].grid()
 	plot_index +=1
 	im1 = ax[plot_index,0].pcolor(temp_t, temp_r, merge_Te_prof_multipulse_interp_crop[time_crop<=0.9], cmap='rainbow',vmax=9);
 	#fig.colorbar(im, ax=ax[plot_index,0],orientation="vertical").set_label('temperature [eV]')
@@ -1141,6 +1142,13 @@ if initial_conditions:
 	input_data_dict['input_power']['TS']['flow']['plasma_inflow_upstream_min'] = plasma_inflow_upstream_min
 	input_data_dict['input_power']['TS']['flow']['H2_source_inflow'] = source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J)
 	input_data_dict['input_power']['TS']['flow']['H2_target_inflow'] = feed_rate_SLM /60/1000 * 101325/(273*boltzmann_constant_J)
+
+	input_data_dict['Te'] = dict([('original_TS',dict([])),('bayesian',dict([]))])
+	input_data_dict['Te']['original_TS'] = dict([('full',dict([]))])
+	input_data_dict['Te']['original_TS']['full'] = dict([('most_likely',merge_Te_prof_multipulse_interp_crop),('most_likely_sigma',merge_dTe_prof_multipulse_interp_crop),('unit','eV')])
+	input_data_dict['ne'] = dict([('original_TS',dict([]))])
+	input_data_dict['ne']['original_TS'] = dict([('full',dict([]))])
+	input_data_dict['ne']['original_TS']['full'] = dict([('most_likely',merge_ne_prof_multipulse_interp_crop),('most_likely_sigma',merge_dne_prof_multipulse_interp_crop),('unit','# 1e-20 m^-3')])
 	np.savez_compressed(path_where_to_save_everything +'/input_data', **input_data_dict)
 
 
@@ -1188,13 +1196,13 @@ else:
 	population_coefficients += ((recombination_full * nHp_ne_all).T /multiplicative_factor_full).T
 	population_states_atoms = population_coefficients* ne_all**2 * 1e40
 
-	sample = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te_all.flatten(),T_Hp.flatten(),T_Hm.flatten(),ne_all.flatten()*1e20,(nHp_ne_all*ne_all).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+	sample = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te_all.flatten(),T_Hm.flatten(),ne_all.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
 	temp1 = np.zeros_like(sample)
 	select = np.logical_and(np.logical_and(ne_all>0,Te_all>0),nH_ne_all>0)
-	temp1[select.flatten()] = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te_all[select].flatten(),T_Hp[select].flatten(),T_Hm[select].flatten(),ne_all[select].flatten()*1e20,(nHp_ne_all*ne_all)[select].flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+	temp1[select.flatten()] = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te_all[select].flatten(),T_Hm[select].flatten(),ne_all[select].flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
 	temp2 = np.zeros_like(sample)
 	select = np.logical_and(np.logical_and(ne_all>0,nH2p_ne_all>0),Te_all>0)
-	temp2[select.flatten()] = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te_all[select].flatten(),T_H2p[select].flatten(),T_Hm[select].flatten(),ne_all[select].flatten()*1e20,(nH2p_ne_all*ne_all)[select].flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+	temp2[select.flatten()] = (From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te_all[select].flatten(),T_H2p[select].flatten(),T_Hm[select].flatten(),ne_all[select].flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p)).T * ((nH2p_ne_all*ne_all)[select].flatten()*1e20/1e15)).T
 	population_coefficients += (nHm_ne_all.flatten()*( temp1 + temp2 ).T).reshape((np.shape(population_coefficients)))
 
 	temp = np.zeros_like(sample)
@@ -4612,6 +4620,9 @@ else:
 		intervals_power_rad_mol = np.zeros_like(Te_all).tolist()
 		prob_power_rad_mol = np.zeros_like(Te_all).tolist()
 		actual_values_power_rad_mol = np.zeros_like(Te_all).tolist()
+		intervals_power_potential = np.zeros_like(Te_all).tolist()
+		prob_power_potential = np.zeros_like(Te_all).tolist()
+		actual_values_power_potential = np.zeros_like(Te_all).tolist()
 		intervals_power_potential_mol = np.zeros_like(Te_all).tolist()
 		prob_power_potential_mol = np.zeros_like(Te_all).tolist()
 		actual_values_power_potential_mol = np.zeros_like(Te_all).tolist()
@@ -4794,6 +4805,9 @@ else:
 					intervals_power_rad_mol[i_t][i_r] = [0,0]
 					prob_power_rad_mol[i_t][i_r] = [1]
 					actual_values_power_rad_mol[i_t][i_r] = [0]
+					intervals_power_potential[i_t][i_r] = [0,0]
+					prob_power_potential[i_t][i_r] = [1]
+					actual_values_power_potential[i_t][i_r] = [0]
 					intervals_power_potential_mol[i_t][i_r] = [0,0]
 					prob_power_potential_mol[i_t][i_r] = [1]
 					actual_values_power_potential_mol[i_t][i_r] = [0]
@@ -4973,6 +4987,9 @@ else:
 					intervals_power_rad_mol[i_t][i_r] = power_balance_data_dict[i]['power_rad_mol']['intervals']
 					prob_power_rad_mol[i_t][i_r] = power_balance_data_dict[i]['power_rad_mol']['prob']
 					actual_values_power_rad_mol[i_t][i_r] = power_balance_data_dict[i]['power_rad_mol']['actual_values']
+					intervals_power_potential[i_t][i_r] = power_balance_data_dict[i]['power_potential']['intervals']
+					prob_power_potential[i_t][i_r] = power_balance_data_dict[i]['power_potential']['prob']
+					actual_values_power_potential[i_t][i_r] = power_balance_data_dict[i]['power_potential']['actual_values']
 					intervals_power_potential_mol[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol']['intervals']
 					prob_power_potential_mol[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol']['prob']
 					actual_values_power_potential_mol[i_t][i_r] = power_balance_data_dict[i]['power_potential_mol']['actual_values']
@@ -5263,6 +5280,9 @@ else:
 		most_likely_power_rad_mol,most_likely_power_rad_mol_sigma = calculate_most_likely(prob_power_rad_mol,actual_values_power_rad_mol,intervals_power_rad_mol)
 		figure_index = make_plot_type_1(most_likely_power_rad_mol,'power_rad_mol','power [W/m3]',figure_index)
 
+		most_likely_power_potential,most_likely_power_potential_sigma = calculate_most_likely(prob_power_potential,actual_values_power_potential,intervals_power_potential)
+		if np.sum(np.array(most_likely_power_potential)>0)>0:
+			figure_index = make_plot_type_1(most_likely_power_potential,'power_potential','power [W/m3]',figure_index)
 		most_likely_power_potential_mol,most_likely_power_potential_mol_sigma = calculate_most_likely(prob_power_potential_mol,actual_values_power_potential_mol,intervals_power_potential_mol)
 		if np.sum(np.array(most_likely_power_potential_mol)>0)>0:
 			figure_index = make_plot_type_1(most_likely_power_potential_mol,'power_potential_mol','power [W/m3]',figure_index)
@@ -5612,7 +5632,7 @@ else:
 			H2_destruction_RR = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],samples))
 			for i_t in range(np.shape(Te_all)[0]):
 				for i_r in range(np.shape(Te_all)[1]):
-					if len(actual_values_CX_term_1_1[i_t][i_r])>1:
+					if len(actual_values_CX_term_1_1[i_t][i_r])>1 and len(actual_values_CX_term_1_3[i_t][i_r])>1:
 						CX_term_1_1[i_t][i_r] = np.random.choice(actual_values_CX_term_1_1[i_t][i_r],size=samples,p=prob_CX_term_1_1[i_t][i_r])
 						CX_term_1_2[i_t][i_r] = np.random.choice(actual_values_CX_term_1_2[i_t][i_r],size=samples,p=prob_CX_term_1_2[i_t][i_r])
 						CX_term_1_3[i_t][i_r] = np.random.choice(actual_values_CX_term_1_3[i_t][i_r],size=samples,p=prob_CX_term_1_3[i_t][i_r])
@@ -5720,7 +5740,7 @@ else:
 					actual_values_n_H2CX[i_t][i_r] = np.array(temp_actual_values3)
 					# n_H2CX_2_actual_values[i_t][i_r] = np.array(temp_actual_values4)
 					actual_values_n_HCX_2[i_t][i_r] = np.array(temp_actual_values5)
-					if (len(actual_values_CX_term_1_1[i_t][i_r])>1 and np.nanmax(P_HCX[i_t][i_r])>0):
+					if ((len(actual_values_CX_term_1_1[i_t][i_r])>1 and len(actual_values_CX_term_1_3[i_t][i_r])>1) and np.nanmax(P_HCX[i_t][i_r])>0):
 						prob_P_HCX[i_t][i_r],intervals_P_HCX[i_t][i_r] = improved_log_histogram(P_HCX[i_t][i_r],intervals)
 						prob_P_HCX[i_t][i_r] = prob_P_HCX[i_t][i_r]/np.sum(prob_P_HCX[i_t][i_r])
 						prob_P_HCX_2[i_t][i_r],intervals_P_HCX_2[i_t][i_r] = improved_log_histogram(P_HCX_2[i_t][i_r],intervals)
@@ -5790,7 +5810,7 @@ else:
 			intervals_P_HCX_3 = intervals_P_HCX_3.tolist()
 			for i_t in range(np.shape(Te_all)[0]):
 				for i_r in range(np.shape(Te_all)[1]):
-					if len(actual_values_CX_term_1_1[i_t][i_r])<=1:
+					if len(actual_values_CX_term_1_1[i_t][i_r])<=1 or len(actual_values_CX_term_1_3[i_t][i_r])<=1:
 						prob_P_HCX[i_t][i_r] = [1]
 						actual_values_P_HCX[i_t][i_r] = [0]
 						intervals_P_HCX[i_t][i_r] = [0]
@@ -5949,8 +5969,9 @@ else:
 			# temp = 1e-3*np.min([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e)],axis=0)
 			# temp[temp<1e-8]=1e-8
 			# plt.plot(temp_e,temp,'--',color=color[index])
-			plt.plot(np.array([temp_e]*2).T,np.array(nH2p_nH2_values_Te_ne(temp_e,[ne_bands[index]]*np.sum(select),2)).T,'--',color=color[index])
-			plt.plot(np.array([temp_e]*2).T,np.array(nH2p_nH2_values_Te_ne(temp_e,[ne_bands[index+1]]*np.sum(select),2)).T,'--',color=color[index])
+			# plt.plot(np.array([temp_e]*2).T,np.array(nH2p_nH2_values_Te_ne(temp_e,[ne_bands[index]]*np.sum(select),2)).T,'--',color=color[index])
+			# plt.plot(np.array([temp_e]*2).T,np.array(nH2p_nH2_values_Te_ne(temp_e,[ne_bands[index+1]]*np.sum(select),2)).T,'--',color=color[index])
+			# the previous 2 don't make sense no more, as I use the emissivity now as a metric to define the ranges
 			# temp_e = np.sort(np.array(most_likely_Te_values)[select])
 			# temp = 1e3*np.max([H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),temp_e)],axis=0)
 			# temp[temp<1e0]=1e0
@@ -5969,9 +5990,13 @@ else:
 				plt.plot(np.sort(temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index]]*np.sum(select)),np.sort(temp_e)),'-.',color=color[index])
 			plt.plot(np.sort(temp_e),H2p_H2_v_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),np.sort(temp_e)),':',color=color[index])
 			plt.plot(np.sort(temp_e),H2p_H2_v0_ratio_AMJUEL(np.array([ne_bands[index+1]]*np.sum(select)),np.sort(temp_e)),'-.',color=color[index])
+		plt.axhline(y=1e6,linestyle='--',color='k')	# fixed max/min
+		plt.axhline(y=1e-7,linestyle='--',color='k')
 		plt.ylim(bottom=1e-9)
 		plt.yscale('log')
 		plt.xscale('log')
+		temp1,temp2=np.meshgrid(sample_time_step,sample_radious)
+		plt.plot(np.array(most_likely_Te_values)[temp1.flatten(),temp2.flatten()],np.array(most_likely_nH2p_nH2_values)[temp1.flatten(),temp2.flatten()],'ko',fillstyle='none',zorder=100)
 		plt.grid()
 		plt.ylabel('nH2p/nH2 [au]')
 		plt.legend(loc='best', fontsize='xx-small')
@@ -5991,7 +6016,7 @@ else:
 			# temp = 1e-3*np.min([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
 			# temp[temp<1e-6]=1e-6
 			# plt.plot(temp_e,temp,'--',color=color[index])
-			plt.plot(np.array([temp_e]*2).T,np.array(nHm_nH2_values_Te(temp_e,2)).T,'--',color=color[index])
+			# plt.plot(np.array([temp_e]*2).T,np.array(nHm_nH2_values_Te(temp_e,2)).T,'--',color=color[index])
 			# temp_e = np.sort(np.array(most_likely_Te_values)[select])
 			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
 			# temp[temp<1e1]=1e1
@@ -6004,9 +6029,13 @@ else:
 			# plt.plot(temp_e,temp,':',color=color[index])
 		plt.plot(np.sort(np.array(most_likely_Te_values).flatten()),Hm_H2_v_ratio_AMJUEL(np.sort(np.array(most_likely_Te_values).flatten())),':k',label='from equilibrium vn')
 		plt.plot(np.sort(np.array(most_likely_Te_values).flatten()),Hm_H2_v0_ratio_AMJUEL(np.sort(np.array(most_likely_Te_values).flatten())),'-.k',label='from equilibrium v0')
+		plt.axhline(y=1e6,linestyle='--',color='k')	# fixed max/min
+		plt.axhline(y=1e-7,linestyle='--',color='k')
 		plt.ylim(bottom=1e-7)
 		plt.yscale('log')
 		plt.xscale('log')
+		temp1,temp2=np.meshgrid(sample_time_step,sample_radious)
+		plt.plot(np.array(most_likely_Te_values)[temp1.flatten(),temp2.flatten()],np.array(most_likely_nHm_nH2_values)[temp1.flatten(),temp2.flatten()],'ko',fillstyle='none',zorder=100)
 		plt.grid()
 		plt.ylabel('nHm/nH2 [au]')
 		plt.legend(loc='best', fontsize='xx-small')
@@ -6026,10 +6055,14 @@ else:
 			# temp = 1e-3*np.min([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
 			# temp[temp<1e-6]=1e-6
 			# plt.plot(temp_e,temp,'--',color=color[index])
-			temp_H2 = []
+			temp_H2_up = []
+			temp_H2_down = []
 			for value in temp_e:
-				temp_H2.append(nH2_ne_values_Te_2(value,3)[[0,2]])
-			plt.plot(np.array([temp_e]*2).T,temp_H2,'--',color=color[index])
+				# temp_H2.append(nH2_ne_values_Te_2(value,3)[[0,2]])
+				temp_H2_up.append(nH2_ne_fit_from_simulations(value)*1e1)
+				temp_H2_down.append(nH2_ne_fit_from_simulations(value)*1e-12)
+			plt.plot(temp_e,temp_H2_up,'--',color='k')
+			plt.plot(temp_e,temp_H2_down,'--',color='k')
 			# temp_e = np.sort(np.array(most_likely_Te_values)[select])
 			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
 			# temp[temp<1e1]=1e1
@@ -6043,6 +6076,8 @@ else:
 		plt.plot(np.sort(np.array(most_likely_Te_values).flatten()),nH2_ne_fit_from_simulations(np.sort(np.array(most_likely_Te_values).flatten())),'-k',label='from somulations')
 		plt.yscale('log')
 		plt.xscale('log')
+		temp1,temp2=np.meshgrid(sample_time_step,sample_radious)
+		plt.plot(np.array(most_likely_Te_values)[temp1.flatten(),temp2.flatten()],np.array(most_likely_nH2_ne_values)[temp1.flatten(),temp2.flatten()],'ko',fillstyle='none',zorder=100)
 		plt.grid()
 		plt.ylabel('nH2/ne [au]')
 		plt.legend(loc='best', fontsize='xx-small')
@@ -6062,10 +6097,18 @@ else:
 			# temp = 1e-3*np.min([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
 			# temp[temp<1e-6]=1e-6
 			# plt.plot(temp_e,temp,'--',color=color[index])
-			temp_H2 = []
+			# temp_H = []
+			# for value in temp_e:
+			# 	temp_H.append(nH_ne_values_Te(value,3)[[0,2]])
+			# plt.plot(np.array([temp_e]*2).T,temp_H2,'--',color=color[index])
+			temp_H2_up = []
+			temp_H2_down = []
 			for value in temp_e:
-				temp_H2.append(nH_ne_values_Te(value,3)[[0,2]])
-			plt.plot(np.array([temp_e]*2).T,temp_H2,'--',color=color[index])
+				# temp_H2.append(nH2_ne_values_Te_2(value,3)[[0,2]])
+				temp_H2_up.append(np.exp(limit_H_up(np.log(value))))
+				temp_H2_down.append(np.exp(limit_H_down(np.log(value)))*1e-3)
+			plt.plot(temp_e,temp_H2_up,'--',color='k')
+			plt.plot(temp_e,temp_H2_down,'--',color='k')
 			# temp_e = np.sort(np.array(most_likely_Te_values)[select])
 			# temp = 1e4*np.max([Hm_H2_v_ratio_AMJUEL(temp_e),Hm_H2_v0_ratio_AMJUEL(temp_e)],axis=0)
 			# temp[temp<1e1]=1e1
@@ -6079,6 +6122,8 @@ else:
 		plt.plot(np.sort(np.array(most_likely_Te_values).flatten()),nH_ne_fit_from_simulations(np.sort(np.array(most_likely_Te_values).flatten())),'-k',label='from somulations')
 		plt.yscale('log')
 		plt.xscale('log')
+		temp1,temp2=np.meshgrid(sample_time_step,sample_radious)
+		plt.plot(np.array(most_likely_Te_values)[temp1.flatten(),temp2.flatten()],np.array(most_likely_nH_ne_values)[temp1.flatten(),temp2.flatten()],'ko',fillstyle='none',zorder=100)
 		plt.grid()
 		plt.ylabel('nH/ne [au]')
 		plt.legend(loc='best', fontsize='xx-small')
@@ -6221,6 +6266,7 @@ else:
 		intervals_power_rad_excit_r, prob_power_rad_excit_r, actual_values_power_rad_excit_r = radial_sum_PDF_MC(actual_values_power_rad_excit,prob_power_rad_excit)
 		intervals_power_rad_rec_bremm_r, prob_power_rad_rec_bremm_r, actual_values_power_rad_rec_bremm_r = radial_sum_PDF_MC(actual_values_power_rad_rec_bremm,prob_power_rad_rec_bremm)
 		intervals_power_rad_mol_r, prob_power_rad_mol_r, actual_values_power_rad_mol_r = radial_sum_PDF_MC(actual_values_power_rad_mol,prob_power_rad_mol)
+		intervals_power_potential_r, prob_power_potential_r, actual_values_power_potential_r = radial_sum_PDF_MC(actual_values_power_potential,prob_power_potential)
 		intervals_power_potential_mol_r, prob_power_potential_mol_r, actual_values_power_potential_mol_r = radial_sum_PDF_MC(actual_values_power_potential_mol,prob_power_potential_mol)
 		intervals_power_potential_mol_plasma_heating_r, prob_power_potential_mol_plasma_heating_r, actual_values_power_potential_mol_plasma_heating_r = radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_heating,prob_power_potential_mol_plasma_heating)
 		intervals_power_potential_mol_plasma_cooling_r, prob_power_potential_mol_plasma_cooling_r, actual_values_power_potential_mol_plasma_cooling_r = radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_cooling,prob_power_potential_mol_plasma_cooling)
@@ -6277,6 +6323,7 @@ else:
 		most_likely_power_rad_excit_r,actual_values_power_rad_excit_r_up,actual_values_power_rad_excit_r_down = find_DPF_range_temporal(actual_values_power_rad_excit_r,prob_power_rad_excit_r,intervals_power_rad_excit_r)
 		most_likely_power_rad_rec_bremm_r,actual_values_power_rad_rec_bremm_r_up,actual_values_power_rad_rec_bremm_r_down = find_DPF_range_temporal(actual_values_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r,intervals_power_rad_rec_bremm_r)
 		most_likely_power_rad_mol_r,actual_values_power_rad_mol_r_up,actual_values_power_rad_mol_r_down = find_DPF_range_temporal(actual_values_power_rad_mol_r,prob_power_rad_mol_r,intervals_power_rad_mol_r)
+		most_likely_power_potential_r,actual_values_power_potential_r_up,actual_values_power_potential_r_down = find_DPF_range_temporal(actual_values_power_potential_r,prob_power_potential_r,intervals_power_potential_r)
 		most_likely_power_potential_mol_r,actual_values_power_potential_mol_r_up,actual_values_power_potential_mol_r_down = find_DPF_range_temporal(actual_values_power_potential_mol_r,prob_power_potential_mol_r,intervals_power_potential_mol_r)
 		most_likely_power_potential_mol_plasma_heating_r,actual_values_power_potential_mol_plasma_heating_r_up,actual_values_power_potential_mol_plasma_heating_r_down = find_DPF_range_temporal(actual_values_power_potential_mol_plasma_heating_r,prob_power_potential_mol_plasma_heating_r,intervals_power_potential_mol_plasma_heating_r)
 		most_likely_power_potential_mol_plasma_cooling_r,actual_values_power_potential_mol_plasma_cooling_r_up,actual_values_power_potential_mol_plasma_cooling_r_down = find_DPF_range_temporal(actual_values_power_potential_mol_plasma_cooling_r,prob_power_potential_mol_plasma_cooling_r,intervals_power_potential_mol_plasma_cooling_r)
@@ -6557,8 +6604,8 @@ else:
 				plt.plot(time_crop, multiplier*np.array(heat_inflow_upstream_min),'k--')
 				plt.errorbar(time_source_power_crop,multiplier*np.array(power_pulse_shape_crop),yerr=multiplier*np.array(power_pulse_shape_std_crop),color='y',ls='--',capsize=2)
 			if flow_plot:
-				plt.plot(time_crop, dt/1000*np.array(plasma_inflow_upstream_max),'k--',label='upstrem inflow fixed velocity range')
-				plt.plot(time_crop, dt/1000*np.array(plasma_inflow_upstream_min),'k--')
+				plt.plot(time_crop, dt/1000*np.array(plasma_inflow_upstream_max),'k:',label='upstream inflow fixed velocity range')
+				plt.plot(time_crop, dt/1000*np.array(plasma_inflow_upstream_min),'k:')
 				plt.plot(time_crop, dt/1000*np.sum(Bohm_adiabatic_flow*area,axis=1),label='Bohm flow TS location')
 				plt.plot(time_crop, dt/1000*np.sum(upstream_Bohm_adiabatic_flow*area,axis=1),label='Bohm flow upstream')
 				plt.plot(np.sort(time_crop)[[0,-1]],[H2_pre_ELMlike_pulse]*2,'--',label='H2 in the plasma volume before the pulse')
@@ -6582,6 +6629,8 @@ else:
 		figure_index = make_plot_type_2(intervals_power_rad_excit_r,prob_power_rad_excit_r,most_likely_power_rad_excit_r,actual_values_power_rad_excit_r_down,actual_values_power_rad_excit_r_up,'power_rad_excit','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r,most_likely_power_rad_rec_bremm_r,actual_values_power_rad_rec_bremm_r_down,actual_values_power_rad_rec_bremm_r_up,'power_rad_rec_bremm','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rad_mol_r,prob_power_rad_mol_r,most_likely_power_rad_mol_r,actual_values_power_rad_mol_r_down,actual_values_power_rad_mol_r_up,'power_rad_mol','Power loss [W]',figure_index)
+		if np.sum(np.array(most_likely_power_potential_r)>0)>0:
+			figure_index = make_plot_type_2(intervals_power_potential_r,prob_power_potential_r,most_likely_power_potential_r,actual_values_power_potential_r_down,actual_values_power_potential_r_up,'power_potential','Power loss [W]',figure_index)
 		if np.sum(np.array(most_likely_power_potential_mol_r)>0)>0:
 			figure_index = make_plot_type_2(intervals_power_potential_mol_r,prob_power_potential_mol_r,most_likely_power_potential_mol_r,actual_values_power_potential_mol_r_down,actual_values_power_potential_mol_r_up,'power_potential_mol','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_potential_mol_plasma_heating_r,prob_power_potential_mol_plasma_heating_r,most_likely_power_potential_mol_plasma_heating_r,actual_values_power_potential_mol_plasma_heating_r_down,actual_values_power_potential_mol_plasma_heating_r_up,'power_potential_mol_plasma_heating','Power loss [W]',figure_index)
@@ -6650,6 +6699,7 @@ else:
 		plt.plot(time_crop,most_likely_power_rad_excit_r,label='power_rad_excit')
 		plt.plot(time_crop,most_likely_power_rad_rec_bremm_r,label='power_rad_rec_bremm')
 		plt.plot(time_crop,most_likely_power_rad_mol_r,label='power_rad_mol')
+		plt.plot(time_crop,most_likely_power_potential_r,label='power_potential')
 		plt.plot(time_crop,most_likely_power_potential_mol_r,label='power_potential_mol')
 		plt.plot(time_crop,most_likely_power_potential_mol_plasma_heating_r,label='power_potential_mol_plasma_heating')
 		plt.plot(time_crop,most_likely_power_potential_mol_plasma_cooling_r,label='power_potential_mol_plasma_cooling')
@@ -7120,6 +7170,7 @@ else:
 		intervals_power_rad_excit_tr, prob_power_rad_excit_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_excit_r,prob_power_rad_excit_r)
 		intervals_power_rad_rec_bremm_tr, prob_power_rad_rec_bremm_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r)
 		intervals_power_rad_mol_tr, prob_power_rad_mol_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_mol_r,prob_power_rad_mol_r)
+		intervals_power_potential_tr, prob_power_potential_tr = temporal_radial_sum_PDF_MC(actual_values_power_potential_r,prob_power_potential_r)
 		intervals_power_potential_mol_tr, prob_power_potential_mol_tr = temporal_radial_sum_PDF_MC(actual_values_power_potential_mol_r,prob_power_potential_mol_r)
 		intervals_power_potential_mol_plasma_heating_tr, prob_power_potential_mol_plasma_heating_tr = temporal_radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_heating_r,prob_power_potential_mol_plasma_heating_r)
 		intervals_power_potential_mol_plasma_cooling_tr, prob_power_potential_mol_plasma_cooling_tr = temporal_radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_cooling_r,prob_power_potential_mol_plasma_cooling_r)
@@ -7168,6 +7219,9 @@ else:
 		ML_power_rad_mol = (np.add(intervals_power_rad_mol_tr[1:],intervals_power_rad_mol_tr[:-1])/2)[np.array(prob_power_rad_mol_tr).argmax()]
 		temp = np.cumsum(prob_power_rad_mol_tr)
 		ML_power_rad_mol_sigma = np.mean([ML_power_rad_mol-intervals_power_rad_mol_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_mol_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_mol])
+		ML_power_potential = (np.add(intervals_power_potential_tr[1:],intervals_power_potential_tr[:-1])/2)[np.array(prob_power_potential_tr).argmax()]
+		temp = np.cumsum(prob_power_potential_tr)
+		ML_power_potential_sigma = np.mean([ML_power_potential-intervals_power_potential_tr[np.abs(temp-0.159).argmin()+1],intervals_power_potential_tr[np.abs(temp-1+0.159).argmin()]-ML_power_potential])
 		ML_power_potential_mol = (np.add(intervals_power_potential_mol_tr[1:],intervals_power_potential_mol_tr[:-1])/2)[np.array(prob_power_potential_mol_tr).argmax()]
 		temp = np.cumsum(prob_power_potential_mol_tr)
 		ML_power_potential_mol_sigma = np.mean([ML_power_potential_mol-intervals_power_potential_mol_tr[np.abs(temp-0.159).argmin()+1],intervals_power_potential_mol_tr[np.abs(temp-1+0.159).argmin()]-ML_power_potential_mol])
@@ -7284,6 +7338,7 @@ else:
 		plt.plot(np.sort(intervals_power_rad_excit_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_excit_tr]*2).T.flatten(),label='power_rad_excit ML=%.3g+/-%.3gJ' %(ML_power_rad_excit,ML_power_rad_excit_sigma))
 		plt.plot(np.sort(intervals_power_rad_rec_bremm_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_rec_bremm_tr]*2).T.flatten(),label='power_rad_rec_bremm ML=%.3g+/-%.3gJ' %(ML_power_rad_rec_bremm,ML_power_rad_rec_bremm_sigma))
 		plt.plot(np.sort(intervals_power_rad_mol_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_mol_tr]*2).T.flatten(),label='power_rad_mol ML=%.3g+/-%.3gJ' %(ML_power_rad_mol,ML_power_rad_mol_sigma))
+		plt.plot(np.sort(intervals_power_potential_tr.tolist()*2)[1:-1],100*np.array([prob_power_potential_tr]*2).T.flatten(),label='power_potential ML=%.3g+/-%.3gJ' %(ML_power_potential,ML_power_potential_sigma))
 		plt.plot(np.sort(intervals_power_potential_mol_tr.tolist()*2)[1:-1],100*np.array([prob_power_potential_mol_tr]*2).T.flatten(),label='power_potential_mol ML=%.3g+/-%.3gJ' %(ML_power_potential_mol,ML_power_potential_mol_sigma))
 		plt.plot(np.sort(intervals_power_potential_mol_plasma_heating_tr.tolist()*2)[1:-1],100*np.array([prob_power_potential_mol_plasma_heating_tr]*2).T.flatten(),label='power_potential_mol_plasma_heating ML=%.3g+/-%.3gJ' %(ML_power_potential_mol_plasma_heating,ML_power_potential_mol_plasma_heating_sigma))
 		plt.plot(np.sort(intervals_power_potential_mol_plasma_cooling_tr.tolist()*2)[1:-1],100*np.array([prob_power_potential_mol_plasma_cooling_tr]*2).T.flatten(),label='power_potential_mol_plasma_cooling ML=%.3g+/-%.3gJ' %(ML_power_potential_mol_plasma_cooling,ML_power_potential_mol_plasma_cooling_sigma))
@@ -7350,8 +7405,8 @@ else:
 		plt.plot([source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,[0,100],'--',label='H2 flow to the source = %.3g#' %(source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000));
 		plt.plot([feed_rate_SLM /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,[0,100],'--',label='H2 flow to the target chamber = %.3g#' %(feed_rate_SLM /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000));
 		plt.plot([np.pi*(0.25**2)*target_chamber_length*target_chamber_pressure/(273*boltzmann_constant_J)]*2,[0,100],label='H2 in the target chamber before the pulse = %.3g#' %(np.pi*(0.25**2)*target_chamber_length*target_chamber_pressure/(273*boltzmann_constant_J)))
-		plt.plot([np.sum(plasma_inflow_upstream_max[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'k--',label='upstrem inflow fixed velocity range')
-		plt.plot([np.sum(plasma_inflow_upstream_min[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'k--')
+		plt.plot([np.sum(plasma_inflow_upstream_max[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'k:',label='upstream inflow fixed velocity range')
+		plt.plot([np.sum(plasma_inflow_upstream_min[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'k:')
 		plt.plot([np.sum(np.sum(Bohm_adiabatic_flow*area,axis=1)[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'--',label='Bohm flow TS location')
 		plt.plot([np.sum(np.sum(upstream_Bohm_adiabatic_flow*area,axis=1)[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'--',label='Bohm flow upstream')
 		plt.plot([np.sum(np.sum(target_Bohm_adiabatic_flow*area,axis=1)[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'--',label='Bohm flow target')
@@ -7421,6 +7476,11 @@ else:
 		bayesian_results_dict['power_rad_mol']['full'] = dict([('intervals',intervals_power_rad_mol),('prob',prob_power_rad_mol),('actual_values',actual_values_power_rad_mol),('most_likely',most_likely_power_rad_mol),('most_likely_sigma',most_likely_power_rad_mol_sigma),('unit','W m^-3')])
 		bayesian_results_dict['power_rad_mol']['radial_sum'] = dict([('intervals',intervals_power_rad_mol_r),('prob',prob_power_rad_mol_r),('actual_values',actual_values_power_rad_mol_r),('most_likely',most_likely_power_rad_mol_r),('unit','W')])
 		bayesian_results_dict['power_rad_mol']['radial_time_sum'] = dict([('intervals',intervals_power_rad_mol_tr),('prob',prob_power_rad_mol_tr),('most_likely',ML_power_rad_mol),('most_likely_sigma',ML_power_rad_mol_sigma),('unit','J')])
+
+		bayesian_results_dict['power_potential'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['power_potential']['full'] = dict([('intervals',intervals_power_potential),('prob',prob_power_potential),('actual_values',actual_values_power_potential),('most_likely',most_likely_power_potential),('most_likely_sigma',most_likely_power_potential_sigma),('unit','W m^-3')])
+		bayesian_results_dict['power_potential']['radial_sum'] = dict([('intervals',intervals_power_potential_r),('prob',prob_power_potential_r),('actual_values',actual_values_power_potential_r),('most_likely',most_likely_power_potential_r),('unit','W')])
+		bayesian_results_dict['power_potential']['radial_time_sum'] = dict([('intervals',intervals_power_potential_tr),('prob',prob_power_potential_tr),('most_likely',ML_power_potential),('most_likely_sigma',ML_power_potential_sigma),('unit','J')])
 
 		bayesian_results_dict['power_potential_mol'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['power_potential_mol']['full'] = dict([('intervals',intervals_power_potential_mol),('prob',prob_power_potential_mol),('actual_values',actual_values_power_potential_mol),('most_likely',most_likely_power_potential_mol),('most_likely_sigma',most_likely_power_potential_mol_sigma),('unit','W m^-3')])

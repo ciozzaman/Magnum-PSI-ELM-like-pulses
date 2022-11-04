@@ -73,7 +73,9 @@ for merge_ID_target in merge_ID_target_multipulse:
 		target_location_right = target_location - 11*mm_per_pixel
 		target_location_left_pixel = int(round(target_location/mm_per_pixel))-16
 		target_location_right_pixel = int(round(target_location/mm_per_pixel))-11
-		LOS_size = 3.8	# mm diameter
+		# LOS_size = 3.8	# mm diameter
+		# in reality it's smaller than the resolution. looking at acually feeding light of the right wavelength the imprint is very small, with a vague halo around the main spot, but a weak one
+		LOS_size = 1	# mm diameter
 		LOS_number = 40
 		LOS_interval = 1.06478505470992	# 10/02/2020 from	Calculate magnification_FF.xlsx
 		LOS_full_size = (LOS_number-1)*LOS_interval + LOS_size
@@ -100,7 +102,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 			raw_images, setup, bpp = read_frames(full_folder+filename)#,start_frame=1,count=1)
 			# header = read_header('/home/ffederic/work/Collaboratory/test/experimental_data/2019-05-03/01/fast_camera/02_1.cine')
 			framerate = setup.FrameRate
-			integration_time = setup.ShutterNs/1000	# ms
+			integration_time = setup.ShutterNs/1000000	# ms
 			saturation_counts = setup.Conv8Max	# counts
 			raw_data = []
 			for image in raw_images:
@@ -207,7 +209,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 				averaged_profile[np.max(raw_data,axis=0)>=saturation_counts] = np.nan
 				length = 351+target_OES_distance	# mm distance skimmer to OES/TS + OES/TS to target
 				total_volume = ((np.max([plasma_diameter_50,plasma_diameter_100,plasma_diameter_OES,plasma_diameter_target,plasma_diameter_target])/2)**2)*np.pi*length
-				overexposed_volume_max = np.max([plasma_diameter_50,plasma_diameter_100,plasma_diameter_OES,plasma_diameter_target,plasma_diameter_target])*np.sum((np.max(raw_data,axis=0)>=saturation_counts))*((mm_per_pixel)**2)
+				overexposed_volume_max = np.max([plasma_diameter_50,plasma_diameter_100,plasma_diameter_OES,plasma_diameter_target,plasma_diameter_target])*np.nansum((np.max(raw_data,axis=0)>=saturation_counts))*((mm_per_pixel)**2)
 				fraction_overexposed_volume = overexposed_volume_max/total_volume * 100
 
 
@@ -313,7 +315,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 	all_averaged_profile = [value[:temp] for value in all_averaged_profile]
 	full_saved_file_dict['averaged_profile'] = np.mean(all_averaged_profile,axis=(0,1))	# counts are normalised for a 1ms exposure
 	fast_camera_record_duration = np.shape(all_averaged_profile)[1] / framerate	# [s]
-	fast_camera_record_duration_OES_location = max(1,np.sum(np.max(np.mean(all_averaged_profile,axis=0)[:,:,OES_location_left_pixel:OES_location_right_pixel+1],axis=(-1,-2))>0)) / framerate	# [s]
+	fast_camera_record_duration_OES_location = max(1,np.nansum(np.nanmax(np.nanmean(all_averaged_profile,axis=0)[:,:,OES_location_left_pixel:OES_location_right_pixel+1],axis=(-1,-2))>0)) / framerate	# [s]
 	full_saved_file_dict['record_duration'] = fast_camera_record_duration
 	full_saved_file_dict['record_duration_OES_location'] = fast_camera_record_duration_OES_location
 	results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
@@ -397,7 +399,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 		averaged_profile[overexposed_mask] = np.nan
 		length = 351+target_OES_distance	# mm distance skimmer to OES/TS + OES/TS to target
 		total_volume = ((np.max([plasma_diameter_50,plasma_diameter_100,plasma_diameter_OES,plasma_diameter_target,plasma_diameter_target])/2)**2)*np.pi*length
-		overexposed_volume_max = np.max([plasma_diameter_50,plasma_diameter_100,plasma_diameter_OES,plasma_diameter_target,plasma_diameter_target])*np.sum(overexposed_mask)*((mm_per_pixel)**2)
+		overexposed_volume_max = np.max([plasma_diameter_50,plasma_diameter_100,plasma_diameter_OES,plasma_diameter_target,plasma_diameter_target])*np.nansum(overexposed_mask)*((mm_per_pixel)**2)
 		fraction_overexposed_volume = overexposed_volume_max/total_volume * 100
 	else:
 		full_saved_file_dict['overexposed_mask'] = np.zeros_like(averaged_profile).astype(bool)
@@ -443,23 +445,27 @@ for merge_ID_target in merge_ID_target_multipulse:
 	path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_average'+'2.eps', bbox_inches='tight')
 	plt.close('all')
 
-	plt.figure(figsize=(10,3))
-	plt.imshow(averaged_profile,'rainbow',origin='lower',extent=[0,np.shape(raw_data)[1]*mm_per_pixel,0,np.shape(raw_data)[2]*mm_per_pixel])
-	global_plasma_cecntre = (np.abs(np.cumsum(np.sum(averaged_profile[:,60:],axis=1))/np.sum(averaged_profile[:,60:int(target_location//mm_per_pixel)])-0.5).argmin()+0.5) * mm_per_pixel
+	plt.figure(figsize=(8,6))
+	global_plasma_cecntre = (np.abs(np.cumsum(np.nansum(averaged_profile[:,60:],axis=1))/np.nansum(averaged_profile[:,60:int(target_location//mm_per_pixel)])-0.5).argmin()+0.5) * mm_per_pixel
+	plt.imshow(averaged_profile,'rainbow',origin='lower',extent=[0-target_location,np.shape(raw_data)[1]*mm_per_pixel-target_location,0-global_plasma_cecntre,np.shape(raw_data)[2]*mm_per_pixel-global_plasma_cecntre])
 	# plt.imshow(cleaned[select],'rainbow',origin='lower')
 	if overexposed:
-		plt.colorbar().set_label('average counts [au]\n%.3g%% vol overexposed' %(fraction_overexposed_volume),fontsize=13)
+		# plt.colorbar().set_label('average counts [au]\n%.3g%% vol overexposed' %(fraction_overexposed_volume),fontsize=13)
+		plt.colorbar().set_label('average counts [au] (overexposed)')
 	else:
 		plt.colorbar().set_label('average counts [au]')
 	# plt.plot([OES_location_left,OES_location_left],[60*mm_per_pixel,200*mm_per_pixel],'k',label='OES location')
 	# plt.plot([OES_location_right,OES_location_right],[60*mm_per_pixel,200*mm_per_pixel],'k')
-	plt.plot([OES_location_left,OES_location_left,OES_location_right,OES_location_right,OES_location_left],[global_plasma_cecntre-LOS_full_size/2,global_plasma_cecntre+LOS_full_size/2,global_plasma_cecntre+LOS_full_size/2,global_plasma_cecntre-LOS_full_size/2,global_plasma_cecntre-LOS_full_size/2],'k',label='OES')
-	plt.plot([TS_location_left,TS_location_left,TS_location_right,TS_location_right,TS_location_left],[global_plasma_cecntre-TS_LOS_full_size/2,global_plasma_cecntre+TS_LOS_full_size/2,global_plasma_cecntre+TS_LOS_full_size/2,global_plasma_cecntre-TS_LOS_full_size/2,global_plasma_cecntre-TS_LOS_full_size/2],'-.k',label='TS')
+	# plt.plot([OES_location_left,OES_location_left,OES_location_right,OES_location_right,OES_location_left],[global_plasma_cecntre-LOS_full_size/2,global_plasma_cecntre+LOS_full_size/2,global_plasma_cecntre+LOS_full_size/2,global_plasma_cecntre-LOS_full_size/2,global_plasma_cecntre-LOS_full_size/2],'k',label='OES/TS location')
+	plt.axvline(x=OES_location_left-target_location,color='k',label='OES/TS location')
+	plt.axvline(x=OES_location_right-target_location,color='k')
+	# plt.plot([TS_location_left,TS_location_left,TS_location_right,TS_location_right,TS_location_left],[global_plasma_cecntre-TS_LOS_full_size/2,global_plasma_cecntre+TS_LOS_full_size/2,global_plasma_cecntre+TS_LOS_full_size/2,global_plasma_cecntre-TS_LOS_full_size/2,global_plasma_cecntre-TS_LOS_full_size/2],'-.k',label='TS')
 	# plt.axhline(y=global_plasma_cecntre,color='k')
-	plt.plot([target_location]*2,[60*mm_per_pixel,200*mm_per_pixel],'--k',label='target')
-	plt.ylim(bottom=30,top=65)
+	# plt.plot([target_location]*2,[60*mm_per_pixel,200*mm_per_pixel],'--k',label='target')
+	plt.axvline(x=0,color='k',linestyle='--',label='target')
+	# plt.ylim(bottom=30,top=65)
 	# plt.ylim(bottom=global_plasma_cecntre-LOS_full_size/2-2,top=global_plasma_cecntre+LOS_full_size/2+2)
-	plt.xlim(left=0,right=target_location+0.5)
+	# plt.xlim(left=0,right=target_location+0.5)
 	plt.title('magnetic_field %.3gT,steady state pressure %.3gPa,target/OES distance %.3gmm,ELM pulse voltage %.3gV\n average profile' %(magnetic_field,SS_pressure,target_OES_distance,pulse_voltage),fontsize=12)
 	plt.legend(loc='best', fontsize='x-small')
 	plt.xlabel('longitudinal position [mm]')

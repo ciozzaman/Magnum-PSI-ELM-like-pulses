@@ -197,7 +197,9 @@ for merge_ID_target in [99,98,96,97]:	# pressure scan
 		target_location_right = target_location - 11*mm_per_pixel
 		target_location_left_pixel = int(round(target_location/mm_per_pixel))-16
 		target_location_right_pixel = int(round(target_location/mm_per_pixel))-11
-		LOS_size = 3.8	# mm diameter
+		# LOS_size = 3.8	# mm diameter
+		# in reality it's smaller than the resolution. looking at acually feeding light of the right wavelength the imprint is very small, with a vague halo around the main spot, but a weak one
+		LOS_size = 1	# mm diameter
 		OES_location = 230*mm_per_pixel - 31.2
 		OES_location_left = 230*mm_per_pixel - 31.2 - LOS_size/2
 		OES_location_right = 230*mm_per_pixel - 31.2 + LOS_size/2
@@ -572,28 +574,31 @@ plt.ylabel('Emission ratio/diameter [au/mm]')
 plt.yscale('log')
 plt.pause(0.01)
 
+plt.rcParams.update({'font.size': 20})
 color = ['b', 'r', 'm', 'y', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
-fig = plt.figure(figsize=(12,6))
+fig = plt.figure(figsize=(13,8))
 ax1 = fig.add_subplot(1,1,1)
 # if merge_ID_target in [85,97]:
 # 	ax2 = fig.add_subplot(5,5,7, facecolor='w',yscale='linear')
+ax1.plot([],[],'w',label='Pressure')
 for i in range(len(averaged_profile_all)):
 	temp_temp = np.mean(averaged_profile_all[i],axis=0)
 	temp_temp[np.arange(np.shape(averaged_profile_all)[1])>230]=0
-	ax1.plot(np.arange(np.shape(averaged_profile_all)[1])*mm_per_pixel,temp_temp,color=color[i],label='Pressure = %.3gPa' %(SS_pressure_all[i]))
+	target_location = 230*mm_per_pixel +target_OES_distance_all[i] - 31.2
+	ax1.plot(np.arange(np.shape(averaged_profile_all)[1])*mm_per_pixel-target_location,temp_temp,color=color[i],label='%.3gPa' %(SS_pressure_all[i]))
 # plt.yscale('log')
-ax1.plot([230*mm_per_pixel]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-.',label='target')
-ax1.plot([OES_location_left]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-',label='TS/OES')
-ax1.plot([OES_location_right]*2,[0,np.mean(averaged_profile_all,axis=1).max()],'k-')
-ax1.set_title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field,target_OES_distance,pulse_voltage)+'\nAverage of emissivity in the radial direction')
+ax1.axvline(x=0,color='k',linestyle='-.',label='target')
+ax1.axvline(x=OES_location_left-target_location,color='k',linestyle='-',label='TS/OES')
+ax1.axvline(x=OES_location_right-target_location,color='k',linestyle='-')
+ax1.set_title('Pressure scan magnetic_field %.3gT,target/OES distance %.3gmm,ELM pulse voltage %.3gV' %(magnetic_field,target_OES_distance,pulse_voltage)+'\nAverage of emissivity in the radial direction\n')
 ax1.set_xlabel('longitudinal position [mm]')
 ax1.set_ylabel('Average brightness [au]')
 ax1.grid()
 ax1.set_yscale('log')
 ax1.set_ylim(bottom=0.1)
-ax2 = plt.axes([.2, .5, .2, .32], facecolor='w',yscale='linear')
 if merge_ID_target==85:
-	ax1.plot([75,78,78,75,75],[600,600,800,800,600],'k--',label='linear detail')
+	ax2 = plt.axes([.2, .54, .2, .29], facecolor='w',yscale='linear')
+	ax1.plot(np.array([75,78,78,75,75])-target_location,[600,600,800,800,600],'k--',label='linear detail')
 	for i in range(len(averaged_profile_all)):
 		temp_temp = np.mean(averaged_profile_all[i],axis=0)
 		temp_temp[np.arange(np.shape(averaged_profile_all)[1])>230]=0
@@ -602,18 +607,24 @@ if merge_ID_target==85:
 	ax2.set_ylim(bottom=600,top=800)
 	ax2.set_yscale('linear')
 	ax2.set_title('linear detail')
-elif merge_ID_target==97:
-	ax1.plot([75,78,78,75,75],[100,100,210,210,100],'k--',label='linear detail')
-	for i in range(len(averaged_profile_all)):
-		temp_temp = np.mean(averaged_profile_all[i],axis=0)
-		temp_temp[np.arange(np.shape(averaged_profile_all)[1])>230]=0
-		ax2.plot(np.arange(np.shape(averaged_profile_all)[1])*mm_per_pixel,temp_temp,color=color[i])
-	ax2.set_xlim(left=75,right=78)
-	ax2.set_ylim(bottom=100,top=210)
-	ax2.set_yscale('linear')
-	ax2.set_title('linear detail')
-ax1.legend(loc=3, fontsize='small')
-plt.pause(0.01)
+# elif merge_ID_target==97:
+# 	ax2 = plt.axes([.2, .5, .2, .32], facecolor='w',yscale='linear')
+# 	ax1.plot(np.array([75,78,78,75,75])-target_location,[100,100,210,210,100],'k--',label='linear detail')
+# 	for i in range(len(averaged_profile_all)):
+# 		temp_temp = np.mean(averaged_profile_all[i],axis=0)
+# 		temp_temp[np.arange(np.shape(averaged_profile_all)[1])>230]=0
+# 		ax2.plot(np.arange(np.shape(averaged_profile_all)[1])*mm_per_pixel,temp_temp,color=color[i])
+# 	ax2.set_xlim(left=75,right=78)
+# 	ax2.set_ylim(bottom=100,top=210)
+# 	ax2.set_yscale('linear')
+# 	ax2.set_title('linear detail')
+ax1.legend(loc=3, fontsize='x-small')
+ax1.set_xlim(right=5)
+ax1.set_ylim(bottom=1)
+plt.savefig('/home/ffederic/work/Collaboratory/test/experimental_data/fast camera/' +'39'+'.png', bbox_inches='tight')
+# plt.savefig('/home/ffederic/work/Collaboratory/test/experimental_data/fast camera/' +'20'+'.png', bbox_inches='tight')
+plt.close()
+# plt.pause(0.01)
 
 
 
@@ -663,6 +674,7 @@ ne = np.array([6.71,6.24,6.29,1.07,0.875,0,11.1,11.3,14.2,13.6,16.5,16.5,21.2,19
 z_position = [-170,-110,-90,-170,-110,-90,-170,-100,-170,-100,-170,-100,-170,-100,-170,-100,-170,-100,-170,-100]	# mm
 exposure = [3000,900,900,10000,3000,3000,10000,10000,10000,10000,10000,10000,10000,10000,2000,2000,2000,2000,10000,10000]	# microseconds
 target_chamber_pressure = [0.25,0.26,0.26,0.52,0.52,0.52,0.27,0.29,0.54,0.52,0.99,0.99,2.02,2.01,4.47,4.48,8.18,8.33,16.8,17.3]	# Pa
+mm_per_pixel = 15/44	# mm/#
 
 for i_j,j in enumerate(file_id):
 	full_folder = '/home/ffederic/work/Collaboratory/test/experimental_data/fast camera/DetachmentMovieRawCine/'
@@ -689,15 +701,37 @@ for i_j,j in enumerate(file_id):
 	# counts are normalised for a 1ms exposure
 	average = average/(setup.ShutterNs/1000)
 
+	target_location = 230*mm_per_pixel +  -(z_position[i_j]+78.8)-5  - 31.2	# this is for a tungsten dummy 1 target, as I think it was for theis set of experiment
+	LOS_size = 1	# mm diameter
+	LOS_number = 40
+	LOS_interval = 1.06478505470992	# 10/02/2020 from	Calculate magnification_FF.xlsx
+	LOS_full_size = (LOS_number-1)*LOS_interval + LOS_size
+	TS_size = [-4.149230769230769056e+01, 4.416923076923076508e+01]
+	TS_LOS_full_size = TS_size[1]-TS_size[0]
+	TS_LOS_interval = (TS_size[1]-TS_size[0])/65
+	OES_location = 230*mm_per_pixel - 31.2
+	OES_location_left = 230*mm_per_pixel - 31.2 - LOS_size/2
+	OES_location_right = 230*mm_per_pixel - 31.2 + LOS_size/2
+	OES_location_left_pixel = int(round(OES_location_left/mm_per_pixel))
+	OES_location_right_pixel = int(round(OES_location_right/mm_per_pixel))
+	TS_location_left = 230*mm_per_pixel - 31.2 - TS_LOS_interval/2
+	TS_location_right = 230*mm_per_pixel - 31.2 + TS_LOS_interval/2
+
 	plt.figure(figsize=(8,6))
-	plt.imshow(average,'rainbow',origin='lower',extent=[0,np.shape(raw_data)[1]*mm_per_pixel,0,np.shape(raw_data)[2]*mm_per_pixel])
+	global_plasma_cecntre = (np.abs(np.cumsum(np.nansum(raw_data[:,:,60:],axis=(0,2)))/np.nansum(raw_data[:,:,60:int(target_location//mm_per_pixel)])-0.5).argmin()+0.5) * mm_per_pixel
+	plt.imshow(average,'rainbow',origin='lower',extent=[0-target_location,np.shape(raw_data)[1]*mm_per_pixel-target_location,0-global_plasma_cecntre,np.shape(raw_data)[2]*mm_per_pixel-global_plasma_cecntre])
+	plt.axvline(x=0,color='k',linestyle='--',label='target')
+
+	plt.axvline(x=OES_location_left-target_location,color='k',label='OES/TS location')
+	plt.axvline(x=OES_location_right-target_location,color='k')
+
 	# plt.imshow(cleaned[select],'rainbow',origin='lower')
 	if overexposed_local:
 		plt.colorbar().set_label('average counts [au] (overexposed)')
 	else:
 		plt.colorbar().set_label('average counts [au]')
 	plt.title(full_folder+filename+'\nmagnetic_field %.3gT,steady state pressure %.3gPa,target/OES distance %.3gmm,no ELM pulse\n average profile' %(1.2,target_chamber_pressure[i_j],-(z_position[i_j]+78.8)),fontsize=12)
-	# plt.legend(loc='best', fontsize='x-small')
+	plt.legend(loc='upper left', fontsize='x-small')
 	plt.xlabel('longitudinal position [mm]')
 	plt.ylabel('radial position [mm]')
 	plt.grid()
@@ -705,9 +739,13 @@ for i_j,j in enumerate(file_id):
 	plt.savefig(full_folder +'/fast_camera'+'_' + filename +'.eps', bbox_inches='tight')
 	plt.close('all')
 
-plt.figure(figsize=(12,6))
+plt.figure(figsize=(13,8))
+mm_per_pixel = 15/44	# mm/#
+plt.plot([],[],'w',label='Pressure')
 for i_j,j in enumerate(file_id):
-	if not(j in [9325,9329,9333,9337]):
+	# if not(j in [9325,9329,9333,9337]):
+	# if not(j in [9325,9329,9337]):
+	if not(j in [9325,9331,9337]):
 		continue
 	full_folder = '/home/ffederic/work/Collaboratory/test/experimental_data/fast camera/DetachmentMovieRawCine/'
 	type = '.cine'
@@ -726,20 +764,39 @@ for i_j,j in enumerate(file_id):
 	# counts are normalised for a 1ms exposure
 	average = average/(setup.ShutterNs/1000)
 
-	plt.plot(np.arange(np.shape(average)[0])*mm_per_pixel,np.mean(average[110:150],axis=0),label='%.3g Pa' %(target_chamber_pressure[i_j]))
-plt.title('steady state samples average profile\nmagnetic_field %.3gT,target/OES distance %.3gmm,no ELM pulse' %(1.2,-(z_position[i_j]+78.8)),fontsize=12)
+	target_location = 230*mm_per_pixel +  -(z_position[i_j]+78.8)-5  - 31.2	# this is for a tungsten dummy 1 target, as I think it was for theis set of experiment
+	LOS_size = 1	# mm diameter
+	LOS_number = 40
+	LOS_interval = 1.06478505470992	# 10/02/2020 from	Calculate magnification_FF.xlsx
+	LOS_full_size = (LOS_number-1)*LOS_interval + LOS_size
+	TS_size = [-4.149230769230769056e+01, 4.416923076923076508e+01]
+	TS_LOS_full_size = TS_size[1]-TS_size[0]
+	TS_LOS_interval = (TS_size[1]-TS_size[0])/65
+	OES_location = 230*mm_per_pixel - 31.2
+	OES_location_left = 230*mm_per_pixel - 31.2 - LOS_size/2
+	OES_location_right = 230*mm_per_pixel - 31.2 + LOS_size/2
+	OES_location_left_pixel = int(round(OES_location_left/mm_per_pixel))
+	OES_location_right_pixel = int(round(OES_location_right/mm_per_pixel))
+	TS_location_left = 230*mm_per_pixel - 31.2 - TS_LOS_interval/2
+	TS_location_right = 230*mm_per_pixel - 31.2 + TS_LOS_interval/2
+
+	plt.plot(np.arange(np.shape(average)[0])*mm_per_pixel-target_location,np.mean(average[110:150],axis=0),label='%.3gPa' %(target_chamber_pressure[i_j]))
+plt.title('steady state samples average profile\nmagnetic_field %.3gT,target/OES distance %.3gmm,no ELM pulse\n' %(1.2,-(z_position[i_j]+78.8)),fontsize=12)
 # plt.plot([195*mm_per_pixel]*2,[0,np.mean(average,axis=0).max()],'k-.',label='target')
-plt.plot([195*mm_per_pixel]*2,[0,0.5],'k-.',label='target')
+# plt.plot([195*mm_per_pixel]*2,[0,0.5],'k-.',label='target')
+plt.axvline(x=0,color='k',linestyle='-.',label='target')
+plt.axvline(x=OES_location_left-target_location,color='k',label='OES/TS location')
+plt.axvline(x=OES_location_right-target_location,color='k')
 plt.legend(loc='best', fontsize='x-small')
 plt.xlabel('longitudinal position [mm]')
 plt.ylabel('Average brightness [au]')
 plt.ylim(top=6e-1,bottom=1e-2)
-plt.xlim(left=0,right=70)
+plt.xlim(left=0-target_location,right=70-target_location)
 plt.grid()
 plt.semilogy()
-plt.pause(0.01)
-# plt.savefig(full_folder +'/fast_camera'+'_' + filename +'.eps', bbox_inches='tight')
-# plt.close('all')
+# plt.pause(0.01)
+plt.savefig(full_folder +'/SS_scan4' +'.png', bbox_inches='tight')
+plt.close('all')
 
 
 

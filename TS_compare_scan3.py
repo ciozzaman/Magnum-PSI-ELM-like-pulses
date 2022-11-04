@@ -35,7 +35,7 @@ line_style = ['-','--',':','-.']
 marker = ['x','+']
 
 
-fig, ax1 = plt.subplots(figsize=(10, 6))
+fig, ax1 = plt.subplots(figsize=(10, 8))
 
 ax1.set_xlabel('Pressure [Pa]')
 ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
@@ -54,6 +54,9 @@ for i_to_scan,to_scan in enumerate([[99,98,96,97],[95,89,87,86,85]]):
 		average_static_pressure.append(np.float(results_summary.loc[merge_ID_target,['average_static_pressure']]))
 		average_Te.append(np.float(results_summary.loc[merge_ID_target,['average_Te']]))
 		average_ne.append(np.float(results_summary.loc[merge_ID_target,['average_ne']]))
+		# average_static_pressure.append(np.float(results_summary.loc[merge_ID_target,['peak_static_pressure']]))
+		# average_Te.append(np.float(results_summary.loc[merge_ID_target,['peak_Te']]))
+		# average_ne.append(np.float(results_summary.loc[merge_ID_target,['peak_ne']]))
 		magnetic_field_all.append(np.float(results_summary.loc[merge_ID_target,['B']]))
 
 
@@ -69,12 +72,12 @@ for i_to_scan,to_scan in enumerate([[99,98,96,97],[95,89,87,86,85]]):
 ax1.tick_params(axis='y', labelcolor=a1.get_color())
 ax2.tick_params(axis='y', labelcolor=a2.get_color())
 ax3.tick_params(axis='y', labelcolor=a3.get_color())
-ax1.set_ylabel('average peak Te [eV]', color=a1.get_color())
-ax2.set_ylabel('average peak ne [10^20 #/m3]', color=a2.get_color())  # we already handled the x-label with ax1
-ax3.set_ylabel('average peak static pressure [Pa]', color=a3.get_color())  # we already handled the x-label with ax1
-ax1.legend(loc=7, fontsize='x-small')
-ax2.legend(loc=6, fontsize='x-small')
-ax3.legend(loc=4, fontsize='x-small')
+ax1.set_ylabel('smoothed peak Te [eV]', color=a1.get_color())
+ax2.set_ylabel('smoothed peak ne [10^20 #/m3]', color=a2.get_color())  # we already handled the x-label with ax1
+ax3.set_ylabel('smoothed peak static pressure [Pa]', color=a3.get_color())  # we already handled the x-label with ax1
+# ax1.legend(loc=7, fontsize='x-small')
+# ax2.legend(loc=6, fontsize='x-small')
+# ax3.legend(loc=4, fontsize='x-small')
 ax1.set_ylim(bottom=0)
 ax2.set_ylim(bottom=0)
 ax3.set_ylim(bottom=0)

@@ -11,6 +11,11 @@ from functions.SpectralFit import doSpecFit_single_frame,doSpecFit_single_frame_
 from functions.GaussFitData import doLateralfit_time_tependent,doLateralfit_single,find_plasma_axis,doLateralfit_time_tependent_with_sigma,doLateralfit_single_with_sigma,doLateralfit_single_with_sigma_pure_Abel
 import collections
 
+# to show the line where it fails
+import sys, traceback, logging
+logging.basicConfig(level=logging.ERROR)
+
+
 import os,sys
 from PIL import Image
 import xarray as xr
@@ -1793,8 +1798,8 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 						else:
 							fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5,maxfev=1e5)
 						return z,fit[0][-1],fit[1][-1,-1]**0.5,output(fit[0])
-					except:
-						print('main fast fit failed, z='+str(z)+', j='+str(j))
+					except Exception as e:
+						print('time ' + str(interpolated_time) +' main fast fit failed, z='+str(z)+', j='+str(j) + ' , e='+str(e))
 						if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
 							fit = least_squares(polynomial_2D_residuals_11(coord),guess,bounds=bds,max_nfev=125,ftol=1e-7)
 						else:
