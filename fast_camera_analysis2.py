@@ -108,7 +108,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 			for image in raw_images:
 				raw_data.append(image)
 			raw_data = np.array(raw_data).astype('int')
-			raw_data = raw_data[np.max(raw_data,axis=(1,2))>0]
+			raw_data = raw_data[np.max(raw_data,axis=(1,2))>0]	# I select the times only containing data
 
 			overexposed_local = False
 			if raw_data.max()>=saturation_counts:
@@ -311,18 +311,61 @@ for merge_ID_target in merge_ID_target_multipulse:
 			plt.close('all')
 
 
-	temp = np.min([np.shape(value)[0] for value in all_averaged_profile])
-	all_averaged_profile = [value[:temp] for value in all_averaged_profile]
-	full_saved_file_dict['averaged_profile'] = np.mean(all_averaged_profile,axis=(0,1))	# counts are normalised for a 1ms exposure
-	fast_camera_record_duration = np.shape(all_averaged_profile)[1] / framerate	# [s]
-	fast_camera_record_duration_OES_location = max(1,np.nansum(np.nanmax(np.nanmean(all_averaged_profile,axis=0)[:,:,OES_location_left_pixel:OES_location_right_pixel+1],axis=(-1,-2))>0)) / framerate	# [s]
+	# finding the proper point to allign temporally all the shots, also better measure of the pulse duration
+	duration_OES = []
+	duration = []
+	temporal_peak = []
+	total_length = []
+	# plt.figure()
+	for values in all_averaged_profile:
+		gna = np.mean(np.array(values)[:,:,OES_location_right_pixel:target_location_right_pixel+10],axis=(1,2))	# restricted close to the target
+		total_length.append(len(gna))
+		# plt.plot(gna)
+		fit = np.polyfit(np.arange(len(gna))[max(gna.argmax()-3,0):gna.argmax()+5-1],gna[max(gna.argmax()-3,0):gna.argmax()+5-1],2)
+		temporal_peak.append(-fit[1]/(2*fit[0]))
+		duration_OES.append(np.sum(gna>0))
+		gna = np.mean(values,axis=(1,2))
+		duration.append(np.sum(gna>0))
+	fast_camera_record_duration_OES_location = np.mean(duration_OES)/framerate	# [s]
+	fast_camera_record_duration = np.mean(duration)/framerate	# [s]
+	temporal_peak = np.round(temporal_peak-np.mean(temporal_peak)).astype(int)
+
+	# calculating average profile
+	# temp = np.min([np.shape(value)[0] for value in all_averaged_profile])
+	# all_averaged_profile = [value[:temp] for value in all_averaged_profile]
+	temp = np.ones((len(all_averaged_profile),np.int(np.max(total_length) + temporal_peak.max()-temporal_peak.min())*2+4,*np.shape(all_averaged_profile[0])[1:]))*np.nan
+	for i_ in range(len(all_averaged_profile)):
+		temp[i_,1+temporal_peak.max()-temporal_peak[i_]+1:1+temporal_peak.max()-temporal_peak[i_]+1+len(all_averaged_profile[i_])] = all_averaged_profile[i_]
+	all_averaged_profile = cp.deepcopy(temp)
+	temp = np.nanmean(temp,axis=(0,2,3))
+	all_averaged_profile = all_averaged_profile[:,np.isfinite(temp)]
+	all_averaged_profile[np.isnan(all_averaged_profile)] = 0
+
+	plt.figure(figsize=(8,6))
+	plt.title('magnetic_field %.3gT,steady state pressure %.3gPa,target/OES distance %.3gmm,ELM pulse voltage %.3gV\n temporal profile aligmnent, limited close to target' %(magnetic_field,SS_pressure,target_OES_distance,pulse_voltage),fontsize=12)
+	plt.plot(np.arange(len(all_averaged_profile[0]))/framerate*1000,np.nanmean(np.array(all_averaged_profile)[:,:,OES_location_right_pixel:target_location_right_pixel+10],axis=(0,2,3)),'k',label='average')
+	for i_ in range(len(all_averaged_profile)):
+		plt.plot(np.arange(len(all_averaged_profile[0]))/framerate*1000,np.nanmean(np.array(all_averaged_profile)[i_,:,OES_location_right_pixel:target_location_right_pixel+10],axis=(1,2)),'--',label=str(i_+1))
+	plt.legend(loc='best', fontsize='x-small')
+	plt.xlabel('time [ms]')
+	plt.ylabel('average counts [au]')
+	plt.grid()
+	# plt.pause(0.01)
+	# plt.yscale('log')
+	plt.savefig(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_average'+'.eps', bbox_inches='tight')
+	plt.close('all')
+
+
+	averaged_profile = np.nanmean(all_averaged_profile,axis=(0,1))
+	full_saved_file_dict['averaged_profile'] = averaged_profile	# counts are normalised for a 1ms exposure
+	# fast_camera_record_duration = np.shape(all_averaged_profile)[1] / framerate	# [s]
+	# fast_camera_record_duration_OES_location = max(1,np.nansum(np.nanmax(np.nanmean(all_averaged_profile,axis=0)[:,:,OES_location_left_pixel:OES_location_right_pixel+1],axis=(-1,-2))>0)) / framerate	# [s]
 	full_saved_file_dict['record_duration'] = fast_camera_record_duration
 	full_saved_file_dict['record_duration_OES_location'] = fast_camera_record_duration_OES_location
 	results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
 	results_summary.loc[merge_ID_target,['fast_camera_record_duration_OES','fast_camera_record_duration_long']]=fast_camera_record_duration_OES_location,fast_camera_record_duration
 	results_summary.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv')
 
-	averaged_profile = np.mean(all_averaged_profile,axis=(0,1))
 
 	temp = np.mean(averaged_profile[:,47:53],axis=1)
 	axis_pixel = max(1,temp.argmax())
@@ -391,7 +434,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 	plt.grid()
 	# plt.pause(0.01)
 	# plt.yscale('log')
-	plt.savefig(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_average'+'.eps', bbox_inches='tight')
+	plt.savefig(path_where_to_save_everything +'/fast_camera_merge_'+str(merge_ID_target)+'_average'+'1.eps', bbox_inches='tight')
 	plt.close('all')
 
 	if overexposed:
@@ -479,7 +522,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 	plt.figure(figsize=(10,5))
 	plt.plot(np.arange(np.shape(raw_data)[1])*mm_per_pixel,np.mean(averaged_profile[:,OES_location_left_pixel:OES_location_right_pixel+1],axis=1),label='full')
 	full_saved_file_dict['radial_average_brightness_1ms_int_time'] = np.mean(averaged_profile[:,OES_location_left_pixel:OES_location_right_pixel+1],axis=1)	# counts are normalised for a 1ms exposure
-	temp = np.mean(all_averaged_profile,axis=0)
+	temp = np.nanmean(all_averaged_profile,axis=0)
 	temp = generic_filter(temp[:,:,OES_location_left_pixel:OES_location_right_pixel+1],np.mean,size=[int(round(fast_camera_record_duration_OES_location*framerate)),1,1])
 	temp = np.mean(temp,axis=-1)
 	temp = temp[np.max(temp,axis=-1).argmax()]

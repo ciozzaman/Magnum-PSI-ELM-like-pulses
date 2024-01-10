@@ -91,6 +91,7 @@ fitCoefs_sigma = np.zeros((len(all_fits), nLine, 7,7))
 leg = ['n = %i' % i for i in range(3, 13)]
 
 
+# this is only to find the profile centre
 minimum_level = np.min(all_fits[all_fits>0])
 if force_glogal_center!=0:
 	profile_centres = np.zeros((len(all_fits),nLine))
@@ -162,7 +163,7 @@ elif (same_centre_every_line==True and same_centre_all_time==True):
 		for iR in range(np.shape(all_fits)[-1]):
 
 			# # for col in ['n5']:
-			yy = all_fits[iSet,:,iR]
+			yy = all_fits[iSet,:,iR]	# W m-2 sr-1
 			for iCorr, value in enumerate(yy):
 				if np.isnan(value):
 					yy[iCorr]=0
@@ -235,7 +236,7 @@ elif (same_centre_every_line==True and same_centre_all_time==True):
 		# df_lineRads = pd.read_csv('%s%i.csv' % (ddir, iSet))
 		for iR in range(np.shape(all_fits)[-1]):
 			# # for col in ['n5']:
-			yy = all_fits[iSet, :, iR]
+			yy = all_fits[iSet, :, iR]	# W m-2 sr-1
 			for iCorr, value in enumerate(yy):
 				if np.isnan(value):
 					yy[iCorr] = 0
@@ -326,7 +327,7 @@ elif same_centre_all_time==True:
 	profile_centres_score = np.zeros((len(all_fits),nLine))
 	# fit = [[0, 4e-3, 20 * dx,0,0],dx*np.ones((5,5))]
 	fit = [[0, 5*dx, 20 * dx],dx*np.ones((3,3))]
-	for iSet in range(len(all_fits)):
+	for iSet in range(len(all_fits)):	# this initial loop is to fit the emission with a single gaussian
 		# df_lineRads = pd.read_csv('%s%i.csv' % (ddir, iSet))
 		for iR in range(np.shape(all_fits)[-1]):
 			# # for col in ['n5']:
@@ -392,7 +393,7 @@ elif same_centre_all_time==True:
 	# profile_centre = np.mean(profile_centres,axis=-1)
 	profile_centre = np.nansum(profile_centres/(profile_centres_score**2), axis=0)/np.nansum(1/(profile_centres_score**2), axis=0)
 	profile_centre = np.ones_like(profile_centre)*np.median(profile_centre)
-	for iSet in range(len(all_fits)):
+	for iSet in range(len(all_fits)):	# second loop with 3 gaussians to improve the precision of the peak location
 		# df_lineRads = pd.read_csv('%s%i.csv' % (ddir, iSet))
 		for iR in range(np.shape(all_fits)[-1]):
 			# # for col in ['n5']:
@@ -437,7 +438,7 @@ elif same_centre_all_time==True:
 			# plt.pause(0.01)
 	# profile_centre = np.mean(profile_centres, axis=-1)
 	profile_centre = np.nansum(profile_centres/(profile_centres_score**2), axis=0)/np.nansum(1/(profile_centres_score**2), axis=0)
-	for iSet in range(len(all_fits)):
+	for iSet in range(len(all_fits)):	# third loop fitting with 3 gaussians that are more constrained to make sense (gauss3_2 rather than gauss3), but still only to imrove the precision of the centre
 		# df_lineRads = pd.read_csv('%s%i.csv' % (ddir, iSet))
 		for iR in range(np.shape(all_fits)[-1]):
 			# # for col in ['n5']:
@@ -469,7 +470,7 @@ elif same_centre_all_time==True:
 				# fit = curve_fit(gauss3, xx_good, yy_good, p0, maxfev=100000, bounds=bds)
 				fit = curve_fit(gauss3_2, xx_good, yy_good, p0,sigma=yy_good_sigma, absolute_sigma=True, maxfev=100000, bounds=bds,x_scale=x_scale)
 			except:
-				print('fit failed for line '+str(iR)+' iSet '+str(iSet))
+				print('preliminary fit failed for line '+str(iR)+' iSet '+str(iSet))
 				fit=[p0,np.inf*np.ones((len(p0),len(p0)))]
 			profile_centres[iSet, iR] = fit[0][-1]
 			if len(fit)==1:
@@ -494,7 +495,7 @@ elif same_centre_all_time==True:
 	# profile_centre = np.convolve(profile_centre, np.ones((len(profile_centre)//5)) / (len(profile_centre)//5), mode='valid')
 
 
-
+# up to here it was only to fint the centre of the distributions
 
 
 
@@ -511,8 +512,8 @@ def calc_stuff(arg):
 	example_fit_sigma = arg[3]
 	gauss3_locked_2 = lambda x, A1, sig1, c_A2, c_sig2, c_A3, c_sig3: gauss(x, A1, sig1, profile_centre[iSet,iR]) + gauss(x,A1*c_A2,c_sig2*sig1,profile_centre[iSet,iR]) + gauss(x, c_A3*c_sig3*(A1 +A1*c_A2/c_sig2), c_sig3*sig1, profile_centre[iSet,iR])
 	gauss3_locked_2_bias = lambda x, A1, sig1, c_A2, c_sig2, c_A3, c_sig3, m, q: gauss(x, A1, sig1,profile_centre[iR]) + gauss(x, A1*c_A2,c_sig2 * sig1,profile_centre[iR]) + gauss(x, c_A3 * c_sig3 * (A1 + A1*c_A2 / c_sig2), c_sig3 * sig1, profile_centre[iR]) + q + x * m
-	yy = all_fits[iSet, :, iR]
-	yy_sigma = all_fits_sigma[iSet, :, iR]
+	yy = all_fits[iSet, :, iR]	# W m-2 sr-1
+	yy_sigma = all_fits_sigma[iSet, :, iR]	# W m-2 sr-1
 	xx_int = xx
 	if np.sum(np.isnan(yy))+np.sum(np.isnan(yy_sigma))>0:
 		select = np.logical_not(np.logical_or(np.isnan(yy),np.isnan(yy_sigma)))
@@ -525,7 +526,7 @@ def calc_stuff(arg):
 	# 	if np.isnan(value):
 	# 		yy[iCorr] = 0
 	temp_all_fits = cp.deepcopy(yy)
-	if np.max(yy)>100*np.sort(yy)[-2]:
+	if np.max(yy)>100*np.sort(yy)[-2]:	# this is to compensate for crazy high outlayers
 		pos1 = np.max([yy.argmax()-1,0])
 		pos2 = np.min([yy.argmax()+1,len(yy)-1])
 		yy[yy.argmax()]=np.mean(yy[[pos1,pos2]])
@@ -540,9 +541,14 @@ def calc_stuff(arg):
 		if borders[0]!=0:	# this should not be necessary but I cannot avoid a smear of composed_array when dealing with data missing in lower lines
 			borders[0]+=5
 		xx_good = xx_int[borders[0]:borders[-1]]
-		yy_good = yy[borders[0]:borders[-1]]
-		yy_good_sigma = yy_sigma[borders[0]:borders[-1]]
+		yy_good = yy[borders[0]:borders[-1]]	# W m-2 sr-1
+		yy_good_sigma = yy_sigma[borders[0]:borders[-1]]	# W m-2 sr-1
 
+
+	# I need to remove the data that has sigma=0
+	xx_good = xx_good[yy_good_sigma!=0]
+	yy_good = yy_good[yy_good_sigma!=0]
+	yy_good_sigma = yy_good_sigma[yy_good_sigma!=0]
 	# xx_good = np.abs(xx_good-profile_centre[iSet,iR])
 	# plt.figure();plt.plot(xx_good,yy_good)
 	# yy_good = np.array([peaks for _, peaks in sorted(zip(xx_good, yy_good))])
@@ -649,8 +655,8 @@ for iSet in range(len(all_fits)):
 	for iR in range(np.shape(all_fits)[-1]):
 		# gauss3_locked = lambda x, A1, sig1, A2, sig2, A3, sig3: gauss(x, A1, sig1, profile_centre[iSet,iR]) + gauss(x,A2,sig2,profile_centre[iSet,iR]) + gauss(x, A3, sig3, profile_centre[iSet,iR])
 		# AInvgauss3_locked = lambda x, A1, sig1, A2, sig2, A3, sig3: AInvgauss(x, A1, sig1, 0) + AInvgauss(x, A2,sig2,0) + AInvgauss(x, A3, sig3, 0)
-		gauss3_locked_2 = lambda x, A1, sig1, c_A2, c_sig2, c_A3, c_sig3: gauss(x, A1, sig1, profile_centre[iSet,iR]) + gauss(x,A1*c_A2,c_sig2*sig1,profile_centre[iSet,iR]) + gauss(x, c_A3*c_sig3*(A1 +A1*c_A2/c_sig2), c_sig3*sig1, profile_centre[iSet,iR])
-		gauss3_locked_2_bias = lambda x, A1, sig1, c_A2, c_sig2, c_A3, c_sig3, m, q: gauss(x, A1, sig1,profile_centre[iR]) + gauss(x, A1*c_A2,c_sig2 * sig1,profile_centre[iR]) + gauss(x, c_A3 * c_sig3 * (A1 + A1*c_A2 / c_sig2), c_sig3 * sig1, profile_centre[iR]) + q + x * m
+		# gauss3_locked_2 = lambda x, A1, sig1, c_A2, c_sig2, c_A3, c_sig3: gauss(x, A1, sig1, profile_centre[iSet,iR]) + gauss(x,A1*c_A2,c_sig2*sig1,profile_centre[iSet,iR]) + gauss(x, c_A3*c_sig3*(A1 +A1*c_A2/c_sig2), c_sig3*sig1, profile_centre[iSet,iR])
+		# gauss3_locked_2_bias = lambda x, A1, sig1, c_A2, c_sig2, c_A3, c_sig3, m, q: gauss(x, A1, sig1,profile_centre[iR]) + gauss(x, A1*c_A2,c_sig2 * sig1,profile_centre[iR]) + gauss(x, c_A3 * c_sig3 * (A1 + A1*c_A2 / c_sig2), c_sig3 * sig1, profile_centre[iR]) + q + x * m
 		yy = all_fits[iSet, :, iR]
 		temp_all_fits = cp.deepcopy(yy)
 		temp_all_fits[np.isnan(temp_all_fits)]=0
@@ -699,6 +705,7 @@ for iSet in range(len(all_fits)):
 			im = ax[iR,0].plot(1000*xx, gauss(xx, fit[0][0]*fit[0][2],fit[0][1]*fit[0][3],fit[0][-1]),'y--',label='base')
 			im = ax[iR,0].plot(1000*xx, gauss(xx, fit[0][0],fit[0][1],fit[0][-1])+gauss(xx, fit[0][4]*fit[0][5]*fit[0][0]*(1+fit[0][2]/fit[0][3]),fit[0][5]*fit[0][1],fit[0][-1]),'g--',label='peak')
 			ax[iR,0].grid()
+			ax[iR,0].set_ylim(top=gauss3_2(xx, *fit[0]).max()+2*np.nanmedian(yy_good_sigma),bottom=-1*np.nanmedian(yy_good_sigma))
 			if iR==0:
 				ax[iR,0].set_title('cyan=line int data, magenta=fit\nline n='+str(iR+4)+'->2\n ')
 			else:
@@ -731,12 +738,12 @@ for iSet in range(len(all_fits)):
 		# temp = AInvgauss3_locked_2_with_error_included(r, *correlated_values(fit[0][:-1],fit[1][:-1,:-1]) )
 		# temp = A_erf_3_locked_2_with_error_included(np.array([0,*(r+dx/2)]), *correlated_values(fit[0][:-1],fit[1][:-1,:-1]) )
 		# temp = np.diff(temp)/np.array([dx/2,*np.diff(r)])
-		fit_wit_no_axis = fit[0]
+		fit_wit_no_axis = cp.deepcopy(fit[0])
 		fit_wit_no_axis[-1] = 0
-		temp = AInvgauss3_locked_3_with_error_included(np.array([0,*(r+dx/2)]), *correlated_values(fit_wit_no_axis,fit[1]) )
+		temp = AInvgauss3_locked_3_with_error_included(np.array([0,*(r+dx/2)]), *correlated_values(fit_wit_no_axis,fit[1]) )	# W m^-3 sr^-1
 		temp = -np.diff(temp)/np.diff(np.array([0,*(r+dx/2)])**2)
-		inverted_profiles[iSet, iR] = nominal_values(temp)
-		inverted_profiles_sigma[iSet, iR] = std_devs(temp)
+		inverted_profiles[iSet, iR] = nominal_values(temp)	# W m^-3 sr^-1
+		inverted_profiles_sigma[iSet, iR] = std_devs(temp)	# W m^-3 sr^-1
 		all_fits_fitted[iSet, :, iR] = gauss3_2(xx,*fit[0])
 		# inverted_profiles[iSet, iR] = AInvgauss3_locked_2(r, *fit[0][:-2])
 		# all_fits_fitted[iSet, :, iR] = gauss3_locked_2_bias(xx,*fit[0])

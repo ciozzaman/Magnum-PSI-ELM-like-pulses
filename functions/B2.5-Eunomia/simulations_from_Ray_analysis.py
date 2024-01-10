@@ -105,6 +105,8 @@ pressure = [0.53,2.0,4.4,0.45,2.0,4.3]
 data_tria = ['low_tria.1','low_tria.1','low_tria.1','high_tria.1','high_tria.1','high_tria.1']
 boltzmann_constant_J = 1.380649e-23	# J/K
 eV_to_K = 8.617333262145e-5	# eV/K
+electron_charge = 1.60217662e-19	# C
+electron_mass = 9.10938356e-31	# kg
 hydrogen_mass = 1.008*1.660*1e-27	# kg
 ionisation_potential = 13.6	# eV
 dissociation_potential = 2.2	# eV
@@ -112,6 +114,9 @@ J_to_eV = 6.242e18
 print('Reading data file..')
 ccdfile = '/home/ffederic/work/Collaboratory/test/experimental_data/functions/ccd96_h.dat'
 from adas import read_adf15,read_adf11
+exec(open("/home/ffederic/work/Collaboratory/test/experimental_data/functions/MolRad_Yacora/Yacora_FF/import_PECs_FF_2.py").read())
+
+from scipy.interpolate import griddata
 
 figure_index=0
 plt.close('all')
@@ -204,6 +209,8 @@ fit_TH2_TE_all = []
 fit_nH_ne_TE_all = []
 fit_nH2_ne_TE_all = []
 all_local_CX_sum = []
+all_local_elastic_H2_sum = []
+all_target_heat_flux = []
 for index in range(len(file_array)):
 	list, grid_cells, data_grid = read_first(Data+file_array[index])
 	data_matrix = read_data([Data+file_array[index]], list, grid_cells)
@@ -329,7 +336,25 @@ for index in range(len(file_array)):
 	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
 	plt.figure(figure_12)
-	ratio = vz_Hp/(((temp_e + 5/3*temp_Hp)/eV_to_K*boltzmann_constant_J/hydrogen_mass)**0.5)
+	sound_speed = (((temp_e + 5/3*temp_Hp)/eV_to_K*boltzmann_constant_J/hydrogen_mass)**0.5)
+	for ref_distance_to_target in [0,0.011,0.016,0.031,0.046,0.066,0.09]:
+		sound_speed_target = griddata(np.array([z_data,r_data]).T,sound_speed,np.array([[(z_data[r_data<0.02]).max()-ref_distance_to_target]*20,np.linspace(0.001,0.02,20)]).T,method='nearest')
+		ne_target = griddata(np.array([z_data,r_data]).T,dens_e,np.array([[(z_data[r_data<0.02]).max()-ref_distance_to_target]*20,np.linspace(0.001,0.02,20)]).T,method='nearest')
+		Te_target = griddata(np.array([z_data,r_data]).T,temp_e,np.array([[(z_data[r_data<0.02]).max()-ref_distance_to_target]*20,np.linspace(0.001,0.02,20)]).T,method='nearest')
+		particle_flux_target = 0.5*ne_target*sound_speed_target
+		electron_sound_speed = (Te_target/eV_to_K*boltzmann_constant_J/(electron_mass))**0.5	# m/s
+		ion_sound_speed = (Te_target/eV_to_K*boltzmann_constant_J/(hydrogen_mass))**0.5	# m/s
+		sheath_potential_drop = Te_target/eV_to_K*boltzmann_constant_J/electron_charge * np.log(4*ion_sound_speed/electron_sound_speed)
+		presheath_potential_drop = Te_target/eV_to_K*boltzmann_constant_J/electron_charge * np.log(0.5)
+		total_wall_potential = sheath_potential_drop + presheath_potential_drop
+		ions_pre_sheath_acceleration = 0.4
+		electrons_pre_sheath_acceleration = 0.2
+		neutrals_natural_reflection = 0.6
+		target_heat_flux = particle_flux_target*((2.5*boltzmann_constant_J*Te_target/eV_to_K-electron_charge*total_wall_potential)*(1-ions_pre_sheath_acceleration) + 2*Te_target/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
+		target_heat_flux = np.trapz(target_heat_flux*2*np.pi*np.linspace(0.001,0.02,20),x=np.linspace(0.001,0.02,20))
+		all_target_heat_flux.append(target_heat_flux)
+
+	ratio = vz_Hp/sound_speed
 	select = np.logical_and(axis_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),True))
 	plt.plot((z_data)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(z_data,ratio,',',color=color[index])
@@ -394,7 +419,7 @@ for index in range(len(file_array)):
 	plt.plot((temp_e)[select],ratio[select],'x',color=color[index],label='pressure %.3gPa' %(pressure[index]) +' '+file_array[index][:file_array[index].find('_')] + ' dens')
 	plt.plot(temp_e,ratio,',',color=color[index])
 	# here I want to check how much would be CX if I overestimate it with my super simple method
-	select = np.logical_and(full_pure_geometrical_selection,np.logical_and(np.isfinite(ratio),ratio<1e5))
+	select = np.logical_and(np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,True))),np.logical_and(np.isfinite(ratio),ratio<1e5))
 	temp = read_adf11(ccdfile, 'ccd', 1, 1, 1, temp_e,(dens_e * 10 ** (0 - 6)))
 	temp[np.isnan(temp)] = 0
 	eff_CX_RR = temp * (10 ** -6)  # in CX m^-3 s-1 / (# / m^3)**2
@@ -418,6 +443,29 @@ for index in range(len(file_array)):
 	# plt.figure()
 	# plt.scatter(r_resampled,z_resampled,marker='o',c=local_CX_resampled)
 	all_local_CX_sum.append(np.sum(np.array(local_CX_resampled) * dr*dz*2*np.pi*r_resampled))
+	# here I want to check how much would be H2 elastic collisions if I overestimate it with my super simple method
+	select = np.logical_and(np.logical_and(r_data>0,np.logical_and(r_data<0.02,np.logical_and(z_data>-0.35,True))),np.logical_and(np.isfinite(ratio),ratio<1e5))
+	elastic_H2_RR = RR_Hp_H2__Hp_H2(temp_Hp,temp_H2)	# m^-3 s-1 / (# / m^3)**2 * 1e20
+	elastic_H2_RR_int = elastic_H2_RR * (dens_H2*dens_Hp)/1e20 	# m^-3 s-1
+	delta_t = 8/9*(temp_Hp - temp_H2)
+	delta_t[delta_t<0] = 0
+	local_elastic_H2 = np.float32(3/2* delta_t * elastic_H2_RR_int / J_to_eV)	# W / m^3
+	# plt.figure()
+	# plt.scatter(r_data[select],z_data[select],marker='o',c=(dens_H/dens_e)[select])
+	r_resampled = np.arange(r_data[select].min(),r_data[select].max(),0.0002)
+	dr=np.mean(np.diff(r_resampled))
+	z_resampled = np.arange(z_data[select].min(),z_data[select].max(),0.0005)
+	dz=np.mean(np.diff(z_resampled))
+	r_resampled,z_resampled = np.meshgrid(r_resampled,z_resampled)
+	shape = np.shape(r_resampled)
+	r_resampled = r_resampled.flatten()
+	z_resampled = z_resampled.flatten()
+	local_elastic_H2_resampled = []
+	for i_ in range(len(r_resampled)):
+		local_elastic_H2_resampled.append(local_elastic_H2[np.abs((r_resampled[i_] - r_data)**2 + (z_resampled[i_] - z_data)**2).argmin()])
+	# plt.figure()
+	# plt.scatter(r_resampled,z_resampled,marker='o',c=local_elastic_H2_resampled)
+	all_local_elastic_H2_sum.append(np.sum(np.array(local_elastic_H2_resampled) * dr*dz*2*np.pi*r_resampled))
 # plt.plot([0.1,4],[1,1e-3],'k--')
 # plt.plot([0.1,4],[1000,1],'k--')
 collect_x = [item for sublist in collect_x for item in sublist]
@@ -633,7 +681,7 @@ plt.ylabel(r'$vz_{H_2}/v_{H_2}$'+' [m/s]')
 plt.title('B = 1.2T, Plasma source of 4 slm , 120A\n conditions at r<=1mm')
 # plt.plot([0.1,0.8,2.5,4],[5,5,0.2,0.2],'k--',label='boundaries')
 # plt.plot([0.1,4],[0.12,0.3],'k--')
-plt.legend(loc='best', fontsize='x-small'),plt.semilogy()#,plt.semilogx()
+plt.legend(loc='best', fontsize='x-small')#,plt.semilogy()#,plt.semilogx()
 plt.grid()
 plt.pause(0.01)
 plt.figure(figure_19)
@@ -665,13 +713,21 @@ plt.legend(loc='best', fontsize='x-small')
 plt.grid()
 plt.pause(0.01)
 
+plt.figure()
+for index in range(len(file_array)):
+	plt.plot([0,0.011,0.016,0.031,0.046,0.066],np.array(all_target_heat_flux[0+7*index:6+7*index])/all_target_heat_flux[6+7*index])
 
-# this bit is to read the full output from Ray's simulations. the goal is to compare the CX RR with ADAS
+# this bit is to read the full output from Ray's simulations. the goal is to compare the CX RR and H2 elastic collisions with ADAS
 if False:
 	import xarray as xr
 	from adas import read_adf15,read_adf11
 	figure_index=0
 	plt.close('all')
+	ccdfile = '/home/ffederic/work/Collaboratory/test/experimental_data/functions/ccd96_h.dat'
+	import matplotlib.pyplot as plt
+	import matplotlib.tri as ptri
+	import matplotlib.colors as colors
+	import matplotlib.artist as art
 
 	figure_index+=1
 	figure_1 = figure_index
@@ -683,31 +739,51 @@ if False:
 	pressure = [0.53,2.0,4.4,0.45,2.0,4.3]
 	data_tria = ['low_tria.1','low_tria.1','low_tria.1','high_tria.1','high_tria.1','high_tria.1']
 	average = []
+	collision_iosisation=0	# ionisation
+	collision_CX=4	# CX
+	collision_H2=17	# H2 elastic
+	# all_B25_CX_sum = np.array([850*0.08,900*0.1,750*0.05,1750*0,1750*0.03,1750*0.05])
+	# all_B25_elastic_H2_sum = np.array([850*0.03,900*0.25,750*0.3,1750*0.08,1750*0.1,1750*0.2])
+	# I don't need these, because I calculate the actual values in all_total_B25_CX_power,all_total_B25_H2_power
+
+	all_ionisation_RR_total = []
+	all_ionisation_RR = []
+	all_total_B25_CX_power = []
+	all_total_B25_H2_power = []
 	for i in range(len(file_array)):
 		rate_storage = xr.open_dataset('/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/Paper replication package/replication_package/netcdf_data/netcdf_target_'+file_array[i][:file_array[i].find('_')]+'_density_rates.nc')
 		if file_array[i][:file_array[i].find('_')] == 'low':
 			person = 'gijs'
 		else:
 			person = 'mike'
-		CX_RR = rate_storage.sel(collision=4,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['Data'].data
-		cellIndex = rate_storage.sel(collision=4,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['cellIndex'].data
-		r = rate_storage.sel(collision=4,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['r'].data
-		z = rate_storage.sel(collision=4,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['z'].data
+		CX_RR = rate_storage.sel(collision=collision_CX,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['Data'].data	# reactions/s/m3
+		cellIndex = rate_storage.sel(collision=collision_CX,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['cellIndex'].data
+		r = rate_storage.sel(collision=collision_CX,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['r'].data
+		z = rate_storage.sel(collision=collision_CX,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['z'].data
 		select = np.logical_and(r>0,np.logical_and(r<0.02,z>-0.35))
 		CX_RR = CX_RR[select]
+		ionisation_RR = rate_storage.sel(collision=collision_iosisation,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['Data'].data	# reactions/s/m3
+		all_ionisation_RR_total.append(np.nansum(ionisation_RR*rate_storage.sel(file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat')['vol'].data))
 		cellIndex = cellIndex[select]
+		cell_volume = rate_storage.sel(file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',cellIndex=cellIndex)['vol'].data	# m3
+		all_ionisation_RR.append(np.nansum(ionisation_RR[select]*cell_volume))
+
 		density_storage = xr.open_dataset('/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/Paper replication package/replication_package/netcdf_data/netcdf_'+file_array[i][:file_array[i].find('_')]+'_density.nc')
-		nH = density_storage.sel(quantity='n',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H',index=cellIndex)['Data'].data
-		nHp = density_storage.sel(quantity='n',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H^+',index=cellIndex)['Data'].data
-		ne = density_storage.sel(quantity='n',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='e',index=cellIndex)['Data'].data
-		Te = density_storage.sel(quantity='t',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='e',index=cellIndex)['Data'].data
-		THp = density_storage.sel(quantity='t',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H^+',index=cellIndex)['Data'].data
-		TH = density_storage.sel(quantity='t',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H',index=cellIndex)['Data'].data
+		nH = density_storage.sel(quantity='n',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H',index=cellIndex)['Data'].data	# #/m3
+		nHp = density_storage.sel(quantity='n',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H^+',index=cellIndex)['Data'].data	# #/m3
+		ne = density_storage.sel(quantity='n',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='e',index=cellIndex)['Data'].data	# #/m3
+		Te = density_storage.sel(quantity='t',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='e',index=cellIndex)['Data'].data	# eV
+		THp = density_storage.sel(quantity='t',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H^+',index=cellIndex)['Data'].data	# eV
+		TH = density_storage.sel(quantity='t',filename=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')]+'.dat',species='H',index=cellIndex)['Data'].data	# eV
 		ADAS_RR = read_adf11(ccdfile, 'ccd', 1, 1, 1, Te,(ne * 10 ** (0 - 6))) * (10 ** -6)  # in CX m^-3 s-1 / (# / m^3)**2
 
-		power_storage = xr.open_dataset('/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/Paper replication package/replication_package/netcdf_data/netcdf_full_'+file_array[i][:file_array[i].find('_')]+'_density_rates.nc')
-		CX_power = np.mean(power_storage.sel(collision=4,file=person+'_rates/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')],cellIndex=cellIndex)['Data'].data,axis=0)
+		power_storage = xr.open_dataset('/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/Paper replication package/replication_package/netcdf_data/netcdf_full_'+file_array[i][:file_array[i].find('_')]+'_density.nc')
+		CX_power = -np.mean(power_storage.sel(collision=collision_CX,file=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')],cellIndex=cellIndex,data='heat')['Data'].data,axis=0)	# eV/s/m3
+		H2_power = -np.mean(power_storage.sel(collision=collision_H2,file=person+'/'+file_array[i][file_array[i].find('_')+1:file_array[i].find('.')],cellIndex=cellIndex,data='heat')['Data'].data,axis=0)	# eV/s/m3
 
+		# all_total_B25_CX_power.append(np.sum(CX_power*cell_volume)/J_to_eV)
+		all_total_B25_CX_power.append(np.sum((CX_power*cell_volume)[CX_power>0])/np.sum(CX_power*cell_volume))
+		all_total_B25_H2_power.append(np.sum(H2_power*cell_volume)/J_to_eV)
 
 		# plt.scatter(r,z,marker='o',c=CX_power)
 		average.append(np.median(ADAS_RR/(CX_RR/(nH*nHp))))
@@ -749,11 +825,16 @@ plt.pause(0.01)
 
 '''Data read only 1 time'''
 data_tria = '/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/'
-file_array = ['027.dat','053.dat','10.dat','20.dat','44.dat']
+# file_array = ['027.dat','053.dat','10.dat','20.dat','44.dat']
+file_array = ['low_053.dat','low_20.dat','low_44.dat','high_045.dat','high_20.dat','high_43.dat']
+file_tria = ['low_tria.1','low_tria.1','low_tria.1','high_tria.1','high_tria.1','high_tria.1']
 Data = '/home/ffederic/work/Collaboratory/test/experimental_data/functions/B2.5-Eunomia/'
-selected_file = file_array[-1]
+
+selected_file = file_array[0]
+selected_tria = file_tria[0]
+
 list, grid_cells, data_grid = read_first(Data+selected_file)
-r_tri, z_tri, tri = read_triangle(data_tria+'tria.1.node',data_tria+'tria.1.ele')
+r_tri, z_tri, tri = read_triangle(data_tria+selected_tria+'.node',data_tria+selected_tria+'.ele')
 
 r_tri = np.asarray(r_tri)
 r_tri2 = -r_tri
@@ -784,8 +865,10 @@ triang2=ptri.Triangulation(z_tri,r_tri2,tri)
 # ax[2].tick_params(labelsize=16)
 
 temp_e = data_matrix.sel(quantity='t', species='e', filename=Data+selected_file).values
+temp_Hp = data_matrix.sel(quantity='t', species='H^+', filename=Data+selected_file).values
 dens_e = data_matrix.sel(quantity='n', species='e', filename=Data+selected_file).values
 vz_e = data_matrix.sel(quantity='vz', species='e', filename=Data+selected_file).values
+vz_Hp = data_matrix.sel(quantity='vz', species='H^+', filename=Data+selected_file).values
 temp_H2 = (data_matrix.sel(quantity='t', species='H_2', filename=Data+selected_file).values)[0]
 dens_H2 = (data_matrix.sel(quantity='n', species='H_2', filename=Data+selected_file).values)[0]
 temp_H = (data_matrix.sel(quantity='t', species='H', filename=Data+selected_file).values)
@@ -925,11 +1008,11 @@ dissociation_potential = 2.2	# eV
 
 # Example points
 
-ne_values = np.array([1e20,4e21,2e21])
-Te_values = np.array([0.5,1,8])
+ne_values = np.array([0.1e20,4e21,2e21])
+Te_values = np.array([10,0.5,8])
 
 
-multiplicative_factor_full = energy_difference_full * einstein_coeff_full / J_to_eV
+multiplicative_factor_full = energy_difference_full * einstein_coeff_full / J_to_eV	# J/s
 excitation_full = []
 for isel in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
 	if isel==0:
@@ -964,9 +1047,9 @@ recombination_full = (recombination_full /multiplicative_factor_full)  # in # m^
 total_wavelengths = np.unique(excited_states_From_Hn_with_Hp)
 T_Hp_values = Te_values/eV_to_K	# K
 T_Hp_values[T_Hp_values<300]=300
-T_Hm_values = (np.exp(TH2_fit_from_simulations(np.log(Te_values)))+2.2)/eV_to_K	# K
+T_Hm_values = (np.exp(TH2_fit_from_simulations(np.log(Te_values),np.log(ne_values)))+2.2)/eV_to_K	# K
 T_Hm_values[T_Hm_values<300]=300
-T_H2p_values = np.exp(TH2_fit_from_simulations(np.log(Te_values)))/eV_to_K	# K
+T_H2p_values = np.exp(TH2_fit_from_simulations(np.log(Te_values),np.log(ne_values)))/eV_to_K	# K
 T_H2p_values[T_H2p_values<300]=300
 
 record_nH_ne_values = []
@@ -975,12 +1058,14 @@ for i_Te_for_nH_ne,Te_for_nH_ne in enumerate(Te_values):
 	record_nH_ne_values.append(nH_ne_values)
 record_nH_ne_values = np.array(record_nH_ne_values)
 nHp_ne_values = np.ones_like(ne_values)
-nH_ne_excited_states_atomic_recomb = (recombination_full.T * nHp_ne_values * ne_values).T
-emissivity_excited_states_atomic_recomb = (nH_ne_excited_states_atomic_recomb.T * ne_values).T * multiplicative_factor_full
+nH_ne_excited_states_atomic_recomb = (recombination_full.T * nHp_ne_values * ne_values).T	# # m^-3 / (# / m^3)**1
+emissivity_excited_states_atomic_recomb = (nH_ne_excited_states_atomic_recomb.T * ne_values).T * multiplicative_factor_full	# W/m-3
+photons_excited_states_atomic_recomb = (nH_ne_excited_states_atomic_recomb.T * ne_values).T * einstein_coeff_full	# W/m-3
 nHex_nH_excited_states_atomic_recomb = (recombination_full.T * nHp_ne_values * ne_values / record_nH_ne_values).T
 nH_ne_nHp_excited_states_atomic_recomb = recombination_full
 nH_ne_excited_states_atomic_excit = (excitation_full.T * record_nH_ne_values * ne_values).T
-emissivity_excited_states_atomic_excit = (nH_ne_excited_states_atomic_excit.T * ne_values).T * multiplicative_factor_full
+emissivity_excited_states_atomic_excit = (nH_ne_excited_states_atomic_excit.T * ne_values).T * multiplicative_factor_full	# W/m-3
+photons_excited_states_atomic_excit = (nH_ne_excited_states_atomic_excit.T * ne_values).T * einstein_coeff_full	# W/m-3
 nHex_nH_excited_states_atomic_excit = (excitation_full.T * record_nH_ne_values * ne_values / record_nH_ne_values).T
 nH_ne_nH_excited_states_atomic_excit = excitation_full
 
@@ -1000,24 +1085,30 @@ nHp_ne_values = 1 - nH2p_ne_values + nHm_ne_values
 
 coeff_1 = From_H2p_pop_coeff_full_extra(np.array([Te_values,ne_values]).T,total_wavelengths)
 nH_ne_excited_states_mol_H2p = (coeff_1.T * nH2p_ne_values * ne_values).T
-emissivity_excited_states_mol_H2p = (nH_ne_excited_states_mol_H2p.T * ne_values).T * multiplicative_factor_full
+emissivity_excited_states_mol_H2p = (nH_ne_excited_states_mol_H2p.T * ne_values).T * multiplicative_factor_full	# W/m-3
+photons_excited_states_mol_H2p = (nH_ne_excited_states_mol_H2p.T * ne_values).T * einstein_coeff_full	# W/m-3
 nHex_nH_excited_states_mol_H2p = (coeff_1.T * nH2p_ne_values * ne_values / record_nH_ne_values).T
 nH_ne_nH2p_excited_states_mol_H2p = coeff_1
 coeff_2 = From_H2_pop_coeff_full_extra(np.array([Te_values,ne_values]).T,total_wavelengths)
 nH_ne_excited_states_mol_H2 = (coeff_2.T * record_nH2_ne_values * ne_values).T
-emissivity_excited_states_mol_H2 = (nH_ne_excited_states_mol_H2.T * ne_values).T * multiplicative_factor_full
+emissivity_excited_states_mol_H2 = (nH_ne_excited_states_mol_H2.T * ne_values).T * multiplicative_factor_full	# W/m-3
+photons_excited_states_mol_H2 = (nH_ne_excited_states_mol_H2.T * ne_values).T * einstein_coeff_full	# W/m-3
 nHex_nH_excited_states_mol_H2 = (coeff_2.T * record_nH2_ne_values * ne_values / record_nH_ne_values).T
 nH_ne_nH2_excited_states_mol_H2 = coeff_2
-coeff_3 = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te_values,T_Hp_values,T_Hm_values,ne_values,nHp_ne_values*ne_values]).T ,total_wavelengths)
+coeff_3 = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te_values,T_Hm_values,ne_values]).T ,total_wavelengths)
 nH_ne_excited_states_mol_Hn_with_Hp = (coeff_3.T * nHm_ne_values * ne_values).T
-emissivity_excited_states_mol_Hn_with_Hp = (nH_ne_excited_states_mol_Hn_with_Hp.T * ne_values).T * multiplicative_factor_full
+emissivity_excited_states_mol_Hn_with_Hp = (nH_ne_excited_states_mol_Hn_with_Hp.T * ne_values).T * multiplicative_factor_full	# W/m-3
+photons_excited_states_mol_Hn_with_Hp = (nH_ne_excited_states_mol_Hn_with_Hp.T * ne_values).T * einstein_coeff_full	# W/m-3
 nHex_nH_excited_states_mol_Hn_with_Hp = (coeff_3.T * nHm_ne_values * ne_values / record_nH_ne_values).T
 nH_nHn_nHp_excited_states_mol_Hn_with_Hp = (coeff_3.T * ne_values /(nHp_ne_values * ne_values)).T
-coeff_4 = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te_values,T_H2p_values,T_Hm_values,ne_values,nH2p_ne_values*ne_values]).T,total_wavelengths)
+coeff_4 = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te_values,T_H2p_values,T_Hm_values,ne_values]).T,total_wavelengths)
 nH_ne_excited_states_mol_Hn_with_H2p = (coeff_4.T * nHm_ne_values * ne_values).T
-emissivity_excited_states_mol_Hn_with_H2p = (nH_ne_excited_states_mol_Hn_with_H2p.T * ne_values).T * multiplicative_factor_full
+emissivity_excited_states_mol_Hn_with_H2p = (nH_ne_excited_states_mol_Hn_with_H2p.T * ne_values).T * multiplicative_factor_full	# W/m-3
+photons_excited_states_mol_Hn_with_H2p = (nH_ne_excited_states_mol_Hn_with_H2p.T * ne_values).T * einstein_coeff_full	# W/m-3
 nHex_nH_excited_states_mol_Hn_with_H2p = (coeff_4.T * nHm_ne_values * ne_values / record_nH_ne_values).T
 nH_nHn_nH2p_excited_states_mol_Hn_with_H2p = (coeff_4.T * ne_values / (nH2p_ne_values * ne_values)).T
+
+
 
 linestyle = ['-','--','-.']
 plt.figure()
@@ -1048,19 +1139,19 @@ plt.semilogy()
 plt.grid()
 plt.pause(0.01)
 
-
-linestyle = ['-','-','-.']
+plt.rcParams.update({'font.size': 20})
+linestyle = ['-',':','-.']
 plt.figure(figsize=(12, 8))
-# for index in range(len(ne_values)):
-for index in [1]:	# Bruce says that it's clearer with only one set of lines
+for index in range(len(ne_values)):
+# for index in [1]:	# Bruce says that it's clearer with only one set of lines
 	# max_nH_ne = np.max([nH_ne_excited_states_atomic_recomb[index],nH_ne_excited_states_atomic_excit[index],nH_ne_excited_states_mol_H2p[index],nH_ne_excited_states_mol_H2[index],nH_ne_excited_states_mol_Hn_with_Hp[index],nH_ne_excited_states_mol_Hn_with_H2p[index]])
 	if index == 1:
 		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_atomic_recomb[index][:6+1]/(nH_ne_excited_states_atomic_recomb[index][2]),color=color[0],linestyle=linestyle[index],label='recombination (ADAS)\n'+r'$H^+ + e^- → H(p) + hν$'+'\n'+r'$H^+ + 2e^- → H(p) + e^-$')
 		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_atomic_excit[index][:6+1]/(nH_ne_excited_states_atomic_excit[index][2]),color=color[1],linestyle=linestyle[index],label='direct excitation (ADAS)\n'+r'$H(q) + e^- → H(p>q) + e^-$')
-		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_mol_H2p[index][:6+1]/(nH_ne_excited_states_mol_H2p[index][2]),color=color[2],linestyle=linestyle[index],label='H2+ dissociation (Yacora)\n'+r'${H_2}^+ + e^- → H(p) + H^+ + e^-$')
-		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_mol_H2[index][:6+1]/(nH_ne_excited_states_mol_H2[index][2]),color=color[3],linestyle=linestyle[index],label='H2 dissociation (Yacora)\n'+r'$H_2 + e^- → H(p) + H(1) + e^-$')
-		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_mol_Hn_with_Hp[index][:6+1]/(nH_ne_excited_states_mol_Hn_with_Hp[index][2]),color=color[4],linestyle=linestyle[index],label='H+ mutual neutralisation (Yacora)\n'+r'$H^+ + H^- → H(p) + H(1)$')
-		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_mol_Hn_with_H2p[index][:6+1]/(nH_ne_excited_states_mol_Hn_with_H2p[index][2]),color=color[5],linestyle=linestyle[index],label='H2+ mutual neutralisation (Yacora)\n'+r'${H_2}^+ + H^- → H(p) + H_2$')
+		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_mol_H2p[index][:6+1]/(nH_ne_excited_states_mol_H2p[index][2]),color=color[2],linestyle=linestyle[index],label=r'${H_2}^+$'+' dissociation (Yacora)\n'+r'${H_2}^+ + e^- → H(p) + H^+ + e^-$')
+		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_mol_H2[index][:6+1]/(nH_ne_excited_states_mol_H2[index][2]),color=color[3],linestyle=linestyle[index],label=r'${H_2}$'+' dissociation (Yacora)\n'+r'$H_2 + e^- → H(p) + H(1) + e^-$')
+		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_mol_Hn_with_Hp[index][:6+1]/(nH_ne_excited_states_mol_Hn_with_Hp[index][2]),color=color[4],linestyle=linestyle[index],label=r'${H}^+$'+' mutual neutralisation (Yacora)\n'+r'$H^+ + H^- → H(p) + H(1)$')
+		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_mol_Hn_with_H2p[index][:6+1]/(nH_ne_excited_states_mol_Hn_with_H2p[index][2]),color=color[5],linestyle=linestyle[index],label=r'${H_2}^+$'+' mutual neutralisation (Yacora)\n'+r'${H_2}^+ + H^- → H(p) + H_2$')
 	else:
 		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_atomic_recomb[index][:6+1]/(nH_ne_excited_states_atomic_recomb[index][2]),color=color[0],linestyle=linestyle[index])
 		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_atomic_excit[index][:6+1]/(nH_ne_excited_states_atomic_excit[index][2]),color=color[1],linestyle=linestyle[index])
@@ -1069,15 +1160,19 @@ for index in [1]:	# Bruce says that it's clearer with only one set of lines
 		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_mol_Hn_with_Hp[index][:6+1]/(nH_ne_excited_states_mol_Hn_with_Hp[index][2]),color=color[4],linestyle=linestyle[index])
 		plt.plot(total_wavelengths[:6+1],nH_ne_excited_states_mol_Hn_with_H2p[index][:6+1]/(nH_ne_excited_states_mol_Hn_with_H2p[index][2]),color=color[5],linestyle=linestyle[index])
 
+	# plt.title('[Te[eV],ne['+r'$10^{20}$'+'#'+r'$/m^3$'+']] examples → "'+linestyle[index] +'"='+ str(temp[index]))
+temp = np.array([Te_values,ne_values/1e20]).T
+plt.title('[Te[eV],ne['+r'$10^{20}$'+'#'+r'$/m^3$'+']] examples → "'+linestyle[0] +'"='+ str(temp[0])+ '\n"'+linestyle[1] +'"='+ str(temp[1])+ '\n"'+linestyle[2] +'"='+ str(temp[2]))
+
 plt.xlabel('H excited state '+r'$p$')
 plt.ylabel(r'$n_{H(p)} / n_{H(4)}$')
 temp = np.array([Te_values,ne_values/1e20]).T
-plt.title('[Te[eV],ne['+r'$10^{20}$'+'#'+r'$/m^3$'+']] examples → "'+linestyle[0] +'"='+ str(temp[0])+ ', "'+linestyle[1] +'"='+ str(temp[1])+ ', "'+linestyle[2] +'"='+ str(temp[2]))
 plt.legend(loc='best', fontsize='x-small')
 plt.semilogy()
 # plt.semilogx()
 plt.grid()
-plt.pause(0.01)
+# plt.pause(0.01)
+plt.savefig('/home/ffederic/work/Collaboratory/pure_rates_compare'+ ''+ '.png', bbox_inches='tight')
 
 linestyle = ['-','--','-.']
 plt.figure()
@@ -1097,6 +1192,36 @@ for index in range(len(ne_values)):
 		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_mol_H2[index][:6+1]/(emissivity_excited_states_mol_H2[index][2]),color=color[3],linestyle=linestyle[index])
 		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_mol_Hn_with_Hp[index][:6+1]/(emissivity_excited_states_mol_Hn_with_Hp[index][2]),color=color[4],linestyle=linestyle[index])
 		plt.plot(total_wavelengths[:6+1],emissivity_excited_states_mol_Hn_with_H2p[index][:6+1]/(emissivity_excited_states_mol_Hn_with_H2p[index][2]),color=color[5],linestyle=linestyle[index])
+
+plt.xlabel('H excited state '+r'$p$')
+plt.ylabel('line ratio '+r'$\epsilon_{H(p)} / \epsilon_{H(4)}$')
+temp = np.array([Te_values,ne_values/1e20]).T
+plt.title('[Te[eV],ne['+r'$10^{20}$'+'#'+r'$/m^3$'+']] examples → "'+linestyle[0] +'"='+ str(temp[0])+ ', "'+linestyle[1] +'"='+ str(temp[1])+ ', "'+linestyle[2] +'"='+ str(temp[2]))
+plt.legend(loc='best', fontsize='x-small')
+plt.semilogy()
+# plt.semilogx()
+plt.grid()
+plt.pause(0.01)
+
+
+linestyle = ['-','--','-.']
+plt.figure()
+for index in range(len(ne_values)):
+	# max_nH_ne = np.max([nH_ne_excited_states_atomic_recomb[index],nH_ne_excited_states_atomic_excit[index],nH_ne_excited_states_mol_H2p[index],nH_ne_excited_states_mol_H2[index],nH_ne_excited_states_mol_Hn_with_Hp[index],nH_ne_excited_states_mol_Hn_with_H2p[index]])
+	if index == 0:
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_atomic_recomb[index][:6+1]/(photons_excited_states_atomic_recomb[index][2]),color=color[0],linestyle=linestyle[index],label='recombination (ADAS)\n'+r'$H^+ + e^- → H(p) + hν$'+'\n'+r'$H^+ + 2e^- → H(p) + e^-$')
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_atomic_excit[index][:6+1]/(photons_excited_states_atomic_excit[index][2]),color=color[1],linestyle=linestyle[index],label='direct excitation (ADAS)\n'+r'$H(q) + e^- → H(p>q) + e^-$')
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_mol_H2p[index][:6+1]/(photons_excited_states_mol_H2p[index][2]),color=color[2],linestyle=linestyle[index],label='H2+ dissociation (Yacora)\n'+r'${H_2}^+ + e^- → H(p) + H^+ + e^-$')
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_mol_H2[index][:6+1]/(photons_excited_states_mol_H2[index][2]),color=color[3],linestyle=linestyle[index],label='H2 dissociation (Yacora)\n'+r'$H_2 + e^- → H(p) + H(1) + e^-$')
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_mol_Hn_with_Hp[index][:6+1]/(photons_excited_states_mol_Hn_with_Hp[index][2]),color=color[4],linestyle=linestyle[index],label='H+ mutual neutralisation (Yacora)\n'+r'$H^+ + H^- → H(p) + H(1)$')
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_mol_Hn_with_H2p[index][:6+1]/(photons_excited_states_mol_Hn_with_H2p[index][2]),color=color[5],linestyle=linestyle[index],label='H2+ mutual neutralisation (Yacora)\n'+r'${H_2}^+ + H^- → H(p) + H_2$')
+	else:
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_atomic_recomb[index][:6+1]/(photons_excited_states_atomic_recomb[index][2]),color=color[0],linestyle=linestyle[index])
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_atomic_excit[index][:6+1]/(photons_excited_states_atomic_excit[index][2]),color=color[1],linestyle=linestyle[index])
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_mol_H2p[index][:6+1]/(photons_excited_states_mol_H2p[index][2]),color=color[2],linestyle=linestyle[index])
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_mol_H2[index][:6+1]/(photons_excited_states_mol_H2[index][2]),color=color[3],linestyle=linestyle[index])
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_mol_Hn_with_Hp[index][:6+1]/(photons_excited_states_mol_Hn_with_Hp[index][2]),color=color[4],linestyle=linestyle[index])
+		plt.plot(total_wavelengths[:6+1],photons_excited_states_mol_Hn_with_H2p[index][:6+1]/(photons_excited_states_mol_Hn_with_H2p[index][2]),color=color[5],linestyle=linestyle[index])
 
 plt.xlabel('H excited state '+r'$p$')
 plt.ylabel('line ratio '+r'$\epsilon_{H(p)} / \epsilon_{H(4)}$')

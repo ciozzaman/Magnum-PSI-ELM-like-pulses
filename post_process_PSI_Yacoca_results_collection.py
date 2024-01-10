@@ -31,8 +31,10 @@ results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experiment
 color = ['b', 'r', 'm', 'y', 'g', 'c', 'k', 'slategrey', 'darkorange', 'lime', 'pink', 'gainsboro', 'paleturquoise', 'teal', 'olive']
 
 # type_of_analysis = 'only_Hm_H2_H2p_mol_lim'
-type_of_analysis = 'only_Hm_H2_H2p_part_bal_only_Yacora_as_molecule_nH2_nH_linear'
+# type_of_analysis = 'only_Hm_H2_H2p_part_bal_only_Yacora_as_molecule_nH2_nH_linear'
 # type_of_analysis = 'only_Hm_H2_H2p_part_bal'
+# type_of_analysis = 'only_Hm_H2_H2p_part_bal_only_Yacora_as_molecule_full_Yacora_nH2_nH_linear'
+type_of_analysis = 'only_Hm_H2_H2p_part_bal_only_Yacora_as_molecule_full_Yacora_TSok_nH2_nH_linear'
 
 # merge_ID_target_multipulse = [95,89,88,87,86]
 merge_ID_target_multipulse = [95,89,87,86,85]
@@ -64,6 +66,8 @@ net_power_removed_plasma_column = []
 net_power_removed_plasma_column_sigma = []
 power_potential = []
 power_potential_sigma = []
+power_potential_mol = []
+power_potential_mol_sigma = []
 tot_rad_power = []
 tot_rad_power_sigma = []
 power_rec_neutral = []
@@ -75,6 +79,9 @@ power_rad_excit_sigma = []
 power_rad_rec_bremm = []
 power_rad_rec_bremm_sigma = []
 max_CX_energy = []
+max_CX_energy_sigma = []
+max_H2_elastic_energy = []
+max_H2_elastic_energy_sigma = []
 average_static_pressure = []
 average_Te = []
 average_ne = []
@@ -92,6 +99,72 @@ power_via_ionisation = []
 power_via_ionisation_sigma = []
 power_via_recombination = []
 power_via_recombination_sigma = []
+
+all_MAR_from_Hm = []
+all_MAR_from_Hm_sigma = []
+all_MAD_from_Hm = []
+all_MAD_from_Hm_sigma = []
+all_MAI_from_Hm = []
+all_MAI_from_Hm_sigma = []
+all_MAR_from_H2p = []
+all_MAR_from_H2p_sigma = []
+all_MAD_from_H2p = []
+all_MAD_from_H2p_sigma = []
+all_MAI_from_H2p = []
+all_MAI_from_H2p_sigma = []
+all_MAR_from_H2p_Hm = []
+all_MAR_from_H2p_Hm_sigma = []
+all_MAD_from_H2p_Hm = []
+all_MAD_from_H2p_Hm_sigma = []
+all_MAI_from_H2p_Hm = []
+all_MAI_from_H2p_Hm_sigma = []
+all_atomic_H2_dissociation = []
+all_atomic_H2_dissociation_sigma = []
+plasma_inflow_upstream_homogeneous_mach_number = []
+H2_inflow_sides_plasma_column = []
+H2_source_inflow = []
+H2_target_inflow = []
+H2_creation_RR = []
+H2_creation_RR_sigma = []
+H2_destruction_RR = []
+H2_destruction_RR_sigma = []
+
+H_creation_RR = []
+H_creation_RR_sigma = []
+H_destruction_RR = []
+H_destruction_RR_sigma = []
+
+net_H_destruction_RR = []
+net_H_destruction_RR_sigma = []
+net_H2_destruction_RR = []
+net_H2_destruction_RR_sigma = []
+net_e_destruction = []
+net_e_destruction_sigma = []
+net_Hp_destruction = []
+net_Hp_destruction_sigma = []
+net_Hm_destruction = []
+net_Hm_destruction_sigma = []
+net_H2p_destruction = []
+net_H2p_destruction_sigma = []
+
+
+Hp_destruction_RR = []
+Hp_destruction_RR_sigma = []
+Hp_creation_RR = []
+Hp_creation_RR_sigma = []
+e_destruction_RR = []
+e_destruction_RR_sigma = []
+e_creation_RR = []
+e_creation_RR_sigma = []
+Hm_destruction_RR = []
+Hm_destruction_RR_sigma = []
+Hm_creation_RR = []
+Hm_creation_RR_sigma = []
+H2p_destruction_RR = []
+H2p_destruction_RR_sigma = []
+H2p_creation_RR = []
+H2p_creation_RR_sigma = []
+
 pulse_t0_semi_inf2 = []
 pulse_t0_semi_inf2_sigma = []
 net_recombination = []
@@ -146,7 +219,7 @@ power_pulse_shape = []
 for merge_ID_target in merge_ID_target_multipulse:
 	print('Looking at '+str(merge_ID_target))
 	all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
-	target_chamber_pressure_2.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
+	target_chamber_pressure_2.append(float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
 	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 	full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/'+type_of_analysis+'/bayesian_results3'+'.npz')
 	full_saved_file_dict.allow_pickle = True
@@ -170,58 +243,140 @@ for merge_ID_target in merge_ID_target_multipulse:
 		temp1=np.cumsum(temp[1])
 		TS_pulse_duration_at_max_power.append(temp1.max()/np.max(temp[1])*np.median(np.diff(temp[0]))*1e-3)
 		TS_pulse_duration_at_max_power2.append(temp1.max()/np.max(temp[1])*np.median(np.diff(temp[0]))*1e-3)
-		target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
-		target_OES_distance.append(np.float(results_summary.loc[merge_ID_target,['T_axial']]))
-		feed_rate_SLM.append(np.float(results_summary.loc[merge_ID_target,['Seed']]))
-		CB_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['CB energy [J]']]))
-		delivered_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['Delivered energy [J]']]))
-		magnetic_field.append(np.float(results_summary.loc[merge_ID_target,['B']]))
-		area_equiv_max_static_pressure.append(np.float(results_summary.loc[merge_ID_target,['area_equiv_max_static_pressure']]))
+		target_chamber_pressure.append(float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
+		target_OES_distance.append(float(results_summary.loc[merge_ID_target,['T_axial']]))
+		feed_rate_SLM.append(float(results_summary.loc[merge_ID_target,['Seed']]))
+		CB_pulse_energy.append(float(results_summary.loc[merge_ID_target,['CB energy [J]']]))
+		delivered_pulse_energy.append(float(results_summary.loc[merge_ID_target,['Delivered energy [J]']]))
+		magnetic_field.append(float(results_summary.loc[merge_ID_target,['B']]))
+		area_equiv_max_static_pressure.append(float(results_summary.loc[merge_ID_target,['area_equiv_max_static_pressure']]))
 
-		# net_power_removed_plasma_column.append(np.float(results_summary.loc[merge_ID_target,['net_power_removed_plasma_column']]))
-		# net_power_removed_plasma_column_sigma.append(np.float(results_summary.loc[merge_ID_target,['net_power_removed_plasma_column_sigma']]))
+		# net_power_removed_plasma_column.append(float(results_summary.loc[merge_ID_target,['net_power_removed_plasma_column']]))
+		# net_power_removed_plasma_column_sigma.append(float(results_summary.loc[merge_ID_target,['net_power_removed_plasma_column_sigma']]))
 		net_power_removed_plasma_column.append(full_saved_file_dict['net_power_removed_plasma_column'].all()['radial_time_sum']['most_likely'])
 		net_power_removed_plasma_column_sigma.append(full_saved_file_dict['net_power_removed_plasma_column'].all()['radial_time_sum']['most_likely_sigma'])
 		power_potential.append(full_saved_file_dict['power_potential'].all()['radial_time_sum']['most_likely'])
 		power_potential_sigma.append(full_saved_file_dict['power_potential'].all()['radial_time_sum']['most_likely_sigma'])
+		power_potential_mol.append(full_saved_file_dict['power_potential_mol'].all()['radial_time_sum']['most_likely'])
+		power_potential_mol_sigma.append(full_saved_file_dict['power_potential_mol'].all()['radial_time_sum']['most_likely_sigma'])
 		tot_rad_power.append(full_saved_file_dict['tot_rad_power'].all()['radial_time_sum']['most_likely'])
-		# tot_rad_power_sigma.append(np.float(results_summary.loc[merge_ID_target,['tot_rad_power_sigma']]))
+		# tot_rad_power_sigma.append(float(results_summary.loc[merge_ID_target,['tot_rad_power_sigma']]))
 		tot_rad_power_sigma.append(full_saved_file_dict['tot_rad_power'].all()['radial_time_sum']['most_likely_sigma'])
 		power_via_ionisation.append(full_saved_file_dict['power_via_ionisation'].all()['radial_time_sum']['most_likely'])
-		# power_via_ionisation_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_via_ionisation_sigma']]))
+		# power_via_ionisation_sigma.append(float(results_summary.loc[merge_ID_target,['power_via_ionisation_sigma']]))
 		power_via_ionisation_sigma.append(full_saved_file_dict['power_via_ionisation'].all()['radial_time_sum']['most_likely_sigma'])
 		power_via_recombination.append(full_saved_file_dict['power_via_recombination'].all()['radial_time_sum']['most_likely'])
-		# power_via_recombination_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_via_recombination_sigma']]))
+		# power_via_recombination_sigma.append(float(results_summary.loc[merge_ID_target,['power_via_recombination_sigma']]))
 		power_via_recombination_sigma.append(full_saved_file_dict['power_via_recombination'].all()['radial_time_sum']['most_likely_sigma'])
+
+		all_MAR_from_Hm.append(full_saved_file_dict['all_MAR_from_Hm'].all()['radial_time_sum']['most_likely'])
+		all_MAR_from_Hm_sigma.append(full_saved_file_dict['all_MAR_from_Hm'].all()['radial_time_sum']['most_likely_sigma'])
+		all_MAD_from_Hm.append(full_saved_file_dict['all_MAD_from_Hm'].all()['radial_time_sum']['most_likely'])
+		all_MAD_from_Hm_sigma.append(full_saved_file_dict['all_MAD_from_Hm'].all()['radial_time_sum']['most_likely_sigma'])
+		all_MAI_from_Hm.append(full_saved_file_dict['all_MAI_from_Hm'].all()['radial_time_sum']['most_likely'])
+		all_MAI_from_Hm_sigma.append(full_saved_file_dict['all_MAI_from_Hm'].all()['radial_time_sum']['most_likely_sigma'])
+		all_MAR_from_H2p.append(full_saved_file_dict['all_MAR_from_H2p'].all()['radial_time_sum']['most_likely'])
+		all_MAR_from_H2p_sigma.append(full_saved_file_dict['all_MAR_from_H2p'].all()['radial_time_sum']['most_likely_sigma'])
+		all_MAD_from_H2p.append(full_saved_file_dict['all_MAD_from_H2p'].all()['radial_time_sum']['most_likely'])
+		all_MAD_from_H2p_sigma.append(full_saved_file_dict['all_MAD_from_H2p'].all()['radial_time_sum']['most_likely_sigma'])
+		all_MAI_from_H2p.append(full_saved_file_dict['all_MAI_from_H2p'].all()['radial_time_sum']['most_likely'])
+		all_MAI_from_H2p_sigma.append(full_saved_file_dict['all_MAI_from_H2p'].all()['radial_time_sum']['most_likely_sigma'])
+		all_MAR_from_H2p_Hm.append(full_saved_file_dict['all_MAR_from_H2p_Hm'].all()['radial_time_sum']['most_likely'])
+		all_MAR_from_H2p_Hm_sigma.append(full_saved_file_dict['all_MAR_from_H2p_Hm'].all()['radial_time_sum']['most_likely_sigma'])
+		all_MAD_from_H2p_Hm.append(full_saved_file_dict['all_MAD_from_H2p_Hm'].all()['radial_time_sum']['most_likely'])
+		all_MAD_from_H2p_Hm_sigma.append(full_saved_file_dict['all_MAD_from_H2p_Hm'].all()['radial_time_sum']['most_likely_sigma'])
+		all_MAI_from_H2p_Hm.append(full_saved_file_dict['all_MAI_from_H2p_Hm'].all()['radial_time_sum']['most_likely'])
+		all_MAI_from_H2p_Hm_sigma.append(full_saved_file_dict['all_MAI_from_H2p_Hm'].all()['radial_time_sum']['most_likely_sigma'])
+		all_atomic_H2_dissociation.append(full_saved_file_dict['all_atomic_H2_dissociation'].all()['radial_time_sum']['most_likely'])
+		all_atomic_H2_dissociation_sigma.append(full_saved_file_dict['all_atomic_H2_dissociation'].all()['radial_time_sum']['most_likely_sigma'])
+
+		H2_creation_RR.append(full_saved_file_dict['H2_creation_RR'].all()['radial_time_sum']['most_likely'])
+		H2_creation_RR_sigma.append(full_saved_file_dict['H2_creation_RR'].all()['radial_time_sum']['most_likely_sigma'])
+		H2_destruction_RR.append(full_saved_file_dict['H2_destruction_RR2'].all()['radial_time_sum']['most_likely'])
+		H2_destruction_RR_sigma.append(full_saved_file_dict['H2_destruction_RR2'].all()['radial_time_sum']['most_likely_sigma'])
+		H_creation_RR.append(full_saved_file_dict['H_creation_RR'].all()['radial_time_sum']['most_likely'])
+		H_creation_RR_sigma.append(full_saved_file_dict['H_creation_RR'].all()['radial_time_sum']['most_likely_sigma'])
+		H_destruction_RR.append(full_saved_file_dict['H_destruction_RR2'].all()['radial_time_sum']['most_likely'])
+		H_destruction_RR_sigma.append(full_saved_file_dict['H_destruction_RR2'].all()['radial_time_sum']['most_likely_sigma'])
+
+		net_H_destruction_RR.append(full_saved_file_dict['net_H_destruction_RR'].all()['radial_time_sum']['most_likely'])
+		net_H_destruction_RR_sigma.append(full_saved_file_dict['net_H_destruction_RR'].all()['radial_time_sum']['most_likely_sigma'])
+		net_H2_destruction_RR.append(full_saved_file_dict['net_H2_destruction_RR'].all()['radial_time_sum']['most_likely'])
+		net_H2_destruction_RR_sigma.append(full_saved_file_dict['net_H2_destruction_RR'].all()['radial_time_sum']['most_likely_sigma'])
+		net_e_destruction.append(full_saved_file_dict['net_e_destruction'].all()['radial_time_sum']['most_likely'])
+		net_e_destruction_sigma.append(full_saved_file_dict['net_e_destruction'].all()['radial_time_sum']['most_likely_sigma'])
+		net_Hp_destruction.append(full_saved_file_dict['net_Hp_destruction'].all()['radial_time_sum']['most_likely'])
+		net_Hp_destruction_sigma.append(full_saved_file_dict['net_Hp_destruction'].all()['radial_time_sum']['most_likely_sigma'])
+		net_Hm_destruction.append(full_saved_file_dict['net_Hm_destruction'].all()['radial_time_sum']['most_likely'])
+		net_Hm_destruction_sigma.append(full_saved_file_dict['net_Hm_destruction'].all()['radial_time_sum']['most_likely_sigma'])
+		net_H2p_destruction.append(full_saved_file_dict['net_H2p_destruction'].all()['radial_time_sum']['most_likely'])
+		net_H2p_destruction_sigma.append(full_saved_file_dict['net_H2p_destruction'].all()['radial_time_sum']['most_likely_sigma'])
+
+		Hp_destruction_RR.append(full_saved_file_dict['Hp_destruction_RR'].all()['radial_time_sum']['most_likely'])
+		Hp_destruction_RR_sigma.append(full_saved_file_dict['Hp_destruction_RR'].all()['radial_time_sum']['most_likely_sigma'])
+		Hp_creation_RR.append(full_saved_file_dict['Hp_creation_RR'].all()['radial_time_sum']['most_likely'])
+		Hp_creation_RR_sigma.append(full_saved_file_dict['Hp_creation_RR'].all()['radial_time_sum']['most_likely_sigma'])
+		e_destruction_RR.append(full_saved_file_dict['e_destruction_RR'].all()['radial_time_sum']['most_likely'])
+		e_destruction_RR_sigma.append(full_saved_file_dict['e_destruction_RR'].all()['radial_time_sum']['most_likely_sigma'])
+		e_creation_RR.append(full_saved_file_dict['e_creation_RR'].all()['radial_time_sum']['most_likely'])
+		e_creation_RR_sigma.append(full_saved_file_dict['e_creation_RR'].all()['radial_time_sum']['most_likely_sigma'])
+		Hm_destruction_RR.append(full_saved_file_dict['Hm_destruction_RR'].all()['radial_time_sum']['most_likely'])
+		Hm_destruction_RR_sigma.append(full_saved_file_dict['Hm_destruction_RR'].all()['radial_time_sum']['most_likely_sigma'])
+		Hm_creation_RR.append(full_saved_file_dict['Hm_creation_RR'].all()['radial_time_sum']['most_likely'])
+		Hm_creation_RR_sigma.append(full_saved_file_dict['Hm_creation_RR'].all()['radial_time_sum']['most_likely_sigma'])
+		H2p_destruction_RR.append(full_saved_file_dict['H2p_destruction_RR'].all()['radial_time_sum']['most_likely'])
+		H2p_destruction_RR_sigma.append(full_saved_file_dict['H2p_destruction_RR'].all()['radial_time_sum']['most_likely_sigma'])
+		H2p_creation_RR.append(full_saved_file_dict['H2p_creation_RR'].all()['radial_time_sum']['most_likely'])
+		H2p_creation_RR_sigma.append(full_saved_file_dict['H2p_creation_RR'].all()['radial_time_sum']['most_likely_sigma'])
+
+		conventional_start_pulse = full_saved_file_dict['miscellaneous'].all()['conventional_start_pulse']
+		conventional_end_pulse = full_saved_file_dict['miscellaneous'].all()['conventional_end_pulse']
+
+		time_crop = full_saved_file_dict['miscellaneous'].all()['coord_info']['time_crop']
+		dt = np.mean(np.diff(time_crop))
+		plasma_inflow_upstream_homogeneous_mach_number.append( np.sum(np.array(full_saved_file_dict['input_power'].all()['TS']['flow']['plasma_inflow_upstream_homogeneous_mach_number'])[conventional_start_pulse:conventional_end_pulse])*dt/1000 )
+		H2_source_inflow.append(full_saved_file_dict['input_power'].all()['TS']['flow']['H2_source_inflow'])
+		H2_target_inflow.append(full_saved_file_dict['input_power'].all()['TS']['flow']['H2_target_inflow'])
+		H2_inflow_sides_plasma_column.append(full_saved_file_dict['miscellaneous'].all()['H2_inflow_sides_plasma_column'])
+
+
 		power_rec_neutral.append(full_saved_file_dict['power_rec_neutral'].all()['radial_time_sum']['most_likely'])
-		# power_rec_neutral_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rec_neutral_sigma']]))
+		# power_rec_neutral_sigma.append(float(results_summary.loc[merge_ID_target,['power_rec_neutral_sigma']]))
 		power_rec_neutral_sigma.append(full_saved_file_dict['power_rec_neutral'].all()['radial_time_sum']['most_likely_sigma'])
 		power_rad_mol.append(full_saved_file_dict['power_rad_mol'].all()['radial_time_sum']['most_likely'])
-		# power_rad_mol_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_mol_sigma']]))
+		# power_rad_mol_sigma.append(float(results_summary.loc[merge_ID_target,['power_rad_mol_sigma']]))
 		power_rad_mol_sigma.append(full_saved_file_dict['power_rad_mol'].all()['radial_time_sum']['most_likely_sigma'])
 		power_rad_excit.append(full_saved_file_dict['power_rad_excit'].all()['radial_time_sum']['most_likely'])
-		# power_rad_excit_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_excit_sigma']]))
+		# power_rad_excit_sigma.append(float(results_summary.loc[merge_ID_target,['power_rad_excit_sigma']]))
 		power_rad_excit_sigma.append(full_saved_file_dict['power_rad_excit'].all()['radial_time_sum']['most_likely_sigma'])
 		power_rad_rec_bremm.append(full_saved_file_dict['power_rad_rec_bremm'].all()['radial_time_sum']['most_likely'])
-		# power_rad_rec_bremm_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_rec_bremm_sigma']]))
+		# power_rad_rec_bremm_sigma.append(float(results_summary.loc[merge_ID_target,['power_rad_rec_bremm_sigma']]))
 		power_rad_rec_bremm_sigma.append(full_saved_file_dict['power_rad_rec_bremm'].all()['radial_time_sum']['most_likely_sigma'])
-		# max_CX_energy.append(np.float(results_summary.loc[merge_ID_target,['max_CX_energy']]))
-		max_CX_energy.append(full_saved_file_dict['P_HCX_3'].all()['total_energy']['most_likely'])
-		average_static_pressure.append(np.float(results_summary.loc[merge_ID_target,['average_static_pressure']]))
-		average_Te.append(np.float(results_summary.loc[merge_ID_target,['average_Te']]))
-		average_ne.append(np.float(results_summary.loc[merge_ID_target,['average_ne']]))
+		# max_CX_energy.append(float(results_summary.loc[merge_ID_target,['max_CX_energy']]))
+		# max_CX_energy.append(full_saved_file_dict['P_HCX_3'].all()['total_energy']['most_likely'])
+		max_CX_energy.append(full_saved_file_dict['local_CX'].all()['radial_time_sum']['most_likely'])
+		max_CX_energy_sigma.append(full_saved_file_dict['local_CX'].all()['radial_time_sum']['most_likely_sigma'])
+		try:
+			max_H2_elastic_energy.append(full_saved_file_dict['local_elastic_H2'].all()['radial_time_sum']['most_likely'])
+			max_H2_elastic_energy_sigma.append(full_saved_file_dict['local_elastic_H2'].all()['radial_time_sum']['most_likely_sigma'])
+		except:
+			max_H2_elastic_energy.append(0)
+			max_H2_elastic_energy_sigma.append(0)
+		average_static_pressure.append(float(results_summary.loc[merge_ID_target,['average_static_pressure']]))
+		average_Te.append(float(results_summary.loc[merge_ID_target,['average_Te']]))
+		average_ne.append(float(results_summary.loc[merge_ID_target,['average_ne']]))
 		power_rad_Hm.append(full_saved_file_dict['power_rad_Hm'].all()['radial_time_sum']['most_likely'])
-		# power_rad_Hm_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_Hm_sigma']]))
+		# power_rad_Hm_sigma.append(float(results_summary.loc[merge_ID_target,['power_rad_Hm_sigma']]))
 		power_rad_Hm_sigma.append(full_saved_file_dict['power_rad_Hm'].all()['radial_time_sum']['most_likely_sigma'])
 		power_rad_Hm_H2p.append(full_saved_file_dict['power_rad_Hm_H2p'].all()['radial_time_sum']['most_likely'])
 		power_rad_Hm_H2p_sigma.append(full_saved_file_dict['power_rad_Hm_H2p'].all()['radial_time_sum']['most_likely_sigma'])
 		power_rad_Hm_Hp.append(full_saved_file_dict['power_rad_Hm_Hp'].all()['radial_time_sum']['most_likely'])
 		power_rad_Hm_Hp_sigma.append(full_saved_file_dict['power_rad_Hm_Hp'].all()['radial_time_sum']['most_likely_sigma'])
 		power_rad_H2.append(full_saved_file_dict['power_rad_H2'].all()['radial_time_sum']['most_likely'])
-		# power_rad_H2_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_H2_sigma']]))
+		# power_rad_H2_sigma.append(float(results_summary.loc[merge_ID_target,['power_rad_H2_sigma']]))
 		power_rad_H2_sigma.append(full_saved_file_dict['power_rad_H2'].all()['radial_time_sum']['most_likely_sigma'])
 		power_rad_H2p.append(full_saved_file_dict['power_rad_H2p'].all()['radial_time_sum']['most_likely'])
-		# power_rad_H2p_sigma.append(np.float(results_summary.loc[merge_ID_target,['power_rad_H2p_sigma']]))
+		# power_rad_H2p_sigma.append(float(results_summary.loc[merge_ID_target,['power_rad_H2p_sigma']]))
 		power_rad_H2p_sigma.append(full_saved_file_dict['power_rad_H2p'].all()['radial_time_sum']['most_likely_sigma'])
 		radial_average_brightness_bayesian.append(full_saved_file_dict['total_removed_power_visible'].all()['average_brightness']['most_likely'])
 		radial_average_brightness_bayesian_long.append(full_saved_file_dict['total_removed_power_visible'].all()['long_average_brightness']['most_likely'])
@@ -251,12 +406,12 @@ for merge_ID_target in merge_ID_target_multipulse:
 		IR_trace, = df_log.loc[j,['IR_trace']]
 		if isinstance(IR_trace,str):
 			j_specific_merge_ID_target.append(merge_ID_target)
-			j_specific_target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
-			j_specific_target_OES_distance.append(np.float(results_summary.loc[merge_ID_target,['T_axial']]))
-			j_specific_feed_rate_SLM.append(np.float(results_summary.loc[merge_ID_target,['Seed']]))
-			j_specific_CB_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['CB energy [J]']]))
-			j_specific_delivered_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['Delivered energy [J]']]))
-			j_specific_magnetic_field.append(np.float(results_summary.loc[merge_ID_target,['B']]))
+			j_specific_target_chamber_pressure.append(float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
+			j_specific_target_OES_distance.append(float(results_summary.loc[merge_ID_target,['T_axial']]))
+			j_specific_feed_rate_SLM.append(float(results_summary.loc[merge_ID_target,['Seed']]))
+			j_specific_CB_pulse_energy.append(float(results_summary.loc[merge_ID_target,['CB energy [J]']]))
+			j_specific_delivered_pulse_energy.append(float(results_summary.loc[merge_ID_target,['Delivered energy [J]']]))
+			j_specific_magnetic_field.append(float(results_summary.loc[merge_ID_target,['B']]))
 
 			path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 			full_saved_file_dict = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')
@@ -346,11 +501,11 @@ for merge_ID_target in merge_ID_target_multipulse:
 # plt.grid()
 # plt.pause(0.001)
 
-if True:	#			PLOTS FOR THE PAPER
+if True:	#			PLOTS FOR THE PAPER IR section
 
 	# merge_ID_target_multipulse = [95,89,88,87,86]
-	merge_ID_target_multipulse = [95,89,88,87,86,85]
-	# merge_ID_target_multipulse = [99,98,96,97]
+	# merge_ID_target_multipulse = [95,89,88,87,86,85]
+	merge_ID_target_multipulse = [99,98,96,97]
 	# merge_ID_target_multipulse = [66,67,68,69,70,74]
 
 	j_specific_target_chamber_pressure = []
@@ -387,15 +542,15 @@ if True:	#			PLOTS FOR THE PAPER
 	for merge_ID_target in merge_ID_target_multipulse:
 		print('Looking at '+str(merge_ID_target))
 		all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
-		target_chamber_pressure_2.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
+		target_chamber_pressure_2.append(float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
 		path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 		full_saved_file_dict = np.load(path_where_to_save_everything+'/input_data'+'.npz')
 		full_saved_file_dict.allow_pickle = True
 		# full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2p_mol_lim/bayesian_results3'+'.npz')
 		if merge_ID_target != 88:
-			magnetic_field.append(np.float(results_summary.loc[merge_ID_target,['B']]))
-			target_OES_distance.append(np.float(results_summary.loc[merge_ID_target,['T_axial']]))
-			CB_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['CB energy [J]']]))
+			magnetic_field.append(float(results_summary.loc[merge_ID_target,['B']]))
+			target_OES_distance.append(float(results_summary.loc[merge_ID_target,['T_axial']]))
+			CB_pulse_energy.append(float(results_summary.loc[merge_ID_target,['CB energy [J]']]))
 			temp = energy_flow_from_TS_at_sound_speed(merge_ID_target,interpolated_TS=False)
 			TS_time.append(temp[0])
 			energy_flow.append(temp[1])
@@ -424,7 +579,7 @@ if True:	#			PLOTS FOR THE PAPER
 		for j in all_j:
 			IR_trace, = df_log.loc[j,['IR_trace']]
 			if isinstance(IR_trace,str):
-				j_specific_target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
+				j_specific_target_chamber_pressure.append(float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
 
 				path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 				full_saved_file_dict = np.load(path_where_to_save_everything +'/file_index_' + str(j) +'_IR_trace_'+IR_trace+'.npz')
@@ -657,29 +812,104 @@ else:
 	plt.pause(0.01)
 
 
-if True:	#			PLOTS FOR THE PAPER
-	fig, ax = plt.subplots( 2,1,figsize=(10, 9), squeeze=False, sharex=True)
-	fig.suptitle('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ\n ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
-	ax[0,0].plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{upstream}$')
-	ax[0,0].errorbar(target_chamber_pressure,net_power_removed_plasma_column,yerr=np.array(net_power_removed_plasma_column_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{removed \: from \: plasma}$')
-	ax[0,0].plot(target_chamber_pressure,max_CX_energy,'--',linewidth=3,color=color[7],label=r'$E_{CX \: max}$')
-	ax[0,0].errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf)+np.array(pulse_en_SS),yerr=np.array(pulse_en_semi_inf_sigma),linewidth=3,color=color[8],capsize=5,label=r'$E_{target}$')
-	ax[0,0].legend(loc=0, fontsize='small',framealpha=0.5)
-	ax[0,0].grid()
-	ax[0,0].set_ylabel('Energy [J]')
-	ax[1,0].plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{upstream}$')
-	ax[1,0].errorbar(target_chamber_pressure,power_potential,yerr=np.array(power_potential_sigma),color=color[2],capsize=5,label=r'$E_{potential}$')
-	ax[1,0].errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{radiated}$')
-	ax[1,0].errorbar(target_chamber_pressure,power_rec_neutral,yerr=np.array(power_rec_neutral_sigma),capsize=5,color=color[3],label=r'$E_{neutral \: from \: recombination}$')
-	ax[1,0].errorbar(target_chamber_pressure,power_via_ionisation,yerr=np.array(power_via_ionisation_sigma),capsize=5,color=color[4],linestyle='--',label=r'$E_{ionisation \: (only \: potential)}$')
-	# ax[1,0].errorbar(target_chamber_pressure,power_rad_excit,yerr=np.array(power_rad_excit_sigma),capsize=5,color=color[14],label=r'$E_{direct excitation}$')
-	ax[1,0].errorbar(target_chamber_pressure,power_via_recombination,yerr=np.array(power_via_recombination_sigma),capsize=5,color=color[5],linestyle='--',label=r'$E_{recombination \: (only \: potential)}$')
-	# ax[1,0].errorbar(target_chamber_pressure,net_recombination,yerr=np.array(net_recombination_sigma),capsize=5,color=color[4],label=r'$E_{recombination \: (radiated \: & \: bremm \: - \: heating)}$')
-	ax[1,0].legend(loc=0, fontsize='small',framealpha=0.5)
-	ax[1,0].grid()
-	ax[1,0].set_ylabel('Energy [J]')
-	ax[1,0].set_xlabel('Target chamber pressure [Pa]')
-	plt.pause(0.001)
+if True:	#			PLOTS FOR THE PAPER Bayesian process section
+	if False:
+		fig, ax = plt.subplots( 2,1,figsize=(8, 9), squeeze=False, sharex=False)
+		fig.suptitle('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ\n ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
+		ax[0,0].plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{in}$')
+		# ax[0,0].errorbar(target_chamber_pressure,net_power_removed_plasma_column,yerr=np.array(net_power_removed_plasma_column_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{removed \: from \: plasma}$')
+		ax[0,0].errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),color=color[1], uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{radiated}$')
+		ax[0,0].errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf)+np.array(pulse_en_SS),yerr=np.array(pulse_en_semi_inf_sigma),color=color[8], uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{target}$')
+		# ax[0,0].errorbar(target_chamber_pressure,max_CX_energy,yerr=max_CX_energy_sigma,linestyle=':',linewidth=3,color=color[7],capsize=5,label=r'$E_{CX}$')
+		up,down = (np.array([max_CX_energy]).T*[1.5,0.01]).T
+		ax[0,0].errorbar(target_chamber_pressure,np.mean([up,down],axis=0),yerr=(((up-down)/2)**2+np.array(max_CX_energy_sigma)**2)**0.5,linestyle='-',color='silver', uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{CX}$')
+		# ax[0,0].errorbar(target_chamber_pressure,max_H2_elastic_energy,yerr=max_H2_elastic_energy_sigma,linestyle='--',linewidth=3,color=color[7],capsize=5,label=r'$E_{H_2 \: elastic}$')
+		up,down = (np.array([max_H2_elastic_energy]).T*[0.34,0.18]).T
+		ax[0,0].errorbar(target_chamber_pressure,np.mean([up,down],axis=0),yerr=(((up-down)/2)**2+np.array(max_H2_elastic_energy_sigma)**2)**0.5,linestyle='-',color='k', uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{H_2 \: elastic}$')
+		ax[0,0].legend(loc=0, fontsize='small',framealpha=0.5)
+		ax[0,0].set_ylim(top=80,bottom=-10)
+		ax[0,0].grid()
+		ax[0,0].set_ylabel('Energy [J]')
+		ax[0,0].set_xlabel('Target chamber pressure [Pa]')
+		# ax[0,0].semilogx()
+		# ax[1,0].plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{upstream}$')
+		ax[1,0].errorbar(target_chamber_pressure,power_potential,yerr=np.array(power_potential_sigma),color=color[2],capsize=5,label=r'$E_{potential}$')
+		ax[1,0].errorbar(target_chamber_pressure,power_potential_mol,yerr=np.array(power_potential_mol_sigma),linestyle='--',color=color[2],capsize=5,label=r'$E_{potential mol}$')
+		ax[1,0].errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{radiated}$')
+		ax[1,0].errorbar(target_chamber_pressure,power_rec_neutral,yerr=np.array(power_rec_neutral_sigma),capsize=5,color=color[3],label=r'$E_{neutral \: from \: recombination}$')
+		ax[1,0].errorbar(target_chamber_pressure,power_via_ionisation,yerr=np.array(power_via_ionisation_sigma),capsize=5,color=color[4],linestyle='--',label=r'$E_{ionisation \: (only \: potential)}$')
+		# ax[1,0].errorbar(target_chamber_pressure,power_rad_excit,yerr=np.array(power_rad_excit_sigma),capsize=5,color=color[14],label=r'$E_{direct excitation}$')
+		ax[1,0].errorbar(target_chamber_pressure,-np.array(power_via_recombination),yerr=np.array(power_via_recombination_sigma),capsize=5,color=color[5],linestyle='--',label=r'$E_{recombination \: (only \: potential)}$')
+		# ax[1,0].errorbar(target_chamber_pressure,net_recombination,yerr=np.array(net_recombination_sigma),capsize=5,color=color[4],label=r'$E_{recombination \: (radiated \: & \: bremm \: - \: heating)}$')
+		ax[1,0].legend(loc=0, fontsize='small',framealpha=0.5)
+		# ax[1,0].set_ylim(bottom=-1)
+		ax[1,0].grid()
+		ax[1,0].set_ylabel('Energy [J]')
+		ax[1,0].set_xlabel('Target chamber pressure [Pa]')
+		plt.savefig('/home/ffederic/work/Collaboratory/Bayesian_strong_3'+ ''+ '.png', bbox_inches='tight')
+		plt.close()
+		# plt.pause(0.001)
+	else:	#same plot but a bit nicer
+		fig, ax = plt.subplots( 2,1,figsize=(8, 7), squeeze=False,sharex=True, gridspec_kw={'height_ratios': [1, 2]})
+
+		ax[0,0].plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{in}$')
+		# ax[0,0].errorbar(target_chamber_pressure,net_power_removed_plasma_column,yerr=np.array(net_power_removed_plasma_column_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{removed \: from \: plasma}$')
+		ax[0,0].errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),color=color[1], uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{radiated}$')
+		ax[0,0].errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf)+np.array(pulse_en_SS),yerr=np.array(pulse_en_semi_inf_sigma),color=color[8], uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{target}$')
+		# ax[0,0].errorbar(target_chamber_pressure,max_CX_energy,yerr=max_CX_energy_sigma,linestyle=':',linewidth=3,color=color[7],capsize=5,label=r'$E_{CX}$')
+		up,down = (np.array([max_CX_energy]).T*[1.5,0.01]).T
+		# DO NOT REUSE NEXT LINE1  there is an edit only for plotting
+		ax[0,0].errorbar(target_chamber_pressure[1:],np.mean([up,down],axis=0)[1:],yerr=(((up-down)/2)**2+np.array(max_CX_energy_sigma)**2)[1:]**0.5,linestyle='-',color='silver', uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{CX}$')
+		# ax[0,0].errorbar(target_chamber_pressure,max_H2_elastic_energy,yerr=max_H2_elastic_energy_sigma,linestyle='--',linewidth=3,color=color[7],capsize=5,label=r'$E_{H_2 \: elastic}$')
+		up,down = (np.array([max_H2_elastic_energy]).T*[0.34,0.18]).T
+		ax[0,0].errorbar(target_chamber_pressure,np.mean([up,down],axis=0),yerr=(((up-down)/2)**2+np.array(max_H2_elastic_energy_sigma)**2)**0.5,linestyle='-',color='k', uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{H_2 \: elastic}$')
+		# ax[0,0].legend(loc=0, fontsize='small',framealpha=0.5)
+		# ax[0,0].set_ylim(top=80,bottom=-10)
+		ax[0,0].grid()
+		# ax[0,0].set_ylabel('Energy [J]')
+
+		ax[1,0].plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{in}$')
+		# ax[0,0].errorbar(target_chamber_pressure,net_power_removed_plasma_column,yerr=np.array(net_power_removed_plasma_column_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{removed \: from \: plasma}$')
+		ax[1,0].errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),color=color[1], uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{radiated}$')
+		ax[1,0].errorbar(target_chamber_pressure,np.array(pulse_en_semi_inf)+np.array(pulse_en_SS),yerr=np.array(pulse_en_semi_inf_sigma),color=color[8], uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{target}$')
+		# ax[0,0].errorbar(target_chamber_pressure,max_CX_energy,yerr=max_CX_energy_sigma,linestyle=':',linewidth=3,color=color[7],capsize=5,label=r'$E_{CX}$')
+		up,down = (np.array([max_CX_energy]).T*[1.5,0.01]).T
+		ax[1,0].errorbar(target_chamber_pressure,np.mean([up,down],axis=0),yerr=(((up-down)/2)**2+np.array(max_CX_energy_sigma)**2)**0.5,linestyle='-',color='silver', uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{CX}$')
+		# ax[0,0].errorbar(target_chamber_pressure,max_H2_elastic_energy,yerr=max_H2_elastic_energy_sigma,linestyle='--',linewidth=3,color=color[7],capsize=5,label=r'$E_{H_2 \: elastic}$')
+		up,down = (np.array([max_H2_elastic_energy]).T*[0.34,0.18]).T
+		ax[1,0].errorbar(target_chamber_pressure,np.mean([up,down],axis=0),yerr=(((up-down)/2)**2+np.array(max_H2_elastic_energy_sigma)**2)**0.5,linestyle='-',color='k', uplims=True, lolims=True,fillstyle='none',capsize=5,label=r'$E_{H_2 \: elastic}$')
+		ax[0,0].legend(loc='upper left', fontsize='medium',framealpha=0.5,ncol=2)
+		# ax[1,0].set_ylim(top=80,bottom=-10)
+		ax[1,0].grid()
+		ax[1,0].set_ylabel('Energy [J]')
+
+
+		ax[1,0].set_xlabel('Target chamber pressure [Pa]')
+
+
+		ax[0,0].set_ylim(bottom=80)
+		ax[1,0].set_ylim(top=80,bottom=-5)
+
+		ax[0,0].spines['bottom'].set_visible(False)
+		ax[1,0].spines['top'].set_visible(False)
+		ax[0,0].xaxis.tick_top()
+		ax[0,0].tick_params(labeltop=False)  # don't put tick labels at the top
+		ax[1,0].xaxis.tick_bottom()
+
+		dx = .01  # how big to make the diagonal lines in axes coordinates
+		dy = .02  # how big to make the diagonal lines in axes coordinates
+		# arguments to pass to plot, just so we don't keep repeating them
+		kwargs = dict(transform=ax[0,0].transAxes, color='k', clip_on=False)
+		ax[0,0].plot((-dx, +dx), (-dy, +dy), **kwargs)        # top-left diagonal
+		ax[0,0].plot((1 - dx, 1 + dx), (-dy, +dy), **kwargs)  # top-right diagonal
+
+		d = .01  # how big to make the diagonal lines in axes coordinates
+		kwargs.update(transform=ax[1,0].transAxes)  # switch to the bottom axes
+		ax[1,0].plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+		ax[1,0].plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)
+		plt.subplots_adjust(wspace=0, hspace=0.02)
+		plt.savefig('/home/ffederic/work/Collaboratory/Bayesian_strong_3b'+ ''+ '.png', bbox_inches='tight')
+		plt.close()
 
 
 	power_rad_mol = np.array(power_rad_mol)
@@ -690,18 +920,389 @@ if True:	#			PLOTS FOR THE PAPER
 	power_rad_H2 = np.array(power_rad_H2)
 	power_rad_excit = np.array(power_rad_excit)
 	power_rad_rec_bremm = np.array(power_rad_rec_bremm)
-	plt.figure(figsize=(10, 5));
+	plt.figure(figsize=(9, 5.5));
 	temp = power_rad_Hm_H2p + power_rad_Hm_Hp + power_rad_H2p + power_rad_H2 + power_rad_excit + power_rad_rec_bremm
-	labels = [r'$E_{radiated \: \: H^- + {H_2}^+  \:→\: H(p) + H_2}$', r'$E_{radiated \: \: H^- + H^+  \:→\: H(p) + H(1)}$' , r'$E_{radiated \: \: {H_2}^+ + e \:→\: H(p) + H^+ + e \:, \:→ \: H(p) + H(1)}$' , r'$E_{radiated \: \: H_2 + e \:→\: H(p) + H(1) + e}$' , r'$E_{direct \: excitation}$' , r'$E_{recombination \: radiated \: \: + \: brems.}$' ]
-	plt.stackplot(target_chamber_pressure,power_rad_Hm_H2p/temp,power_rad_Hm_Hp/temp,power_rad_H2p/temp,power_rad_H2/temp,power_rad_excit/temp,power_rad_rec_bremm/temp,labels=labels)
-	plt.errorbar(target_chamber_pressure,power_rad_mol/temp,yerr=np.array(power_rad_mol_sigma)/temp,linestyle='--',capsize=5,color=color[6],label=r'$E_{radiated \: \: molecules}$')
-	plt.legend(loc='best', fontsize='small')
-	plt.ylim(bottom=0,top=1)
-	plt.ylabel('fraction of the total radiated energy [au]')
-	plt.xlabel('Target chamber pressure [Pa]')
+	labels = [r'$E_{rad \: \: H^- + {H_2}^+}$', r'$E_{rad \: \: H^- + H^+ }$' , r'$E_{rad \: \: {H_2}^+ }$' , r'$E_{rad \: \: H_2 }$' , r'$E_{exc}$' , r'$E_{rad\: rec+bremm}$' ]
+	plt.stackplot(target_chamber_pressure,power_rad_Hm_H2p,power_rad_Hm_Hp,power_rad_H2p,power_rad_H2,power_rad_excit,power_rad_rec_bremm,labels=labels)
+	plt.errorbar(target_chamber_pressure,power_rad_mol,yerr=np.array(power_rad_mol_sigma),linestyle='--',capsize=5,color=color[6],label=r'$E_{radiated \: \: molecules}$')
+	plt.legend(loc='upper center', fontsize='medium',ncol=2)
+	# plt.ylim(bottom=0,top=1)
+	plt.ylabel('energy [J]')
+	plt.xlabel('target chamber pressure [Pa]')
 	plt.grid()
 	plt.title('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ\n ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
-	plt.pause(0.001)
+	# plt.pause(0.001)
+	plt.savefig('/home/ffederic/work/Collaboratory/Bayesian_strong_4'+ ''+ '.png', bbox_inches='tight')
+	plt.close()
+
+
+	# I want to explain and show better the results in tha peaper so I need some example plots
+	merge_ID_target = 95
+	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
+	full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/'+type_of_analysis+'/bayesian_results3'+'.npz')
+	full_saved_file_dict.allow_pickle = True
+	power_rad_excit_example_intervals = full_saved_file_dict['power_rad_excit'].all()['full']['intervals']
+	power_rad_excit_example_prob = full_saved_file_dict['power_rad_excit'].all()['full']['prob']
+	r_crop = full_saved_file_dict['miscellaneous'].all()['coord_info']['r_crop']
+	time_crop = full_saved_file_dict['miscellaneous'].all()['coord_info']['time_crop']
+	area = full_saved_file_dict['miscellaneous'].all()['coord_info']['area']
+	length = full_saved_file_dict['miscellaneous'].all()['coord_info']['length']
+
+	fig, ax = plt.subplots( 2,1,figsize=(10, 11), squeeze=False,sharex=False)
+	# plt.figure(figsize=(10, 4.5))
+	i_t = 8
+	cm = plt.get_cmap('gist_rainbow')
+	# rainbow_colors = [cm(1.*i/len(power_rad_excit_example_intervals[i_t])) for i in range(len(power_rad_excit_example_intervals[i_t]))]
+	rainbow_colors = [cm(1.*i/12) for i in range(12)]
+	# for i_r in range(len(power_rad_excit_example_intervals[i_t])):
+	for i_r in range(12):
+		ax[0,0].plot(np.sort(list(power_rad_excit_example_intervals[i_t][i_r])*2)[1:-1]*(area[i_r]*length),np.array([(np.array(power_rad_excit_example_prob[i_t][i_r])/np.diff(power_rad_excit_example_intervals[i_t][i_r])*(area[i_r]*length)).tolist()]*2).T.flatten(),color=rainbow_colors[i_r],label='r=%.2gmm' %(1e3*r_crop[i_r]));
+	ax[0,0].plot(np.sort(list(full_saved_file_dict['power_rad_excit'].all()['radial_sum']['intervals'][i_t])*2)[1:-1],np.array([(np.array(full_saved_file_dict['power_rad_excit'].all()['radial_sum']['prob'][i_t])/np.diff(full_saved_file_dict['power_rad_excit'].all()['radial_sum']['intervals'][i_t])).tolist()]*2).T.flatten(),'--',color='k',label='sum convolution');
+	ax[0,0].semilogx()
+	ax[0,0].semilogy()
+	ax[0,0].set_xlim(left=1e1,right=5e4)
+	ax[0,0].set_ylim(bottom=1e-17)
+	ax[0,0].legend(loc='best', fontsize='x-small',ncol=2)
+	ax[0,0].grid()
+	ax[0,0].set_xlabel(r'power $\left[ \frac{W}{m^3} m^3 \right]$')
+	ax[0,0].set_ylabel('PDF [au/W]')
+
+	dt = np.mean(np.diff(time_crop))
+	rainbow_colors = [cm(1.*i/np.sum(np.logical_and(time_crop>0.1,time_crop<1))) for i in range(np.sum(np.logical_and(time_crop>0,time_crop<0.8)))]
+	for i_t in np.arange(len(time_crop))[np.logical_and(time_crop>0.1,time_crop<0.8)]:
+		ax[1,0].plot(np.sort(list(full_saved_file_dict['power_rad_excit'].all()['radial_sum']['intervals'][i_t])*2)[1:-1]*dt*1e-3,np.array([(np.array(full_saved_file_dict['power_rad_excit'].all()['radial_sum']['prob'][i_t])/np.diff(full_saved_file_dict['power_rad_excit'].all()['radial_sum']['intervals'][i_t])*dt*1e-3).tolist()]*2).T.flatten(),color=rainbow_colors[i_t],label='t=%.2gms' %(time_crop[i_t]));
+	ax[1,0].plot(np.sort(list(full_saved_file_dict['power_rad_excit'].all()['radial_time_sum']['intervals'])*2)[1:-1],np.array([(np.array(full_saved_file_dict['power_rad_excit'].all()['radial_time_sum']['prob'])/np.diff(full_saved_file_dict['power_rad_excit'].all()['radial_time_sum']['intervals'])).tolist()]*2).T.flatten(),'--',color='k',label='sum convolution');
+	ax[1,0].semilogx()
+	ax[1,0].semilogy()
+	ax[1,0].legend(loc='best', fontsize='x-small',ncol=2)
+	ax[1,0].grid()
+	ax[1,0].set_xlim(left=1e-1)#,right=5e4)
+	# ax[1,0].set_ylim(bottom=1e-15)
+	ax[1,0].set_xlabel(r'energy $[ W s]$')
+	ax[1,0].set_ylabel('PDF [au/J]')
+
+	# ax[1,0].grid()
+	plt.savefig('/home/ffederic/work/Collaboratory/Bayesian_example_1'+ ''+ '.png', bbox_inches='tight')
+	plt.close()
+
+	merge_ID_target = 95
+	path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
+	full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/'+type_of_analysis+'/bayesian_results3'+'.npz')
+	full_saved_file_dict.allow_pickle = True
+	most_likely_power_rad_excit = full_saved_file_dict['power_rad_excit'].all()['full']['most_likely']
+	most_likely_power_rad_rec_bremm = full_saved_file_dict['power_rad_rec_bremm'].all()['full']['most_likely']
+	most_likely_power_rad_mol = full_saved_file_dict['power_rad_mol'].all()['full']['most_likely']
+	r_crop = full_saved_file_dict['miscellaneous'].all()['coord_info']['r_crop']
+	time_crop = full_saved_file_dict['miscellaneous'].all()['coord_info']['time_crop']
+	conventional_start_pulse = full_saved_file_dict['miscellaneous'].all()['conventional_start_pulse']
+	conventional_end_pulse = full_saved_file_dict['miscellaneous'].all()['conventional_end_pulse']
+
+	dx = np.mean(np.diff(r_crop))
+	dt = np.mean(np.diff(time_crop))
+	temp_r, temp_t = np.meshgrid([*r_crop-dx/2,r_crop.max()+dx/2], [*time_crop-dt/2,time_crop.max()+dt/2])
+	pre_title = 'merge'+str(merge_ID_target)+'\n'
+
+	def make_plot_type_1(most_likely_something,label,label_units,figure_index,ext_vmin=0.1,logaritmic=True):
+		plt.figure(figsize=(8, 5));
+		if logaritmic:
+			temp = np.nanmax([np.zeros_like(most_likely_something),most_likely_something],axis=0)
+			if np.nanmax(temp)<=0:
+				temp = np.nanmax([np.ones_like(most_likely_something)*1e-20,most_likely_something],axis=0)
+			plt.pcolor(temp_t, temp_r*1e3, temp,cmap='rainbow',vmin=max(max(ext_vmin,np.nanmin(temp)),np.nanmax(temp)*1e-6), norm=LogNorm());
+		else:
+			plt.pcolor(temp_t, temp_r*1e3, most_likely_something,cmap='rainbow',vmin=max(max(ext_vmin,np.nanmin(most_likely_something)),np.nanmax(most_likely_something)*1e-6));
+		plt.colorbar(orientation="horizontal").set_label(label_units)  # ;plt.pause(0.01)
+		plt.axes().set_aspect(20*1e-3)
+		plt.xlabel('time [ms]')
+		plt.ylabel('radial location [mm]      ')
+		plt.xlim(left=time_crop[conventional_start_pulse]-dt/2,right=time_crop[conventional_end_pulse]+dt/2)
+		plt.title(pre_title+'Most likely values of '+label)
+		figure_index += 1
+		plt.savefig('/home/ffederic/work/Collaboratory/'+'_merge'+str(merge_ID_target)+'_global_fit_example' + str(
+			figure_index+1) + '.eps', bbox_inches='tight')
+		plt.close()
+		return figure_index
+
+	figure_index=0
+	make_plot_type_1(most_likely_power_rad_excit,'power_rad_excit','power [W/m3]',figure_index)
+	figure_index=1
+	make_plot_type_1(most_likely_power_rad_rec_bremm,'power_rad_rec_bremm','power [W/m3]',figure_index)
+	figure_index=2
+	make_plot_type_1(most_likely_power_rad_mol,'power_rad_mol','power [W/m3]',figure_index)
+
+	# evolution in time of a pulse
+	most_likely_power_rad_excit_r = full_saved_file_dict['power_rad_excit'].all()['radial_sum']['most_likely']
+	most_likely_power_rad_rec_bremm_r = full_saved_file_dict['power_rad_rec_bremm'].all()['radial_sum']['most_likely']
+	most_likely_power_rad_mol_r = full_saved_file_dict['power_rad_mol'].all()['radial_sum']['most_likely']
+	most_likely_power_rec_neutral_r = full_saved_file_dict['power_rec_neutral'].all()['radial_sum']['most_likely']
+	most_likely_power_via_ionisation_r = full_saved_file_dict['power_via_ionisation'].all()['radial_sum']['most_likely']
+	most_likely_power_via_recombination_r = -full_saved_file_dict['power_via_recombination'].all()['radial_sum']['most_likely']
+	most_likely_power_potential_mol_plasma_heating_r = -full_saved_file_dict['power_potential_mol_plasma_heating'].all()['radial_sum']['most_likely']
+	most_likely_power_potential_mol_plasma_cooling_r = full_saved_file_dict['power_potential_mol_plasma_cooling'].all()['radial_sum']['most_likely']
+	most_likely_all_atomic_H2_dissociation_r = full_saved_file_dict['all_atomic_H2_dissociation'].all()['radial_sum']['most_likely']
+
+	most_likely_power_potential_mol_r = full_saved_file_dict['power_potential_mol'].all()['radial_sum']['most_likely']
+	most_likely_tot_rad_power_r = full_saved_file_dict['tot_rad_power'].all()['radial_sum']['most_likely']
+	actual_values_tot_rad_power_r_up = full_saved_file_dict['tot_rad_power'].all()['radial_sum']['most_likely_sigma_up']
+	most_likely_total_removed_power_r = full_saved_file_dict['total_removed_power'].all()['radial_sum']['most_likely']
+	actual_values_total_removed_power_r_up = full_saved_file_dict['total_removed_power'].all()['radial_sum']['most_likely_sigma_up']
+
+	power_pulse_shape_crop = full_saved_file_dict['input_power'].all()['power']['most_likely']
+	power_pulse_shape_std_crop = full_saved_file_dict['input_power'].all()['power']['sigma']
+	time_source_power_crop = full_saved_file_dict['input_power'].all()['power']['time']
+
+	# power_pulse_shape_crop = interpolated_power_pulse_shape(time_crop)
+	# power_pulse_shape_std_crop = interpolated_power_pulse_shape_std(time_crop)
+	# time_source_power_crop = cp.deepcopy(time_crop)
+	conventional_start_pulse = full_saved_file_dict['miscellaneous'].all()['conventional_start_pulse']
+	conventional_end_pulse = full_saved_file_dict['miscellaneous'].all()['conventional_end_pulse']
+
+	# comparison of what generates the radiation
+	plt.figure(figsize=(8, 5));
+	temp = most_likely_power_rad_excit_r + most_likely_power_rad_rec_bremm_r + most_likely_power_rad_mol_r + most_likely_power_rec_neutral_r + most_likely_power_via_ionisation_r + most_likely_power_via_recombination_r + most_likely_power_potential_mol_plasma_heating_r + most_likely_power_potential_mol_plasma_cooling_r + most_likely_all_atomic_H2_dissociation_r
+	labels_cool = ['excitation', 'rad\nrec + bremsstrahlung', 'radiated molecular', 'neutral via\nrecombination', 'potential energy\n(ionisation)','potential energy\n(molecules cooling)']
+	labels_heat = ['potential energy\n(recombination)','potential energy\n(molecules heating)']
+	# plt.stackplot(time_crop,most_likely_power_via_ionisation_r/temp,most_likely_power_via_recombination_r/temp,most_likely_power_rad_mol_r/temp,most_likely_power_rad_excit_r/temp,most_likely_power_via_brem_r/temp,most_likely_power_rec_neutral_r/temp,labels=labels)
+	a1=plt.stackplot(time_crop,most_likely_power_rad_excit_r*1e-3 , most_likely_power_rad_rec_bremm_r*1e-3 , most_likely_power_rad_mol_r*1e-3 , most_likely_power_rec_neutral_r*1e-3 , most_likely_power_via_ionisation_r*1e-3 , most_likely_power_potential_mol_plasma_cooling_r*1e-3,labels=labels_cool)
+	plt.stackplot(time_crop, most_likely_power_via_recombination_r*1e-3 , most_likely_power_potential_mol_plasma_heating_r*1e-3 ,labels=labels_heat,colors=['pink',a1[-1].get_facecolors()[0]])
+	plt.errorbar(time_crop,most_likely_total_removed_power_r*1e-3,yerr=actual_values_total_removed_power_r_up*1e-3-most_likely_total_removed_power_r*1e-3,ls='--',label='volume\nsinks-sources',color='m')
+	plt.errorbar(time_crop,most_likely_tot_rad_power_r*1e-3,yerr=actual_values_tot_rad_power_r_up*1e-3-most_likely_tot_rad_power_r*1e-3,ls='--',label='removed from\nplasma',color='y')
+
+	plt.errorbar(time_source_power_crop,power_pulse_shape_crop*1e-3,yerr=power_pulse_shape_std_crop*1e-3,ls='--',label=r'$P_{in}$',color='k')
+	# plt.semilogy()
+	# plt.ylim(bottom=1e0,top=1e6)
+	# plt.plot([time_crop[conventional_start_pulse]]*2,[0,power_pulse_shape_crop.max()],'k--',label='conventional start/end pulse')
+	# plt.plot([time_crop[conventional_end_pulse-1]]*2,[0,power_pulse_shape_crop.max()],'k--')
+	plt.legend(loc='upper right', fontsize='x-small')
+	# plt.ylim(bottom=0,top=max(np.max(most_likely_power_via_ionisation_r_up),np.max(power_pulse_shape_crop)))
+	# plt.ylim(bottom=1e-1)
+	plt.xlabel('time from beginning of pulse [ms]')
+	# plt.ylabel('fraction of the total power removed from plasma [au]')
+	plt.ylabel('Power loss [kW]')
+	plt.title(pre_title+'Importance of the power loss mechanism in time')
+	plt.grid()
+	plt.ylim(top=175,bottom=-75)
+	plt.xlim(left=time_crop[conventional_start_pulse]-dt/2,right=time_crop[conventional_end_pulse]+dt/2)
+	# plt.pause(0.01)
+	figure_index += 1
+	plt.savefig('/home/ffederic/work/Collaboratory/'+'_merge'+str(merge_ID_target)+'_global_fit_example' + str(
+		figure_index+1) + '.png', bbox_inches='tight')
+	plt.close('all')
+
+	# let's look at the particle balance
+	J_to_eV = 6.242e18	# eV / J
+	ionisation_particle_number = np.array(power_via_ionisation)/(13.6/J_to_eV)*1e-20
+	ionisation_particle_number_sigma = np.array(power_via_ionisation_sigma)/(13.6/J_to_eV)*1e-20
+	recombination_particle_number = np.array(power_via_recombination)/(13.6/J_to_eV)*1e-20
+	recombination_particle_number_sigma = np.array(power_via_recombination_sigma)/(13.6/J_to_eV)*1e-20
+
+	MAR = np.array(all_MAR_from_Hm) + all_MAR_from_H2p + all_MAR_from_H2p_Hm
+	MAR_sigma = (np.array(all_MAR_from_Hm_sigma)**2 + np.array(all_MAR_from_H2p_sigma)**2 + np.array(all_MAR_from_H2p_Hm_sigma)**2)**0.5
+	MAD = np.array(all_MAD_from_Hm) + all_MAD_from_H2p + all_MAD_from_H2p_Hm
+	MAD_sigma = (np.array(all_MAD_from_Hm_sigma)**2 + np.array(all_MAD_from_H2p_sigma)**2 + np.array(all_MAD_from_H2p_Hm_sigma)**2)**0.5
+	MAI = np.array(all_MAI_from_Hm) + all_MAI_from_H2p + all_MAI_from_H2p_Hm
+	MAI_sigma = (np.array(all_MAI_from_Hm_sigma)**2 + np.array(all_MAI_from_H2p_sigma)**2 + np.array(all_MAI_from_H2p_Hm_sigma)**2)**0.5
+	other_MAD_H2 = np.array(H2_destruction_RR) - (MAD + np.array(all_atomic_H2_dissociation))
+	other_MAD_H2_sigma = (np.array(H2_destruction_RR_sigma)**2 + (MAD_sigma**2 + np.array(all_atomic_H2_dissociation_sigma)**2))**0.5
+	other_MAD_H = np.array(H_creation_RR) - (2*MAD + 2*np.array(all_atomic_H2_dissociation) + np.array(recombination_particle_number))
+	other_MAD_H_sigma = (np.array(H_creation_RR_sigma)**2 + ((2*MAD_sigma)**2 + (2*np.array(all_atomic_H2_dissociation_sigma))**2 + np.array(recombination_particle_number_sigma)**2))**0.5
+	all_MAD_H = np.array(H_creation_RR) - (2*np.array(all_atomic_H2_dissociation) + np.array(recombination_particle_number))
+	all_MAD_H_sigma = (np.array(H_creation_RR_sigma)**2 + ((2*np.array(all_atomic_H2_dissociation_sigma))**2 + np.array(recombination_particle_number_sigma)**2))**0.5
+
+	target_chamber_length = 0.351+0.4	# mm distance skimmer to OES/TS + OES/TS to target
+	boltzmann_constant_J = 1.380649e-23	# J/K
+	H2_target_before_pulse = np.pi*(0.25**2)*target_chamber_length*np.array(target_chamber_pressure)/(273*boltzmann_constant_J)
+
+	fig, ax = plt.subplots( 2,1,figsize=(8, 9), squeeze=False, sharex=False)
+	fig.suptitle('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ\n ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
+	# ax[0,0].errorbar(target_chamber_pressure,MAI*10,yerr=MAI_sigma*10,ls='-',label='MAI')
+	# ax[0,0].plot(target_chamber_pressure,np.sum(np.array(plasma_inflow_upstream_homogeneous_mach_number)[:,conventional_start_pulse:conventional_end_pulse],axis=1)*dt/1000*1e-20*10,linewidth=3,color=color[0],label=r'$(nv)_{H^+,in}$')
+	# ax[0,0].errorbar(target_chamber_pressure,ionisation_particle_number*10,yerr=ionisation_particle_number_sigma*10,ls='-',label='ionisation')
+	# ax[0,0].errorbar(target_chamber_pressure,-recombination_particle_number*10,yerr=recombination_particle_number_sigma*10,ls='-',label='recombination')
+	# ax[0,0].errorbar(target_chamber_pressure,-MAR*10,yerr=MAR_sigma*10,ls='-',label='MAR')
+	labels_ionisation = [r'$(nv)_{H^+,in}$','MAI','ionisation']
+	labels_recombination = ['MAR','EIR']
+	ax[0,0].stackplot(target_chamber_pressure,np.array(plasma_inflow_upstream_homogeneous_mach_number)*1e-20*10,MAI*10,ionisation_particle_number*10,labels=labels_ionisation)
+	ax[0,0].stackplot(target_chamber_pressure, -MAR*10,-recombination_particle_number*10, labels=labels_recombination)
+
+	ax[0,0].errorbar(target_chamber_pressure,(-np.array(Hp_destruction_RR) + np.array(Hp_creation_RR) + np.array(plasma_inflow_upstream_homogeneous_mach_number)*1e-20)*10,yerr=((np.array(Hp_destruction_RR_sigma)**2+np.array(Hp_creation_RR_sigma)**2)**0.5),ls='-',label=r'net $H^+$',color='y')
+	ax[0,0].errorbar(target_chamber_pressure,(-np.array(e_destruction_RR) + np.array(e_creation_RR) + np.array(plasma_inflow_upstream_homogeneous_mach_number)*1e-20)*10,yerr=((np.array(e_destruction_RR_sigma)**2+np.array(e_creation_RR_sigma)**2)**0.5)*10,ls='-',label=r'net $e^-$',color='m')
+
+	ax[0,0].legend(loc='upper right', fontsize='small',framealpha=0.5,ncol=2)
+	# ax[0,0].set_ylim(top=80,bottom=-10)
+	ax[0,0].grid()
+	ax[0,0].set_ylabel(r'Particles [$10^{19}$#]')
+	# ax[0,0].semilogx()
+	ax[0,0].set_xlabel('Target chamber pressure [Pa]')
+
+	# the next is x2 because for every reaction 2 hydrogen atoms are created
+	ax[1,0].errorbar(target_chamber_pressure,2*np.array(all_atomic_H2_dissociation)*10,yerr=2*np.array(all_atomic_H2_dissociation_sigma)*10,ls='-',label=r'$e^- + H_2(v) \rightarrow e^- + H + H$')
+	ax[1,0].errorbar(target_chamber_pressure,2*MAD*10,yerr=2*MAD_sigma*10,ls='-',label='MAD')
+	ax[1,0].plot(target_chamber_pressure,2*np.array(H2_target_inflow)*(conventional_end_pulse-conventional_start_pulse)*dt/1000*1e-20*10,label=r'$2H_2$ target inflow')
+	ax[1,0].plot(target_chamber_pressure,2*H2_target_before_pulse*1e-20*10,label=r'$2H_2$ target chamber before pulse')
+	ax[1,0].errorbar(target_chamber_pressure,-ionisation_particle_number*10,yerr=ionisation_particle_number_sigma*10,ls='-',label='ionisation')
+	ax[1,0].errorbar(target_chamber_pressure,recombination_particle_number*10,yerr=recombination_particle_number_sigma*10,ls='-',label='recombination')
+	ax[1,0].errorbar(target_chamber_pressure,other_MAD_H*10,yerr=other_MAD_H_sigma*10,ls='-',label='other_MAD_H')
+	# ax[1,0].semilogy()
+	# ax[1,0].plot(target_chamber_pressure,delivered_pulse_energy,linewidth=3,color=color[0],label=r'$E_{upstream}$')
+	# ax[1,0].errorbar(target_chamber_pressure,power_potential,yerr=np.array(power_potential_sigma),color=color[2],capsize=5,label=r'$E_{potential}$')
+	# ax[1,0].errorbar(target_chamber_pressure,tot_rad_power,yerr=np.array(tot_rad_power_sigma),linewidth=3,color=color[1],capsize=5,label=r'$E_{radiated}$')
+	# ax[1,0].errorbar(target_chamber_pressure,power_rec_neutral,yerr=np.array(power_rec_neutral_sigma),capsize=5,color=color[3],label=r'$E_{neutral \: from \: recombination}$')
+	# ax[1,0].errorbar(target_chamber_pressure,power_via_ionisation,yerr=np.array(power_via_ionisation_sigma),capsize=5,color=color[4],linestyle='--',label=r'$E_{ionisation \: (only \: potential)}$')
+	# # ax[1,0].errorbar(target_chamber_pressure,power_rad_excit,yerr=np.array(power_rad_excit_sigma),capsize=5,color=color[14],label=r'$E_{direct excitation}$')
+	# ax[1,0].errorbar(target_chamber_pressure,-np.array(power_via_recombination),yerr=np.array(power_via_recombination_sigma),capsize=5,color=color[5],linestyle='--',label=r'$E_{recombination \: (only \: potential)}$')
+	# # ax[1,0].errorbar(target_chamber_pressure,net_recombination,yerr=np.array(net_recombination_sigma),capsize=5,color=color[4],label=r'$E_{recombination \: (radiated \: & \: bremm \: - \: heating)}$')
+	ax[1,0].legend(loc=0, fontsize='small',framealpha=0.5)
+	# # ax[1,0].set_ylim(bottom=-1)
+	# ax[1,0].grid()
+	# ax[1,0].set_ylabel('Energy [J]')
+	# ax[1,0].set_xlabel('Target chamber pressure [Pa]')
+	plt.savefig('/home/ffederic/work/Collaboratory/Bayesian_strong_6'+ ''+ '.png', bbox_inches='tight')
+	plt.close()
+
+
+	fig, ax = plt.subplots( 2,1,figsize=(8, 7), squeeze=False,sharex=True, gridspec_kw={'height_ratios': [1, 2]})
+	fig.suptitle('Pressure scan\nmagnetic_field %.3gT,target/OES distance %.3gmm,ELM energy %.3gJ\n ' %(magnetic_field[0],target_OES_distance[0],CB_pulse_energy[0]))
+
+	labels_pos = ['net molecular',r'$e^- + H_2(v) \rightarrow e^- + H + H$','EIR']
+	labels_neg = ['ionisation']
+	ax[1,0].stackplot(target_chamber_pressure,all_MAD_H*10,2*np.array(all_atomic_H2_dissociation)*10,recombination_particle_number*10 ,labels=labels_pos)
+	ax[1,0].stackplot(target_chamber_pressure, -ionisation_particle_number*10, labels=labels_neg)
+	ax[0,0].stackplot(target_chamber_pressure,all_MAD_H*10,2*np.array(all_atomic_H2_dissociation)*10,recombination_particle_number*10 ,labels=labels_pos)
+	ax[0,0].stackplot(target_chamber_pressure, -ionisation_particle_number*10, labels=labels_neg)
+
+
+	# the next is x2 because for every reaction 2 hydrogen atoms are created
+	# ax[0,0].errorbar(target_chamber_pressure,2*np.array(all_atomic_H2_dissociation)*10,yerr=2*np.array(all_atomic_H2_dissociation_sigma)*10,ls='-',label=r'$e^- + H_2(v) \rightarrow e^- + H + H$')
+	ax[0,0].errorbar(target_chamber_pressure,2*MAD*10,yerr=2*MAD_sigma*10,ls='-',label='MAD',color='y')
+	ax[0,0].plot(target_chamber_pressure,2*np.array(H2_target_inflow)*(conventional_end_pulse-conventional_start_pulse)*dt/1000*1e-20*10,label=r'$2 \cdot H_2$ target inflow',color='m')
+	ax[0,0].plot(target_chamber_pressure,2*H2_target_before_pulse*1e-20*10,label=r'$2 \cdot H_2$ target chamber before pulse')
+	# ax[0,0].errorbar(target_chamber_pressure,-ionisation_particle_number*10,yerr=ionisation_particle_number_sigma*10,ls='-',label='ionisation')
+	# ax[0,0].errorbar(target_chamber_pressure,-MAI*10,yerr=MAI_sigma*10,ls='-',label='MAI')
+	# ax[0,0].errorbar(target_chamber_pressure,recombination_particle_number*10,yerr=recombination_particle_number_sigma*10,ls='-',label='recombination')
+	# ax[0,0].errorbar(target_chamber_pressure,all_MAD_H*10,yerr=all_MAD_H_sigma*10,ls='-',label='all_MAD_H')
+	ax[0,0].legend(loc=0, fontsize='small',framealpha=0.5,ncol=2)
+	# ax[1,0].errorbar(target_chamber_pressure,2*np.array(all_atomic_H2_dissociation)*10,yerr=2*np.array(all_atomic_H2_dissociation_sigma)*10,ls='-',label=r'$e^- + H_2(v) \rightarrow e^- + H + H$')
+	ax[1,0].errorbar(target_chamber_pressure,2*MAD*10,yerr=2*MAD_sigma*10,ls='-',label='MAD',color='y')
+	ax[1,0].plot(target_chamber_pressure,2*np.array(H2_target_inflow)*(conventional_end_pulse-conventional_start_pulse)*dt/1000*1e-20*10,label=r'$2 \cdot H_2$ target inflow',color='m')
+	ax[1,0].plot(target_chamber_pressure,2*H2_target_before_pulse*1e-20*10,label=r'$ \cdot 2H_2$ target chamber before pulse')
+	# ax[1,0].errorbar(target_chamber_pressure,-ionisation_particle_number*10,yerr=ionisation_particle_number_sigma*10,ls='-',label='ionisation')
+	# ax[1,0].errorbar(target_chamber_pressure,-MAI*10,yerr=MAI_sigma*10,ls='-',label='MAI')
+	# ax[1,0].errorbar(target_chamber_pressure,recombination_particle_number*10,yerr=recombination_particle_number_sigma*10,ls='-',label='recombination')
+	# ax[1,0].errorbar(target_chamber_pressure,all_MAD_H*10,yerr=all_MAD_H_sigma*10,ls='-',label='all_MAD_H')
+	# ax[1,0].legend(loc=0, fontsize='small',framealpha=0.5)
+	# # ax[1,0].set_ylim(bottom=-1)
+
+	ax[0,0].grid()
+	ax[1,0].grid()
+	ax[1,0].set_ylabel(r'Particles [$10^{19}$#]')
+	# ax[0,0].semilogx()
+	ax[1,0].set_xlabel('Target chamber pressure [Pa]')
+
+
+	ax[0,0].set_ylim(bottom=10)
+	ax[1,0].set_ylim(top=10,bottom=-2)
+
+	ax[0,0].spines['bottom'].set_visible(False)
+	ax[1,0].spines['top'].set_visible(False)
+	ax[0,0].xaxis.tick_top()
+	ax[0,0].tick_params(labeltop=False)  # don't put tick labels at the top
+	ax[1,0].xaxis.tick_bottom()
+
+	dx = .01  # how big to make the diagonal lines in axes coordinates
+	dy = .02  # how big to make the diagonal lines in axes coordinates
+	# arguments to pass to plot, just so we don't keep repeating them
+	kwargs = dict(transform=ax[0,0].transAxes, color='k', clip_on=False)
+	ax[0,0].plot((-dx, +dx), (-dy, +dy), **kwargs)        # top-left diagonal
+	ax[0,0].plot((1 - dx, 1 + dx), (-dy, +dy), **kwargs)  # top-right diagonal
+
+	d = .01  # how big to make the diagonal lines in axes coordinates
+	kwargs.update(transform=ax[1,0].transAxes)  # switch to the bottom axes
+	ax[1,0].plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+	ax[1,0].plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)
+	plt.subplots_adjust(wspace=0, hspace=0.02)
+	plt.savefig('/home/ffederic/work/Collaboratory/Bayesian_strong_7'+ ''+ '.png', bbox_inches='tight')
+	plt.close()
+
+
+	# I want to calculate, for 1 example Te, ne, the radiative losses per 1 molecular reaction with Yacora
+	Te=2	#ev
+	ne=10e20	# #/m3
+	nHm = 1e18
+	nH2p = 1e18
+	nH2 = 1e19
+	nH = 1e20
+	nH2p_ne_values = nH2p/ne
+	nHm_ne_values = nHm/ne
+	nHp_ne_values = 1
+	nH2_ne_values = nH2/ne
+	total_wavelengths = np.unique(excited_states_From_Hn_with_Hp)
+	T_Hm_values = ((np.exp(TH2_fit_from_simulations(np.log(Te),np.log(ne)))+2.2))/eV_to_K	# K
+	T_H2p_values = (np.exp(TH2_fit_from_simulations(np.log(Te),np.log(ne))))/eV_to_K	# K
+	T_Hp_values = Te/eV_to_K	# K
+	T_H2_values = (np.exp(TH2_fit_from_simulations(np.log(Te),np.log(ne))))/eV_to_K	# K
+	T_H_values = np.exp(TH_fit_from_simulations(np.log(Te)))/eV_to_K	# K
+
+	coeff_1 = From_H2p_pop_coeff_full_extra(np.array([Te,ne]).T,total_wavelengths)	# (# / m^3) / (# / m^3)**2
+
+	coeff_2 = From_H2_pop_coeff_full_extra(np.array([Te,ne]).T,total_wavelengths)	# (# / m^3) / (# / m^3)**2
+
+	coeff_4_universal = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te,T_H2p_values,T_Hm_values,ne]).T,total_wavelengths)	# I removed nH2+ as the coefficient does not depent of it
+	coeff_4 = coeff_4_universal*nH2p_ne_values*ne/1e15
+	coeff_4 = np.sum((coeff_4 * multiplicative_factor_full_full),axis=-1)*(ne**2)
+
+	coeff_3_universal = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te,T_Hm_values,ne]).T ,total_wavelengths)	# I removed TH+ as I assume it is =Te and it's independent on nH+
+	coeff_3 = coeff_3_universal*nHp_ne_values
+	coeff_3 = np.sum((coeff_3 * multiplicative_factor_full_full),axis=-1) *(ne**2)
+
+	power_rad_Hm_H2p = nHm_ne_values*( coeff_4 )
+	power_rad_Hm_Hp = nHm_ne_values*( coeff_3 )
+
+	power_rad_H2p = np.sum((coeff_1 * multiplicative_factor_full_full),axis=-1) * (ne**2)	#  	# (# / m^3) / (# / m^3)**2 * W * m-3 * m-3 = W/m3
+	power_rad_H2p = (power_rad_H2p * nH2p_ne_values)	# H, Hm, H2, H2p, ne, Te	# W/m3
+
+	power_rad_H2 = np.sum((coeff_2 * multiplicative_factor_full_full),axis=-1) * (ne**2)	# (# / m^3) / (# / m^3)**2 * W * (# / m^3)**2 = W/m3
+	power_rad_H2 = (power_rad_H2 * nH2_ne_values)	# H, Hm, H2, H2p, ne, Te	# W/m3
+
+	power_rad_Hm_H2p *= J_to_eV	# eV
+	power_rad_Hm_Hp *= J_to_eV	# eV
+	power_rad_H2p *= J_to_eV	# eV
+	power_rad_H2 *= J_to_eV	# eV
+
+	ne_small=ne * 1e-20	# #/m3*1e-20
+
+	Hp_Hm__Hex_H = nHm_ne_values*RR_Hp_Hm__Hex_H(Te,T_Hp_values,T_Hm_values,ne_small,nHp_ne_values)
+	Hp_Hm__Hex_H =  np.max([Hp_Hm__Hex_H,nHm_ne_values*nHp_ne_values*RR_Hp_Hm__H_H__r(Te,ne_small)],axis=0)
+
+	H2p_Hm__Hex_H2 = nHm_ne_values*RR_H2p_Hm__Hex_H2(np.array([Te]),np.array([T_Hp_values]),np.array([T_Hm_values]),np.array([T_H2p_values]),np.array([ne_small]),np.array([nH2p_ne_values]))[0]
+	H2p_Hm__H_H2 = nHm_ne_values*nH2p_ne_values*RR_H2p_Hm__H_H2__r(Te,np.unique(T_H2p_values),np.unique(T_Hm_values),ne_small)[0]
+	H2p_Hm__Hex_H2 = np.max([H2p_Hm__Hex_H2,H2p_Hm__H_H2],axis=0)
+
+	e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_values*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne_small)[0]
+	e_H2p__XXX__e_Hp_H = nH2p_ne_values*RR_e_H2p__XXX__e_Hp_H__r(Te,ne_small)
+	e_H2p__H_H = nH2p_ne_values*RR_e_H2p__H_H__r(Te,ne_small)
+	ratio = e_H2p__XXX__e_Hp_H/(e_H2p__XXX__e_Hp_H+e_H2p__H_H)
+	e_H2p__XXX__e_Hp_H = np.max([e_H2p__XXX__e_Hp_H,e_H2p__Hex_H__or__Hex_Hp_e*ratio],axis=0)
+	e_H2p__H_H = np.max([e_H2p__H_H,e_H2p__Hex_H__or__Hex_Hp_e*(1-ratio)],axis=0)
+
+	e_H2__e_Hex_H = nH2_ne_values*RR_e_H2__e_Hex_H__r(Te,ne_small)[0]
+	e_H2__e_Hex_H = np.max([e_H2__e_Hex_H,nH2_ne_values*RR_e_H2v__e_H_H__r(Te,ne_small)],axis=0)
+
+	Hp_Hm__Hex_H *= 1e20	# m^-3/s
+	H2p_Hm__Hex_H2 *= 1e20	# m^-3/s
+	e_H2p__H_H *= 1e20	# m^-3/s
+	e_H2p__XXX__e_Hp_H *= 1e20	# m^-3/s
+	e_H2__e_Hex_H *= 1e20	# m^-3/s
+
+	print('power_rad_Hm_H2p/H2p_Hm__Hex_H2')
+	print(power_rad_Hm_H2p/H2p_Hm__Hex_H2)
+	print('power_rad_Hm_Hp/Hp_Hm__Hex_H')
+	print(power_rad_Hm_Hp/Hp_Hm__Hex_H)
+	print('power_rad_H2p/(e_H2p__H_H + e_H2p__XXX__e_Hp_H)')
+	print(power_rad_H2p/(e_H2p__H_H + e_H2p__XXX__e_Hp_H))
+	print('power_rad_H2/e_H2__e_Hex_H')
+	print(power_rad_H2/e_H2__e_Hex_H)
+
 
 else:	# plots not for the paper
 	plt.figure(figsize=(10, 4.5))
@@ -1009,7 +1610,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 	full_saved_file_dict = np.load(path_where_to_save_everything+'/input_data'+'.npz')
 	full_saved_file_dict.allow_pickle = True
 	if merge_ID_target != 88:
-		target_chamber_pressure.append(np.float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
+		target_chamber_pressure.append(float(results_summary.loc[merge_ID_target,['p_n [Pa]']]))
 		time_source_power.append(full_saved_file_dict['input_power'].all()['TS']['time_source_power'])
 		power_pulse_shape.append(full_saved_file_dict['input_power'].all()['TS']['power_pulse_shape'])
 		temp = energy_flow_from_TS_at_sound_speed(merge_ID_target,interpolated_TS=False)
@@ -1338,7 +1939,7 @@ for merge_ID_target in merge_ID_target_multipulse:
 			j_specific_energy_density_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['energy_fit_fix_duration']['pulse_energy_density_sigma'])
 			j_specific_area_of_interest_IR.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit'])
 			j_specific_area_of_interest_IR_sigma.append(full_saved_file_dict['average_pulse_fitted_data'].all()['area_of_interest_1D_profile_fit_sigma'])
-			j_delivered_pulse_energy.append(np.float(results_summary.loc[merge_ID_target,['Delivered energy [J]']]))
+			j_delivered_pulse_energy.append(float(results_summary.loc[merge_ID_target,['Delivered energy [J]']]))
 
 			path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
 			full_saved_file_dict = np.load(path_where_to_save_everything+'/Yacora_Bayesian/absolute/lines_fitted5/fit_bounds_from_sims/spatial_factor_1/time_shift_factor_0/only_Hm_H2_H2p_mol_lim/bayesian_results3'+'.npz')

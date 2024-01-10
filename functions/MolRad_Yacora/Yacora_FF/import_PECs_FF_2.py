@@ -983,9 +983,14 @@ else:	# this is with the optimised range of parameters, getting rid of unnecesar
 	T_Hm_From_Hn_with_H2p = PEC_better_range_From_Hn_with_H2p[:, :, 2].T.flatten()
 	T_H_From_Hn_with_H2p = 8000	# K
 	n_e_From_Hn_with_H2p = PEC_better_range_From_Hn_with_H2p[:, :, 3].T.flatten()
-	n_H2p_From_Hn_with_H2p = 1e15	# # m^-3
+	# n_H2p_From_Hn_with_H2p = 1e15	# # m^-3
+	# wrong! as per guidance:
+	# In these cases, you can choose if you want to insert a separate value for the density or use the electron density multiply for a factor at your choice.
+	# the factor chosen was 1 (default)!!
+	n_H2p_From_Hn_with_H2p = 0	# it is tqual to ne
 	n_Hm_From_Hn_with_H2p = 1e15	# # m^-3
 	PEC_val_From_Hn_with_H2p = PEC_better_range_From_Hn_with_H2p[:, :, 4].T.flatten()
+	PEC_val_From_Hn_with_H2p = PEC_val_From_Hn_with_H2p*(1e15/n_e_From_Hn_with_H2p)
 
 	excited_states_From_Hn_with_H2p = len(PEC_better_range_From_Hn_with_H2p)
 	excited_states_From_Hn_with_H2p = np.linspace(2, 2 + excited_states_From_Hn_with_H2p - 1,excited_states_From_Hn_with_H2p).astype('int')
@@ -996,9 +1001,14 @@ else:	# this is with the optimised range of parameters, getting rid of unnecesar
 	T_Hm_From_Hn_with_H2p_lowT = PEC_better_range_From_Hn_with_H2p_lowT[:, :, 2].T.flatten()
 	T_H_From_Hn_with_H2p_lowT = 8000	# K
 	n_e_From_Hn_with_H2p_lowT = PEC_better_range_From_Hn_with_H2p_lowT[:,:,3].T.flatten()
-	n_H2p_From_Hn_with_H2p_lowT = 1e15	# # m^-3
+	# n_H2p_From_Hn_with_H2p_lowT = 1e15	# # m^-3
+	# wrong! as per guidance:
+	# In these cases, you can choose if you want to insert a separate value for the density or use the electron density multiply for a factor at your choice.
+	# the factor chosen was 1 (default)!!
+	n_H2p_From_Hn_with_H2p_lowT = 0	# it is tqual to ne
 	n_Hm_From_Hn_with_H2p_lowT = 1e15	# # m^-3
 	PEC_val_From_Hn_with_H2p_lowT = PEC_better_range_From_Hn_with_H2p_lowT[:,:,4].T.flatten()
+	PEC_val_From_Hn_with_H2p_lowT = PEC_val_From_Hn_with_H2p_lowT*(1e15/n_e_From_Hn_with_H2p_lowT)
 
 	excited_states_From_Hn_with_H2p_lowT = len(PEC_better_range_From_Hn_with_H2p_lowT)
 	excited_states_From_Hn_with_H2p_lowT = np.linspace(2, 2 + excited_states_From_Hn_with_H2p_lowT - 1, excited_states_From_Hn_with_H2p_lowT).astype('int')
@@ -1875,40 +1885,47 @@ def RR_H2p_Hm__H_2_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,T_Hm
 		T_Hm = np.array([T_Hm])
 		if len(T_H2p)==1 and len(T_Hm)==1:
 			reduced_mass = (2*hydrogen_mass)*hydrogen_mass/((2*hydrogen_mass)+hydrogen_mass)
-			if False:	# this method SHOULD not be correct because does not account for 3d effects
-				H2p_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_H2p),50))).T*(2*boltzmann_constant_J*T_H2p.T/(2*hydrogen_mass))**0.5).T
-				H2p_velocity_x = np.sort(H2p_velocity.flatten().tolist() + (-H2p_velocity).flatten().tolist())/(3**0.5)	# in only one direction
-				H2p_velocity_PDF = (4*np.pi*(H2p_velocity.T)**2 * gauss( H2p_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T	# gauss = gauss(x, A, sig, x0)
-				H2p_velocity_PF = H2p_velocity_PDF.flatten()*np.array([(H2p_velocity.flatten()[1]-H2p_velocity.flatten()[0]),*np.diff(H2p_velocity.flatten())[1:]/2+np.diff(H2p_velocity.flatten())[:-1]/2,(H2p_velocity.flatten()[-1]-H2p_velocity.flatten()[-2])])
-				H2p_velocity_PF_x = np.array(np.flip(H2p_velocity_PF.flatten(),axis=0).tolist() + H2p_velocity_PF.flatten().tolist())/2
-				Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hm.T),50))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
-				Hm_velocity_x = np.sort(Hm_velocity.flatten().tolist() + (-Hm_velocity).flatten().tolist())/(3**0.5)	# in only one direction
-				Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
-				Hm_velocity_PF = Hm_velocity_PDF.flatten()*np.array([(Hm_velocity.flatten()[1]-Hm_velocity.flatten()[0]),*np.diff(Hm_velocity.flatten())[1:]/2+np.diff(Hm_velocity.flatten())[:-1]/2,(Hm_velocity.flatten()[-1]-Hm_velocity.flatten()[-2])])
-				Hm_velocity_PF_x = np.array(np.flip(Hm_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
-				relative_velocity_x = np.array([H2p_velocity_x.tolist()]*100) - np.array([Hm_velocity_x.tolist()]*100).T
-				relative_velocity_x = np.log(np.abs(relative_velocity_x).flatten()).astype(np.float32)
-				relative_velocity_x_log_max = relative_velocity_x.max()
-				relative_velocity_x = (relative_velocity_x/relative_velocity_x_log_max*(2**8-1)).astype(np.uint8)
-				# relative_velocity_x = (np.log(relative_velocity_x/(relative_velocity_x.max()))*(2**8-1)).astype(np.uint8)
-				relative_velocity_PF_x = (np.array([H2p_velocity_PF_x.tolist()]*100) * np.array([Hm_velocity_PF_x.tolist()]*100).T).flatten()
-				relative_velocity_PF_x2 = []
-				for value in np.unique(relative_velocity_x):
-					relative_velocity_PF_x2.append(np.sum(relative_velocity_PF_x[relative_velocity_x==value]))
-				relative_velocity_PF_x2 = np.array(relative_velocity_PF_x2)
-				relative_velocity_x2 = np.exp(np.unique(relative_velocity_x).astype(float)/(2**8-1)*relative_velocity_x_log_max)**2
-				relative_velocity = (np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)) + np.array([np.array([relative_velocity_x2.tolist()]*len(relative_velocity_x2)).T.tolist()]*len(relative_velocity_x2)) + np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)).T).flatten()**0.5
-				relative_velocity_PF = (np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)) * np.array([np.array([relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)).T.tolist()]*len(relative_velocity_PF_x2)) * np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)).T).flatten()
-				relative_velocity = np.log(relative_velocity)
-				relative_velocity_log_max = relative_velocity.max()
-				relative_velocity = (relative_velocity/relative_velocity_log_max*(2**8-1)).astype(np.uint8)
-				relative_velocity_PF2 = []
-				for value in np.unique(relative_velocity):
-					relative_velocity_PF2.append(np.sum(relative_velocity_PF[relative_velocity==value]))
-				relative_velocity_PF2 = np.array(relative_velocity_PF2)
-				relative_velocity_2 = np.exp(np.unique(relative_velocity/(2**8-1)).astype(float)*relative_velocity_log_max)
-				relative_velocity_PDF2 = relative_velocity_PF2/np.array([(relative_velocity_2.flatten()[1]-relative_velocity_2.flatten()[0]),*np.diff(relative_velocity_2.flatten())[1:]/2+np.diff(relative_velocity_2.flatten())[:-1]/2,(relative_velocity_2.flatten()[-1]-relative_velocity_2.flatten()[-2])])
-				relative_energy = 1/2*reduced_mass*(relative_velocity_2**2) * J_to_eV
+			if True:	# this method SHOULD not be correct because does not account for 3d effects
+				if False:
+					H2p_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_H2p),50))).T*(2*boltzmann_constant_J*T_H2p.T/(2*hydrogen_mass))**0.5).T
+					H2p_velocity_x = np.sort(H2p_velocity.flatten().tolist() + (-H2p_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+					H2p_velocity_PDF = (4*np.pi*(H2p_velocity.T)**2 * gauss( H2p_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T	# gauss = gauss(x, A, sig, x0)
+					H2p_velocity_PF = H2p_velocity_PDF.flatten()*np.array([(H2p_velocity.flatten()[1]-H2p_velocity.flatten()[0]),*np.diff(H2p_velocity.flatten())[1:]/2+np.diff(H2p_velocity.flatten())[:-1]/2,(H2p_velocity.flatten()[-1]-H2p_velocity.flatten()[-2])])
+					H2p_velocity_PF_x = np.array(np.flip(H2p_velocity_PF.flatten(),axis=0).tolist() + H2p_velocity_PF.flatten().tolist())/2
+					Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hm.T),50))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+					Hm_velocity_x = np.sort(Hm_velocity.flatten().tolist() + (-Hm_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+					Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+					Hm_velocity_PF = Hm_velocity_PDF.flatten()*np.array([(Hm_velocity.flatten()[1]-Hm_velocity.flatten()[0]),*np.diff(Hm_velocity.flatten())[1:]/2+np.diff(Hm_velocity.flatten())[:-1]/2,(Hm_velocity.flatten()[-1]-Hm_velocity.flatten()[-2])])
+					Hm_velocity_PF_x = np.array(np.flip(Hm_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
+					relative_velocity_x = np.array([H2p_velocity_x.tolist()]*100) - np.array([Hm_velocity_x.tolist()]*100).T
+					relative_velocity_x = np.log(np.abs(relative_velocity_x).flatten()).astype(np.float32)
+					relative_velocity_x_log_max = relative_velocity_x.max()
+					relative_velocity_x = (relative_velocity_x/relative_velocity_x_log_max*(2**8-1)).astype(np.uint8)
+					# relative_velocity_x = (np.log(relative_velocity_x/(relative_velocity_x.max()))*(2**8-1)).astype(np.uint8)
+					relative_velocity_PF_x = (np.array([H2p_velocity_PF_x.tolist()]*100) * np.array([Hm_velocity_PF_x.tolist()]*100).T).flatten()
+					relative_velocity_PF_x2 = []
+					for value in np.unique(relative_velocity_x):
+						relative_velocity_PF_x2.append(np.sum(relative_velocity_PF_x[relative_velocity_x==value]))
+					relative_velocity_PF_x2 = np.array(relative_velocity_PF_x2)
+					relative_velocity_x2 = np.exp(np.unique(relative_velocity_x).astype(float)/(2**8-1)*relative_velocity_x_log_max)**2
+					relative_velocity = (np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)) + np.array([np.array([relative_velocity_x2.tolist()]*len(relative_velocity_x2)).T.tolist()]*len(relative_velocity_x2)) + np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)).T).flatten()**0.5
+					relative_velocity_PF = (np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)) * np.array([np.array([relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)).T.tolist()]*len(relative_velocity_PF_x2)) * np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)).T).flatten()
+					relative_velocity = np.log(relative_velocity)
+					relative_velocity_log_max = relative_velocity.max()
+					relative_velocity = (relative_velocity/relative_velocity_log_max*(2**8-1)).astype(np.uint8)
+					relative_velocity_PF2 = []
+					for value in np.unique(relative_velocity):
+						relative_velocity_PF2.append(np.sum(relative_velocity_PF[relative_velocity==value]))
+					relative_velocity_PF2 = np.array(relative_velocity_PF2)
+					relative_velocity_2 = np.exp(np.unique(relative_velocity/(2**8-1)).astype(float)*relative_velocity_log_max)
+					relative_velocity_PDF2 = relative_velocity_PF2/np.array([(relative_velocity_2.flatten()[1]-relative_velocity_2.flatten()[0]),*np.diff(relative_velocity_2.flatten())[1:]/2+np.diff(relative_velocity_2.flatten())[:-1]/2,(relative_velocity_2.flatten()[-1]-relative_velocity_2.flatten()[-2])])
+					relative_energy = 1/2*reduced_mass*(relative_velocity_2**2) * J_to_eV
+				else:	# TH- is TH2+ +2.2eV. also H- weights half as H2+, so I consider H2+ stationary
+					relative_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm),200))).T*(2*boltzmann_constant_J*T_Hm.T/hydrogen_mass)**0.5).T
+					relative_velocity_PDF = (4*np.pi*(relative_velocity.T)**2 * gauss( relative_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm.T))**(3/2) , (T_Hm.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+					relative_energy = 0.5*hydrogen_mass*(relative_velocity**2) * J_to_eV
+					relative_velocity_PDF2 = relative_velocity_PDF
+					relative_velocity_2 = relative_velocity
 				coefficients = np.array([-3.49880888*1e1, 2.15245051*1e-1, -2.35628664*1e-2, 5.49471553*1e-2, 5.37932888*1e-3, -6.05507021*1e-3, 9.99168329*1e-4, -6.63625564*1e-5,1.61228385*1e-6])
 				# cross_section = (np.exp(np.sum(((np.log(baricenter_impact_energy.T))**(np.arange(9)))*coefficients ,axis=-1)) * 1e-4).T
 				cross_section = np.exp(np.polyval(np.flip(coefficients,axis=0),np.log(relative_energy)))* (1e-4 * 1e20)	# multiplied 1e20
@@ -2000,7 +2017,7 @@ def RR_H2p_Hm__H_3_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,T_Hm
 		T_Hm = np.array([T_Hm])
 		if len(T_H2p)==1 and len(T_Hm)==1:
 			reduced_mass = 2*hydrogen_mass*hydrogen_mass/(2*hydrogen_mass+hydrogen_mass)
-			if False:	# this method SHOULD not be correct because does not account for 3D effects
+			if True:	# this method SHOULD not be correct because does not account for 3D effects
 				H2p_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_H2p),50))).T*(2*boltzmann_constant_J*T_H2p.T/(2*hydrogen_mass))**0.5).T
 				H2p_velocity_x = np.sort(H2p_velocity.flatten().tolist() + (-H2p_velocity).flatten().tolist())/(3**0.5)	# in only one direction
 				H2p_velocity_PDF = (4*np.pi*(H2p_velocity.T)**2 * gauss( H2p_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T
@@ -2095,6 +2112,96 @@ def RR_H2p_Hm__H_3_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,T_Hm
 	reaction_rate = np.reshape(reaction_rate,np.shape(T_H2p))[0]
 	H2p_Hm__H_3_H2 = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
 	return H2p_Hm__H_3_H2	# m^-3/s *1e-20 / (nHm/ne) / (nH2p/ne)
+
+def RR_H2p_Hm__H_H2__r(merge_Te_prof_multipulse_interp_crop_limited,T_H2p,T_Hm,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
+		print('error, Te and ne are different shapes')
+		exit()
+	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)==():
+		merge_Te_prof_multipulse_interp_crop_limited=np.array([merge_Te_prof_multipulse_interp_crop_limited])
+		merge_ne_prof_multipulse_interp_crop_limited=np.array([merge_ne_prof_multipulse_interp_crop_limited])
+		T_H2p=np.array([T_H2p])
+		T_Hm=np.array([T_Hm])
+	# reaction rate		H+2 +H− → H2 +H
+	# this rate is taken from
+	# Cross section for the mutual neutralization reaction H2++H-, calculated in a multiple-crossing Landau-Zener approximation
+	def internal(*arg):
+		T_H2p,T_Hm = arg[0]
+		T_H2p = np.array([T_H2p])
+		T_Hm = np.array([T_Hm])
+		if len(T_H2p)==1 and len(T_Hm)==1:
+			reduced_mass = (2*hydrogen_mass)*hydrogen_mass/((2*hydrogen_mass)+hydrogen_mass)
+			if True:	# this method SHOULD not be correct because does not account for 3d effects
+				if False:
+					H2p_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_H2p),50))).T*(2*boltzmann_constant_J*T_H2p.T/(2*hydrogen_mass))**0.5).T
+					H2p_velocity_x = np.sort(H2p_velocity.flatten().tolist() + (-H2p_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+					H2p_velocity_PDF = (4*np.pi*(H2p_velocity.T)**2 * gauss( H2p_velocity.T, ((2*hydrogen_mass)/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/(2*hydrogen_mass))**0.5 ,0)).T	# gauss = gauss(x, A, sig, x0)
+					H2p_velocity_PF = H2p_velocity_PDF.flatten()*np.array([(H2p_velocity.flatten()[1]-H2p_velocity.flatten()[0]),*np.diff(H2p_velocity.flatten())[1:]/2+np.diff(H2p_velocity.flatten())[:-1]/2,(H2p_velocity.flatten()[-1]-H2p_velocity.flatten()[-2])])
+					H2p_velocity_PF_x = np.array(np.flip(H2p_velocity_PF.flatten(),axis=0).tolist() + H2p_velocity_PF.flatten().tolist())/2
+					Hm_velocity = ((np.logspace(np.log10(0.001),np.log10(10),50)*np.ones((*np.shape(T_Hm.T),50))).T*(2*boltzmann_constant_J*T_Hm/hydrogen_mass)**0.5).T
+					Hm_velocity_x = np.sort(Hm_velocity.flatten().tolist() + (-Hm_velocity).flatten().tolist())/(3**0.5)	# in only one direction
+					Hm_velocity_PDF = (4*np.pi*(Hm_velocity.T)**2 * gauss( Hm_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm))**(3/2) , (T_Hm*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+					Hm_velocity_PF = Hm_velocity_PDF.flatten()*np.array([(Hm_velocity.flatten()[1]-Hm_velocity.flatten()[0]),*np.diff(Hm_velocity.flatten())[1:]/2+np.diff(Hm_velocity.flatten())[:-1]/2,(Hm_velocity.flatten()[-1]-Hm_velocity.flatten()[-2])])
+					Hm_velocity_PF_x = np.array(np.flip(Hm_velocity_PF.flatten(),axis=0).tolist() + Hm_velocity_PF.flatten().tolist())/2
+					relative_velocity_x = np.array([H2p_velocity_x.tolist()]*100) - np.array([Hm_velocity_x.tolist()]*100).T
+					relative_velocity_x = np.log(np.abs(relative_velocity_x).flatten()).astype(np.float32)
+					relative_velocity_x_log_max = relative_velocity_x.max()
+					relative_velocity_x = (relative_velocity_x/relative_velocity_x_log_max*(2**8-1)).astype(np.uint8)
+					# relative_velocity_x = (np.log(relative_velocity_x/(relative_velocity_x.max()))*(2**8-1)).astype(np.uint8)
+					relative_velocity_PF_x = (np.array([H2p_velocity_PF_x.tolist()]*100) * np.array([Hm_velocity_PF_x.tolist()]*100).T).flatten()
+					relative_velocity_PF_x2 = []
+					for value in np.unique(relative_velocity_x):
+						relative_velocity_PF_x2.append(np.sum(relative_velocity_PF_x[relative_velocity_x==value]))
+					relative_velocity_PF_x2 = np.array(relative_velocity_PF_x2)
+					relative_velocity_x2 = np.exp(np.unique(relative_velocity_x).astype(float)/(2**8-1)*relative_velocity_x_log_max)**2
+					relative_velocity = (np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)) + np.array([np.array([relative_velocity_x2.tolist()]*len(relative_velocity_x2)).T.tolist()]*len(relative_velocity_x2)) + np.array([[relative_velocity_x2.tolist()]*len(relative_velocity_x2)]*len(relative_velocity_x2)).T).flatten()**0.5
+					relative_velocity_PF = (np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)) * np.array([np.array([relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)).T.tolist()]*len(relative_velocity_PF_x2)) * np.array([[relative_velocity_PF_x2.tolist()]*len(relative_velocity_PF_x2)]*len(relative_velocity_PF_x2)).T).flatten()
+					relative_velocity = np.log(relative_velocity)
+					relative_velocity_log_max = relative_velocity.max()
+					relative_velocity = (relative_velocity/relative_velocity_log_max*(2**8-1)).astype(np.uint8)
+					relative_velocity_PF2 = []
+					for value in np.unique(relative_velocity):
+						relative_velocity_PF2.append(np.sum(relative_velocity_PF[relative_velocity==value]))
+					relative_velocity_PF2 = np.array(relative_velocity_PF2)
+					relative_velocity_2 = np.exp(np.unique(relative_velocity/(2**8-1)).astype(float)*relative_velocity_log_max)
+					relative_velocity_PDF2 = relative_velocity_PF2/np.array([(relative_velocity_2.flatten()[1]-relative_velocity_2.flatten()[0]),*np.diff(relative_velocity_2.flatten())[1:]/2+np.diff(relative_velocity_2.flatten())[:-1]/2,(relative_velocity_2.flatten()[-1]-relative_velocity_2.flatten()[-2])])
+					relative_energy = 1/2*reduced_mass*(relative_velocity_2**2) * J_to_eV
+				else:	# TH- is TH2+ +2.2eV. also H- weights half as H2+, so I consider H2+ stationary
+					relative_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm),200))).T*(2*boltzmann_constant_J*T_Hm.T/hydrogen_mass)**0.5).T
+					relative_velocity_PDF = (4*np.pi*(relative_velocity.T)**2 * gauss( relative_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm.T))**(3/2) , (T_Hm.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+					relative_energy = 0.5*hydrogen_mass*(relative_velocity**2) * J_to_eV
+					relative_velocity_PDF2 = relative_velocity_PDF
+					relative_velocity_2 = relative_velocity
+				interpolator_cross_section = interpolate.interp1d(np.log([0.01,1,10]), np.log([4.5e-16,2.2e-17,1e-17]),fill_value='extrapolate')	# m^2
+				cross_section = np.exp(interpolator_cross_section(np.log(relative_energy)))* (1e20)	# multiplied 1e20
+				cross_section[np.logical_not(np.isfinite(cross_section))]=0
+				cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.01)).argmin()]
+				cross_section_max = cross_section.flatten()[(np.abs(relative_energy-10)).argmin()]
+				cross_section[relative_energy<0.01]=cross_section_min
+				cross_section[relative_energy>10]=cross_section_max
+				cross_section[cross_section<0] = 0
+				reaction_rate = np.array([np.trapz((cross_section*relative_velocity_PDF2*relative_velocity_2),x=relative_velocity_2)])		# m^3 / s
+			else:	# equations taken from PLASMA PHYSICS AND FUSIONENERGY, Jeffrey P. Freidberg, chapter 9.7
+				# this relies on having the same temperature for both particles!
+				temperature = (T_H2p+T_Hm)/2
+				relative_velocity = np.logspace(np.log10(0.001),np.log10(10),500)*(2*boltzmann_constant_J*temperature/(reduced_mass))**0.5
+				relative_energy = 0.5*reduced_mass*(relative_velocity**2) * J_to_eV
+
+				interpolator_cross_section = interpolate.interp1d(np.log([0.01,1,10]), np.log([4.5e-16,2.2e-17,1e-17]),fill_value='extrapolate')	# m^2
+				cross_section = np.exp(interpolator_cross_section(np.log(relative_energy)))* (1e20)	# multiplied 1e20
+				cross_section[np.logical_not(np.isfinite(cross_section))]=0
+				cross_section_min = cross_section.flatten()[(np.abs(relative_energy-0.01)).argmin()]
+				cross_section_max = cross_section.flatten()[(np.abs(relative_energy-10)).argmin()]
+				cross_section[relative_energy<0.01]=cross_section_min
+				cross_section[relative_energy>10]=cross_section_max
+				cross_section[cross_section<0] = 0
+				temp = 16*(np.pi**2)* ((reduced_mass/(2*np.pi*boltzmann_constant_J*temperature))**(3/2)) * 1/(4*np.pi)
+				reaction_rate = temp * np.trapz(relative_velocity**3 * cross_section * np.exp(-reduced_mass*(relative_velocity**2)/(2*boltzmann_constant_J*temperature)),relative_velocity)
+		return reaction_rate
+	reaction_rate = list(map(internal,(np.array([T_H2p.flatten(),T_Hm.flatten()]).T)))
+	reaction_rate = np.reshape(reaction_rate,np.shape(T_H2p))[0]
+	H2p_Hm__H_2_H2 = (merge_ne_prof_multipulse_interp_crop_limited**2)*reaction_rate
+	return H2p_Hm__H_2_H2	# m^-3/s *1e-20 / (nHm/ne) / (nH2p/ne)
 
 def RR_Hp_Hm__H_2_H__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
@@ -2352,20 +2459,22 @@ def RR_Hp_Hm__Hex_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge
 	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
 	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
 
-	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4:	# H, Hm, H2, H2p, ne, Te
+	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4 and False:	# H, Hm, H2, H2p, ne, Te	# dunno what this is for, plain wrong!
 		Te = merge_Te_prof_multipulse_interp_crop_limited[0,:,0]
 		ne = merge_ne_prof_multipulse_interp_crop_limited[0,:,0]
 		T_Hp_temp = T_Hp[0,:,0]
 		T_Hm_temp = T_Hm[0,:,0]
 		nHp_ne_all_temp = nHp_ne_all[0,:,0]
-		population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te.flatten(),T_Hp_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nHp_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		# population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te.flatten(),T_Hp_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nHp_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		population_coefficients = (From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp)).T*(nHp_ne_all_temp).flatten()).T
 		reaction_rate = (ne.flatten()**2)*1e20*np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1)	# 	#/s * 1e-20
 		reaction_rate = reaction_rate.reshape(np.shape(T_Hp[0,:,0]))
 		reaction_rate = np.transpose([[reaction_rate.tolist()]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[2]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[0] ,(0,2,1,3))
 	else:
-		population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_Hp.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nHp_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
-		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
-	return reaction_rate	# m^-3/s *1e-20 / (nHm/ne) / (nHp/ne)
+		# population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_Hp.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nHp_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		population_coefficients = (From_Hn_with_Hp_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp)).T*(nHp_ne_all).flatten()).T
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+	return reaction_rate	# m^-3/s *1e-20 / (nHm/ne)
 
 def RR_Hp_Hm__Hn_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited,nHp_ne_all):	# [eV, 10e20 #/m3]
 	if np.shape(merge_Te_prof_multipulse_interp_crop_limited)!=np.shape(merge_ne_prof_multipulse_interp_crop_limited):
@@ -2385,18 +2494,20 @@ def RR_Hp_Hm__Hn_H(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_
 	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
 	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
 
-	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4:	# H, Hm, H2, H2p, ne, Te
+	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4 and False:	# H, Hm, H2, H2p, ne, Te	# dunno what this is for, plain wrong!
 		Te = merge_Te_prof_multipulse_interp_crop_limited[0,:,0]
 		ne = merge_ne_prof_multipulse_interp_crop_limited[0,:,0]
 		T_Hp_temp = T_Hp[0,:,0]
 		T_Hm_temp = T_Hm[0,:,0]
 		nHp_ne_all_temp = nHp_ne_all[0,:,0]
-		population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te.flatten(),T_Hp_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nHp_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		# population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te.flatten(),T_Hp_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nHp_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		population_coefficients = (From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp)).T*(nHp_ne_all_temp).flatten()).T
 		reaction_rate = (ne.flatten()**2)*1e20*(population_coefficients*einstein_coeff_full_cumulative).T	# 	#/s * 1e-20
 		reaction_rate = reaction_rate.reshape((len(einstein_coeff_full_cumulative),*np.shape(T_Hp[0,:,0])))
 		reaction_rate = np.transpose([[reaction_rate.tolist()]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[2]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[0] ,(2,0,3,1,4))
 	else:
-		population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_Hp.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nHp_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		# population_coefficients = From_Hn_with_Hp_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_Hp.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nHp_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		population_coefficients = (From_Hn_with_Hp_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp)).T*(nHp_ne_all).flatten()).T
 		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited**2)*1e20*np.transpose((population_coefficients*einstein_coeff_full_cumulative).reshape((*np.shape(merge_Te_prof_multipulse_interp_crop_limited),len(einstein_coeff_full_cumulative))),(-1,*np.arange(len(merge_Te_prof_multipulse_interp_crop_limited.shape))))	# 	#/s * 1e-20
 	return reaction_rate	# m^-3/s *1e-20 / (nHm/ne) / (nHp/ne)
 
@@ -2432,19 +2543,21 @@ def RR_H2p_Hm__Hex_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H
 	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
 	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
 
-	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4:	# H, Hm, H2, H2p, ne, Te
+	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4 and False:	# H, Hm, H2, H2p, ne, Te	# dunno what this is for, plain wrong!
 		Te = merge_Te_prof_multipulse_interp_crop_limited[0,0,0]
 		ne = merge_ne_prof_multipulse_interp_crop_limited[0,0,0]
 		T_Hp_temp = T_Hp[0,0,0]
 		T_Hm_temp = T_Hm[0,0,0]
 		T_H2p_temp = T_H2p[0,0,0]
 		nH2p_ne_all_temp = nH2p_ne_all[0,0,0]
-		population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te.flatten(),T_H2p_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nH2p_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		# population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te.flatten(),T_H2p_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nH2p_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		population_coefficients = (From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te.flatten(),T_H2p_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p)).T*(nH2p_ne_all_temp*ne).flatten()*1e20/1e15).T
 		reaction_rate = (ne.flatten()**2)*1e20*np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1)	# 	#/s * 1e-20
 		reaction_rate = np.array([[[reaction_rate.tolist()]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[2]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[1]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[0])
 	else:
-		population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_H2p.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nH2p_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
-		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+		# population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_H2p.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nH2p_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		population_coefficients = (From_Hn_with_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_H2p.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p)).T*(nH2p_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20/1e15).T
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
 	return reaction_rate	# m^-3/s *1e-20 / (nHm/ne)
 
 def RR_H2p_Hm__Hn_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2p,merge_ne_prof_multipulse_interp_crop_limited,nH2p_ne_all):	# [eV, 10e20 #/m3]
@@ -2466,19 +2579,21 @@ def RR_H2p_Hm__Hn_H2(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,T_H2
 	# Data from "Accurate Atomic Transition Probabilities for Hydrogen, Helium, and Lithium", W. L. Wiese and J. R. Fuhr 2009
 	# einstein_coeff_Lyman = np.array([4.6986,5.5751e-01,1.2785e-01,4.1250e-02,1.6440e-02,7.5684e-03,3.8694e-03,2.1425e-03,1.2631e-03,7.8340e-04,5.0659e-04,3.3927e-04]) * 1e8  # 1/s
 
-	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4:	# H, Hm, H2, H2p, ne, Te
+	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4 and False:	# H, Hm, H2, H2p, ne, Te	# dunno what this is for, plain wrong!
 		Te = merge_Te_prof_multipulse_interp_crop_limited[0,0,0]
 		ne = merge_ne_prof_multipulse_interp_crop_limited[0,0,0]
 		T_Hp_temp = T_Hp[0,0,0]
 		T_Hm_temp = T_Hm[0,0,0]
 		T_H2p_temp = T_H2p[0,0,0]
 		nH2p_ne_all_temp = nH2p_ne_all[0,0,0]
-		population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te.flatten(),T_H2p_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nH2p_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		# population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te.flatten(),T_H2p_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nH2p_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		population_coefficients = (From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te.flatten(),T_H2p_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p)).T*(nH2p_ne_all_temp*ne).flatten()*1e20/1e15).T
 		reaction_rate = (ne.flatten()**2)*1e20*(population_coefficients*einstein_coeff_full_cumulative).T	# 	#/s * 1e-20
 		reaction_rate = np.transpose([[[reaction_rate.tolist()]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[2]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[1]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[0], (3,0,1,2,4))
 	else:
-		population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_H2p.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nH2p_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
-		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+		# population_coefficients = From_Hn_with_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_H2p.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nH2p_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		population_coefficients = (From_Hn_with_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_H2p.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p)).T*(nH2p_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20/1e15).T
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
 	return reaction_rate	# m^-3/s *1e-20 / (nHm/ne)
 
 def RR_Hp_Hm__H2p_e__r(merge_Te_prof_multipulse_interp_crop_limited,T_Hp,T_Hm,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
@@ -3318,7 +3433,7 @@ def RR_e_H2__e_Hex_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_pr
 		reaction_rate = (ne**2)*1e20*np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1)	# 	#/s * 1e-20
 	else:
 		population_coefficients = From_H2_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_H2))
-		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
 	return reaction_rate	# m^-3/s *1e-20 / (nH2/ne)
 
 def RR_e_H2__e_Hn_H__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
@@ -3632,12 +3747,12 @@ def RR_Hp_H2v__H_H2p__r(Te,T_H2,T_Hp,ne):	# [eV, 10e20 #/m3]
 		Hp_H2X1Σg__H1s_H2pX2Σg = np.sum(Hp_H2X1Σg__H1s_H2pX2Σg,axis=0)
 	elif True:	# 27/05/2020
 		# from AMJUEL
-		# 3.28 Reaction 3.2.3 p +H2(v) →H +H+
+		# 3.28 Reaction 3.2.3 p +H2(v) →H +H2+
 		coefficients_all = [[-2.133104980000e+1,2.961905900000e-1,-2.876892150000e-2,-3.323271590000e-2,7.234558340000e-3,2.940230100000e-4,-8.005031610000e-5,0.000000000000e+0,0.000000000000e+0],[2.308461720000e+0,-1.064800460000e+0,2.310120950000e-1,6.809382980000e-2,-4.241210420000e-2,8.271152020000e-3,-6.275988100000e-4,0.000000000000e+0,0.000000000000e+0],[-2.026151710000e+0,1.142806740000e+0,-2.621943460000e-1,-6.877694430000e-2,4.012716970000e-2,-6.143307540000e-3,3.233852920000e-4,0.000000000000e+0,0.000000000000e+0],[1.648000330000e-1,-4.675786500000e-1,1.242261910000e-1,1.774294860000e-2,-1.157658350000e-2,1.311061300000e-3,-1.125957730000e-5,0.000000000000e+0,0.000000000000e+0],[1.651993580000e-1,5.766584690000e-2,-3.659922760000e-2,7.083346120000e-3,3.403537010000e-4,-2.752152790000e-4,2.225165850000e-5,0.000000000000e+0,0.000000000000e+0],[-2.598458070000e-2,1.349144350000e-2,8.871659800000e-3,-5.231162040000e-3,3.324241650000e-4,1.985585660000e-4,-2.813630850000e-5,0.000000000000e+0,0.000000000000e+0],[-4.330453510000e-3,-5.246404340000e-3,-1.636107180000e-3,1.242023150000e-3,-4.524774630000e-5,-6.369415730000e-5,8.679231940000e-6,0.000000000000e+0,0.000000000000e+0],[1.187405610000e-3,6.281964210000e-4,1.740000360000e-4,-1.337853740000e-4,6.784609160000e-7,8.284840740000e-6,-1.075372230000e-6,0.000000000000e+0,0.000000000000e+0],[-6.897815380000e-5,-2.667160440000e-5,-7.528040300000e-6,5.516687380000e-6,1.140207820000e-7,-3.837975410000e-7,4.793672020000e-8,0.000000000000e+0,0.000000000000e+0]]
 		reaction_rate = np.exp(np.polynomial.polynomial.polyval2d(np.log(T_Hp*eV_to_K),np.log(3/2*T_H2*eV_to_K),coefficients_all)) * (1e-6 * 1e20)	# m^2 *1e20, T_H2 to en cin H2 must be multiplied by 3/2
 		reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
-		Hp_H2v__H_H2p = reaction_rate*(ne**2)
 		reaction_rate[reaction_rate<0]=0
+		Hp_H2v__H_H2p = reaction_rate*(ne**2)
 	return Hp_H2v__H_H2p	# m^-3/s *1e-20 / (nH2/ne) / (nHp/ne)
 
 def RR_Hp_H1s__H1s_Hp__r(merge_Te_prof_multipulse_interp_crop_limited,T_H,T_Hp,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
@@ -3909,7 +4024,7 @@ def RR_e_H2p__Hex_H__or__Hex_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limite
 		reaction_rate = (ne**2)*1e20*np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1)	# 	#/s * 1e-20
 	else:
 		population_coefficients = From_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_H2p))
-		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited.flatten()**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
+		reaction_rate = (merge_ne_prof_multipulse_interp_crop_limited**2)*1e20*(np.sum(population_coefficients*einstein_coeff_full_cumulative,axis=-1).reshape(np.shape(merge_Te_prof_multipulse_interp_crop_limited)))	# 	#/s * 1e-20
 	return reaction_rate	# m^-3/s *1e-20 / (nH2p/ne)
 
 def RR_e_H2p__Hn_H__or__Hn_Hp_e__r(merge_Te_prof_multipulse_interp_crop_limited,merge_ne_prof_multipulse_interp_crop_limited):	# [eV, 10e20 #/m3]
@@ -4145,9 +4260,14 @@ def RR_H2p_Hm__H2N13Λσ_H1s__r(merge_Te_prof_multipulse_interp_crop_limited,T_H
 	# I don't have any info on the functions I should be using to calculate the energy resolved cross section, so I use the flat estimate they give
 	reduced_mass = 2*hydrogen_mass*hydrogen_mass/(2*hydrogen_mass+hydrogen_mass)
 	if False:	# this method SHOULD not be correct because does not account for 3d effects
-		relative_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/reduced_mass)**0.5).T
-		relative_velocity_PDF = (4*np.pi*(relative_velocity.T)**2 * gauss( relative_velocity.T, (reduced_mass/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/reduced_mass)**0.5 ,0)).T
-		relative_energy = 0.5*reduced_mass*(relative_velocity**2) * J_to_eV
+		if False:	# this is very different for what done in RR_H2p_Hm__H_2_H2__r, so it seems wrong to me
+			relative_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_H2p),200))).T*(2*boltzmann_constant_J*T_H2p.T/reduced_mass)**0.5).T
+			relative_velocity_PDF = (4*np.pi*(relative_velocity.T)**2 * gauss( relative_velocity.T, (reduced_mass/(2*np.pi*boltzmann_constant_J*T_H2p.T))**(3/2) , (T_H2p.T*boltzmann_constant_J/reduced_mass)**0.5 ,0)).T
+			relative_energy = 0.5*reduced_mass*(relative_velocity**2) * J_to_eV
+		else:	# TH- is TH2+ +2.2eV. also H- weights half as H2+, so I consider H2+ stationary
+			relative_velocity = ((np.logspace(np.log10(0.001),np.log10(10),200)*np.ones((*np.shape(T_Hm),200))).T*(2*boltzmann_constant_J*T_Hm.T/hydrogen_mass)**0.5).T
+			relative_velocity_PDF = (4*np.pi*(relative_velocity.T)**2 * gauss( relative_velocity.T, (hydrogen_mass/(2*np.pi*boltzmann_constant_J*T_Hm.T))**(3/2) , (T_Hm.T*boltzmann_constant_J/hydrogen_mass)**0.5 ,0)).T
+			relative_energy = 0.5*hydrogen_mass*(relative_velocity**2) * J_to_eV
 		cross_section1 = 7.5e-15 * (1e-4 *1e20)		# m^2	# channel N=2 * 1e20
 		cross_section2 = 5e-14 * (1e-4 * 1e20)		# m^2	# channel N=3 * 1e20
 		cross_section = np.ones_like(relative_energy) * (cross_section1 + cross_section2)
@@ -4471,7 +4591,7 @@ def RR_Hp_H2__Hp_H2(THp,TH2):	# [eV, 10e20 #/m3]
 class MyException(Exception):
     pass
 
-def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,particle_AMJUEL_precision,particle_Janev_ALADDIN_precision,particle_ADAS_precision,power_AMJUEL_precision,power_Janev_ALADDIN_precision,power_ADAS_precision,require_strongest=False,only_Yacora_as_molecule=False):
+def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all,nH_ne_all,nH2_ne_all,nHm_ne_all,nH2p_ne_all,fractional_population_states_H2,nH_ne_all_ground_state,nH_ne_all_excited_state_2,nH_ne_all_excited_state_3,nH_ne_all_excited_state_4,particle_AMJUEL_precision,particle_Janev_ALADDIN_precision,particle_ADAS_precision,power_AMJUEL_precision,power_Janev_ALADDIN_precision,power_ADAS_precision,require_strongest=False,only_Yacora_as_molecule=False,particle_balance_from_Yacora=False):
 	if (len(np.unique(Te_long))==1 and len(np.unique(ne_long))==1):
 		Te = np.unique(Te_long)	# eV
 		ne = np.unique(ne_long)	# m^-3 *1e-20
@@ -4521,26 +4641,45 @@ def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all
 			H2pvi_H2v0__H3p_H1s = nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te,np.unique(T_H2),np.unique(T_H2p),ne,fractional_population_states_H2)[0]
 			H2p_Hm__H3p_e = nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0]
 		e_H2__Hm_H = nH2_ne_all*RR_e_H2__Hm_H__r(Te,ne,fractional_population_states_H2)[0]
-		# Hp_Hm__Hex_H = nHm_ne_all*RR_Hp_Hm__Hex_H(Te_long,T_Hp,T_Hm,ne_long,nHp_ne_all)
 		# Hp_Hm__Hn_H = nHm_ne_all*RR_Hp_Hm__Hn_H(Te_long,T_Hp,T_Hm,ne_long,nHp_ne_all)
-		Hp_Hm__Hex_H =  nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_H__r(Te,ne)[0]
-		# H2p_Hm__Hex_H2 = nHm_ne_all*RR_H2p_Hm__Hex_H2(Te_long,T_Hp,T_Hm,T_H2p,ne_long,nH2p_ne_all)
+		if particle_balance_from_Yacora:	# I use the max() because Yacora does not include the ground state, so it might make sense that the true RR is higher
+			Hp_Hm__Hex_H = nHm_ne_all*RR_Hp_Hm__Hex_H(Te_long,T_Hp,T_Hm,ne_long,nHp_ne_all)
+			Hp_Hm__Hex_H =  np.max([Hp_Hm__Hex_H,nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_H__r(Te,ne)[0]],axis=0)
+		else:
+			Hp_Hm__Hex_H =  nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_H__r(Te,ne)[0]
 		# H2p_Hm__Hn_H2 = nHm_ne_all*RR_H2p_Hm__Hn_H2(Te_long,T_Hp,T_Hm,T_H2p,ne_long,nH2p_ne_all)
-		H2p_Hm__H_2_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_2_H2__r(Te,np.unique(T_H2p),np.unique(T_Hm),ne)
-		H2p_Hm__H_3_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_3_H2__r(Te,np.unique(T_H2p),np.unique(T_Hm),ne)
-		H2p_Hm__Hex_H2 = H2p_Hm__H_2_H2 + H2p_Hm__H_3_H2
+		if particle_balance_from_Yacora:	# I use the max() because Yacora does not include the ground state, so it might make sense that the true RR is higher
+			H2p_Hm__Hex_H2 = nHm_ne_all*RR_H2p_Hm__Hex_H2(Te_long,T_Hp,T_Hm,T_H2p,ne_long,nH2p_ne_all)
+			H2p_Hm__H_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_H2__r(Te,np.unique(T_H2p),np.unique(T_Hm),ne)
+			H2p_Hm__Hex_H2 = np.max([H2p_Hm__Hex_H2,H2p_Hm__H_H2],axis=0)
+		else:
+			# H2p_Hm__H_2_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_2_H2__r(Te,np.unique(T_H2p),np.unique(T_Hm),ne)
+			# H2p_Hm__H_3_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_3_H2__r(Te,np.unique(T_H2p),np.unique(T_Hm),ne)
+			# H2p_Hm__Hex_H2 = H2p_Hm__H_2_H2 + H2p_Hm__H_3_H2
+			H2p_Hm__Hex_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_H2__r(Te,np.unique(T_H2p),np.unique(T_Hm),ne)
 		# calculating H2p_Hm__H2N13Λσ_H1s and H2p_Hm__H_2_H2 + H2p_Hm__H_3_H2 is not double counting!
-		H2p_Hm__H2N13Λσ_H1s = nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0]
+		# H2p_Hm__H2N13Λσ_H1s = nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te,np.unique(T_Hm),np.unique(T_H2p),ne)[0]
+		H2p_Hm__H2N13Λσ_H1s = np.zeros_like(nH2p_ne_all)	# included in H2p_Hm__H_H2
 		e_H2__e_H2p_e = nH2_ne_all*RR_e_H2__e_H2p_e__r(Te,ne)[0]
 		Hp_H2v__H_H2p = nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te,np.unique(T_H2),np.unique(T_Hp),ne)[0]
-		e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0]
-		e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne)[0]
-		# e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0]
 		# e_H2p__Hn_H__or__Hn_Hp_e = np.transpose(np.transpose(np.array([nH2p_ne_all.tolist()]*len(np.unique(excited_states_From_H2p))), (*np.arange(1,1+len(nH2p_ne_all.shape)),0))*RR_e_H2p__Hn_H__or__Hn_Hp_e__r(Te,ne)[0], (-1,*np.arange(len(nH2p_ne_all.shape))))	# split among hydrogen excited states
+		if particle_balance_from_Yacora:	# I use the max() because Yacora does not include the ground state, so it might make sense that the true RR is higher
+			e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te,ne)[0]
+			e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0]
+			e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne)[0]
+			ratio = e_H2p__XXX__e_Hp_H/(e_H2p__XXX__e_Hp_H+e_H2p__H_H)
+			e_H2p__XXX__e_Hp_H = np.max([e_H2p__XXX__e_Hp_H,e_H2p__Hex_H__or__Hex_Hp_e*ratio],axis=0)
+			e_H2p__H_H = np.max([e_H2p__H_H,e_H2p__Hex_H__or__Hex_Hp_e*(1-ratio)],axis=0)
+		else:
+			e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te,ne)[0]
+			e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(Te,ne)[0]
 		e_H2p__e_Hp_Hp_e = nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te,ne)[0]
-		# e_H2__e_Hex_H = nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0]
-		e_H2__e_Hex_H = nH2_ne_all*RR_e_H2v__e_H_H__r(Te,ne)[0]
 		# e_H2__e_Hn_H = np.transpose(np.transpose(np.array([nH2_ne_all.tolist()]*len(np.unique(excited_states_From_H2p))), (*np.arange(1,1+len(nH2_ne_all.shape)),0))*RR_e_H2__e_Hn_H__r(Te,ne)[0], (-1,*np.arange(len(nH2_ne_all.shape))))	# split among hydrogen excited states
+		if particle_balance_from_Yacora:	# I use the max() because Yacora does not include the ground state, so it might make sense that the true RR is higher
+			e_H2__e_Hex_H = nH2_ne_all*RR_e_H2__e_Hex_H__r(Te,ne)[0]
+			e_H2__e_Hex_H = np.max([e_H2__e_Hex_H,nH2_ne_all*RR_e_H2v__e_H_H__r(Te,ne)[0]],axis=0)
+		else:
+			e_H2__e_Hex_H = nH2_ne_all*RR_e_H2v__e_H_H__r(Te,ne)[0]
 		e_H2__Hp_H_2e = nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te,ne)[0]
 		# e_H2X1Σg__e_H1s_H1s is already included in the AMJUEL rate
 		e_H2X1Σg__e_H1s_H1s = np.zeros_like(nHm_ne_all) #nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te,ne,fractional_population_states_H2)[0]
@@ -4589,25 +4728,44 @@ def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all
 			H2pvi_H2v0__H3p_H1s = nH2p_ne_all*nH2_ne_all*RR_H2pvi_H2v0__H3p_H1s__r(Te_long,T_H2,T_H2p,ne_long,fractional_population_states_H2)
 			H2p_Hm__H3p_e = nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H3p_e__r(Te_long,T_Hm,T_H2p,ne_long)
 		e_H2__Hm_H = nH2_ne_all*RR_e_H2__Hm_H__r(Te_long,ne_long,fractional_population_states_H2)
-		# Hp_Hm__Hex_H = nHm_ne_all*RR_Hp_Hm__Hex_H(Te_long,T_Hp,T_Hm,ne_long,nHp_ne_all)
 		# Hp_Hm__Hn_H = nHm_ne_all*RR_Hp_Hm__Hn_H(Te_long,T_Hp,T_Hm,ne_long,nHp_ne_all)
-		Hp_Hm__Hex_H =  nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_H__r(Te_long,ne_long)
-		# H2p_Hm__Hex_H2 = nHm_ne_all*RR_H2p_Hm__Hex_H2(Te_long,T_Hp,T_Hm,T_H2p,ne_long,nH2p_ne_all)
+		if particle_balance_from_Yacora:	# I use the max() because Yacora does not include the ground state, so it might make sense that the true RR is higher
+			Hp_Hm__Hex_H = nHm_ne_all*RR_Hp_Hm__Hex_H(Te_long,T_Hp,T_Hm,ne_long,nHp_ne_all)
+			Hp_Hm__Hex_H =  np.max([Hp_Hm__Hex_H,nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_H__r(Te_long,ne_long)],axis=0)
+		else:
+			Hp_Hm__Hex_H =  nHm_ne_all*nHp_ne_all*RR_Hp_Hm__H_H__r(Te_long,ne_long)
 		# H2p_Hm__Hn_H2 = nHm_ne_all*RR_H2p_Hm__Hn_H2(Te_long,T_Hp,T_Hm,T_H2p,ne_long,nH2p_ne_all)
-		H2p_Hm__H_2_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_2_H2__r(Te_long,T_H2p,T_Hm,ne_long)
-		H2p_Hm__H_3_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_3_H2__r(Te_long,T_H2p,T_Hm,ne_long)
-		H2p_Hm__Hex_H2 = H2p_Hm__H_2_H2 + H2p_Hm__H_3_H2
-		H2p_Hm__H2N13Λσ_H1s = nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te_long,T_Hm,T_H2p,ne_long)
+		if particle_balance_from_Yacora:
+			H2p_Hm__Hex_H2 = nHm_ne_all*RR_H2p_Hm__Hex_H2(Te_long,T_Hp,T_Hm,T_H2p,ne_long,nH2p_ne_all)
+			H2p_Hm__H_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_H2__r(Te_long,T_Hp,T_Hm,T_H2p,ne_long,nH2p_ne_all)
+			H2p_Hm__Hex_H2 = np.max([H2p_Hm__Hex_H2,H2p_Hm__H_H2],axis=0)
+		else:
+			# H2p_Hm__H_2_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_2_H2__r(Te_long,T_H2p,T_Hm,ne_long)
+			# H2p_Hm__H_3_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_3_H2__r(Te_long,T_H2p,T_Hm,ne_long)
+			# H2p_Hm__Hex_H2 = H2p_Hm__H_2_H2 + H2p_Hm__H_3_H2
+			H2p_Hm__Hex_H2 = nHm_ne_all*nH2p_ne_all*RR_H2p_Hm__H_H2__r(Te_long,T_Hp,T_Hm,T_H2p,ne_long,nH2p_ne_all)
+		# H2p_Hm__H2N13Λσ_H1s = nH2p_ne_all*nHm_ne_all*RR_H2p_Hm__H2N13Λσ_H1s__r(Te_long,T_Hm,T_H2p,ne_long)
+		H2p_Hm__H2N13Λσ_H1s = np.zeros_like(nH2p_ne_all)	# included in H2p_Hm__H_H2
 		e_H2__e_H2p_e = nH2_ne_all*RR_e_H2__e_H2p_e__r(Te_long,ne_long)
 		Hp_H2v__H_H2p = nHp_ne_all*nH2_ne_all*RR_Hp_H2v__H_H2p__r(Te_long,T_H2,T_Hp,ne_long)
-		e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te_long,ne_long)
-		e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(Te_long,ne_long)
-		# e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te_long,ne_long)
 		# e_H2p__Hn_H__or__Hn_Hp_e = nH2p_ne_all*RR_e_H2p__Hn_H__or__Hn_Hp_e__r(Te_long,ne_long)	# split among hydrogen excited states
+		if particle_balance_from_Yacora:	# I use the max() because Yacora does not include the ground state, so it might make sense that the true RR is higher
+			e_H2p__Hex_H__or__Hex_Hp_e = nH2p_ne_all*RR_e_H2p__Hex_H__or__Hex_Hp_e__r(Te_long,ne_long)
+			e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te_long,ne_long)
+			e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(Te_long,ne_long)
+			ratio = e_H2p__XXX__e_Hp_H/(e_H2p__XXX__e_Hp_H+e_H2p__H_H)
+			e_H2p__XXX__e_Hp_H = np.max([e_H2p__XXX__e_Hp_H,e_H2p__Hex_H__or__Hex_Hp_e*(ratio)],axis=0)
+			e_H2p__H_H = np.max([e_H2p__H_H,e_H2p__Hex_H__or__Hex_Hp_e*(1-ratio)],axis=0)
+		else:
+			e_H2p__XXX__e_Hp_H = nH2p_ne_all*RR_e_H2p__XXX__e_Hp_H__r(Te_long,ne_long)
+			e_H2p__H_H = nH2p_ne_all*RR_e_H2p__H_H__r(Te_long,ne_long)
 		e_H2p__e_Hp_Hp_e = nH2p_ne_all*RR_e_H2p__e_Hp_Hp_e__r(Te_long,ne_long)
-		# e_H2__e_Hex_H = nH2_ne_all*RR_e_H2__e_Hex_H__r(Te_long,ne_long)
-		e_H2__e_Hex_H = nH2_ne_all*RR_e_H2v__e_H_H__r(Te_long,ne_long)
 		# e_H2__e_Hn_H = nH2_ne_all*RR_e_H2__e_Hn_H__r(Te_long,ne_long)	# split among hydrogen excited states
+		if particle_balance_from_Yacora:	# I use the max() because Yacora does not include the ground state, so it might make sense that the true RR is higher
+			e_H2__e_Hex_H = nH2_ne_all*RR_e_H2__e_Hex_H__r(Te_long,ne_long)
+			e_H2__e_Hex_H = np.max([e_H2__e_Hex_H,nH2_ne_all*RR_e_H2v__e_H_H__r(Te_long,ne_long)],axis=0)
+		else:
+			e_H2__e_Hex_H = nH2_ne_all*RR_e_H2v__e_H_H__r(Te_long,ne_long)
 		e_H2__Hp_H_2e = nH2_ne_all*RR_e_H2__Hp_H_2e__r(Te_long,ne_long)
 		# e_H2X1Σg__e_H1s_H1s is already included in the AMJUEL rate
 		e_H2X1Σg__e_H1s_H1s = np.zeros_like(nHm_ne_all) #nH2_ne_all*RR_e_H2X1Σg__e_H1s_H1s__r(Te_long,ne_long,fractional_population_states_H2)
@@ -4727,39 +4885,50 @@ def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all
 	rate_net_destruction_H2p_sigma = ((particle_AMJUEL_precision*(- e_H2__e_H2p_e - Hp_H2v__H_H2p + e_H2p__XXX__e_Hp_H + e_H2p__H_H + e_H2p__e_Hp_Hp_e )*1e-10)**2 + (particle_Yacora_precision*(+ H2pvi_H2v0__Hp_H_H2v1 + H2pvi_H2v0__H3p_H1s + H2p_Hm__H2N13Λσ_H1s + H2p_Hm__H3p_e + H1s_H2pv__Hp_H_H - H1s_H_2__H2p_e - H1s_H_3__H2p_e - H1s_H_4__H2p_e - Hp_H_H__H_H2p - Hp_Hm__H2p_e + H2p_Hm__Hex_H2)*1e-10)**2)**0.5 *1e10	# m^-3/s *1e-20
 
 	if require_strongest:
-		fraction_1_Hm = e_H__Hm_pv/rate_creation_Hm * ((e_H__Hm_pv + e_H2__Hm_H - Hp_Hm__H2p_e)/rate_creation_Hm)	# the second bit accounts for the H- "stolen" to generate H2+
-		fraction_1_Hm[rate_creation_Hm<=0] = 0
-		fraction_1_Hm = np.maximum(fraction_1_Hm,0)
-		fraction_2_Hm = e_H2__Hm_H/rate_creation_Hm * ((e_H__Hm_pv + e_H2__Hm_H - Hp_Hm__H2p_e)/rate_creation_Hm)	# the second bit accounts for the H- "stolen" to generate H2+
-		fraction_2_Hm[rate_creation_Hm<=0] = 0
-		fraction_2_Hm = np.maximum(fraction_2_Hm,0)
+		common_Hm_rate = np.min([rate_creation_Hm,rate_destruction_Hm],axis=0)
+		temp = common_Hm_rate/(rate_creation_Hm**2)
+		temp[rate_creation_Hm<=0] = 0
+		temp[np.isnan(temp)] = 0
+		temp[np.logical_not(np.isfinite(temp))] = 1
+		fraction_Hm_destruction_rate = common_Hm_rate/rate_destruction_Hm
+		fraction_Hm_destruction_rate[rate_destruction_Hm<=0] = 0
+		fraction_Hm_destruction_rate[np.isnan(fraction_Hm_destruction_rate)] = 0
+		fraction_Hm_destruction_rate[np.logical_not(np.isfinite(fraction_Hm_destruction_rate))] = 1
+		fraction_1_Hm = e_H__Hm_pv*temp
+		fraction_2_Hm = e_H2__Hm_H*temp
 		MAR_from_Hm = Hp_Hm__Hex_H*(fraction_1_Hm + fraction_2_Hm)	# m^-3/s *1e-20
+		MAR_from_Hm *= fraction_Hm_destruction_rate
 		MAD_from_Hm = e_Hm__e_H_e*fraction_2_Hm + Hm_H1s__H1s_H1s_e*fraction_2_Hm + Hm_H2v__H_H2v_e*fraction_2_Hm	# m^-3/s *1e-20
+		MAD_from_Hm *= fraction_Hm_destruction_rate
 		MAI_from_Hm = np.zeros_like(MAD_from_Hm)	# m^-3/s *1e-20
-		fraction_1_H2p = Hp_Hm__H2p_e/rate_creation_H2p
-		fraction_1_H2p[rate_creation_H2p<=0] = 0
-		fraction_2_H2p = e_H2__e_H2p_e/rate_creation_H2p
-		fraction_2_H2p[rate_creation_H2p<=0] = 0
-		fraction_3_H2p = Hp_H2v__H_H2p/rate_creation_H2p
-		fraction_3_H2p[rate_creation_H2p<=0] = 0
-		fraction_4_H2p = (H1s_H_2__H2p_e + H1s_H_3__H2p_e + H1s_H_4__H2p_e)/rate_creation_H2p
-		fraction_4_H2p[rate_creation_H2p<=0] = 0
-		fraction_5_H2p = Hp_H_H__H_H2p/rate_creation_H2p
-		fraction_5_H2p[rate_creation_H2p<=0] = 0
-		fraction_1a_H2p = Hp_Hm__H2p_e/rate_creation_H2p * e_H__Hm_pv/rate_creation_Hm
-		fraction_1a_H2p[rate_creation_H2p<=0] = 0
-		fraction_1a_H2p[rate_creation_Hm<=0] = 0
-		fraction_1b_H2p = Hp_Hm__H2p_e/rate_creation_H2p * e_H2__Hm_H/rate_creation_Hm
-		fraction_1b_H2p[rate_creation_H2p<=0] = 0
-		fraction_1b_H2p[rate_creation_Hm<=0] = 0
+		MAI_from_Hm *= fraction_Hm_destruction_rate
+		common_H2p_rate = np.min([rate_creation_H2p,rate_destruction_H2p],axis=0)
+		temp = common_H2p_rate/(rate_creation_H2p**2)
+		temp[rate_creation_H2p<=0] = 0
+		temp[np.isnan(temp)] = 0
+		temp[np.logical_not(np.isfinite(temp))] = 1
+		fraction_H2p_destruction_rate = common_H2p_rate/rate_destruction_H2p
+		fraction_H2p_destruction_rate[rate_destruction_H2p<=0] = 0
+		fraction_H2p_destruction_rate[np.isnan(fraction_H2p_destruction_rate)] = 0
+		fraction_H2p_destruction_rate[np.logical_not(np.isfinite(fraction_H2p_destruction_rate))] = 1
+		fraction_1_H2p = Hp_Hm__H2p_e*temp
+		fraction_2_H2p = e_H2__e_H2p_e*temp
+		fraction_3_H2p = Hp_H2v__H_H2p*temp
+		fraction_4_H2p = (H1s_H_2__H2p_e + H1s_H_3__H2p_e + H1s_H_4__H2p_e)*temp
+		fraction_5_H2p = Hp_H_H__H_H2p*temp
+		fraction_1a_H2p = fraction_1_H2p * fraction_1_Hm
+		fraction_1b_H2p = fraction_1_H2p * fraction_2_Hm
 		MAR_from_H2p = e_H2p__H_H*(fraction_3_H2p + fraction_5_H2p + fraction_1a_H2p + fraction_1b_H2p)	# m^-3/s *1e-20
+		MAR_from_H2p *= fraction_H2p_destruction_rate
 		MAD_from_H2p = e_H2p__XXX__e_Hp_H*(fraction_3_H2p + fraction_1b_H2p) + e_H2p__H_H*fraction_2_H2p + e_H2p__e_Hp_Hp_e*0 + H1s_H2pv__Hp_H_H*(fraction_3_H2p + fraction_1b_H2p) + H2pvi_H2v0__Hp_H_H2v1*(fraction_3_H2p + fraction_1b_H2p) + H2pvi_H2v0__H3p_H1s*0	# m^-3/s *1e-20
+		MAD_from_H2p *= fraction_H2p_destruction_rate
 		MAI_from_H2p = e_H2p__XXX__e_Hp_H*(fraction_2_H2p + fraction_4_H2p) + e_H2p__H_H*0 + e_H2p__e_Hp_Hp_e*(fraction_2_H2p*2 + fraction_3_H2p + fraction_4_H2p*2 + fraction_5_H2p + fraction_1a_H2p + fraction_1b_H2p) + H1s_H2pv__Hp_H_H*(fraction_2_H2p + fraction_4_H2p) + H2pvi_H2v0__Hp_H_H2v1*(fraction_2_H2p + fraction_4_H2p) + H2pvi_H2v0__H3p_H1s*(fraction_2_H2p + fraction_4_H2p)	# m^-3/s *1e-20
+		MAI_from_H2p *= fraction_H2p_destruction_rate
 
-		fraction_1_1_1 = fraction_1_H2p*fraction_1_Hm*fraction_1_Hm
-		fraction_1_1_2 = fraction_1_H2p*fraction_1_Hm*fraction_2_Hm
-		fraction_1_2_1 = fraction_1_H2p*fraction_2_Hm*fraction_1_Hm
-		fraction_1_2_2 = fraction_1_H2p*fraction_2_Hm*fraction_2_Hm
+		fraction_1_1_1 = fraction_1a_H2p*fraction_1_Hm
+		fraction_1_1_2 = fraction_1a_H2p*fraction_2_Hm
+		fraction_1_2_1 = fraction_1b_H2p*fraction_1_Hm
+		fraction_1_2_2 = fraction_1b_H2p*fraction_2_Hm
 		fraction_2_1 = fraction_2_H2p*fraction_1_Hm
 		fraction_2_2 = fraction_2_H2p*fraction_2_Hm
 		fraction_3_1 = fraction_3_H2p*fraction_1_Hm
@@ -4768,10 +4937,18 @@ def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all
 		fraction_4_2 = fraction_4_H2p*fraction_2_Hm
 		fraction_5_1 = fraction_5_H2p*fraction_1_Hm
 		fraction_5_2 = fraction_5_H2p*fraction_2_Hm
+		fraction_Hm_H2p_destruction_rate = np.min([common_H2p_rate/rate_destruction_H2p,common_Hm_rate/rate_destruction_Hm],axis=0)
+		fraction_Hm_H2p_destruction_rate[rate_destruction_H2p<=0] = 0
+		fraction_Hm_H2p_destruction_rate[rate_destruction_Hm<=0] = 0
+		fraction_Hm_H2p_destruction_rate[np.isnan(fraction_Hm_H2p_destruction_rate)] = 0
+		fraction_Hm_H2p_destruction_rate[np.logical_not(np.isfinite(fraction_Hm_H2p_destruction_rate))] = 1
 
 		MAR_from_H2p_Hm = (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*(fraction_1_1_1 + fraction_1_1_2 + fraction_1_2_1 + fraction_1_2_2 + fraction_3_2 + fraction_5_1 + fraction_5_2)	# m^-3/s *1e-20
+		MAR_from_H2p_Hm *= fraction_Hm_H2p_destruction_rate
 		MAD_from_H2p_Hm = (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*(fraction_2_2)	# m^-3/s *1e-20
+		MAD_from_H2p_Hm *= fraction_Hm_H2p_destruction_rate
 		MAI_from_H2p_Hm = (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*(fraction_3_1) + H2p_Hm__H3p_e*(fraction_2_1 + fraction_2_2 + fraction_4_1 + fraction_4_2)	# m^-3/s *1e-20
+		MAI_from_H2p_Hm *= fraction_Hm_H2p_destruction_rate
 
 		atomic_H2_dissociation = e_H2__e_Hex_H + e_H2X1Σg__e_H1s_H1s + Hp_H2X1Σg__Hp_H1s_H1s + H1s_H2v__H1s_2H1s + H2v0_H2v__H2v0_2H1s	# m^-3/s *1e-20
 
@@ -4824,7 +5001,7 @@ def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all
 	# plasma heating
 	# this process release a photon with the difference in potential, so its not heating the plasma but cooling it
 	# e_H__Hm_pv_energy = e_H__Hm_pv * ((H_potential_n1 + e_potential) - (Hm_potential))	# eV m^-3/s *1e-20		# 1
-	Hp_Hm__Hex_H_specific_energy = ((Hm_potential + Hp_potential) - (2*H_potential_n1))
+	Hp_Hm__Hex_H_specific_energy = ((Hm_potential + Hp_potential) - (2*H_potential_n1))	# this is always heating, negative
 	Hp_Hm__Hex_H_energy = Hp_Hm__Hex_H * Hp_Hm__Hex_H_specific_energy		# 2
 	# Here I must only consider the END difference in potential energy.
 	# Hp_Hm__Hex_H_energy = np.sum(Hp_Hm__Hn_H.T * ((Hm_potential + Hp_potential) - (H_potential_n1 + H_potential_n1)),axis=-1).T		# 2
@@ -4842,18 +5019,9 @@ def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all
 	# H2p_Hm__Hex_H2_energy = np.sum(H2p_Hm__Hn_H2.T * ((Hm_potential + H2p_potential) - (H_potential_n2_x + H2_potential)),axis=-1).T		# 5	# eV m^-3/s *1e-20
 	Hp_H_H__H_H2p_specific_energy = ((2*H_potential_n1 + Hp_potential) - (H_potential_n1 + H2p_potential))
 	Hp_H_H__H_H2p_energy = Hp_H_H__H_H2p * Hp_H_H__H_H2p_specific_energy		# 6	# eV m^-3/s *1e-20
-	# the energy to excite the hydrogen from ground state to p=3/4 is already included in the PEC/Yacora radiative losses.
-	# this is not true, though. radiative losses are net losses, potential energy is not, so there is a difference
-	# the reality is, though, that this rate is very not important.
-	# the error I'm doing is that the energy to go from ground to 3/4 is now considered escaping the plasma, while in reality some of it isn't via this reaction
-	H1s_H_3__H2p_e_specific_energy = ((H_potential_n1 + H_potential_n3) - (H2p_potential + e_potential))
-	H1s_H_3__H2p_e_energy = H1s_H_3__H2p_e * H1s_H_3__H2p_e_specific_energy		# 7	# eV m^-3/s *1e-20
-	H1s_H_4__H2p_e_specific_energy = ((H_potential_n1 + H_potential_n4) - (H2p_potential + e_potential))
-	H1s_H_4__H2p_e_energy = H1s_H_4__H2p_e * H1s_H_4__H2p_e_specific_energy		# 8	# eV m^-3/s *1e-20
-	# For consistency I should consider only the ground state energy. the plasma frist pays energy to excite H, then he reaction happens
-	# doing this the reactions become cooling, so I put them in the appropriate section
-	H2pvi_H2v0__Hp_H_H2v1_specific_energy = ((H2_potential + H2p_potential) - (H_potential_n1 + H2_potential + H2p_potential))
-	H2pvi_H2v0__Hp_H_H2v1_energy = H2pvi_H2v0__Hp_H_H2v1 * H2pvi_H2v0__Hp_H_H2v1_specific_energy		# 9	# eV m^-3/s *1e-20
+	# empty		# 7	# eV m^-3/s *1e-20
+	# empty		# 8	# eV m^-3/s *1e-20
+	# empty		# 9	# eV m^-3/s *1e-20
 	H2p_Hm__H2N13Λσ_H1s_specific_energy = ((Hm_potential + H2p_potential) - (H_potential_n1 + H2_potential))
 	H2p_Hm__H2N13Λσ_H1s_energy = H2p_Hm__H2N13Λσ_H1s * H2p_Hm__H2N13Λσ_H1s_specific_energy		# 10	# eV m^-3/s *1e-20
 	Hp_H_H__Hp_H2_specific_energy = ((2*H_potential_n1 + Hp_potential) - (H2_potential + Hp_potential))
@@ -4879,7 +5047,7 @@ def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all
 	e_H2__e_H2p_e_energy = e_H2__e_H2p_e * e_H2__e_H2p_e_specific_energy		# 25	# eV m^-3/s *1e-20
 	Hp_H2v__H_H2p_specific_energy = ((H2_potential + Hp_potential) - (H_potential_n1 + H2p_potential))
 	Hp_H2v__H_H2p_energy = Hp_H2v__H_H2p * Hp_H2v__H_H2p_specific_energy		# 26	# eV m^-3/s *1e-20
-	H1s_H_2__H2p_e_specific_energy = ((H_potential_n1 + H_potential_n2) - (H2p_potential + e_potential))
+	H1s_H_2__H2p_e_specific_energy = ((H_potential_n1 + H_potential_n1) - (H2p_potential + e_potential))
 	H1s_H_2__H2p_e_energy = H1s_H_2__H2p_e * H1s_H_2__H2p_e_specific_energy		# 27	# eV m^-3/s *1e-20
 	e_H2p__e_Hp_Hp_e_specific_energy = ((H2p_potential + e_potential) - (2*e_potential + 2*Hp_potential))
 	e_H2p__e_Hp_Hp_e_energy = e_H2p__e_Hp_Hp_e * e_H2p__e_Hp_Hp_e_specific_energy		# 28	# eV m^-3/s *1e-20
@@ -4928,47 +5096,39 @@ def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all
 	# I only keep it to see how much it is
 	e_H__Hm_pv_specific_energy = -((H_potential_n1 + e_potential) - (Hm_potential))
 	e_H__Hm_pv_energy = e_H__Hm_pv * e_H__Hm_pv_specific_energy		# 41	# eV m^-3/s *1e-20
+	# For consistency I should consider only the ground state energy. the plasma frist pays energy to excite H, then he reaction happens
+	# doing this the reactions become cooling, so I put them in the appropriate section
+	H2pvi_H2v0__Hp_H_H2v1_specific_energy = ((H2_potential + H2p_potential) - (H_potential_n1 + H2_potential + Hp_potential))
+	H2pvi_H2v0__Hp_H_H2v1_energy = H2pvi_H2v0__Hp_H_H2v1 * H2pvi_H2v0__Hp_H_H2v1_specific_energy		# 42	# eV m^-3/s *1e-20
+	# the energy to excite the hydrogen from ground state to p=3/4 is already included in the PEC/Yacora radiative losses.
+	# this is not true, though. radiative losses are net losses, potential energy is not, so there is a difference
+	# the reality is, though, that this rate is very not important.
+	# the error I'm doing is that the energy to go from ground to 3/4 is now considered escaping the plasma, while in reality some of it isn't via this reaction
+	H1s_H_3__H2p_e_specific_energy = ((H_potential_n1 + H_potential_n1) - (H2p_potential + e_potential))
+	H1s_H_3__H2p_e_energy = H1s_H_3__H2p_e * H1s_H_3__H2p_e_specific_energy		# 43	# eV m^-3/s *1e-20
+	H1s_H_4__H2p_e_specific_energy = ((H_potential_n1 + H_potential_n1) - (H2p_potential + e_potential))
+	H1s_H_4__H2p_e_energy = H1s_H_4__H2p_e * H1s_H_4__H2p_e_specific_energy		# 44	# eV m^-3/s *1e-20
 
 	if require_strongest:
-		fraction_1_Hm_energy = e_H__Hm_pv_energy* np.maximum(((e_H__Hm_pv + e_H2__Hm_H - Hp_Hm__H2p_e)/rate_creation_Hm) /(rate_destruction_Hm - Hp_Hm__H2p_e),0)	# the second bit accounts for the H- "stolen" to generate H2+
-		fraction_1_Hm_energy[rate_creation_Hm<=0] = 0
-		fraction_1_Hm_energy[rate_destruction_Hm - Hp_Hm__H2p_e<=0] = 0
-		fraction_2_Hm_energy = e_H2__Hm_H_energy* np.maximum(((e_H__Hm_pv + e_H2__Hm_H - Hp_Hm__H2p_e)/rate_creation_Hm) /(rate_destruction_Hm - Hp_Hm__H2p_e),0)	# the second bit accounts for the H- "stolen" to generate H2+
-		fraction_2_Hm_energy[rate_creation_Hm<=0] = 0
-		fraction_2_Hm_energy[rate_destruction_Hm - Hp_Hm__H2p_e<=0] = 0
-		MAR_from_Hm_energy = Hp_Hm__Hex_H_energy*(fraction_1_Hm + fraction_2_Hm) + Hp_Hm__Hex_H*(fraction_1_Hm_energy + fraction_2_Hm_energy)	# eV m^-3/s *1e-20
-		MAD_from_Hm_energy = e_Hm__e_H_e_energy*fraction_2_Hm + e_Hm__e_H_e*fraction_2_Hm_energy + Hm_H1s__H1s_H1s_e_energy*fraction_2_Hm + Hm_H1s__H1s_H1s_e*fraction_2_Hm_energy + Hm_H2v__H_H2v_e_energy*fraction_2_Hm + Hm_H2v__H_H2v_e*fraction_2_Hm_energy	# eV m^-3/s *1e-20
+		MAR_from_Hm_energy = (Hp_Hm__Hex_H_specific_energy+e_H__Hm_pv_specific_energy)*Hp_Hm__Hex_H*fraction_1_Hm + (Hp_Hm__Hex_H_specific_energy+e_H2__Hm_H_specific_energy)*Hp_Hm__Hex_H*fraction_2_Hm
+		MAR_from_Hm_energy *= fraction_Hm_destruction_rate	# eV m^-3/s *1e-20
+		MAD_from_Hm_energy = (e_Hm__e_H_e_specific_energy+e_H2__Hm_H_specific_energy)*e_Hm__e_H_e*fraction_2_Hm + (Hm_H1s__H1s_H1s_e_specific_energy+e_H2__Hm_H_specific_energy)*Hm_H1s__H1s_H1s_e*fraction_2_Hm + (Hm_H2v__H_H2v_e_specific_energy+e_H2__Hm_H_specific_energy)*Hm_H2v__H_H2v_e*fraction_2_Hm
+		MAD_from_Hm_energy *= fraction_Hm_destruction_rate	# eV m^-3/s *1e-20
 		MAI_from_Hm_energy = np.zeros_like(MAD_from_Hm_energy)	# eV m^-3/s *1e-20
 
-		fraction_1_H2p_energy = ((e_H__Hm_pv_energy + e_H2__Hm_H_energy)* (Hp_Hm__H2p_e/rate_creation_Hm)  + Hp_Hm__H2p_e_energy)/rate_destruction_H2p
-		fraction_1_H2p_energy[rate_creation_Hm<=0] = 0
-		fraction_1_H2p_energy[rate_destruction_H2p<=0] = 0
-		fraction_2_H2p_energy = e_H2__e_H2p_e_energy/rate_destruction_H2p
-		fraction_2_H2p_energy[rate_destruction_H2p<=0] = 0
-		fraction_3_H2p_energy = Hp_H2v__H_H2p_energy/rate_destruction_H2p
-		fraction_3_H2p_energy[rate_destruction_H2p<=0] = 0
-		fraction_4_H2p_energy = (H1s_H_2__H2p_e_energy + H1s_H_3__H2p_e_energy + H1s_H_4__H2p_e_energy)/rate_destruction_H2p
-		fraction_4_H2p_energy[rate_destruction_H2p<=0] = 0
-		fraction_5_H2p_energy = Hp_H_H__H_H2p_energy/rate_destruction_H2p
-		fraction_5_H2p_energy[rate_destruction_H2p<=0] = 0
-		fraction_1a_H2p_energy = (e_H__Hm_pv_energy + Hp_Hm__H2p_e_energy)* (Hp_Hm__H2p_e/rate_creation_Hm)/rate_destruction_H2p
-		fraction_1a_H2p_energy[rate_creation_Hm<=0] = 0
-		fraction_1a_H2p_energy[rate_destruction_H2p<=0] = 0
-		fraction_1b_H2p_energy = (e_H2__Hm_H_energy + Hp_Hm__H2p_e_energy)* (Hp_Hm__H2p_e/rate_creation_Hm)/rate_destruction_H2p
-		fraction_1b_H2p_energy[rate_creation_Hm<=0] = 0
-		fraction_1b_H2p_energy[rate_destruction_H2p<=0] = 0
+		MAR_from_H2p_energy = (e_H2p__H_H_specific_energy+Hp_H2v__H_H2p_specific_energy)*e_H2p__H_H*fraction_3_H2p + (e_H2p__H_H_specific_energy+Hp_H_H__H_H2p_specific_energy)*e_H2p__H_H*fraction_5_H2p + (e_H2p__H_H_specific_energy+e_H__Hm_pv_specific_energy+Hp_Hm__H2p_e_specific_energy)*e_H2p__H_H*fraction_1a_H2p + (e_H2p__H_H_specific_energy+e_H2__Hm_H_specific_energy+Hp_Hm__H2p_e_specific_energy)*e_H2p__H_H*fraction_1b_H2p
+		MAR_from_H2p_energy *= fraction_H2p_destruction_rate	# eV m^-3/s *1e-20
+		MAD_from_H2p_energy = (e_H2p__XXX__e_Hp_H_specific_energy+Hp_H2v__H_H2p_specific_energy)*e_H2p__XXX__e_Hp_H*fraction_3_H2p + (e_H2p__XXX__e_Hp_H_specific_energy+e_H2__Hm_H_specific_energy+Hp_Hm__H2p_e_specific_energy)*e_H2p__XXX__e_Hp_H*fraction_1b_H2p + (e_H2p__H_H_specific_energy+e_H2__e_H2p_e_specific_energy)*e_H2p__H_H*fraction_2_H2p + (H1s_H2pv__Hp_H_H_specific_energy+Hp_H2v__H_H2p_specific_energy)*H1s_H2pv__Hp_H_H*fraction_3_H2p + (H1s_H2pv__Hp_H_H_specific_energy+e_H2__Hm_H_specific_energy+Hp_Hm__H2p_e_specific_energy)*H1s_H2pv__Hp_H_H*fraction_1b_H2p + (H2pvi_H2v0__Hp_H_H2v1_specific_energy+Hp_H2v__H_H2p_specific_energy)*H2pvi_H2v0__Hp_H_H2v1*fraction_3_H2p + (H2pvi_H2v0__Hp_H_H2v1_specific_energy+e_H2__Hm_H_specific_energy+Hp_Hm__H2p_e_specific_energy)*H2pvi_H2v0__Hp_H_H2v1*fraction_1b_H2p
+		MAD_from_H2p_energy *= fraction_H2p_destruction_rate	# eV m^-3/s *1e-20
+		MAI_from_H2p_energy = (e_H2p__XXX__e_Hp_H_specific_energy+e_H2__e_H2p_e_specific_energy)*e_H2p__XXX__e_Hp_H*fraction_2_H2p + (e_H2p__XXX__e_Hp_H_specific_energy+H1s_H_2__H2p_e_specific_energy)*e_H2p__XXX__e_Hp_H*fraction_4_H2p + (e_H2p__e_Hp_Hp_e_specific_energy+e_H2__e_H2p_e_specific_energy)*e_H2p__e_Hp_Hp_e*fraction_2_H2p + (e_H2p__e_Hp_Hp_e_specific_energy+Hp_H2v__H_H2p_specific_energy)*e_H2p__e_Hp_Hp_e*fraction_3_H2p + (e_H2p__e_Hp_Hp_e_specific_energy+H1s_H_2__H2p_e_specific_energy)*e_H2p__e_Hp_Hp_e*fraction_4_H2p + (e_H2p__e_Hp_Hp_e_specific_energy+Hp_H_H__H_H2p_specific_energy)*e_H2p__e_Hp_Hp_e*fraction_5_H2p + (e_H2p__e_Hp_Hp_e_specific_energy+e_H__Hm_pv_specific_energy+Hp_Hm__H2p_e_specific_energy)*e_H2p__e_Hp_Hp_e*fraction_1a_H2p + (e_H2p__e_Hp_Hp_e_specific_energy+e_H2__Hm_H_specific_energy+Hp_Hm__H2p_e_specific_energy)*e_H2p__e_Hp_Hp_e*fraction_1b_H2p + (H1s_H2pv__Hp_H_H_specific_energy+e_H2__e_H2p_e_specific_energy)*H1s_H2pv__Hp_H_H*fraction_2_H2p + (H1s_H2pv__Hp_H_H_specific_energy+H1s_H_2__H2p_e_specific_energy)*H1s_H2pv__Hp_H_H*fraction_4_H2p + (H2pvi_H2v0__Hp_H_H2v1_specific_energy+e_H2__e_H2p_e_specific_energy)*H2pvi_H2v0__Hp_H_H2v1*fraction_2_H2p + (H2pvi_H2v0__Hp_H_H2v1_specific_energy+H1s_H_2__H2p_e_specific_energy)*H2pvi_H2v0__Hp_H_H2v1*fraction_4_H2p + (H2pvi_H2v0__H3p_H1s_specific_energy+e_H2__e_H2p_e_specific_energy)*H2pvi_H2v0__H3p_H1s*fraction_2_H2p + (H2pvi_H2v0__H3p_H1s_specific_energy+H1s_H_2__H2p_e_specific_energy)*H2pvi_H2v0__H3p_H1s*fraction_4_H2p	# m^-3/s *1e-20
+		MAI_from_H2p_energy *= fraction_H2p_destruction_rate	# eV m^-3/s *1e-20
 
-		MAR_from_H2p_energy = e_H2p__H_H_energy*(fraction_3_H2p + fraction_5_H2p + fraction_1a_H2p + fraction_1b_H2p) + e_H2p__H_H*(fraction_3_H2p_energy + fraction_5_H2p_energy + fraction_1a_H2p_energy + fraction_1b_H2p_energy)	# eV m^-3/s *1e-20
-		MAD_from_H2p_energy = e_H2p__XXX__e_Hp_H_energy*(fraction_3_H2p + fraction_1b_H2p) + e_H2p__XXX__e_Hp_H*(fraction_3_H2p_energy + fraction_1b_H2p_energy) + e_H2p__H_H_energy*fraction_2_H2p + e_H2p__H_H*fraction_2_H2p_energy + e_H2p__e_Hp_Hp_e*0 + H1s_H2pv__Hp_H_H_energy*(fraction_3_H2p + fraction_1b_H2p) + H1s_H2pv__Hp_H_H*(fraction_3_H2p_energy + fraction_1b_H2p_energy) + H2pvi_H2v0__Hp_H_H2v1_energy*(fraction_3_H2p + fraction_1b_H2p) + H2pvi_H2v0__Hp_H_H2v1*(fraction_3_H2p_energy + fraction_1b_H2p_energy) + H2pvi_H2v0__H3p_H1s*0	# m^-3/s *1e-20
-		MAI_from_H2p_energy = e_H2p__XXX__e_Hp_H_energy*(fraction_2_H2p + fraction_4_H2p) + e_H2p__XXX__e_Hp_H*(fraction_2_H2p_energy + fraction_4_H2p_energy) + e_H2p__H_H*0 + e_H2p__e_Hp_Hp_e_energy*(fraction_2_H2p + fraction_3_H2p + fraction_4_H2p + fraction_5_H2p + fraction_1a_H2p + fraction_1b_H2p) + e_H2p__e_Hp_Hp_e*(fraction_2_H2p_energy + fraction_3_H2p_energy + fraction_4_H2p_energy + fraction_5_H2p_energy + fraction_1a_H2p_energy + fraction_1b_H2p_energy) + H1s_H2pv__Hp_H_H_energy*(fraction_2_H2p + fraction_4_H2p) + H1s_H2pv__Hp_H_H*(fraction_2_H2p_energy + fraction_4_H2p_energy) + H2pvi_H2v0__Hp_H_H2v1_energy*(fraction_2_H2p + fraction_4_H2p) + H2pvi_H2v0__Hp_H_H2v1*(fraction_2_H2p_energy + fraction_4_H2p_energy) + H2pvi_H2v0__H3p_H1s_energy*(fraction_2_H2p + fraction_4_H2p) + H2pvi_H2v0__H3p_H1s*(fraction_2_H2p_energy + fraction_4_H2p_energy)	# m^-3/s *1e-20
-
-		temp = e_H2__Hm_H/rate_creation_Hm
-		temp[rate_creation_Hm<=0] = 0
-		temp1 = e_H__Hm_pv/rate_creation_Hm
-		temp1[rate_creation_Hm<=0] = 0
-		MAR_from_H2p_Hm_energy = (H2p_Hm__H2N13Λσ_H1s_energy + H2p_Hm__Hex_H2_energy)*(fraction_1_1_1 + fraction_1_1_2 + fraction_1_2_1 + fraction_1_2_2 + fraction_3_2 + fraction_5_1 + fraction_5_2) + (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*(fraction_1a_H2p_energy + fraction_1b_H2p_energy + fraction_5_H2p_energy + fraction_3_H2p_energy*(temp) + fraction_1_Hm_energy*np.maximum(H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2-Hp_Hm__H2p_e,0)*(fraction_1_H2p+fraction_5_H2p) + fraction_2_Hm_energy*np.maximum(H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2-Hp_Hm__H2p_e,0)*(fraction_1_H2p+fraction_3_H2p+fraction_5_H2p))	# m^-3/s *1e-20
-		MAD_from_H2p_Hm_energy = (H2p_Hm__H2N13Λσ_H1s_energy + H2p_Hm__Hex_H2_energy)*(fraction_2_2) + (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*fraction_2_H2p_energy*(temp) + (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*fraction_2_Hm_energy*fraction_2_H2p	# m^-3/s *1e-20
-		MAI_from_H2p_Hm_energy = (H2p_Hm__H2N13Λσ_H1s_energy + H2p_Hm__Hex_H2_energy)*(fraction_3_1) + (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*fraction_3_H2p_energy*(temp1) + (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*fraction_1_Hm_energy*(fraction_3_H2p) + (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*H2p_Hm__H3p_e_energy*(fraction_2_1 + fraction_2_2 + fraction_4_1 + fraction_4_2) + H2p_Hm__H3p_e*(fraction_2_H2p_energy + fraction_4_H2p_energy + (fraction_1_Hm_energy + fraction_2_Hm_energy))	# m^-3/s *1e-20
+		MAR_from_H2p_Hm_energy = (H2p_Hm__H2N13Λσ_H1s_specific_energy*H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2_specific_energy*H2p_Hm__Hex_H2)*(fraction_1_1_1 + fraction_1_1_2 + fraction_1_2_1 + fraction_1_2_2 + fraction_3_2 + fraction_5_1 + fraction_5_2) + (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*((e_H__Hm_pv_specific_energy+Hp_Hm__H2p_e_specific_energy + e_H__Hm_pv_specific_energy)*fraction_1_1_1 + (e_H__Hm_pv_specific_energy+Hp_Hm__H2p_e_specific_energy + e_H2__Hm_H_specific_energy)*fraction_1_1_2 +(e_H2__Hm_H_specific_energy+Hp_Hm__H2p_e_specific_energy + e_H__Hm_pv_specific_energy)*fraction_1_2_1 + (e_H2__Hm_H_specific_energy+Hp_Hm__H2p_e_specific_energy + e_H2__Hm_H_specific_energy)*fraction_1_2_2 + (Hp_H2v__H_H2p_specific_energy + e_H2__Hm_H_specific_energy)*fraction_3_2 + (Hp_H_H__H_H2p_specific_energy + e_H__Hm_pv_specific_energy)*fraction_5_1 + (Hp_H_H__H_H2p_specific_energy + e_H2__Hm_H_specific_energy)*fraction_5_2)	# m^-3/s *1e-20
+		MAR_from_H2p_Hm_energy *= fraction_Hm_H2p_destruction_rate	# eV m^-3/s *1e-20
+		MAD_from_H2p_Hm_energy = (H2p_Hm__H2N13Λσ_H1s_specific_energy*H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2_specific_energy*H2p_Hm__Hex_H2)*(fraction_2_2) + (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*(e_H2__e_H2p_e_specific_energy + e_H2__Hm_H_specific_energy)*(fraction_2_2)
+		MAD_from_H2p_Hm_energy *= fraction_Hm_H2p_destruction_rate	# eV m^-3/s *1e-20
+		MAI_from_H2p_Hm_energy = (H2p_Hm__H2N13Λσ_H1s_specific_energy*H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2_specific_energy*H2p_Hm__Hex_H2)*(fraction_3_1) + (H2p_Hm__H2N13Λσ_H1s + H2p_Hm__Hex_H2)*(Hp_H2v__H_H2p_specific_energy + e_H__Hm_pv_specific_energy)*(fraction_3_1) + H2p_Hm__H3p_e_specific_energy*H2p_Hm__H3p_e*(fraction_2_1 + fraction_2_2 + fraction_4_1 + fraction_4_2) + H2p_Hm__H3p_e*((e_H2__e_H2p_e_specific_energy + e_H__Hm_pv_specific_energy)*fraction_2_1 + (e_H2__e_H2p_e_specific_energy + e_H2__Hm_H_specific_energy)*fraction_2_2 + (H1s_H_2__H2p_e_specific_energy + e_H__Hm_pv_specific_energy)*fraction_4_1 + (H1s_H_2__H2p_e_specific_energy + e_H2__Hm_H_specific_energy)*fraction_4_2)
+		MAI_from_H2p_Hm_energy *= fraction_Hm_H2p_destruction_rate	# eV m^-3/s *1e-20
 
 		atomic_H2_dissociation_energy = e_H2__e_Hex_H_energy  + e_H2X1Σg__e_H1s_H1s_energy + Hp_H2X1Σg__Hp_H1s_H1s_energy + H1s_H2v__H1s_2H1s_energy + H2v0_H2v__H2v0_2H1s_energy	# m^-3/s *1e-20
 
@@ -5029,8 +5189,8 @@ def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all
 	power_potential_mol_sigma_new = power_potential_mol_sigma_new*(1e20/J_to_eV)	# J m^-3/s
 
 	# power_potential_mol = (e_H__Hm_pv_energy + e_H2__Hm_H_energy + e_Hm__e_H_e_energy + Hp_Hm__Hex_H_energy + Hp_Hm__H2p_e_energy + Hm_H1s__H1s_H1s_e_energy + Hm_H1s__H2_v_e_energy + Hm_H2v__H_H2v_e_energy + H2p_Hm__Hex_H2_energy + e_H2__e_H2p_e_energy + Hp_H2v__H_H2p_energy + Hp_H_H__H_H2p_energy + H1s_H_2__H2p_e_energy + H1s_H_3__H2p_e_energy + H1s_H_4__H2p_e_energy + e_H2p__XXX__e_Hp_H_energy + e_H2p__e_Hp_Hp_e_energy + H1s_H2pv__Hp_H_H_energy + H2pvi_H2v0__Hp_H_H2v1_energy + H2pvi_H2v0__H3p_H1s_energy + H2p_Hm__H2N13Λσ_H1s_energy + H2p_Hm__H3p_e_energy + Hp_H_H__Hp_H2_energy + H_H_H__H_H2_energy + e_H2__e_Hex_H_energy + e_H2__Hp_H_2e_energy + e_H2X1Σg__e_H1s_H1s_energy + Hp_H2X1Σg__Hp_H1s_H1s_energy + H1s_H2v__H1s_2H1s_energy + H2v0_H2v__H2v0_2H1s_energy + e_H2p__H_H_energy)	# eV m^-3/s *1e-20
-	power_potential_mol_plasma_heating = -(Hp_Hm__Hex_H_energy_heating + Hp_Hm__H2p_e_energy + Hm_H1s__H2_v_e_energy + H2p_Hm__Hex_H2_energy + Hp_H_H__H_H2p_energy + H1s_H_3__H2p_e_energy + H1s_H_4__H2p_e_energy + H2pvi_H2v0__Hp_H_H2v1_energy + H2p_Hm__H2N13Λσ_H1s_energy + Hp_H_H__Hp_H2_energy + H_H_H__H_H2_energy + e_H2p__H_H_energy)	# eV m^-3/s *1e-20
-	power_potential_mol_plasma_cooling = e_H2__Hm_H_energy + e_Hm__e_H_e_energy + Hm_H1s__H1s_H1s_e_energy + Hm_H2v__H_H2v_e_energy + e_H2__e_H2p_e_energy + Hp_H2v__H_H2p_energy + H1s_H_2__H2p_e_energy + e_H2p__e_Hp_Hp_e_energy + H1s_H2pv__Hp_H_H_energy + H2pvi_H2v0__H3p_H1s_energy + H2p_Hm__H3p_e_energy + e_H2__e_Hex_H_energy + e_H2__Hp_H_2e_energy + e_H2X1Σg__e_H1s_H1s_energy + Hp_H2X1Σg__Hp_H1s_H1s_energy + H1s_H2v__H1s_2H1s_energy + H2v0_H2v__H2v0_2H1s_energy + e_H2p__XXX__e_Hp_H_energy + Hp_Hm__Hex_H_energy_cooling	# eV m^-3/s *1e-20
+	power_potential_mol_plasma_heating = -(Hp_Hm__Hex_H_energy_heating + Hp_Hm__H2p_e_energy + Hm_H1s__H2_v_e_energy + H2p_Hm__Hex_H2_energy + Hp_H_H__H_H2p_energy + H2p_Hm__H2N13Λσ_H1s_energy + Hp_H_H__Hp_H2_energy + H_H_H__H_H2_energy + e_H2p__H_H_energy)	# eV m^-3/s *1e-20
+	power_potential_mol_plasma_cooling = e_H2__Hm_H_energy + e_Hm__e_H_e_energy + Hm_H1s__H1s_H1s_e_energy + Hm_H2v__H_H2v_e_energy + e_H2__e_H2p_e_energy + Hp_H2v__H_H2p_energy + H1s_H_2__H2p_e_energy + e_H2p__e_Hp_Hp_e_energy + H1s_H2pv__Hp_H_H_energy + H2pvi_H2v0__H3p_H1s_energy + H2p_Hm__H3p_e_energy + e_H2__e_Hex_H_energy + e_H2__Hp_H_2e_energy + e_H2X1Σg__e_H1s_H1s_energy + Hp_H2X1Σg__Hp_H1s_H1s_energy + H1s_H2v__H1s_2H1s_energy + H2v0_H2v__H2v0_2H1s_energy + e_H2p__XXX__e_Hp_H_energy + Hp_Hm__Hex_H_energy_cooling + H2pvi_H2v0__Hp_H_H2v1_energy + H1s_H_3__H2p_e_energy + H1s_H_4__H2p_e_energy	# eV m^-3/s *1e-20
 	power_potential_mol = power_potential_mol_plasma_cooling - power_potential_mol_plasma_heating	# eV m^-3/s *1e-20
 	power_potential_mol_sigma = (e_H2__Hm_H_energy_sigma**2 + e_Hm__e_H_e_energy_sigma**2 + Hp_Hm__Hex_H_energy_heating_sigma**2 + Hp_Hm__Hex_H_energy_cooling_sigma**2 + Hp_Hm__H2p_e_energy_sigma**2 + Hm_H1s__H1s_H1s_e_energy_sigma**2 + Hm_H1s__H2_v_e_energy_sigma**2 + Hm_H2v__H_H2v_e_energy_sigma**2 + H2p_Hm__Hex_H2_energy_sigma**2 + e_H2__e_H2p_e_energy_sigma**2 + Hp_H2v__H_H2p_energy_sigma**2 + Hp_H_H__H_H2p_energy_sigma**2 + H1s_H_2__H2p_e_energy_sigma**2 + H1s_H_3__H2p_e_energy_sigma**2 + H1s_H_4__H2p_e_energy_sigma**2 + e_H2p__e_Hp_Hp_e_energy_sigma**2 + H1s_H2pv__Hp_H_H_energy_sigma**2 + H2pvi_H2v0__Hp_H_H2v1_energy_sigma**2 + H2pvi_H2v0__H3p_H1s_energy_sigma**2 + H2p_Hm__H2N13Λσ_H1s_energy_sigma**2 + H2p_Hm__H3p_e_energy_sigma**2 + Hp_H_H__Hp_H2_energy_sigma**2 + H_H_H__H_H2_energy_sigma**2 + e_H2__e_Hex_H_energy_sigma**2 + e_H2__Hp_H_2e_energy_sigma**2 + e_H2X1Σg__e_H1s_H1s_energy_sigma**2 + Hp_H2X1Σg__Hp_H1s_H1s_energy_sigma**2 + H1s_H2v__H1s_2H1s_energy_sigma**2 + H2v0_H2v__H2v0_2H1s_energy_sigma**2 + e_H2p__H_H_energy**2 + e_H2p__XXX__e_Hp_H_energy_sigma**2)**0.5 *1e10	# eV m^-3/s *1e-20
 	power_potential_mol = power_potential_mol*(1e20/J_to_eV)	# J m^-3/s
@@ -5040,18 +5200,18 @@ def all_RR_and_power_balance(Te_long,T_Hp,T_H,T_H2,T_Hm,T_H2p,ne_long,nHp_ne_all
 
 
 	if require_strongest:
-		strongest_potential_mol_plasma_heating = (np.array([np.zeros_like(e_H__Hm_pv_energy) , Hp_Hm__Hex_H_energy_heating , Hp_Hm__H2p_e_energy , Hm_H1s__H2_v_e_energy , H2p_Hm__Hex_H2_energy , Hp_H_H__H_H2p_energy , H1s_H_3__H2p_e_energy , H1s_H_4__H2p_e_energy , H2pvi_H2v0__Hp_H_H2v1_energy , H2p_Hm__H2N13Λσ_H1s_energy , Hp_H_H__Hp_H2_energy , H_H_H__H_H2_energy , recombination_energy , e_H2p__H_H_energy]).argmin(axis=0) + 1).astype(int)
-		strongest_potential_mol_plasma_cooling = (np.array([e_H2__Hm_H_energy , e_Hm__e_H_e_energy , Hm_H1s__H1s_H1s_e_energy , Hm_H2v__H_H2v_e_energy , e_H2__e_H2p_e_energy , Hp_H2v__H_H2p_energy , H1s_H_2__H2p_e_energy , e_H2p__e_Hp_Hp_e_energy , H1s_H2pv__Hp_H_H_energy , H2pvi_H2v0__H3p_H1s_energy , H2p_Hm__H3p_e_energy , e_H2__e_Hex_H_energy , e_H2__Hp_H_2e_energy , e_H2X1Σg__e_H1s_H1s_energy , Hp_H2X1Σg__Hp_H1s_H1s_energy , H1s_H2v__H1s_2H1s_energy , H2v0_H2v__H2v0_2H1s_energy , ionisation_energy , e_H2p__XXX__e_Hp_H_energy , Hp_Hm__Hex_H_energy_cooling,e_H__Hm_pv_energy]).argmax(axis=0) + 21).astype(int)
+		strongest_potential_mol_plasma_heating = (np.array([np.zeros_like(e_H__Hm_pv_energy) , Hp_Hm__Hex_H_energy_heating , Hp_Hm__H2p_e_energy , Hm_H1s__H2_v_e_energy , H2p_Hm__Hex_H2_energy , Hp_H_H__H_H2p_energy , np.zeros_like(e_H__Hm_pv_energy) , np.zeros_like(e_H__Hm_pv_energy) , np.zeros_like(e_H__Hm_pv_energy) , H2p_Hm__H2N13Λσ_H1s_energy , Hp_H_H__Hp_H2_energy , H_H_H__H_H2_energy , recombination_energy , e_H2p__H_H_energy]).argmin(axis=0) + 1).astype(int)
+		strongest_potential_mol_plasma_cooling = (np.array([e_H2__Hm_H_energy , e_Hm__e_H_e_energy , Hm_H1s__H1s_H1s_e_energy , Hm_H2v__H_H2v_e_energy , e_H2__e_H2p_e_energy , Hp_H2v__H_H2p_energy , H1s_H_2__H2p_e_energy , e_H2p__e_Hp_Hp_e_energy , H1s_H2pv__Hp_H_H_energy , H2pvi_H2v0__H3p_H1s_energy , H2p_Hm__H3p_e_energy , e_H2__e_Hex_H_energy , e_H2__Hp_H_2e_energy , e_H2X1Σg__e_H1s_H1s_energy , Hp_H2X1Σg__Hp_H1s_H1s_energy , H1s_H2v__H1s_2H1s_energy , H2v0_H2v__H2v0_2H1s_energy , ionisation_energy , e_H2p__XXX__e_Hp_H_energy , Hp_Hm__Hex_H_energy_cooling,e_H__Hm_pv_energy,H2pvi_H2v0__Hp_H_H2v1_energy,H1s_H_3__H2p_e_energy , H1s_H_4__H2p_e_energy]).argmax(axis=0) + 21).astype(int)
 
 
-		temp = np.array([np.zeros_like(e_H__Hm_pv_energy) , Hp_Hm__Hex_H , Hp_Hm__H2p_e , Hm_H1s__H2_v_e , H2p_Hm__Hex_H2 , Hp_H_H__H_H2p , H1s_H_3__H2p_e , H1s_H_4__H2p_e , H2pvi_H2v0__Hp_H_H2v1 , H2p_Hm__H2N13Λσ_H1s , Hp_H_H__Hp_H2 , H_H_H__H_H2 , recombination , e_H2p__H_H , e_H2__Hm_H , e_Hm__e_H_e , Hm_H1s__H1s_H1s_e , Hm_H2v__H_H2v_e , e_H2__e_H2p_e , Hp_H2v__H_H2p , H1s_H_2__H2p_e , e_H2p__e_Hp_Hp_e , H1s_H2pv__Hp_H_H , H2pvi_H2v0__H3p_H1s , H2p_Hm__H3p_e , e_H2__e_Hex_H , e_H2__Hp_H_2e , e_H2X1Σg__e_H1s_H1s , Hp_H2X1Σg__Hp_H1s_H1s , H1s_H2v__H1s_2H1s , H2v0_H2v__H2v0_2H1s , ionisation , e_H2p__XXX__e_Hp_H , Hp_Hm__Hex_H,e_H__Hm_pv_energy])
+		temp = np.array([np.zeros_like(e_H__Hm_pv_energy) , Hp_Hm__Hex_H , Hp_Hm__H2p_e , Hm_H1s__H2_v_e , H2p_Hm__Hex_H2 , Hp_H_H__H_H2p , H1s_H_3__H2p_e , H1s_H_4__H2p_e , np.zeros_like(e_H__Hm_pv_energy) , H2p_Hm__H2N13Λσ_H1s , Hp_H_H__Hp_H2 , H_H_H__H_H2 , recombination , e_H2p__H_H , e_H2__Hm_H , e_Hm__e_H_e , Hm_H1s__H1s_H1s_e , Hm_H2v__H_H2v_e , e_H2__e_H2p_e , Hp_H2v__H_H2p , H1s_H_2__H2p_e , e_H2p__e_Hp_Hp_e , H1s_H2pv__Hp_H_H , H2pvi_H2v0__H3p_H1s , H2p_Hm__H3p_e , e_H2__e_Hex_H , e_H2__Hp_H_2e , e_H2X1Σg__e_H1s_H1s , Hp_H2X1Σg__Hp_H1s_H1s , H1s_H2v__H1s_2H1s , H2v0_H2v__H2v0_2H1s , ionisation , e_H2p__XXX__e_Hp_H , Hp_Hm__Hex_H,e_H__Hm_pv_energy,H2pvi_H2v0__Hp_H_H2v1])
 		if np.nanmin(temp)<0:
 			raise MyException("there is a problem in the particle balance, some reaction rate is negative!")
 		strongest_rate = temp.argmax(axis=0).astype(int)
 		strongest_rate[strongest_rate>=14]+=7
 		strongest_rate[strongest_rate<14]+=1
 
-		strongest_rate_description = 'plasma HEATING index: ' + '1 '+'removed(e_H__Hm_pv)' + ', 2'+' Hp_Hm__Hex_H' + ', 3'+' Hp_Hm__H2p_e' + ', 4'+' Hm_H1s__H2_v_e' + '\n5'+' H2p_Hm__Hex_H2' + ', 6'+' Hp_H_H__H_H2p' + ', 7'+' H1s_H_3__H2p_e' + ', 8'+' H1s_H_4__H2p_e' + ', 9'+' H2pvi_H2v0__Hp_H_H2v1' + '\n10'+' H2p_Hm__H2N13Λσ_H1s' + ', 11'+' Hp_H_H__Hp_H2' + ', 12'+' H_H_H__H_H2' + ', 13'+' recombination' + ', 14'+' e_H2p__H_H' + ', \n' + 'plasma COOLING index: ' + ', 21'+' e_H2__Hm_H' + ', 22'+' e_Hm__e_H_e' + ', 23'+' Hm_H1s__H1s_H1s_e' + ', 24'+' Hm_H2v__H_H2v_e' + '\n25'+' e_H2__e_H2p_e' + ', 26'+' Hp_H2v__H_H2p' + ', 27'+' H1s_H_2__H2p_e' + ', 28'+' e_H2p__e_Hp_Hp_e' + ', 29'+' H1s_H2pv__Hp_H_H' + '\n30'+' H2pvi_H2v0__H3p_H1s' + ', 31'+' H2p_Hm__H3p_e' + ', 32'+' e_H2__e_Hn_H' + ', 33'+' e_H2__Hp_H_2e' + ', 34'+' e_H2X1Σg__e_H1s_H1s' + '\n35'+' Hp_H2X1Σg__Hp_H1s_H1s' + ', 36'+' H1s_H2v__H1s_2H1s' + ', 37'+' H2v0_H2v__H2v0_2H1s' + ', 38'+' ionisation' + '\n 39'+' e_H2p__XXX__e_Hp_H' + ', 40'+' Hp_Hm__Hex_H'+ ', 41'+' only pv(e_H__Hm_pv)'
+		strongest_rate_description = 'plasma HEATING index: ' + '1 '+'Null' + ', 2'+' Hp_Hm__Hex_H' + ', 3'+' Hp_Hm__H2p_e' + ', 4'+' Hm_H1s__H2_v_e' + '\n5'+' H2p_Hm__Hex_H2' + ', 6'+' Hp_H_H__H_H2p' + ', 7'+' Null' + ', 8'+' Null' + ', 9'+' Null' + '\n10'+' H2p_Hm__H2N13Λσ_H1s' + ', 11'+' Hp_H_H__Hp_H2' + ', 12'+' H_H_H__H_H2' + ', 13'+' recombination' + ', 14'+' e_H2p__H_H' + ', \n' + 'plasma COOLING index: ' + ', 21'+' e_H2__Hm_H' + ', 22'+' e_Hm__e_H_e' + ', 23'+' Hm_H1s__H1s_H1s_e' + ', 24'+' Hm_H2v__H_H2v_e' + '\n25'+' e_H2__e_H2p_e' + ', 26'+' Hp_H2v__H_H2p' + ', 27'+' H1s_H_2__H2p_e' + ', 28'+' e_H2p__e_Hp_Hp_e' + ', 29'+' H1s_H2pv__Hp_H_H' + '\n30'+' H2pvi_H2v0__H3p_H1s' + ', 31'+' H2p_Hm__H3p_e' + ', 32'+' e_H2__e_Hn_H' + ', 33'+' e_H2__Hp_H_2e' + ', 34'+' e_H2X1Σg__e_H1s_H1s' + '\n35'+' Hp_H2X1Σg__Hp_H1s_H1s' + ', 36'+' H1s_H2v__H1s_2H1s' + ', 37'+' H2v0_H2v__H2v0_2H1s' + ', 38'+' ionisation' + '\n 39'+' e_H2p__XXX__e_Hp_H' + ', 40'+' Hp_Hm__Hex_H'+ ', 41'+' only pv(e_H__Hm_pv)' + ', 42'+' H2pvi_H2v0__Hp_H_H2v1' + ', 43'+' H1s_H_3__H2p_e' + ', 44'+' H1s_H_4__H2p_e'
 
 		e_H__Hm_pv_energy = e_H__Hm_pv_energy*(1e20/J_to_eV)	# J m^-3/s
 		e_H__Hm_pv_energy_sigma = e_H__Hm_pv_energy_sigma *1e10*(1e20/J_to_eV)	# J m^-3/s
@@ -5294,29 +5454,33 @@ def calc_H_population_states(merge_ne_prof_multipulse_interp_crop_limited,merge_
 	population_coefficients = ((excitation_full *  nH_ne_all).T /multiplicative_factor_full).T
 	population_coefficients += ((recombination_full * nHp_ne_all).T /multiplicative_factor_full).T
 
-	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4:	# H, Hm, H2, H2p, ne, Te
+	if len(np.shape(merge_Te_prof_multipulse_interp_crop_limited))==4 and False:	# H, Hm, H2, H2p, ne, Te	# dunno what this is for, plain wrong!
 		Te = merge_Te_prof_multipulse_interp_crop_limited[0,:,0]
 		ne = merge_ne_prof_multipulse_interp_crop_limited[0,:,0]
 		T_Hp_temp = T_Hp[0,:,0]
 		T_Hm_temp = T_Hm[0,:,0]
 		T_H2p_temp = T_H2p[0,:,0]
 		nHp_ne_all_temp = nHp_ne_all[0,:,0]
-		temp1 = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te.flatten(),T_Hp_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nHp_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		# temp1 = From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te.flatten(),T_Hp_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nHp_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		temp1 = (From_Hn_with_Hp_pop_coeff_full_extra(np.array([Te.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp)).T*(nHp_ne_all_temp).flatten()).T
 		Te = merge_Te_prof_multipulse_interp_crop_limited[0,0,0]
 		ne = merge_ne_prof_multipulse_interp_crop_limited[0,0,0]
 		T_Hp_temp = T_Hp[0,0,0]
 		T_Hm_temp = T_Hm[0,0,0]
 		T_H2p_temp = T_H2p[0,0,0]
 		nH2p_ne_all_temp = nH2p_ne_all[0,0,0]
-		temp2 = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te.flatten(),T_H2p_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nH2p_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		# temp2 = From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te.flatten(),T_H2p_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20,(nH2p_ne_all_temp*ne).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		temp2 = (From_Hn_with_H2p_pop_coeff_full_extra(np.array([Te.flatten(),T_H2p_temp.flatten(),T_Hm_temp.flatten(),ne.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p)).T *(nH2p_ne_all_temp*ne).flatten()*1e20/1e15).T
 		temp2 = np.transpose([temp2.tolist()]*(np.shape(nHp_ne_all_temp)[1]) ,(1,2,0)).reshape(np.shape(temp1))
 		temp = (temp1 + temp2).reshape((*np.shape(T_Hp[0,:,0]),len(np.unique(excited_states_From_Hn_with_Hp))))
 		temp = np.transpose([[temp.tolist()]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[2]]*np.shape(merge_Te_prof_multipulse_interp_crop_limited)[0] ,(0,2,1,3,4))
 		temp = temp.reshape((np.prod(np.shape(merge_Te_prof_multipulse_interp_crop_limited)) , len(np.unique(excited_states_From_Hn_with_Hp))))
 		population_coefficients += (nHm_ne_all.flatten()*( temp ).T).reshape((np.shape(population_coefficients)))
 	else:
-		temp1 = From_Hn_with_Hp_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_Hp.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nHp_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
-		temp2 = From_Hn_with_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_H2p.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nH2p_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		# temp1 = From_Hn_with_Hp_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_Hp.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nHp_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp))
+		temp1 = (From_Hn_with_Hp_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_Hp)).T*(nHp_ne_all).flatten()).T
+		# temp2 = From_Hn_with_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_H2p.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20,(nH2p_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p))
+		temp2 = (From_Hn_with_H2p_pop_coeff_full_extra(np.array([merge_Te_prof_multipulse_interp_crop_limited.flatten(),T_H2p.flatten(),T_Hm.flatten(),merge_ne_prof_multipulse_interp_crop_limited.flatten()*1e20]).T,np.unique(excited_states_From_Hn_with_H2p)).T*(nH2p_ne_all*merge_ne_prof_multipulse_interp_crop_limited).flatten()*1e20/1e15).T
 		population_coefficients += (nHm_ne_all.flatten()*( temp1 + temp2 ).T).reshape((np.shape(population_coefficients)))
 
 	if (len(np.unique(merge_Te_prof_multipulse_interp_crop_limited))==1 and len(np.unique(merge_ne_prof_multipulse_interp_crop_limited))==1):
@@ -5357,6 +5521,8 @@ def calc_H2_population_states(merge_ne_prof_multipulse_interp_crop_limited,T_H2,
 	plank_constant_J = 6.62607015e-34	# J s
 	light_speed = 299792458	# m/s
 	oscillator_frequency = 4161.166 * 1e2	# 1/m
+	# from Dickenson2013
+	# this method could rely also on "Residual gas entering high density hydrogen plasma: Rarefaction due to rapid heating", Den Harder, N. 2015
 	q_vibr = 1/(1-np.exp(-plank_constant_eV*light_speed*oscillator_frequency/(T_H2*eV_to_K)))
 	population_states_H2 = np.zeros((15,*np.shape(merge_ne_prof_multipulse_interp_crop_limited)))
 	for v_index in range(15):
@@ -5370,6 +5536,8 @@ def calc_H2_fractional_population_states(T_H2):
 	plank_constant_J = 6.62607015e-34	# J s
 	light_speed = 299792458	# m/s
 	oscillator_frequency = 4161.166 * 1e2	# 1/m
+	# from Dickenson2013
+	# this method could rely also on "Residual gas entering high density hydrogen plasma: Rarefaction due to rapid heating", Den Harder, N. 2015
 	q_vibr = 1/(1-np.exp(-plank_constant_eV*light_speed*oscillator_frequency/(T_H2*eV_to_K)))
 	population_states_H2 = np.zeros((15,*np.shape(T_H2)))
 	for v_index in range(15):
@@ -5601,7 +5769,7 @@ def nH2_ne_values_Te_5(Te,H2_steps,ne_values_array,nH2_ne_ne_range,max_H2_densit
 	H2_steps = H2_steps//2*2+1
 	nH2_ne_values_all = []
 	for i_ne,ne in enumerate(ne_values_array):
-		max_nH2_ne = nH2_ne_fit_from_simulations(Te)*1e2
+		max_nH2_ne = nH2_ne_fit_from_simulations(Te)*1e3
 		max_nH2_ne *= expansion_up	# expansion if the highest prob is on a border
 		nH2_ne_range = nH2_ne_ne_range[i_ne]/(ne**2)
 		# nH2_ne_range[nH2_ne_range*ne>max_H2_density_available] = max_H2_density_available/ne
@@ -6052,8 +6220,8 @@ def nHm_nH2_values_Te_expanded_2(Te,to_find_steps,how_expand_nHm_nH2_indexes,H2_
 # 11/03/2022 here I try to use a more sensible range
 def nHm_nH2_values_Te_ne_3(Te,ne,to_find_steps,nHm_ne_ne_range,nH2_ne_values,expansion_up,expansion_down,H2_suppression=False):
 	fixed_max_nHm_nH2 = 1e6
-	fixed_nHm_nH2_AMJUEL_multiplier_up = 1e9
-	fixed_min_nHm_nH2 = 1e-9
+	fixed_nHm_nH2_AMJUEL_multiplier_up = 1e7
+	fixed_min_nHm_nH2 = 1e-7
 	fixed_nHm_nH2_AMJUEL_multiplier_low = 1e-2
 	additional_low_multiplier = 1
 	if H2_suppression:

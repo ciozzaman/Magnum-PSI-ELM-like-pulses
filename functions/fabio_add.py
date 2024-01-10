@@ -464,11 +464,19 @@ def get_metadata(fdir,folder,sequence,untitled,filename_metadata,pulse_frequency
 	TimeStampMsec=np.array(TimeStampMsec)
 	PVCAM_TimeStamp_ms=np.array(PVCAM_TimeStamp)/10
 	PVCAM_TimeStampBOF_ms=np.array(PVCAM_TimeStampBOF)/10
-	timestamp_regularised_shift = np.mean(TimeStampMsec[1:]-PM_Cam_StartTime_ms-np.arange(len(TimeStampMsec)-1)*(1/pulse_frequency_Hz))
-	TimeStampMsec_corrected = PM_Cam_StartTime_ms + (np.arange(len(TimeStampMsec))-1)*(1/pulse_frequency_Hz) + timestamp_regularised_shift
-	TimeStampMsec_corrected[0] = TimeStampMsec_corrected[1]-np.diff(bof[:2])[0]*1e-6
-	bof_regularised_shift = np.mean(TimeStampMsec-bof*1e-6)
-	bof_corrected_ms = bof*1e-6+bof_regularised_shift
+	try:
+		timestamp_regularised_shift = np.mean(TimeStampMsec[1:]-PM_Cam_StartTime_ms-np.arange(len(TimeStampMsec)-1)*(1/pulse_frequency_Hz))
+		TimeStampMsec_corrected = PM_Cam_StartTime_ms + (np.arange(len(TimeStampMsec))-1)*(1/pulse_frequency_Hz) + timestamp_regularised_shift
+		TimeStampMsec_corrected[0] = TimeStampMsec_corrected[1]-np.diff(bof[:2])[0]*1e-6
+		bof_regularised_shift = np.mean(TimeStampMsec-bof*1e-6)
+		bof_corrected_ms = bof*1e-6+bof_regularised_shift
+	except:
+		print('time steps identification failed')
+		PM_Cam_StartTime_ms = np.zeros_like(TimeStampMsec)
+		timestamp_regularised_shift = np.zeros_like(TimeStampMsec)
+		TimeStampMsec_corrected = np.zeros_like(TimeStampMsec)
+		bof_regularised_shift = np.zeros_like(TimeStampMsec)
+		bof_corrected_ms = np.zeros_like(TimeStampMsec)
 	metadata.close()
 
 	time_info = dict([('elapsed_time',elapsed_time),('TimeStampMsec',TimeStampMsec),('PM_Cam_StartTime_ms',PM_Cam_StartTime_ms),('TimeStampMsec_corrected',TimeStampMsec_corrected),('bof_corrected_ms',bof_corrected_ms),('PVCAM_TimeStamp_ms',PVCAM_TimeStamp_ms),('PVCAM_TimeStampBOF_ms',PVCAM_TimeStampBOF_ms)])
@@ -941,7 +949,7 @@ def movie_from_data(data,framerate,integration=1,xlabel=(),ylabel=(),barlabel=()
 
 #######################################################################################################################################################
 
-def get_angle_no_lines(data, nCh=40,bininterv_est=25):
+def get_angle_no_lines(data, nCh=40,min_wave='auto',num_points = 5,bininterv_est=25,min_presumed_distance=19,max_presumed_distance=25,min_distance_from_sides=15,max_multiplicative_factor_for_inclusion=1e2,distance_from_median=1.2):
 	# nCh=40;nLines=2
 	# nCh=40;nLines=7
 	from matplotlib import pyplot as plt
@@ -959,18 +967,24 @@ def get_angle_no_lines(data, nCh=40,bininterv_est=25):
 	RHM = 30
 	LHM = 30
 	dw = np.shape(data)[1] / 20
-	num_points = 5
+	# num_points = 5
 	iBins = [[] for i in range(num_points)]  # Vertical position of chord edge
-	min_wave = dw
+	if not min_wave!='auto':
+		min_wave = dw
 
 	max_wave = int(Ny - dw)
 	test=1
 	while test!=39:
 		vertData = np.mean(data[:, max_wave - LHM:max_wave + RHM], axis=1)
 		# plt.figure();plt.plot(vertData);plt.pause(0.01)
-		binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
-		binProms = get_proms(-vertData, binPeaks)[0]
-		high_Bins = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+		if bininterv_est!='auto':
+			binPeaks,binProms = find_peaks_with_similar_prominence_and_distance(vertData,bininterv_est,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+		else:	# introduced 21/06/2020
+			binPeaks,binProms = scan_presumed_distance_and_find_peaks(vertData,nCh,min_presumed_distance=min_presumed_distance,max_presumed_distance=max_presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+		# binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
+		# binProms = get_proms(-vertData, binPeaks)[0]
+		# high_Bins = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+		high_Bins = sorted(binPeaks)	# 15/03/2023: the more I look at this argpartition the more I think there is no need for it
 		diffI = np.diff(high_Bins)
 		iM = min(vertData.argmax(), high_Bins[-2])
 		iiM = [iM < foo for foo in high_Bins].index(1)
@@ -991,10 +1005,15 @@ def get_angle_no_lines(data, nCh=40,bininterv_est=25):
 		for index, iLine in enumerate(wavel_points):
 			vertData = np.mean(data[:, iLine - LHM:iLine + RHM], axis=1)
 			# plt.figure();plt.plot(vertData);plt.pause(0.01)
-			binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
-			binProms = get_proms(-vertData, binPeaks)[0]
+			if bininterv_est!='auto':
+				binPeaks,binProms = find_peaks_with_similar_prominence_and_distance(vertData,bininterv_est,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+			else:	# introduced 21/06/2020
+				binPeaks,binProms = scan_presumed_distance_and_find_peaks(vertData,nCh,min_presumed_distance=min_presumed_distance,max_presumed_distance=max_presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+			# binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
+			# binProms = get_proms(-vertData, binPeaks)[0]
 
-			iBins[index] = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+			# iBins[index] = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+			iBins[index] = sorted(binPeaks)	# 15/03/2023: the more I look at this argpartition the more I think there is no need for it
 			diffI = np.diff(iBins[index])
 
 			iM = min(vertData.argmax(), iBins[index][-2])
@@ -1017,17 +1036,19 @@ def get_angle_no_lines(data, nCh=40,bininterv_est=25):
 	iBins = np.array(iBins)
 	centre_location = np.mean(iBins, axis=(-1))
 	central_bin = np.abs(np.array(iBins[-1]) - Nx / 2).argmin()
-	binFit = np.polyfit(wavel_points, iBins[:, central_bin], 1)
+	# binFit = np.polyfit(wavel_points, iBins[:, central_bin], 1)
+	binFit = np.polyfit(wavel_points, centre_location, 1,w=1/np.std(np.diff(iBins),axis=1),cov=True)
 	# iFit = np.polyval(binFit, range(len(iBins[i])))
-	phi = np.arctan(binFit[0]) * 180 / np.pi
+	phi = np.arctan(binFit[0][0]) * 180 / np.pi
+	d_phi = np.abs(1 / (1 + binFit[0][0] * binFit[0][0]) * np.sqrt(binFit[1][0, 0]) * 180 / np.pi)
 
-	return phi
+	return phi,d_phi
 
 
 
 #######################################################################################################################################################
 
-def do_tilt_no_lines(data, nCh=40,bininterv_est='auto',return_4_points=False):
+def do_tilt_no_lines(data, nCh=40,bininterv_est='auto',return_4_points=False,min_presumed_distance=19,max_presumed_distance=25,min_distance_from_sides=15,max_multiplicative_factor_for_inclusion=1e2,distance_from_median=1.2):
 	# nCh=40;nLines=2
 	# nCh=40;nLines=7
 	from matplotlib import pyplot as plt
@@ -1055,18 +1076,11 @@ def do_tilt_no_lines(data, nCh=40,bininterv_est='auto',return_4_points=False):
 		vertData = np.mean(data[:, max_wave - LHM:max_wave + RHM], axis=1)
 		# plt.figure();plt.plot(vertData);plt.pause(0.01)
 		if bininterv_est!='auto':
-			binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
-			binProms = get_proms(-vertData, binPeaks)[0]
+			binPeaks,binProms = find_peaks_with_similar_prominence_and_distance(vertData,bininterv_est,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
 		else:	# introduced 21/06/2020
-			temp = []
-			for presumed_distance in [19,20,21,22,23,24,25]:
-				# temp.append(np.mean(get_proms(-vertData, find_peaks(-vertData, distance=presumed_distance)[0])[0]))
-				peaks = find_peaks(-vertData, distance=presumed_distance)[0]
-				temp.append(np.mean(get_proms(-vertData, peaks[np.logical_and(peaks>15,peaks<Nx-15)])[0])*(len(peaks[np.logical_and(peaks>15,peaks<Nx-15)])==nCh-1))
-			presumed_distance = [19,20,21,22,23,24,25][np.array(temp).argmax()]
-			binPeaks = find_peaks(-vertData, distance=presumed_distance)[0]
-			binProms = get_proms(-vertData, binPeaks)[0]
-		high_Bins = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+			binPeaks,binProms = scan_presumed_distance_and_find_peaks(vertData,nCh,min_presumed_distance=min_presumed_distance,max_presumed_distance=max_presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+		# high_Bins = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+		high_Bins = sorted(binPeaks)	# 15/03/2023: the more I look at this argpartition the more I think there is no need for it
 		diffI = np.diff(high_Bins)
 		iM = min(vertData.argmax(), high_Bins[-2])
 		iiM = [iM < foo for foo in high_Bins].index(1)
@@ -1089,23 +1103,19 @@ def do_tilt_no_lines(data, nCh=40,bininterv_est='auto',return_4_points=False):
 			vertData = np.mean(data[:, iLine - LHM:iLine + RHM], axis=1)
 			# plt.figure();plt.plot(vertData);plt.pause(0.01)
 			if bininterv_est!='auto':
-				binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
+				binPeaks,binProms = find_peaks_with_similar_prominence_and_distance(vertData,bininterv_est,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+				# binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
 				presumed_distance = bininterv_est
 				while ( len(binPeaks) < (nCh - 2) and presumed_distance>3 ):
 					presumed_distance -= 2
-					binPeaks = find_peaks(-vertData, distance=presumed_distance)[0]
+					binPeaks,binProms = find_peaks_with_similar_prominence_and_distance(vertData,presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+					# binPeaks = find_peaks(-vertData, distance=presumed_distance)[0]
 				binProms = get_proms(-vertData, binPeaks)[0]
 			else:	# introduced 21/06/2020
-				temp = []
-				for presumed_distance in [19,20,21,22,23,24,25]:
-					# temp.append(np.mean(get_proms(-vertData, find_peaks(-vertData, distance=presumed_distance)[0])[0]))
-					peaks = find_peaks(-vertData, distance=presumed_distance)[0]
-					temp.append(np.mean(get_proms(-vertData, peaks[np.logical_and(peaks>15,peaks<Nx-15)])[0])*(len(peaks[np.logical_and(peaks>15,peaks<Nx-15)])==nCh-1))
-				presumed_distance = [19,20,21,22,23,24,25][np.array(temp).argmax()]
-				binPeaks = find_peaks(-vertData, distance=presumed_distance)[0]
-				binProms = get_proms(-vertData, binPeaks)[0]
+				binPeaks,binProms = scan_presumed_distance_and_find_peaks(vertData,nCh,min_presumed_distance=min_presumed_distance,max_presumed_distance=max_presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
 
-			iBins[index] = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+			# iBins[index] = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+			iBins[index] = sorted(binPeaks)	# 15/03/2023: the more I look at this argpartition the more I think there is no need for it
 			diffI = np.diff(iBins[index])
 
 			iM = min(vertData.argmax(), iBins[index][-2])
@@ -1136,7 +1146,8 @@ def do_tilt_no_lines(data, nCh=40,bininterv_est='auto',return_4_points=False):
 					test = len(np.shape(iBins))
 					wavel_points = np.array(temp2)
 		if test==2:
-			if np.abs(np.array(iBins) - np.median(np.array(iBins),axis=0)).max()>10:	#this is to avoid the unfortunate case that len(np.shape(iBins)) just by chance
+			# if np.abs(np.array(iBins) - np.median(np.array(iBins),axis=0)).max()>10:	#this is to avoid the unfortunate case that len(np.shape(iBins)) just by chance
+			if np.abs(np.diff(iBins).T - np.median(np.diff(iBins),axis=1)).max()>5:	#better check, looking for local inconsistencies in the distance bewtween LOSs
 				test=1
 		print(min_wave)
 		min_wave += dw
@@ -1186,7 +1197,57 @@ def do_tilt_no_lines(data, nCh=40,bininterv_est='auto',return_4_points=False):
 
 	return data
 
+#####################################################################################################################################################################
 
+def find_peaks_with_similar_prominence(vertData,presumed_distance,min_distance_from_sides=0,max_multiplicative_factor_for_inclusion=1e2):
+	# created 15/03/2023 to speed up editing
+	from scipy.signal import find_peaks, peak_prominences as get_proms
+	peaks = find_peaks(-vertData, distance=presumed_distance)[0]
+	peaks = peaks[np.logical_and(peaks>min_distance_from_sides,peaks<len(vertData)-min_distance_from_sides)]
+	proms = get_proms(-vertData, peaks)[0]
+	median_prom = np.median(proms)
+	peaks = peaks[np.logical_and(proms>median_prom/max_multiplicative_factor_for_inclusion,proms<median_prom*max_multiplicative_factor_for_inclusion)]
+	proms = proms[np.logical_and(proms>median_prom/max_multiplicative_factor_for_inclusion,proms<median_prom*max_multiplicative_factor_for_inclusion)]
+	return peaks,proms
+
+def reject_distance_far_from_median(peaks,distance_from_median=1.2):
+	diffs = np.diff(peaks)
+	median_diff = np.median(diffs)
+	number_of_discontinuitis = np.sum(diffs>distance_from_median*median_diff)
+	if number_of_discontinuitis==0:
+		return peaks
+	else:
+		lower_limit = np.min(np.arange(len(diffs))[diffs>distance_from_median*median_diff])
+		upper_limit = np.max(np.arange(len(diffs))[diffs>distance_from_median*median_diff])
+		upper_range = peaks[lower_limit+1:]
+		lower_range = peaks[:upper_limit+1]
+		if number_of_discontinuitis==1:
+			if len(upper_range)>=len(lower_range):
+				return upper_range
+			else:
+				return lower_range
+		else:
+			temp = []
+			for value in peaks:
+				if (value in upper_range) and (value in lower_range):
+					temp.append(value)
+			return np.array(temp)
+
+def find_peaks_with_similar_prominence_and_distance(vertData,presumed_distance,min_distance_from_sides=0,max_multiplicative_factor_for_inclusion=1e2,distance_from_median=1.2):
+	from scipy.signal import find_peaks, peak_prominences as get_proms
+	peaks,proms = find_peaks_with_similar_prominence(vertData,presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion)
+	peaks = reject_distance_far_from_median(peaks,distance_from_median=distance_from_median)
+	proms = get_proms(-vertData, peaks)[0]
+	return peaks,proms
+
+def scan_presumed_distance_and_find_peaks(vertData,nCh,min_presumed_distance=19,max_presumed_distance=25,min_distance_from_sides=0,max_multiplicative_factor_for_inclusion=1e2,distance_from_median=1.2):
+	temp = []
+	for presumed_distance in np.arange(min_presumed_distance,max_presumed_distance+1):
+		peaks,proms = find_peaks_with_similar_prominence_and_distance(vertData,presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+		temp.append((1/np.std(peaks))*(len(peaks)>=nCh-1))
+	presumed_distance = np.arange(min_presumed_distance,max_presumed_distance+1)[np.nanargmax(temp)]
+	peaks,proms = find_peaks_with_similar_prominence_and_distance(vertData,presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+	return peaks,proms
 
 #####################################################################################################################################################################
 
@@ -1260,7 +1321,8 @@ def order_points(pts):
 ######################################################################################################################################################################
 
 
-def get_bin_and_interv_no_lines(data, nCh=40,bininterv_est='auto'):
+def get_bin_and_interv_no_lines(data, min_wave='auto',nCh=40,bininterv_est='auto',min_presumed_distance=19,max_presumed_distance=25,min_distance_from_sides=15,max_multiplicative_factor_for_inclusion=1e2,distance_from_median=1.2):
+
 	# nCh=40;nLines=2
 	# nCh=40;nLines=7
 	from matplotlib import pyplot as plt
@@ -1280,27 +1342,22 @@ def get_bin_and_interv_no_lines(data, nCh=40,bininterv_est='auto'):
 	dw = np.shape(data)[1] / 20
 	num_points = 5
 	# iBins = [[] for i in range(num_points)]  # Vertical position of chord edge
-	min_wave = dw
+	if not min_wave!='auto':
+		min_wave = dw
 
 	max_wave = int(Ny - dw)
 	test=1
-	while test!=39:
+	while test!=nCh-1:
 		vertData = np.mean(data[:, max_wave - LHM:max_wave + RHM], axis=1)
 		# plt.figure();plt.plot(vertData);plt.pause(0.01)
 		if bininterv_est!='auto':
-			binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
-			binProms = get_proms(-vertData, binPeaks)[0]
+			# binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
+			# binProms = get_proms(-vertData, binPeaks)[0]
+			binPeaks,binProms = find_peaks_with_similar_prominence_and_distance(vertData,bininterv_est,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
 		else:	# introduced 21/06/2020
-			temp = []
-			for presumed_distance in [19,20,21,22,23,24,25]:
-				# temp.append(np.mean(get_proms(-vertData, find_peaks(-vertData, distance=presumed_distance)[0])[0]))
-				peaks = find_peaks(-vertData, distance=presumed_distance)[0]
-				temp.append(np.mean(get_proms(-vertData, peaks)[0])*(len(peaks)==nCh-1))
-			presumed_distance = [19,20,21,22,23,24,25][np.array(temp).argmax()]
-			# presumed_distance = [19,20,21,22,23,24,25][np.abs(np.array(temp)-nCh-1).argmin()]
-			binPeaks = find_peaks(-vertData, distance=presumed_distance)[0]
-			binProms = get_proms(-vertData, binPeaks)[0]
-		high_Bins = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+			binPeaks,binProms = scan_presumed_distance_and_find_peaks(vertData,nCh,min_presumed_distance=min_presumed_distance,max_presumed_distance=max_presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+		# high_Bins = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+		high_Bins = sorted(binPeaks)	# 15/03/2023: the more I look at this argpartition the more I think there is no need for it
 		diffI = np.diff(high_Bins)
 		iM = min(vertData.argmax(), high_Bins[-2])
 		iiM = [iM < foo for foo in high_Bins].index(1)
@@ -1323,21 +1380,16 @@ def get_bin_and_interv_no_lines(data, nCh=40,bininterv_est='auto'):
 			vertData = np.mean(data[:, iLine - LHM:iLine + RHM], axis=1)
 			# plt.figure();plt.plot(vertData);plt.pause(0.01)
 			if bininterv_est!='auto':
-				binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
+				# binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
+				binPeaks,binProms = find_peaks_with_similar_prominence_and_distance(vertData,bininterv_est,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
 				presumed_distance = 25
 				while (len(binPeaks) < (nCh - 2) and presumed_distance>3):
 					presumed_distance -= 2
-					binPeaks = find_peaks(-vertData, distance=presumed_distance)[0]
+					# binPeaks = find_peaks(-vertData, distance=presumed_distance)[0]
+					binPeaks,binProms = find_peaks_with_similar_prominence_and_distance(vertData,presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
 				binProms = get_proms(-vertData, binPeaks)[0]
 			else:	# introduced 21/06/2020
-				temp = []
-				for presumed_distance in [19,20,21,22,23,24,25]:
-					# temp.append(np.mean(get_proms(-vertData, find_peaks(-vertData, distance=presumed_distance)[0])[0]))
-					peaks = find_peaks(-vertData, distance=presumed_distance)[0]
-					temp.append(np.mean(get_proms(-vertData, peaks)[0])*(len(peaks)==nCh-1))
-				presumed_distance = [19,20,21,22,23,24,25][np.array(temp).argmax()]
-				binPeaks = find_peaks(-vertData, distance=presumed_distance)[0]
-				binProms = get_proms(-vertData, binPeaks)[0]
+				binPeaks,binProms = scan_presumed_distance_and_find_peaks(vertData,nCh,min_presumed_distance=min_presumed_distance,max_presumed_distance=max_presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
 
 			iBins[index] = sorted(binPeaks[np.argpartition(-binProms, min(len(binPeaks)-1,nCh - 2))[:nCh - 1]])
 			diffI = np.diff(iBins[index])
@@ -1370,10 +1422,12 @@ def get_bin_and_interv_no_lines(data, nCh=40,bininterv_est='auto'):
 					test = len(np.shape(iBins))
 					wavel_points = np.array(temp2)
 		if test==2:
-			if np.abs(np.array(iBins) - np.median(np.array(iBins),axis=0)).max()>10:	#this is to avoid the unfortunate case that len(np.shape(iBins)) just by chance
+			# if np.abs(np.array(iBins) - np.median(np.array(iBins),axis=0)).max()>10:	#this is to avoid the unfortunate case that len(np.shape(iBins)) just by chance
+			if np.abs(np.diff(iBins).T - np.median(np.diff(iBins),axis=1)).max()>5:	#better check, looking for local inconsistencies in the distance bewtween LOSs
 				test=1
 		print(min_wave)
-		min_wave += dw
+		if test != 2:
+			min_wave += dw
 	# if len(np.shape(iBins))==2:	   # this should be done!!!!
 	iBins = np.array(iBins)
 
@@ -1401,7 +1455,7 @@ def get_bin_and_interv_no_lines(data, nCh=40,bininterv_est='auto'):
 
 ################################################################################################################################################
 
-def get_bin_and_interv_specific_wavelength(data,wavelength_column, nCh=40,bininterv_est=25):	# bininterv_est was set to 25 26/06/2020 because the quality of the data this function is used on don't allows it
+def get_bin_and_interv_specific_wavelength(data,wavelength_column, nCh=40,bininterv_est=25,min_presumed_distance=19,max_presumed_distance=25,min_distance_from_sides=15,max_multiplicative_factor_for_inclusion=1e2,distance_from_median=1.2):	# bininterv_est was set to 25 26/06/2020 because the quality of the data this function is used on don't allows it
 	# nCh=40;nLines=2
 	# nCh=40;nLines=7
 	from matplotlib import pyplot as plt
@@ -1429,15 +1483,17 @@ def get_bin_and_interv_specific_wavelength(data,wavelength_column, nCh=40,binint
 		while test!=nCh-1:
 			print('expected interval of '+str(bininterv_est))
 			# plt.figure();plt.plot(vertData);plt.pause(0.01)
-			binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
-			binProms = get_proms(-vertData, binPeaks)[0]
-			if len(binPeaks)<nCh:
+			# binPeaks = find_peaks(-vertData, distance=bininterv_est)[0]
+			# binProms = get_proms(-vertData, binPeaks)[0]
+			binPeaks,binProms = find_peaks_with_similar_prominence_and_distance(vertData,bininterv_est,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+			if len(binPeaks)<nCh-1:
 				bininterv_est-=1
 				if bininterv_est==0:
 					print('search of '+str(nCh)+' LOS at wavelength '+str(wavelength_column)+' failed')
 					# return np.nan,np.nan
 				continue
-			Bins = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+			# Bins = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+			Bins = sorted(binPeaks)	# 15/03/2023: the more I look at this argpartition the more I think there is no need for it
 			diffI = np.diff(Bins)
 			iM = min(vertData.argmax(), Bins[-2])
 			iiM = [iM < foo for foo in Bins].index(1)
@@ -1455,15 +1511,9 @@ def get_bin_and_interv_specific_wavelength(data,wavelength_column, nCh=40,binint
 				print('search of '+str(nCh)+' LOS at wavelength '+str(wavelength_column)+' failed')
 				return np.nan,np.nan
 	else:	# introduced 21/06/2020
-		temp = []
-		for presumed_distance in [19,20,21,22,23,24,25]:
-			# temp.append(np.mean(get_proms(-vertData, find_peaks(-vertData, distance=presumed_distance)[0])[0]))
-			peaks = find_peaks(-vertData, distance=presumed_distance)[0]
-			temp.append(np.mean(get_proms(-vertData, peaks)[0])*(len(peaks)==nCh-1))
-		presumed_distance = [19,20,21,22,23,24,25][np.array(temp).argmax()]
-		binPeaks = find_peaks(-vertData, distance=presumed_distance)[0]
-		binProms = get_proms(-vertData, binPeaks)[0]
-		Bins = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+		binPeaks,binProms = scan_presumed_distance_and_find_peaks(vertData,nCh,min_presumed_distance=min_presumed_distance,max_presumed_distance=max_presumed_distance,min_distance_from_sides=min_distance_from_sides,max_multiplicative_factor_for_inclusion=max_multiplicative_factor_for_inclusion,distance_from_median=distance_from_median)
+		# Bins = sorted(binPeaks[np.argpartition(-binProms, nCh - 2)[:nCh - 1]])
+		Bins = sorted(binPeaks)	# 15/03/2023: the more I look at this argpartition the more I think there is no need for it
 		diffI = np.diff(Bins)
 		iM = min(vertData.argmax(), Bins[-2])
 		iiM = [iM < foo for foo in Bins].index(1)
@@ -1828,7 +1878,7 @@ def fix_minimum_signal_calibration(data,column_averaging=30,range_rows=0,dx_to_e
 	if 	tilt_last_column==[0,0]:
 		tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data),last_wavelength)
 	if np.sum(np.isnan([*tilt_last_column,*tilt_intermediate_column]))>0:
-		print('fix_minimum_signal_calibration aborted for not detecting LOS at column 1200 or 1608')
+		print('fix_minimum_signal_calibration aborted for not detecting LOS at column '+str(intermediate_wavelength)+' or '+str(last_wavelength))
 		return np.ones((len(data)))*np.nan
 	window_of_signal = [np.floor(tilt_last_column[0]).astype('int')-10,np.ceil(tilt_last_column[0]+tilt_last_column[1]*nCh+10).astype('int')+100]
 
@@ -2441,6 +2491,12 @@ def average_TS_around_axis(merge_Te_prof_multipulse,merge_dTe_multipulse,merge_n
 			return T
 		return int
 
+	def curved_plane(dt):
+		def int(dr,T0,vt,vr,vt_exp,vr_exp):
+			T = T0 + vt*dt + vt_exp*dt**2 + vr*dr + vr_exp*dr**2
+			return T
+		return int
+
 	# merge_Te_prof_multipulse_int = cp.deepcopy(merge_Te_prof_multipulse)
 	# merge_dTe_multipulse_int = cp.deepcopy(merge_dTe_multipulse)
 	# merge_ne_prof_multipulse_int = cp.deepcopy(merge_ne_prof_multipulse)
@@ -2468,7 +2524,7 @@ def average_TS_around_axis(merge_Te_prof_multipulse,merge_dTe_multipulse,merge_n
 		if np.sum((np.sum(merge_Te_prof_multipulse, axis=1) == 0)[np.abs(merge_time - value_t) < interp_range_t])>0:
 			interp_range_t_int = cp.deepcopy(interp_range_t*2.66)
 		else:
-			interp_range_t_int = cp.deepcopy(interp_range_t)
+			interp_range_t_int = cp.deepcopy(interp_range_t*1.5)
 		if np.sum(np.abs(merge_time - value_t) < interp_range_t_int) == 0:
 			continue
 		for i_r, value_r in enumerate(np.abs(r)):
@@ -2507,7 +2563,7 @@ def average_TS_around_axis(merge_Te_prof_multipulse,merge_dTe_multipulse,merge_n
 				# temp4[i_t, i_r] = np.max(merge_dne_multipulse[selected_values_t][:,selected_values_r]) / (np.sum(np.isfinite(merge_dne_multipulse[selected_values_t][:,selected_values_r])) ** 0.5)
 				temp3[i_t, i_r] = np.sum(merge_ne_prof_multipulse[selected_values]*weights / merge_dne_multipulse[selected_values]) / np.sum(weights / merge_dne_multipulse[selected_values])
 				if i_r>0:	# added so that it is for sure monominically decreasing
-					temp1[i_t, i_r] = min(temp3[i_t, i_r],temp3[i_t, i_r-1])
+					temp3[i_t, i_r] = min(temp3[i_t, i_r],temp3[i_t, i_r-1])
 				if False: 	# suggestion from Daljeet: use the "worst case scenario" in therms of uncertainty
 					# temp2[i_t, i_r] = (np.sum(selected_values) / (np.sum(1 / merge_dTe_multipulse[selected_values]) ** 2)) ** 0.5
 					# temp4[i_t, i_r] = (np.sum(selected_values) / (np.sum(1 / merge_dne_multipulse[selected_values]) ** 2)) ** 0.5
@@ -2523,7 +2579,7 @@ def average_TS_around_axis(merge_Te_prof_multipulse,merge_dTe_multipulse,merge_n
 				elif True: #	here I add in quadrature the error propagation from the theory of the formula I used for the average PLUS the weighted standard deviation aroung that value (to capture the effect of noisy data)
 					temp2[i_t, i_r] = ((np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dTe_multipulse[selected_values]))**2 + (np.sum((merge_Te_prof_multipulse[selected_values]-temp1[i_t, i_r])**2 * weights)/( np.sum(weights) )) )**0.5
 					temp4[i_t, i_r] = ((np.sqrt(np.sum(weights**2))/np.sum(weights / merge_dne_multipulse[selected_values]))**2 + (np.sum((merge_ne_prof_multipulse[selected_values]-temp3[i_t, i_r])**2 * weights)/( np.sum(weights) )) )**0.5
-			else:	# new method based on fitting a plane to the points (aimed at reducing the sigma to decent levels)
+			elif len(weights)<=7:	# new method based on fitting a plane to the points (aimed at reducing the sigma to decent levels)
 				bds = [[0,-np.inf,-np.inf],[np.inf,np.inf,np.inf]]
 				guess = [np.mean(merge_Te_prof_multipulse[selected_values]),0,0]
 				if i_r>0:	# added so that it is for sure monominically decreasing
@@ -2540,6 +2596,24 @@ def average_TS_around_axis(merge_Te_prof_multipulse,merge_dTe_multipulse,merge_n
 				fit = curve_fit(plane(weights_t[selected_values]-value_t/TS_dt),weights_r[selected_values]-value_r/TS_dr,merge_ne_prof_multipulse[selected_values], sigma=merge_dne_multipulse[selected_values]/weights, p0=guess,bounds=bds, maxfev=100000,x_scale=[1,100,100])
 				temp3[i_t, i_r] = fit[0][0]
 				temp4[i_t, i_r] = (np.sum(((plane(weights_t[selected_values]-value_t/TS_dt)(weights_r[selected_values]-value_r/TS_dr,*fit[0])-merge_ne_prof_multipulse[selected_values]) * (weights/merge_dne_multipulse[selected_values]))**2)/(np.sum((weights/merge_dne_multipulse[selected_values])**2)))**0.5
+				# print('done')
+			else:
+				bds = [[0,-np.inf,-np.inf,-np.inf,-np.inf],[np.inf,np.inf,np.inf,np.inf,np.inf]]
+				guess = [np.mean(merge_Te_prof_multipulse[selected_values]),0,0,0,0]
+				if i_r>0:	# added so that it is for sure monominically decreasing
+					bds[1][0] = max(0.01,temp1[i_t, i_r-1]+min(temp1[i_t, i_r-1],temp2[i_t, i_r-1]))
+					guess[0] = max(0.005,min(guess[0],temp1[i_t, i_r-1]))
+				fit = curve_fit(curved_plane(weights_t[selected_values]-value_t/TS_dt),weights_r[selected_values]-value_r/TS_dr,merge_Te_prof_multipulse[selected_values], sigma=merge_dTe_multipulse[selected_values]/weights, p0=guess,bounds=bds, maxfev=100000,x_scale=[1,100,100,1,1])
+				temp1[i_t, i_r] = fit[0][0]
+				temp2[i_t, i_r] = (np.sum(((curved_plane(weights_t[selected_values]-value_t/TS_dt)(weights_r[selected_values]-value_r/TS_dr,*fit[0])-merge_Te_prof_multipulse[selected_values]) * (weights/merge_dTe_multipulse[selected_values]))**2)/(np.sum((weights/merge_dTe_multipulse[selected_values])**2)))**0.5
+				bds = [[0,-np.inf,-np.inf,-np.inf,-np.inf],[np.inf,np.inf,np.inf,0,0]]
+				guess = [np.mean(merge_ne_prof_multipulse[selected_values]),0,0,0,0]
+				if i_r>0:	# added so that it is for sure monominically decreasing
+					bds[1][0] = max(0.01,temp3[i_t, i_r-1]+min(temp4[i_t, i_r-1],temp3[i_t, i_r-1]))
+					guess[0] = max(0.005,min(guess[0],temp3[i_t, i_r-1]))
+				fit = curve_fit(curved_plane(weights_t[selected_values]-value_t/TS_dt),weights_r[selected_values]-value_r/TS_dr,merge_ne_prof_multipulse[selected_values], sigma=merge_dne_multipulse[selected_values]/weights, p0=guess,bounds=bds, maxfev=100000,x_scale=[1,100,100,1,1])
+				temp3[i_t, i_r] = fit[0][0]
+				temp4[i_t, i_r] = (np.sum(((curved_plane(weights_t[selected_values]-value_t/TS_dt)(weights_r[selected_values]-value_r/TS_dr,*fit[0])-merge_ne_prof_multipulse[selected_values]) * (weights/merge_dne_multipulse[selected_values]))**2)/(np.sum((weights/merge_dne_multipulse[selected_values])**2)))**0.5
 				# print('done')
 
 

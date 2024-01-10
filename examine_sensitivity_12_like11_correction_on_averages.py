@@ -1,5 +1,5 @@
 import numpy as np
-exec(open("/home/ffederic/work/analysis_scripts/scripts/preamble_import_batch.py").read())
+exec(open("/home/ffederic/work/analysis_scripts/scripts/preamble_import_pc.py").read())
 #import .functions
 import os,sys
 
@@ -7,7 +7,7 @@ from numpy.core.multiarray import ndarray
 
 os.chdir('/home/ffederic/work/Collaboratory/test/experimental_data')
 from functions.spectools import get_angle,rotate,get_tilt,do_tilt,getFirstBin, binData, get_angle_2,binData_with_sigma,get_line_position,get_4_points
-from functions.fabio_add import find_nearest_index,multi_gaussian,all_file_names,load_dark,find_index_of_file,get_metadata,examine_current_trace,movie_from_data,get_bin_and_interv_no_lines, four_point_transform, fix_minimum_signal, do_tilt_no_lines, fix_minimum_signal2,apply_proportionality_calibration,fix_minimum_signal_calibration,get_bin_and_interv_specific_wavelength,fix_minimum_signal_experiment
+from functions.fabio_add import find_nearest_index,multi_gaussian,all_file_names,load_dark,find_index_of_file,get_metadata,examine_current_trace,movie_from_data,get_bin_and_interv_no_lines, four_point_transform, fix_minimum_signal, do_tilt_no_lines, fix_minimum_signal2,apply_proportionality_calibration,fix_minimum_signal_calibration,get_bin_and_interv_specific_wavelength,fix_minimum_signal_experiment,get_angle_no_lines
 from functions.Calibrate import do_waveL_Calib,do_waveL_Calib_simplified
 from PIL import Image
 import xarray as xr
@@ -17,6 +17,7 @@ from scipy.optimize import curve_fit
 from scipy import interpolate
 from scipy.signal import gaussian
 from skimage.transform import resize
+from scipy.signal import savgol_filter
 
 exec(open("/home/ffederic/work/analysis_scripts/scripts/profile_smoothing.py").read())
 
@@ -123,7 +124,6 @@ y_calibration=np.array([  80.        ,   80.4040404 ,   80.80808081,   81.212121
 
 
 
-
 #####	THIS BIT IS FOR THE EXPERIMENTS 66 onwards
 
 limits_angle = [66, 70]
@@ -132,13 +132,15 @@ limits_wave = [66, 70]
 figure_number = 0
 where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_12/Sensitivity_4_plots_'
 
-geom_null = pd.DataFrame(columns=['angle', 'tilt', 'binInterv', 'bin00a', 'bin00b'])
+# geom_null = pd.DataFrame(columns=['angle', 'tilt', 'binInterv', 'bin00a', 'bin00b'])
+geom_null = pd.DataFrame([['angle','tilt','binInterv','bin00a','bin00b']],columns = ['angle','tilt','binInterv','bin00a','bin00b'])
 geom_null.loc[0] = [0, 0, 0, 0, 0]
 
+# this section is to find where the hydrogen lines are
 full_list = [limits_angle,limits_tilt,limits_wave]
 full_list = np.array(full_list).flatten()
 full_list = full_list[full_list>0]
-data_sum=0
+data_sum = []
 for merge in range(int(np.min(full_list)),int(np.max(full_list)) + 1):
 	all_j = find_index_of_file(merge, df_settings, df_log)
 	for j in all_j:
@@ -156,14 +158,19 @@ for merge in range(int(np.min(full_list)),int(np.max(full_list)) + 1):
 			data = np.array(im)
 			data_all.append(data)
 		# data_all = np.array(data_all)
-		data_sum += np.mean(data_all,axis=0)
-intermediate_wavelength,last_wavelength = get_line_position(data_sum,2)
-tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),intermediate_wavelength)
-tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),last_wavelength)
+		data_sum.append(np.mean(data_all,axis=0))
+data_sum = np.sum(data_sum,axis=0)
+data_sum = median_filter(data_sum, size=[1,3])
+# data_sum = fix_minimum_signal2(data_sum)
+wavelength_1,wavelength_2,intermediate_wavelength,last_wavelength = get_line_position(data_sum,4)
+tilt_column_1 = get_bin_and_interv_specific_wavelength(data_sum,wavelength_1)
+tilt_column_2 = get_bin_and_interv_specific_wavelength(data_sum,wavelength_2)
+tilt_intermediate_column = get_bin_and_interv_specific_wavelength(data_sum,intermediate_wavelength)
+tilt_last_column = get_bin_and_interv_specific_wavelength(data_sum,last_wavelength)
 dx_to_etrapolate_to=140
 
 
-if np.sum(limits_angle) != 0:
+if (np.sum(limits_angle) != 0) and False:	# disabled
 	angles = []
 	angles_scores = []
 	for merge in range(limits_angle[0], limits_angle[1] + 1):
@@ -192,6 +199,7 @@ if np.sum(limits_angle) != 0:
 				data_all.append(data)
 			# data_all = np.array(data_all)
 			data_mean = np.mean(data_all, axis=0)
+			data_mean = median_filter(data_mean, size=[1,3])
 			nLines=9
 			done=0
 			while done==0 and nLines>=2:
@@ -211,6 +219,109 @@ if np.sum(limits_angle) != 0:
 	print('angles_scores')
 	print(angles_scores)
 	angle = np.nansum(angles / (angles_scores ** 2)) / np.nansum(1 / angles_scores ** 2)
+elif True:
+	int_time_long = [ 1, 10, 100]
+	calib_ID_long=[ 216, 217, 218]
+	angles = []
+	angles_scores = []
+	for j in calib_ID_long:
+		# dataDark = load_dark(j, df_settings, df_log, fdir, geom_null)
+		(folder, date, sequence, untitled) = df_log.loc[j, ['folder', 'date', 'sequence', 'untitled']]
+		type = '.tif'
+		filenames = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0', type)
+		# type = '.txt'
+		# filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0', type)[0]
+		# (bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder,sequence,untitled,filename_metadata)
+
+		# plt.figure()
+		data_all = []
+		for index, filename in enumerate(filenames):
+			fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0/' + filename
+			im = Image.open(fname)
+			data = np.array(im)
+			# data_sigma=np.sqrt(data)
+			# additive_factor,additive_factor_sigma = fix_minimum_signal_experiment(data,intermediate_wavelength,last_wavelength,tilt_intermediate_column,tilt_last_column,counts_treshold_fixed_increase=106,dx_to_etrapolate_to=dx_to_etrapolate_to)
+			# data = (data.T + additive_factor).T
+			# data_sigma = np.sqrt((data_sigma**2).T + (additive_factor_sigma**2)).T
+			# data = fix_minimum_signal2(data)
+			# data = (data - dataDark) * Gain[index]
+			data_all.append(data)
+		# data_all = np.array(data_all)
+		data_mean = np.mean(data_all, axis=0)
+		data_mean = median_filter(data_mean, size=[1,5])
+		additive_factor,additive_factor_sigma = fix_minimum_signal_experiment(data,intermediate_wavelength,last_wavelength,tilt_intermediate_column,tilt_last_column,counts_treshold_fixed_increase=106,dx_to_etrapolate_to=dx_to_etrapolate_to)
+		data_mean = (data_mean.T + additive_factor).T
+		data_mean = median_filter(data_mean, size=[3,1])
+
+		temp = get_angle_no_lines(data_mean,bininterv_est='auto',min_wave=int(data_mean.shape[1]/3))
+		angles.append(temp)
+		# while done==0 and nLines>=2:
+		# 	try:
+		# 		# temp = get_angle_2(data_mean, nLines=nLines)	int_time_long = [ 1, 10, 100]
+	calib_ID_long=[ 216, 217, 218]
+	angles = []
+	angles_scores = []
+	for j in calib_ID_long:
+		# dataDark = load_dark(j, df_settings, df_log, fdir, geom_null)
+		(folder, date, sequence, untitled) = df_log.loc[j, ['folder', 'date', 'sequence', 'untitled']]
+		type = '.tif'
+		filenames = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0', type)
+		# type = '.txt'
+		# filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0', type)[0]
+		# (bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder,sequence,untitled,filename_metadata)
+
+		# plt.figure()
+		data_all = []
+		for index, filename in enumerate(filenames):
+			fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0/' + filename
+			im = Image.open(fname)
+			data = np.array(im)
+			# data_sigma=np.sqrt(data)
+			# additive_factor,additive_factor_sigma = fix_minimum_signal_experiment(data,intermediate_wavelength,last_wavelength,tilt_intermediate_column,tilt_last_column,counts_treshold_fixed_increase=106,dx_to_etrapolate_to=dx_to_etrapolate_to)
+			# data = (data.T + additive_factor).T
+			# data_sigma = np.sqrt((data_sigma**2).T + (additive_factor_sigma**2)).T
+			# data = fix_minimum_signal2(data)
+			# data = (data - dataDark) * Gain[index]
+			data_all.append(data)
+		# data_all = np.array(data_all)
+		data_mean = np.mean(data_all, axis=0)
+		data_mean = median_filter(data_mean, size=[1,5])
+		additive_factor,additive_factor_sigma = fix_minimum_signal_experiment(data,intermediate_wavelength,last_wavelength,tilt_intermediate_column,tilt_last_column,counts_treshold_fixed_increase=106,dx_to_etrapolate_to=dx_to_etrapolate_to)
+		data_mean = (data_mean.T + additive_factor).T
+		# data_mean = median_filter(data_mean, size=[3,1])
+
+		temp,temp1 = get_angle_no_lines(data_mean,bininterv_est='auto',min_wave=int(data_mean.shape[1]/2.5),num_points=10)
+		angles.append(temp)
+		angles_scores.append(temp1)
+		# while done==0 and nLines>=2:
+		# 	try:
+		# 		# temp = get_angle_2(data_mean, nLines=nLines)
+		# 		angles.append(np.array(temp[0]))
+		# 		angles_scores.append(np.array(temp[1]))
+		# 		print(temp)
+		# 		done=1
+		# 	except:
+
+		# 		angles.append(np.array(temp[0]))
+		# 		angles_scores.append(np.array(temp[1]))
+		# 		print(temp)
+		# 		done=1
+		# 	except:
+		# 		nLines-=1
+		# 		print('FAILED')
+	angles = np.array(angles)
+	angles_scores = np.array(angles_scores)
+	print('angles')
+	print(angles)
+	print('angles_scores')
+	print(angles_scores)
+	angle = np.nansum(angles / (angles_scores ** 2)) / np.nansum(1 / angles_scores ** 2)
+
+else:
+	angle = 0.77198326386615
+	print('angle set by hand to the one from merge95')
+	print(angle)
+
 
 # if np.sum(limits_tilt) != 0:
 # 	tilt_4_points = []
@@ -305,13 +416,14 @@ if np.sum(limits_angle) != 0:
 # 	print(tilt)
 # 	tilt = np.nanmedian(tilt, axis=0)
 
-geom = pd.DataFrame(columns=['angle', 'tilt', 'binInterv', 'bin00a', 'bin00b'])
+# geom = pd.DataFrame(columns=['angle', 'tilt', 'binInterv', 'bin00a', 'bin00b'])
+geom = pd.DataFrame([['angle','tilt','binInterv','bin00a','bin00b']],columns = ['angle','tilt','binInterv','bin00a','bin00b'])
 # geom.loc[0] = [angle, np.array(tilt_4_points), tilt[0], tilt[2], tilt[2]]
 geom.loc[0] = [angle, 0, 0, 0, 0]
 geom_store = copy.deepcopy(geom)
 print(geom)
 
-if np.sum(limits_wave) != 0:
+if (np.sum(limits_wave) != 0) and False:	# disabled, copied from merge95
 	waveLcoefs = []
 	for merge in range(limits_wave[0], limits_wave[1] + 1):
 		all_j = find_index_of_file(merge, df_settings, df_log)
@@ -376,6 +488,114 @@ if np.sum(limits_wave) != 0:
 	waveLcoefs = np.nanmedian(waveLcoefs, axis=0)
 	print('waveLcoefs')
 	print(waveLcoefs)
+elif False:	# I cannot do this, I don't trust it. I have a specral lamp measurement in this day, but it was an old bad lamp, I need to compare it manually to another proper one, and tdo the fitting of the wavelength by hand
+	waveLcoefs = np.array([[np.nan,np.nan,np.nan],[-6.63182432e-07,1.27698903e-01,3.14873321e+02]])
+	print('waveLcoefs set by hand from merge95')
+	print(waveLcoefs)
+else:
+	j_right_day_bad_lamp = 213
+	j_wrong_day_good_lamp = 412
+	j = cp.deepcopy(j_wrong_day_good_lamp)
+	# dataDark = load_dark(j, df_settings, df_log, fdir, geom_null)
+	(folder, date, sequence, untitled) = df_log.loc[j, ['folder', 'date', 'sequence', 'untitled']]
+	type = '.tif'
+	filenames = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0', type)
+	data_all = []
+	for index, filename in enumerate(filenames):
+		fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(
+			untitled) + '/Pos0/' + \
+				filename
+		im = Image.open(fname)
+		data = np.array(im)
+		data_all.append(data)
+	data_wrong_day_good_lamp = np.mean(data_all, axis=0)
+	additive_factor,additive_factor_sigma = fix_minimum_signal_experiment(data_wrong_day_good_lamp,intermediate_wavelength,last_wavelength,tilt_intermediate_column,tilt_last_column,counts_treshold_fixed_increase=106,dx_to_etrapolate_to=dx_to_etrapolate_to)
+	data_wrong_day_good_lamp = (data_wrong_day_good_lamp.T + additive_factor).T
+	data_wrong_day_good_lamp = rotate(data_wrong_day_good_lamp, 0.9)
+
+	j = cp.deepcopy(j_right_day_bad_lamp)
+	# dataDark = load_dark(j, df_settings, df_log, fdir, geom_null)
+	(folder, date, sequence, untitled) = df_log.loc[j, ['folder', 'date', 'sequence', 'untitled']]
+	type = '.tif'
+	filenames = all_file_names(fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0', type)
+	data_all = []
+	for index, filename in enumerate(filenames):
+		fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(
+			untitled) + '/Pos0/' + \
+				filename
+		im = Image.open(fname)
+		data = np.array(im)
+		data_all.append(data)
+	data_right_day_bad_lamp = np.mean(data_all, axis=0)
+	additive_factor,additive_factor_sigma = fix_minimum_signal_experiment(data_right_day_bad_lamp,intermediate_wavelength,last_wavelength,tilt_intermediate_column,tilt_last_column,counts_treshold_fixed_increase=106,dx_to_etrapolate_to=dx_to_etrapolate_to)
+	data_right_day_bad_lamp = (data_right_day_bad_lamp.T + additive_factor).T
+	data_right_day_bad_lamp = rotate(data_right_day_bad_lamp, 0.1311269426979163)
+
+
+	plt.figure(figsize=(20, 10))
+	plt.imshow(data_wrong_day_good_lamp,'rainbow')
+	plt.colorbar().set_label('counts [au]')
+	plt.title('data_wrong_day_good_lamp ID'+str(j_wrong_day_good_lamp))
+	figure_number+=1
+	plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+	plt.close()
+
+	plt.figure(figsize=(20, 10))
+	plt.imshow(data_right_day_bad_lamp,'rainbow')
+	plt.colorbar().set_label('counts [au]')
+	plt.title('data_right_day_bad_lamp ID'+str(j_right_day_bad_lamp))
+	figure_number+=1
+	plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+	plt.close()
+
+	fig, ax = plt.subplots( 2,1,figsize=(20, 10), squeeze=False, sharex=False)
+	temp = np.mean(data_wrong_day_good_lamp,axis=0)
+	ax[0,0].plot((temp-np.median(temp))/(temp.max()-np.median(temp)),label='wrong_day_good_lamp (ID'+str(j_wrong_day_good_lamp)+')')
+	temp = np.mean(data_right_day_bad_lamp,axis=0)
+	ax[0,0].plot((temp-np.median(temp))/(temp.max()-np.median(temp))/10,'--',label='right_day_bad_lamp (ID'+str(j_right_day_bad_lamp)+')')
+	ax[0,0].legend(loc='best')
+	ax[0,0].set_xlabel('wavelength axis [pixels]')
+	ax[0,0].set_ylabel('intensity [ua]')
+	ax[0,0].semilogy()
+	# plt.pause(0.01)
+
+
+	peaks_good_lamp = [1356,927,732,627,562]
+	waveLcoefs_good_lamp = np.polyfit(peaks_good_lamp,waveLengths[:len(peaks_good_lamp)],2)
+	# plt.figure()
+	temp = np.mean(data_wrong_day_good_lamp,axis=0)
+	ax[1,0].plot(np.polyval(waveLcoefs_good_lamp,np.arange(len(temp))),(temp-np.median(temp))/(temp.max()-np.median(temp)))
+	# plt.semilogy()
+	# plt.pause(0.01)
+
+	peaks_bad_lamp = [1344,923,1158,1112,706,1402,792,817,1468,1518]
+	waveLengths_H_plus_others = [486.13615,434.0462,463.4,457.4,406.7,493.1,417.6,420.6,501.3,507.3]
+	# peaks_bad_lamp = [1344,923,706,1402,792,817,1468,1518]
+	# waveLengths_H_plus_others = [486.13615,434.0462,406.7,493.1,417.6,420.6,501.3,507.3]
+	waveLcoefs_bad_lamp = np.polyfit(peaks_bad_lamp,waveLengths_H_plus_others,2)
+	temp = np.mean(data_right_day_bad_lamp,axis=0)
+	ax[1,0].plot(np.polyval(waveLcoefs_bad_lamp,np.arange(len(temp))),(temp-np.median(temp))/(temp.max()-np.median(temp))/10,'--')
+	ax[1,0].set_xlabel('wavelength [nm]')
+	ax[1,0].set_ylabel('intensity [ua]')
+	ax[1,0].semilogy()
+	fig.suptitle('Finding the correct wavelength axis of the calibration\nwaveLcoefs_bad_lamp='+str(waveLcoefs_bad_lamp))
+	figure_number+=1
+	plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+	plt.close()
+
+	waveLcoefs_merge95 = np.array([-6.63182432e-07,1.27698903e-01,3.14873321e+02])
+
+	# I need to account for possible changes in LOS and wavelength axis.
+	# if the experiment/calibration is strethed in the LOS axis this is not an issue, as the calibration is calculated for the billed LOSs
+	# only the LOS axis integrated measurement maters, so if it is stretched the total number of photons does not change
+
+	# but if the wavelength axis changes I need to account for that.
+
+
+	waveLcoefs = np.array([[np.nan,np.nan,np.nan],waveLcoefs_bad_lamp])
+	print('waveLcoefs found using the spectral lamp, so correct')
+	print(waveLcoefs)
+
 
 
 # geom = pd.DataFrame(columns = ['angle','tilt','binInterv','bin00a','bin00b'])
@@ -391,8 +611,8 @@ calib_ID_long=[215, 216, 217, 218]
 # calib_ID_long=[215, 216, 217, 413, 414, 415, 218]	# I can't really compare 2xx and 4xx because I don't have a wavelength axis for 4xx
 calib_ID_long = np.array([calib_ID_long for _, calib_ID_long in sorted(zip(int_time_long, calib_ID_long))])
 int_time_long = np.sort(int_time_long)
-int_time_long_new = np.flip(int_time_long,axis=0)
-calib_ID_long_new = np.flip(calib_ID_long,axis=0)
+int_time_long_reversed_order = np.flip(int_time_long,axis=0)
+calib_ID_long_new_reversed_order = np.flip(calib_ID_long,axis=0)
 
 intermediate_wavelength=1200
 last_wavelength=1608
@@ -412,23 +632,24 @@ for iFile, j in enumerate(calib_ID):
 		fname = fdir + '/' + folder + '/' + "{0:0=2d}".format(sequence) + '/Untitled_' + str(untitled) + '/Pos0/' + filename
 		im = Image.open(fname)
 		data = np.array(im)
-		# data = (data - dataDark)
+		data = (data - dataDark)
 		# data = fix_minimum_signal2(data)
 
 		temp.append(data)
 	temp = np.mean(temp, axis=0)
+	temp = fix_minimum_signal2(temp)
 	data = copy.deepcopy(temp)
-	data = data/(df_log.loc[j, ['Calib_ID']][0]*1000000)
+	# data = data/(df_log.loc[j, ['Calib_ID']][0]*1000000)
 	data_all.append(data)
 
 data_all = np.array(data_all)
 data=np.mean(data_all,axis=(0))
-data = fix_minimum_signal2(data)
-
-tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data),intermediate_wavelength)
-tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data),last_wavelength)
-
+# data = fix_minimum_signal2(data)
 data = rotate(data, geom['angle'])
+
+tilt_intermediate_column = get_bin_and_interv_specific_wavelength(data,intermediate_wavelength)
+tilt_last_column = get_bin_and_interv_specific_wavelength(data,last_wavelength)
+
 data = do_tilt_no_lines(data)
 data=np.sum(data,axis=0)
 data=np.convolve(data, np.ones(200)/200 , mode='valid')
@@ -529,6 +750,7 @@ for iFile, j in enumerate(calib_ID_long):
 
 	temp_sigma = np.std(temp,axis=0)
 	temp = np.mean(temp, axis=0)
+	temp = median_filter(temp, size=[1,5])
 
 	additive_factor,additive_factor_sigma = fix_minimum_signal_calibration(temp,counts_treshold_fixed_increase=106.5,intermediate_wavelength=intermediate_wavelength,last_wavelength=last_wavelength,tilt_intermediate_column=tilt_intermediate_column,tilt_last_column=tilt_last_column,dx_to_etrapolate_to=dx_to_etrapolate_to)
 
@@ -596,17 +818,25 @@ for iFile, j in enumerate(calib_ID_long):
 	# angle = get_angle_no_lines(temp)	# I cant use this because it's impossible to decouple the angle error from the tilt.
 	temp = rotate(temp, geom['angle'])
 	tilt_4_points = do_tilt_no_lines(temp,return_4_points=True)
-	temp = do_tilt_no_lines(temp)
+
+	# I want more space on top and bottom, to get 44LOSs rather than 42
+	tilt_4_points[0,1] += 25
+	tilt_4_points[1,1] += 25
+	tilt_4_points[2,1] -= 25
+	tilt_4_points[3,1] -= 25
+
 	tilt_4_points_high_int_time.append(tilt_4_points)
+	# temp = do_tilt_no_lines(temp)
+	temp = four_point_transform(temp, tilt_4_points)
 	temp_sigma= rotate(temp_sigma, geom['angle'])
 	temp_sigma = four_point_transform(temp_sigma, tilt_4_points)
 
-	first_bin, bin_interv = get_bin_and_interv_no_lines(temp)
+	first_bin, bin_interv = get_bin_and_interv_no_lines(temp,min_wave=500)
 	print('bin interval of ' + str(bin_interv) + ' , first_bin of ' + str(first_bin))
 	first_bin_high_int_time.append(first_bin)
 	bin_interv_high_int_time.append(bin_interv)
-	binned_data,binned_data_sigma = binData_with_sigma(temp,temp_sigma, first_bin, bin_interv)/(df_log.loc[j, ['Calib_ID']][0]*1000000)
-	temp1,temp2 = binData_with_sigma(temp, temp_sigma, first_bin - bin_interv, bin_interv, nCh=42)/(df_log.loc[j, ['Calib_ID']][0]*1000000)
+	binned_data,binned_data_sigma = binData_with_sigma(temp,temp_sigma, first_bin, bin_interv)/(df_log.loc[j, ['Calib_ID']][0]*1000000)	# counts/muA
+	temp1,temp2 = binData_with_sigma(temp, temp_sigma, first_bin - 2*bin_interv, bin_interv, nCh=44)/(df_log.loc[j, ['Calib_ID']][0]*1000000)	# counts/muA
 	longCal_all.append(temp1)
 	longCal_sigma_all.append(temp2)
 	# binned_data = binned_data - min(np.min(binned_data), 0)
@@ -629,8 +859,6 @@ for iFile, j in enumerate(calib_ID_long):
 	peak_sum.append(np.sum(binned_data[:, wavel - wavel_range:wavel + wavel_range], axis=(-1)))
 peak_sum=np.array(peak_sum)
 
-int_time_long = np.flip(int_time_long_new,axis=0)
-calib_ID_long = np.flip(calib_ID_long_new,axis=0)
 
 max_coordinate = 0
 for index in range(len(data_all)):
@@ -644,7 +872,9 @@ for index in range(len(data_all)):
 		temp_1.append(np.zeros(np.shape(temp_1[0])))
 		data_sigma_all[index] = np.array(temp_1)
 
-	first_bin, bin_interv = get_bin_and_interv_no_lines(data_all[index])
+	first_bin, bin_interv = get_bin_and_interv_no_lines(data_all[index],min_wave=500)
+	first_bin_high_int_time[index] = first_bin
+	bin_interv_high_int_time[index] = bin_interv
 	waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(data_all[index])[1]+1))
 	temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(data_all[index])[0]+1))
 	plt.figure(figsize=(20, 10))
@@ -654,7 +884,7 @@ for index in range(len(data_all)):
 		plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(data_all[index])[0]-1],'--k',linewidth=0.5)
 	for i in range(41):
 		plt.plot([np.min(waveaxis),np.max(waveaxis)],[first_bin+i*bin_interv,first_bin+i*bin_interv],'--k',linewidth=0.5)
-	plt.title('Exp ' + str(limits_angle) + '\n '+str(calib_ID_long[index])+'int time sensitivity')
+	plt.title('Exp ' + str(limits_angle) + '\n '+str(int_time_long[index])+'int time sensitivity')
 	plt.xlabel('wavelength [nm]')
 	plt.ylabel('LOS axis [pixels]')
 	figure_number+=1
@@ -668,7 +898,7 @@ for index in range(len(data_all)):
 		plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(data_all[index])[0]-1],'--k',linewidth=0.5)
 	for i in range(41):
 		plt.plot([np.min(waveaxis),np.max(waveaxis)],[first_bin+i*bin_interv,first_bin+i*bin_interv],'--k',linewidth=0.5)
-	plt.title('Exp ' + str(limits_angle) + '\n '+str(calib_ID_long[index])+'int time sensitivity low wavelengths')
+	plt.title('Exp ' + str(limits_angle) + '\n '+str(int_time_long[index])+'int time sensitivity low wavelengths')
 	plt.xlabel('wavelength [nm]')
 	plt.ylabel('LOS axis [pixels]')
 	figure_number+=1
@@ -720,10 +950,10 @@ for index in range(len(data_all)):
 # plt.pause(0.01)
 data_all_long_int_time=np.array(data_all)
 binned_all=np.array(binned_all)
-if False:	# the higher int time should give best results
-	bin_interv_high_int_time = np.nanmean(bin_interv_high_int_time)
-	first_bin_high_int_time = np.nanmean(first_bin_high_int_time)
-	tilt_4_points_high_int_time = np.nanmean(tilt_4_points_high_int_time,axis=0)
+if True:	# the higher int time should give best results	# but they are very similar, so the mean makes sense
+	bin_interv_high_int_time = np.nanmedian(bin_interv_high_int_time)
+	first_bin_high_int_time = np.nanmedian(first_bin_high_int_time)
+	tilt_4_points_high_int_time = np.nanmedian(tilt_4_points_high_int_time,axis=0)
 else:
 	bin_interv_high_int_time = bin_interv_high_int_time[-1]
 	first_bin_high_int_time = first_bin_high_int_time[-1]
@@ -740,8 +970,9 @@ longCal_sigma_all=np.array(longCal_sigma_all)
 for i in range(len(binned_all)):
 	topDark = longCal_all[i][0]
 	botDark = longCal_all[i][-1]
-	wtDark = np.arange(1, 41) / 41
-	calBinned = longCal_all[i][1:41] - (np.outer(wtDark, topDark) + np.outer(wtDark[::-1], botDark))	# + (topDark + botDark) / 2  # MODIFIED TO AVOID NEGATIVE VALUES
+	# wtDark = np.arange(1, 41) / 41
+	wtDark = np.arange(2, 42) / 43
+	calBinned = longCal_all[i][2:42] - (np.outer(wtDark, topDark) + np.outer(wtDark[::-1], botDark))	# + (topDark + botDark) / 2  # MODIFIED TO AVOID NEGATIVE VALUES
 	# I do this to eliminate the negative values and relpace them with neighbouring ones
 	for iLine in range(len(calBinned)):
 		while np.sum(calBinned[iLine]<=0)>0:
@@ -752,7 +983,7 @@ for i in range(len(binned_all)):
 				calBinned[iLine,iwave] = positive_values[np.abs(positive_indexes-iwave).argmin()]
 	topDark_sigma = longCal_sigma_all[i][0]
 	botDark_sigma = longCal_sigma_all[i][-1]
-	calBinned_sigma = np.sqrt((longCal_sigma_all[i][1:41])**2 + (np.outer(wtDark, topDark_sigma))**2 + (np.outer(wtDark[::-1], botDark_sigma))**2 + (topDark_sigma**2 + botDark_sigma**2) / 4 ) # MODIFIED TO AVOID NEGATIVE VALUES
+	calBinned_sigma = np.sqrt((longCal_sigma_all[i][1:41])**2 + (np.outer(wtDark, topDark_sigma))**2 + (np.outer(wtDark[::-1], botDark_sigma))**2 ) # + (topDark_sigma**2 + botDark_sigma**2) / 4 ) # MODIFIED TO AVOID NEGATIVE VALUES
 	# calBinned_peak_sum.append(np.sum(calBinned[:,wavel - wavel_range:wavel + wavel_range],axis=(-1,-2)))
 	calBinned_peak_sum.append(np.sum(calBinned[:, wavel - wavel_range:wavel + wavel_range], axis=(-1)))
 	calBinned_all.append(calBinned)
@@ -772,9 +1003,10 @@ for iFile, j in enumerate(calib_ID):
 	(folder, date, sequence, untitled) = df_log.loc[j, ['folder', 'date', 'sequence', 'untitled']]
 
 	dataDark = load_dark(j, df_settings, df_log, fdir, geom_null)
+	dataDark = median_filter(dataDark, size=[1,5])
 	additive_factor,additive_factor_sigma = fix_minimum_signal_calibration(dataDark,counts_treshold_fixed_increase=106.5,intermediate_wavelength=intermediate_wavelength,last_wavelength=last_wavelength,tilt_intermediate_column=tilt_intermediate_column,tilt_last_column=tilt_last_column,dx_to_etrapolate_to=dx_to_etrapolate_to)
 	dataDark_non_proportional = (np.array(dataDark).T + additive_factor).T
-	dataDark = apply_proportionality_calibration(dataDark,x_calibration,y_calibration)
+	dataDark = apply_proportionality_calibration(dataDark_non_proportional,x_calibration,y_calibration)
 	plt.figure()
 	plt.imshow(dataDark,'rainbow',origin='lower')
 	plt.title('Exp '+str(limits_angle)+' , '+str(j)+'int time sensitivity\nDark measurement used, negative and proportionality corrected')
@@ -842,6 +1074,7 @@ for iFile, j in enumerate(calib_ID):
 		# data_all_for_sigma.append(data/(df_log.loc[j, ['Calib_ID']][0]*1000000))
 		# temp_sigma.append(data_sigma)
 	data = np.mean(temp, axis=0)
+	data = median_filter(data, size=[1,5])
 	data_no_add = cp.deepcopy(data)
 	data_sigma = np.std(temp, axis=0)
 
@@ -889,21 +1122,40 @@ for iFile, j in enumerate(calib_ID):
 
 	# temp_sigma = np.sqrt(np.sum(np.array(temp_sigma)**2, axis=0))/len(temp_sigma)
 
-	data = data/(df_log.loc[j, ['Calib_ID']][0]*1000000)
-	data1 = temp1/(df_log.loc[j, ['Calib_ID']][0]*1000000)
-	temp_sigma = data_sigma/(df_log.loc[j, ['Calib_ID']][0]*1000000)
+	data = data/(df_log.loc[j, ['Calib_ID']][0]*1000000)	# counts/muA
+	data1 = temp1/(df_log.loc[j, ['Calib_ID']][0]*1000000)	# counts/muA
+	temp_sigma = data_sigma/(df_log.loc[j, ['Calib_ID']][0]*1000000)	# counts/muA
 	data_all.append(data)
 	data_all_non_proportional.append(data1)
 	data_sigma_all.append(temp_sigma)
 
 
-data_all = np.array(data_all)
-data_all_non_proportional = np.array(data_all_non_proportional)
+# data_all = np.array(data_all)
+# data_all_non_proportional = np.array(data_all_non_proportional)
 data=np.mean(data_all,axis=(0))
-data1=np.mean(data_all_non_proportional,axis=(0))
+data1=np.mean(data_all_non_proportional,axis=(0))	# non_proportional
 data = rotate(data, geom['angle'])
 data1 = rotate(data1, geom['angle'])
 data_no_add = rotate(data_no_add, geom['angle'])
+
+to_plot_pcolor = cp.deepcopy(data)
+waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
+temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
+plt.figure(figsize=(20, 10))
+plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',rasterized=True)
+plt.colorbar().set_label('counts/muA [1/muA]')
+plt.plot(np.polyval(waveLcoefs[1],tilt_4_points_high_int_time[0:2,0].tolist()+tilt_4_points_high_int_time[4:1:-1,0].tolist()+[tilt_4_points_high_int_time[0,0]]),tilt_4_points_high_int_time[0:2,1].tolist()+tilt_4_points_high_int_time[4:1:-1,1].tolist()+[tilt_4_points_high_int_time[0,1]],'--k')
+for i in range(len(waveLengths)):
+	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
+# for i in range(41):
+# 	plt.plot([np.min(waveaxis),np.max(waveaxis)],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linewidth=0.5)
+plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwithout negative signal correction (zoom left)')
+plt.xlabel('wavelength [nm]')
+plt.ylabel('LOS axis [pixels]')
+figure_number+=1
+plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+plt.close()
+
 data = four_point_transform(data, tilt_4_points_high_int_time)
 data1 = four_point_transform(data1, tilt_4_points_high_int_time)
 data_no_add = four_point_transform(data_no_add, tilt_4_points_high_int_time)
@@ -923,7 +1175,7 @@ waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
 temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor[:,600]),vmin=90,rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('counts/muA [1/muA]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 for i in range(41):
@@ -940,7 +1192,7 @@ waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
 temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('counts/muA [1/muA]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 for i in range(41):
@@ -957,7 +1209,7 @@ waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
 temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('counts/muA [1/muA]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 for i in range(41):
@@ -971,7 +1223,7 @@ plt.close()
 
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor[:,600]),rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('counts/muA [1/muA]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 for i in range(41):
@@ -999,7 +1251,7 @@ waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
 temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('counts/muA [1/muA]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 for i in range(41):
@@ -1034,10 +1286,108 @@ plt.close()
 # plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
 # plt.close()
 # plt.pause(0.01)
+if False:	# 20/02/2023	I don't think this applies anymore, as I do a smoothing way before now, before I fix the negativity
+	for kernel in [[1,3],[1,5],[1,7]]:	#added 12/02/2020
+		data2 = median_filter(np.mean(data_all,axis=(0)),size=kernel)
+		data3 = median_filter(np.mean(data_all_non_proportional,axis=(0)),size=kernel)
+		data2 = rotate(data2, geom['angle'])
+		data3 = rotate(data3, geom['angle'])
+		data2 = four_point_transform(data2, tilt_4_points_high_int_time)
+		data3 = four_point_transform(data3, tilt_4_points_high_int_time)
+		# data2 = do_tilt_no_lines(data2)
+		# data3 = do_tilt_no_lines(data3)
 
-for kernel in [[1,3],[1,5],[1,7]]:	#added 12/02/2020
-	data2 = medfilt(np.mean(data_all,axis=(0)),kernel)
-	data3 = medfilt(np.mean(data_all_non_proportional,axis=(0)),kernel)
+		data_sigma = np.mean(data_sigma_all,axis=(0))
+		data_sigma = convolve(data_sigma, np.ones((kernel[0],kernel[1]))/(kernel[0]*kernel[1]))	# I think this is conservative because more points I average the smaller the error, but here I do a simlpe mean of it
+		data_sigma = rotate(data_sigma, geom['angle'])
+		data_sigma = four_point_transform(data_sigma, tilt_4_points_high_int_time)
+		# data_sigma = do_tilt_no_lines(data_sigma)
+
+		to_plot_pcolor = cp.deepcopy(data2)
+		waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
+		temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
+		plt.figure(figsize=(20, 10))
+		plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
+		plt.colorbar()
+		for i in range(len(waveLengths)):
+			plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
+		for i in range(41):
+			plt.plot([np.min(waveaxis),np.max(waveaxis)],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linewidth=0.5)
+		plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwith proportionality correction and median filter, kernel '+str(kernel)+'\nI pick [1,5]')
+		plt.xlabel('wavelength [nm]')
+		plt.ylabel('LOS axis [pixels]')
+		figure_number+=1
+		plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+		plt.close()
+		# plt.figure()
+		# plt.imshow(data2,'rainbow',origin='lower')
+		# for i in range(41):
+		# 	plt.plot([0,np.shape(data)[-1]],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linestyle=(0, (5, 4, 1, 4)),linewidth=0.5)
+		# plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwith proportionality correction and median filter, kernel '+str(kernel)+'\nI pick [1,5]')
+		# plt.xlabel('wavelength axis [pixels]')
+		# plt.ylabel('LOS axis [pixels]')
+		# plt.colorbar().set_label('counts [au]')
+		# figure_number+=1
+		# plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+		# plt.close()
+		to_plot_pcolor = cp.deepcopy(data_sigma)
+		waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
+		temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
+		plt.figure(figsize=(20, 10))
+		plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
+		plt.colorbar()
+		for i in range(len(waveLengths)):
+			plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
+		for i in range(41):
+			plt.plot([np.min(waveaxis),np.max(waveaxis)],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linewidth=0.5)
+		plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwith proportionality correction error, averaged over kernel '+str(kernel)+'\nI pick [1,5]')
+		plt.xlabel('wavelength [nm]')
+		plt.ylabel('LOS axis [pixels]')
+		figure_number+=1
+		plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+		plt.close()
+		# plt.figure()
+		# plt.imshow(data_sigma,'rainbow',origin='lower')
+		# for i in range(41):
+		# 	plt.plot([0,np.shape(data)[-1]],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linestyle=(0, (5, 4, 1, 4)),linewidth=0.5)
+		# plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwith proportionality correction error, averaged over kernel '+str(kernel)+'\nI pick [1,5]')
+		# plt.xlabel('wavelength axis [pixels]')
+		# plt.ylabel('LOS axis [pixels]')
+		# plt.colorbar().set_label('counts [au]')
+		# figure_number+=1
+		# plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+		# plt.close()
+		to_plot_pcolor = cp.deepcopy(data3)
+		waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
+		temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
+		plt.figure(figsize=(20, 10))
+		plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
+		plt.colorbar()
+		for i in range(len(waveLengths)):
+			plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
+		for i in range(41):
+			plt.plot([np.min(waveaxis),np.max(waveaxis)],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linewidth=0.5)
+		plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwithout proportionality correction, kernel '+str(kernel)+'\nI pick [1,5]')
+		plt.xlabel('wavelength [nm]')
+		plt.ylabel('LOS axis [pixels]')
+		figure_number+=1
+		plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+		plt.close()
+		# plt.figure()
+		# plt.imshow(data3,'rainbow',origin='lower')
+		# for i in range(41):
+		# 	plt.plot([0,np.shape(data1)[-1]],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linestyle=(0, (5, 4, 1, 4)),linewidth=0.5)
+		# plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwithout proportionality correction, kernel '+str(kernel)+'\nI pick [1,5]')
+		# plt.xlabel('wavelength axis [pixels]')
+		# plt.ylabel('LOS axis [pixels]')
+		# plt.colorbar().set_label('counts [au]')
+		# figure_number+=1
+		# plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+		# plt.close()
+
+	kernel = [1,5]
+	data2 = median_filter(np.mean(data_all,axis=(0)), size=kernel)
+	data3 = median_filter(np.mean(data_all_non_proportional,axis=(0)), size=kernel)
 	data2 = rotate(data2, geom['angle'])
 	data3 = rotate(data3, geom['angle'])
 	data2 = four_point_transform(data2, tilt_4_points_high_int_time)
@@ -1051,106 +1401,11 @@ for kernel in [[1,3],[1,5],[1,7]]:	#added 12/02/2020
 	data_sigma = four_point_transform(data_sigma, tilt_4_points_high_int_time)
 	# data_sigma = do_tilt_no_lines(data_sigma)
 
-	to_plot_pcolor = cp.deepcopy(data2)
-	waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
-	temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
-	plt.figure(figsize=(20, 10))
-	plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
-	plt.colorbar()
-	for i in range(len(waveLengths)):
-		plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
-	for i in range(41):
-		plt.plot([np.min(waveaxis),np.max(waveaxis)],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linewidth=0.5)
-	plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwith proportionality correction and median filter, kernel '+str(kernel)+'\nI pick [1,5]')
-	plt.xlabel('wavelength [nm]')
-	plt.ylabel('LOS axis [pixels]')
-	figure_number+=1
-	plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
-	plt.close()
-	# plt.figure()
-	# plt.imshow(data2,'rainbow',origin='lower')
-	# for i in range(41):
-	# 	plt.plot([0,np.shape(data)[-1]],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linestyle=(0, (5, 4, 1, 4)),linewidth=0.5)
-	# plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwith proportionality correction and median filter, kernel '+str(kernel)+'\nI pick [1,5]')
-	# plt.xlabel('wavelength axis [pixels]')
-	# plt.ylabel('LOS axis [pixels]')
-	# plt.colorbar().set_label('counts [au]')
-	# figure_number+=1
-	# plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
-	# plt.close()
-	to_plot_pcolor = cp.deepcopy(data_sigma)
-	waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
-	temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
-	plt.figure(figsize=(20, 10))
-	plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
-	plt.colorbar()
-	for i in range(len(waveLengths)):
-		plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
-	for i in range(41):
-		plt.plot([np.min(waveaxis),np.max(waveaxis)],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linewidth=0.5)
-	plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwith proportionality correction error, averaged over kernel '+str(kernel)+'\nI pick [1,5]')
-	plt.xlabel('wavelength [nm]')
-	plt.ylabel('LOS axis [pixels]')
-	figure_number+=1
-	plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
-	plt.close()
-	# plt.figure()
-	# plt.imshow(data_sigma,'rainbow',origin='lower')
-	# for i in range(41):
-	# 	plt.plot([0,np.shape(data)[-1]],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linestyle=(0, (5, 4, 1, 4)),linewidth=0.5)
-	# plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwith proportionality correction error, averaged over kernel '+str(kernel)+'\nI pick [1,5]')
-	# plt.xlabel('wavelength axis [pixels]')
-	# plt.ylabel('LOS axis [pixels]')
-	# plt.colorbar().set_label('counts [au]')
-	# figure_number+=1
-	# plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
-	# plt.close()
-	to_plot_pcolor = cp.deepcopy(data3)
-	waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
-	temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
-	plt.figure(figsize=(20, 10))
-	plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
-	plt.colorbar()
-	for i in range(len(waveLengths)):
-		plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
-	for i in range(41):
-		plt.plot([np.min(waveaxis),np.max(waveaxis)],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linewidth=0.5)
-	plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwithout proportionality correction, kernel '+str(kernel)+'\nI pick [1,5]')
-	plt.xlabel('wavelength [nm]')
-	plt.ylabel('LOS axis [pixels]')
-	figure_number+=1
-	plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
-	plt.close()
-	# plt.figure()
-	# plt.imshow(data3,'rainbow',origin='lower')
-	# for i in range(41):
-	# 	plt.plot([0,np.shape(data1)[-1]],[first_bin_high_int_time+i*bin_interv_high_int_time,first_bin_high_int_time+i*bin_interv_high_int_time],'--k',linestyle=(0, (5, 4, 1, 4)),linewidth=0.5)
-	# plt.title('Exp '+str(limits_angle)+'\n Low int time sensitivity\nwithout proportionality correction, kernel '+str(kernel)+'\nI pick [1,5]')
-	# plt.xlabel('wavelength axis [pixels]')
-	# plt.ylabel('LOS axis [pixels]')
-	# plt.colorbar().set_label('counts [au]')
-	# figure_number+=1
-	# plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
-	# plt.close()
+	if True:	# This enables the use of the median filter, modified 12/02/2020
+		data = copy.deepcopy(data2)
+else:
+	pass
 
-kernel = [1,5]
-data2 = medfilt(np.mean(data_all,axis=(0)),kernel)
-data3 = medfilt(np.mean(data_all_non_proportional,axis=(0)),kernel)
-data2 = rotate(data2, geom['angle'])
-data3 = rotate(data3, geom['angle'])
-data2 = four_point_transform(data2, tilt_4_points_high_int_time)
-data3 = four_point_transform(data3, tilt_4_points_high_int_time)
-# data2 = do_tilt_no_lines(data2)
-# data3 = do_tilt_no_lines(data3)
-
-data_sigma = np.mean(data_sigma_all,axis=(0))
-data_sigma = convolve(data_sigma, np.ones((kernel[0],kernel[1]))/(kernel[0]*kernel[1]))	# I think this is convervative because more points I average the smaller the error, but here I do a simlpe mean of it
-data_sigma = rotate(data_sigma, geom['angle'])
-data_sigma = four_point_transform(data_sigma, tilt_4_points_high_int_time)
-# data_sigma = do_tilt_no_lines(data_sigma)
-
-if True:	# This enables the use of the median filter, modified 12/02/2020
-	data = copy.deepcopy(data2)
 data_no_mask = copy.deepcopy(data)
 # data_no_mask = data_no_mask - min(np.min(data_no_mask),0)
 # first_bin, bin_interv = get_bin_and_interv_no_lines(data)
@@ -1158,11 +1413,11 @@ print('bin interval of ' + str(bin_interv_high_int_time)+' , first_bin of '+str(
 # bin_interv_no_mask = bin_interv
 binned_data_no_mask,binned_data_no_mask_sigma = binData_with_sigma(data,data_sigma, first_bin_high_int_time, bin_interv_high_int_time)
 # binned_data_no_mask = binned_data_no_mask - min(np.min(binned_data_no_mask),0)
-longCal_no_mask,longCal_no_mask_sigma = binData_with_sigma(data,data_sigma,first_bin_high_int_time-bin_interv_high_int_time,bin_interv_high_int_time,nCh = 42)
+longCal_no_mask,longCal_no_mask_sigma = binData_with_sigma(data,data_sigma,first_bin_high_int_time-2*bin_interv_high_int_time,bin_interv_high_int_time,nCh = 44)
 topDark_no_mask = longCal_no_mask[0]
 botDark_no_mask = longCal_no_mask[-1]
-wtDark_no_mask = np.arange(1, 41) / 41
-calBinned_no_mask = longCal_no_mask[1:41] - (np.outer(wtDark_no_mask, topDark_no_mask) + np.outer(wtDark_no_mask[::-1], botDark_no_mask))#  + (topDark_no_mask + botDark_no_mask) / 2  # MODIFIED TO AVOID NEGATIVE VALUES
+wtDark_no_mask = np.arange(2, 42) / 43
+calBinned_no_mask = longCal_no_mask[2:42] - (np.outer(wtDark_no_mask, topDark_no_mask) + np.outer(wtDark_no_mask[::-1], botDark_no_mask))#  + (topDark_no_mask + botDark_no_mask) / 2  # MODIFIED TO AVOID NEGATIVE VALUES
 # I do this to eliminate the negative values and relpace them with neighbouring ones
 for iLine in range(len(calBinned_no_mask)):
 	while np.sum(calBinned_no_mask[iLine]<=0)>0:
@@ -1171,10 +1426,10 @@ for iLine in range(len(calBinned_no_mask)):
 		positive_indexes = np.arange(np.shape(calBinned_no_mask)[1])[calBinned_no_mask[iLine]>0]
 		for iwave in (np.arange(np.shape(calBinned_no_mask)[1])[select]):
 			calBinned_no_mask[iLine,iwave] = positive_values[np.abs(positive_indexes-iwave).argmin()]
-topDark_no_mask = longCal_no_mask_sigma[0]
-botDark_no_mask = longCal_no_mask_sigma[-1]
-wtDark_no_mask = np.arange(1, 41) / 41
-calBinned_no_mask_sigma = np.sqrt((longCal_no_mask_sigma[1:41])**2 + (np.outer(wtDark_no_mask, topDark_no_mask))**2 + (np.outer(wtDark_no_mask[::-1], botDark_no_mask))**2 + (topDark_no_mask**2 + botDark_no_mask**2) / 4 )  # MODIFIED TO AVOID NEGATIVE VALUES
+topDark_no_mask_sigma = longCal_no_mask_sigma[0]
+botDark_no_mask_sigma = longCal_no_mask_sigma[-1]
+# wtDark_no_mask = np.arange(1, 41) / 41
+calBinned_no_mask_sigma = np.sqrt((longCal_no_mask_sigma[2:42])**2 + (np.outer(wtDark_no_mask, topDark_no_mask_sigma))**2 + (np.outer(wtDark_no_mask[::-1], botDark_no_mask_sigma))**2 )# + (topDark_no_mask_sigma**2 + botDark_no_mask_sigma**2) / 4 )  # MODIFIED TO AVOID NEGATIVE VALUES
 
 peak_sum_single = np.sum(binned_data_no_mask[:, wavel - wavel_range:wavel + wavel_range], axis=(-1))  # type: ndarray
 calBinned_peak_sum_single = np.sum(calBinned_no_mask[:, wavel - wavel_range:wavel + wavel_range], axis=(-1))  # type: ndarray
@@ -1185,7 +1440,7 @@ waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
 temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('counts/muA [1/muA]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 plt.title('Exp '+str(limits_angle)+'\n binned data before upper and lower bin stray substraction')
@@ -1200,7 +1455,7 @@ waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
 temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor[:,600]),rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('counts/muA [1/muA]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 plt.title('Exp '+str(limits_angle)+'\n binned data before upper and lower bin stray substraction low waves')
@@ -1215,7 +1470,7 @@ waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
 temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('counts/muA [1/muA]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 plt.title('Exp '+str(limits_angle)+'\n binned data after upper and lower bin stray substraction')
@@ -1230,7 +1485,7 @@ waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
 temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(longCal_no_mask[:,600]),rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('counts/muA [1/muA]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 plt.title('Exp '+str(limits_angle)+'\n binned data after upper and lower bin stray substraction')
@@ -1277,9 +1532,32 @@ figure_number+=1
 plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
 plt.close()
 
-calBinned_no_mask_smoothed = np.zeros_like(calBinned_no_mask)
+# resudual = []
+# for window in np.arange(10,50):
+# 	resudual.append(np.std(calBinned_no_mask[38] - median_filter(calBinned_no_mask[38],size=[window])))
+# # looking at this the smaller windows that reduces well the std is around 23 pixels
+
+calBinned_no_mask_smoothed = np.zeros_like(calBinned_no_mask)	# counts/muA
 for index in range(len(calBinned_no_mask)):
-	calBinned_no_mask_smoothed[index] = smoothing_function(calBinned_no_mask[index],300)
+	calBinned_no_mask_smoothed[index] = savgol_filter(median_filter(calBinned_no_mask[index],size=[23]),201,3)	# simpler arbitrary settings
+	# calBinned_no_mask_smoothed[index] = smoothing_function(calBinned_no_mask[index],300)
+
+# just to see if it is improved
+# plt.figure()
+# spectra_orig = np.fft.fft(calBinned_no_mask[20], axis=0)
+# # magnitude=np.sqrt(np.add(np.power(real,2),np.power(imag,2)))
+# magnitude = 2 * np.abs(spectra_orig) / len(spectra_orig)
+# phase = np.angle(spectra_orig)
+# freq = np.fft.fftfreq(len(magnitude))
+# plt.plot(freq,magnitude)
+# spectra_orig = np.fft.fft(calBinned_no_mask_smoothed[20], axis=0)
+# # magnitude=np.sqrt(np.add(np.power(real,2),np.power(imag,2)))
+# magnitude = 2 * np.abs(spectra_orig) / len(spectra_orig)
+# phase = np.angle(spectra_orig)
+# freq = np.fft.fftfreq(len(magnitude))
+# plt.plot(freq,magnitude,'--')
+# plt.semilogy()
+# plt.pause(0.01)
 
 
 
@@ -1309,7 +1587,7 @@ plt.close()
 # plt.pause(0.01)
 
 
-spline=interpolate.interp1d(df_sphere.waveL,df_sphere.Rad,kind='cubic') #Spline interp of sphere radiance
+spline=interpolate.interp1d(df_sphere.waveL,df_sphere.Rad,kind='cubic') #Spline interp of sphere radiance, 'W m-2 sr-1 nm-1 \muA-1'
 
 # for index in range(len(scaled_up_calBinned_single)):
 # 	scaled_up_calBinned_single[index] = smoothing_function(scaled_up_calBinned_single[index],300)
@@ -1320,9 +1598,9 @@ spline=interpolate.interp1d(df_sphere.waveL,df_sphere.Rad,kind='cubic') #Spline 
 # scaled_up_calBinned_single[scaled_up_calBinned_single<0]=np.min(scaled_up_calBinned_single[scaled_up_calBinned_single>0])
 # spline=interpolate.interp1d(df_sphere.waveL,df_sphere.Rad,kind='cubic') #Spline interp of sphere radiance
 # calibration = calBinned_no_mask / spline(np.polyval(waveLcoefs[1],np.arange(calBinned_no_mask.shape[1])))
-# calibration = copy.deepcopy(calBinned_no_mask_smoothed)
-calibration = copy.deepcopy(calBinned_no_mask)	# modified 12/02/2012
-calibration_sigma = copy.deepcopy(calBinned_no_mask_sigma)	# modified 12/02/2012
+calibration_smoothed = copy.deepcopy(calBinned_no_mask_smoothed)
+calibration = copy.deepcopy(calBinned_no_mask)	# modified 12/02/2012	# counts/muA
+calibration_sigma = copy.deepcopy(calBinned_no_mask_sigma)	# modified 12/02/2012	# counts/muA
 
 to_plot_pcolor = cp.deepcopy(calibration)
 waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
@@ -1338,6 +1616,22 @@ plt.ylabel('LOS axis [pixels]')
 figure_number+=1
 plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
 plt.close()
+
+to_plot_pcolor = cp.deepcopy(calibration_smoothed)
+waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
+temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
+plt.figure(figsize=(20, 10))
+plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
+plt.colorbar()
+for i in range(len(waveLengths)):
+	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
+plt.title('Exp '+str(limits_angle)+'\n calBinned_no_mask_smoothed before Gaussian convolution')
+plt.xlabel('wavelength [nm]')
+plt.ylabel('LOS axis [pixels]')
+figure_number+=1
+plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+plt.close()
+
 # plt.figure()
 # plt.imshow(calibration, 'rainbow',origin='lower',aspect=10)
 # plt.title('Exp '+str(limits_angle)+'\n calBinned_no_mask_smoothed before Gaussian convolution')
@@ -1368,19 +1662,29 @@ plt.close()
 # plt.close()
 # plt.pause(0.01)
 
-calibration = calibration / spline(np.polyval(waveLcoefs[1],np.arange(calibration.shape[1])))
+calibration = calibration / spline(np.polyval(waveLcoefs[1],np.arange(calibration.shape[1])))	# 'counts W-1 m2 sr nm
+calibration_smoothed = calibration_smoothed / spline(np.polyval(waveLcoefs[1],np.arange(calibration.shape[1])))	# 'counts W-1 m2 sr nm
 calibration_sigma = calibration_sigma / spline(np.polyval(waveLcoefs[1],np.arange(calibration.shape[1])))
 
 calibration_convoluted = cp.deepcopy(calibration)
-FWHM = 20	#this is about the width of a peak
+calibration_smoothed_convoluted = cp.deepcopy(calibration_smoothed)
+# FWHM = 20	#this is about the width of a peak
+# in reality the sigma of the lines is ~1.03nm. this results in sigma of ~8.1 pixels. to not change the formula I use the equivalent FWHM
+FWHM = 19
+weighting_function = gaussian(100,FWHM/2.335) + 0.05*gaussian(100,2.5*FWHM/2.335)
+weighting_function = weighting_function/np.sum(weighting_function)
 for index,chord in enumerate(calibration_convoluted):
-	calibration_convoluted[index] = np.convolve(chord, gaussian(100,FWHM/2.335)/np.sum(gaussian(100,FWHM/2.335)) , mode='same')	# I convolute it with a gaussian shape because peaks are about gaussian
+	calibration_convoluted[index] = np.convolve(chord, weighting_function , mode='same')	# I convolute it with a gaussian shape because peaks are about gaussian
+for index,chord in enumerate(calibration_smoothed_convoluted):
+	calibration_smoothed_convoluted[index] = np.convolve(chord, weighting_function , mode='same')	# I convolute it with a gaussian shape because peaks are about gaussian
 
 # if np.sum(calibration<=0)>0:
 # 	calibration = calibration + max(-np.min(calibration),0)+0.001	# 0.001 it's arbitrary just to avoid 1/0
 calibration[calibration<=0] = np.min(calibration[calibration>0])
 calibration_convoluted[calibration_convoluted<=0] = np.min(calibration_convoluted[calibration_convoluted>0])
 
+calibration_smoothed[calibration_smoothed<=0] = np.min(calibration_smoothed[calibration_smoothed>0])
+calibration_smoothed_convoluted[calibration_smoothed_convoluted<=0] = np.min(calibration_smoothed_convoluted[calibration_smoothed_convoluted>0])
 
 
 # calibration = calibration / spline(np.polyval(waveLcoefs[1],np.arange(calibration.shape[1])))
@@ -1390,10 +1694,24 @@ waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
 temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('sensitivity [counts W-1 m2 sr nm]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 plt.title('Exp '+str(limits_angle)+'\n Convoluted calibration')
+plt.xlabel('wavelength [nm]')
+plt.ylabel('LOS axis [pixels]')
+figure_number+=1
+plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+plt.close()
+to_plot_pcolor = cp.deepcopy(calibration_smoothed_convoluted)
+waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
+temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
+plt.figure(figsize=(20, 10))
+plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
+plt.colorbar().set_label('sensitivity [counts W-1 m2 sr nm]')
+for i in range(len(waveLengths)):
+	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
+plt.title('Exp '+str(limits_angle)+'\n Convoluted smoothed calibration')
 plt.xlabel('wavelength [nm]')
 plt.ylabel('LOS axis [pixels]')
 figure_number+=1
@@ -1412,10 +1730,24 @@ waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
 temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('sensitivity [counts W-1 m2 sr nm]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 plt.title('Exp '+str(limits_angle)+'\n Non convoluted calibration')
+plt.xlabel('wavelength [nm]')
+plt.ylabel('LOS axis [pixels]')
+figure_number+=1
+plt.savefig(where_to_save_everything+str(figure_number)+'.eps', bbox_inches='tight')
+plt.close()
+to_plot_pcolor = cp.deepcopy(calibration_smoothed)
+waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
+temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
+plt.figure(figsize=(20, 10))
+plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
+plt.colorbar().set_label('sensitivity [counts W-1 m2 sr nm]')
+for i in range(len(waveLengths)):
+	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
+plt.title('Exp '+str(limits_angle)+'\n Non convoluted smoothed calibration')
 plt.xlabel('wavelength [nm]')
 plt.ylabel('LOS axis [pixels]')
 figure_number+=1
@@ -1433,7 +1765,7 @@ waveaxis = np.polyval(waveLcoefs[1],np.arange(np.shape(to_plot_pcolor)[1]+1))
 temp_w,temp_LOS = np.meshgrid(waveaxis,np.arange(np.shape(to_plot_pcolor)[0]+1))
 plt.figure(figsize=(20, 10))
 plt.pcolor(temp_w,temp_LOS,to_plot_pcolor,cmap='rainbow',vmax=np.max(to_plot_pcolor),rasterized=True)
-plt.colorbar()
+plt.colorbar().set_label('sensitivity [counts W-1 m2 sr nm]')
 for i in range(len(waveLengths)):
 	plt.plot([waveLengths[i],waveLengths[i]],[0,np.shape(to_plot_pcolor)[0]-1],'--k',linewidth=0.5)
 plt.title('Exp '+str(limits_angle)+'\n Non convoluted calibration error')
@@ -1454,15 +1786,23 @@ plt.close()
 to_save = np.zeros((3,)+np.shape(calibration))
 to_save[1] = calibration
 np.save('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_12/Sensitivity_4_non_convoluted',to_save)
+to_save = np.zeros((3,)+np.shape(calibration_smoothed))
+to_save[1] = calibration_smoothed
+np.save('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_12/Sensitivity_4_non_convoluted_smoothed',to_save)
 
 to_save = np.zeros((3,)+np.shape(calibration_convoluted))
 to_save[1] = calibration_convoluted
-np.save('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_11/Sensitivity_4',to_save)
+np.save('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_12/Sensitivity_4',to_save)
+to_save = np.zeros((3,)+np.shape(calibration_smoothed_convoluted))
+to_save[1] = calibration_smoothed_convoluted
+np.save('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_12/Sensitivity_4_smoothed',to_save)
+
+
 to_save = np.zeros((3,)+np.shape(calibration_convoluted))
 to_save[1] = calibration_sigma
 np.save('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_12/Sensitivity_4_non_convoluted_sigma',to_save)
 
-
+np.save('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_12/calibration_waveLcoefs',waveLcoefs)
 
 
 print("I only calculate Sensitivity_4 now")
@@ -1592,8 +1932,8 @@ int_time_long = [0.1, 1, 10, 100]
 calib_ID_long=[289,290,291,292]
 calib_ID_long = np.array([calib_ID_long for _, calib_ID_long in sorted(zip(int_time_long, calib_ID_long))])
 int_time_long = np.sort(int_time_long)
-int_time_long_new = np.flip(int_time_long,axis=0)
-calib_ID_long_new = np.flip(calib_ID_long,axis=0)
+int_time_long_reversed_order = np.flip(int_time_long,axis=0)
+calib_ID_long_new_reversed_order = np.flip(calib_ID_long,axis=0)
 
 wavel_range = 100
 
@@ -1675,8 +2015,8 @@ for iFile, j in enumerate(calib_ID_long):
 		temp.append(data)
 
 	if np.max(data_sum) == 0:
-		int_time_long_new = int_time_long_new[:-1]
-		calib_ID_long_new = calib_ID_long_new[:-1]
+		int_time_long_reversed_order = int_time_long_reversed_order[:-1]
+		calib_ID_long_new_reversed_order = calib_ID_long_new_reversed_order[:-1]
 		print('The integration time ' + str(int_time_long[iFile]) + 'ms will not be used because it requires minimum value corrrection to be used, and therefore it is deemed as unreliable')
 		continue
 
@@ -1700,8 +2040,8 @@ for iFile, j in enumerate(calib_ID_long):
 	peak_sum.append(np.sum(binned_data[:, wavel - wavel_range:wavel + wavel_range], axis=(-1)))
 peak_sum=np.array(peak_sum)
 
-int_time_long = np.flip(int_time_long_new,axis=0)
-calib_ID_long = np.flip(calib_ID_long_new,axis=0)
+int_time_long = np.flip(int_time_long_reversed_order,axis=0)
+calib_ID_long = np.flip(calib_ID_long_new_reversed_order,axis=0)
 
 max_coordinate = 0
 for index in range(len(data_all)):
@@ -2075,8 +2415,8 @@ int_time_long = [1,1, 10,10]		# I neglect 0.1ms to improve the regularity
 calib_ID_long=[196,197,198,199]
 calib_ID_long = np.array([calib_ID_long for _, calib_ID_long in sorted(zip(int_time_long, calib_ID_long))])
 int_time_long = np.sort(int_time_long)
-int_time_long_new = np.flip(int_time_long,axis=0)
-calib_ID_long_new = np.flip(calib_ID_long,axis=0)
+int_time_long_reversed_order = np.flip(int_time_long,axis=0)
+calib_ID_long_new_reversed_order = np.flip(calib_ID_long,axis=0)
 
 wavel_range = 100
 
@@ -2158,8 +2498,8 @@ for iFile, j in enumerate(calib_ID_long):
 		temp.append(data)
 
 	# if np.max(data_sum) == 0:		# check aborted because the data are too bad for that
-	# 	int_time_long_new = int_time_long_new[:-1]
-	# 	calib_ID_long_new = calib_ID_long_new[:-1]
+	# 	int_time_long_reversed_order = int_time_long_reversed_order[:-1]
+	# 	calib_ID_long_new_reversed_order = calib_ID_long_new_reversed_order[:-1]
 	# 	print('The integration time ' + str(int_time_long[iFile]) + 'ms will not be used because it requires minimum value corrrection to be used, and therefore it is deemed as unreliable')
 	# 	continue
 
@@ -2182,8 +2522,8 @@ for iFile, j in enumerate(calib_ID_long):
 	peak_sum.append(np.sum(binned_data[:, wavel - wavel_range:wavel + wavel_range], axis=(-1)))
 peak_sum=np.array(peak_sum)
 
-int_time_long = np.flip(int_time_long_new,axis=0)
-calib_ID_long = np.flip(calib_ID_long_new,axis=0)
+int_time_long = np.flip(int_time_long_reversed_order,axis=0)
+calib_ID_long = np.flip(calib_ID_long_new_reversed_order,axis=0)
 
 max_coordinate = 0
 for index in range(len(data_all)):

@@ -71,6 +71,23 @@ if initial_conditions:
 	plt.close()
 
 	plt.figure(figsize=(7, 10));
+	plt.pcolor(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]-TS_dt/2, TS_r/1000-TS_dr/2, merge_dne_multipulse[np.logical_and(merge_time_original>=time_crop[0]-1e-5,merge_time_original<=time_crop[-1]+1e-5)].T, cmap='rainbow');
+	plt.colorbar(orientation="horizontal").set_label('d density [10^20 # m^-3]')  # ;plt.pause(0.01)
+	plt.errorbar(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])],profile_centres[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,yerr=profile_centres_score[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,color='b',label='local centre')
+	plt.plot(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])],(profile_centres+profile_sigma*2.355/2)[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,'--',color='grey',label='density FWHM\n(gaussian fit)')
+	plt.plot(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])],(profile_centres-profile_sigma*2.355/2)[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,'--',color='grey')
+	plt.plot(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])][[0,-1]],[centre/1000,centre/1000],'k--',label='averaged centre')
+	plt.legend(loc='best', fontsize='xx-small')
+	plt.axes().set_aspect(20)
+	plt.xlabel('time [ms]')
+	plt.ylabel('radial location [mm]')
+	plt.title(pre_title+'untreated dne, centre at %.3gmm' %(centre))
+	figure_index += 1
+	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+		figure_index) + '.eps', bbox_inches='tight')
+	plt.close()
+
+	plt.figure(figsize=(7, 10));
 	plt.pcolor(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]-TS_dt/2, TS_r/1000-TS_dr/2, merge_Te_prof_multipulse[np.logical_and(merge_time_original>=time_crop[0]-1e-5,merge_time_original<=time_crop[-1]+1e-5)].T, cmap='rainbow');
 	plt.colorbar(orientation="horizontal").set_label('temperature [eV]')  # ;plt.pause(0.01)
 	plt.errorbar(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])],profile_centres[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,yerr=profile_centres_score[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,color='b',label='local centre')
@@ -82,6 +99,23 @@ if initial_conditions:
 	plt.xlabel('time [ms]')
 	plt.ylabel('radial location [mm]')
 	plt.title(pre_title+'untreated Te, centre at %.3gmm' %(centre))
+	figure_index += 1
+	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+		figure_index) + '.eps', bbox_inches='tight')
+	plt.close()
+
+	plt.figure(figsize=(7, 10));
+	plt.pcolor(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]-TS_dt/2, TS_r/1000-TS_dr/2, merge_dTe_multipulse[np.logical_and(merge_time_original>=time_crop[0]-1e-5,merge_time_original<=time_crop[-1]+1e-5)].T, cmap='rainbow');
+	plt.colorbar(orientation="horizontal").set_label('d temperature [eV]')  # ;plt.pause(0.01)
+	plt.errorbar(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])],profile_centres[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,yerr=profile_centres_score[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,color='b',label='local centre')
+	plt.plot(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])],(profile_centres+profile_sigma*2.355/2)[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,'--',color='grey',label='density FWHM\n(gaussian fit)')
+	plt.plot(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])],(profile_centres-profile_sigma*2.355/2)[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])]/1000,'--',color='grey')
+	plt.plot(merge_time_original[np.logical_and(merge_time_original>=time_crop[0],merge_time_original<=time_crop[-1])][[0,-1]],[centre/1000,centre/1000],'k--',label='averaged centre')
+	plt.legend(loc='best', fontsize='xx-small')
+	plt.axes().set_aspect(20)
+	plt.xlabel('time [ms]')
+	plt.ylabel('radial location [mm]')
+	plt.title(pre_title+'untreated dTe, centre at %.3gmm' %(centre))
 	figure_index += 1
 	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
 		figure_index) + '.eps', bbox_inches='tight')
@@ -272,7 +306,7 @@ if initial_conditions:
 	ionization_length_H = np.where(np.isinf(ionization_length_H), np.nan, ionization_length_H)
 	ionization_length_H = np.where(np.isnan(ionization_length_H), np.nanmax(ionization_length_H[np.isfinite(ionization_length_H)]), ionization_length_H)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, ionization_length_H,vmax=min(np.max(ionization_length_H),1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, ionization_length_H, cmap='rainbow', norm=LogNorm(vmax=min(np.max(ionization_length_H),1)));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	plt.legend(loc='best', fontsize='xx-small')
 	# plt.colorbar(orientation="horizontal").set_label('ionization_length [m], limited to 1m')  # ;plt.pause(0.01)
@@ -296,7 +330,7 @@ if initial_conditions:
 	ionization_length_H = np.where(np.isinf(ionization_length_H), np.nan, ionization_length_H)
 	ionization_length_H = np.where(np.isnan(ionization_length_H), np.nanmax(ionization_length_H[np.isfinite(ionization_length_H)]), ionization_length_H)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, ionization_length_H,vmax=min(np.max(ionization_length_H),1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, ionization_length_H, cmap='rainbow', norm=LogNorm(vmax=min(np.max(ionization_length_H),1)));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	plt.legend(loc='best', fontsize='xx-small')
 	# plt.colorbar(orientation="horizontal").set_label('ionization_length [m], limited to 1m')  # ;plt.pause(0.01)
@@ -310,9 +344,9 @@ if initial_conditions:
 		figure_index) + '.eps', bbox_inches='tight')
 	plt.close()
 
-	target_voltage_shape_crop = interpolated_target_voltage_shape(time_crop)
+	target_voltage_shape_crop = interpolated_target_voltage_shape(time_crop) + mean_steady_state_target_voltage
 	target_voltage_shape_std_crop = interpolated_target_voltage_shape_std(time_crop)
-	voltage_shape_crop = interpolated_voltage_shape(time_crop)
+	voltage_shape_crop = interpolated_voltage_shape(time_crop) + mean_steady_state_voltage
 	voltage_shape_std_crop = interpolated_voltage_shape_std(time_crop)
 
 	if merge_ID_target in [851,85,90,92,94,74,79,80,81,83,84,66,71,73]:
@@ -450,7 +484,8 @@ if initial_conditions:
 		electrons_pre_sheath_acceleration = 0.2
 		neutrals_natural_reflection = 0.6
 		target_Bohm_heat_flow = target_Bohm_adiabatic_flow*((2.5*boltzmann_constant_J*Te_all_target/eV_to_K-electron_charge*total_wall_potential)*(1-ions_pre_sheath_acceleration) + 2*Te_all_target/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
-		target_Bohm_heat_flow_target_voltage = target_Bohm_adiabatic_flow*((2.5*boltzmann_constant_J*Te_all_target/eV_to_K-electron_charge*corrected_total_wall_potential_negative)*(1-ions_pre_sheath_acceleration) + 2*Te_all_target/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
+		target_Bohm_heat_flow_target_voltage = target_Bohm_adiabatic_flow*((2.5*boltzmann_constant_J*Te_all_target.T/eV_to_K-electron_charge*target_voltage_shape_crop).T*(1-ions_pre_sheath_acceleration) + 2*Te_all_target/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
+		target_Bohm_heat_flow_corrected_voltage = target_Bohm_adiabatic_flow*((2.5*boltzmann_constant_J*Te_all_target/eV_to_K-electron_charge*corrected_total_wall_potential_negative)*(1-ions_pre_sheath_acceleration) + 2*Te_all_target/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
 		ion_flux_target = np.sum(target_Bohm_adiabatic_flow * dt/1000 * area,axis=-1)
 		label_ion_sink_at_target = 'ion sink at the target using TS Te and ne at %.3g mm from it' %target_OES_distance_at_the_target
 	else:
@@ -473,16 +508,17 @@ if initial_conditions:
 		electrons_pre_sheath_acceleration = 0.2
 		neutrals_natural_reflection = 0.6
 		target_Bohm_heat_flow = target_Bohm_adiabatic_flow*((2.5*boltzmann_constant_J*T_Hp-electron_charge*total_wall_potential)*(1-ions_pre_sheath_acceleration) + 2*Te_all/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
-		target_Bohm_heat_flow_target_voltage = target_Bohm_adiabatic_flow*((2.5*boltzmann_constant_J*T_Hp-electron_charge*corrected_total_wall_potential_negative)*(1-ions_pre_sheath_acceleration) + 2*Te_all/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
+		target_Bohm_heat_flow_target_voltage = target_Bohm_adiabatic_flow*((2.5*boltzmann_constant_J*T_Hp.T-electron_charge*target_voltage_shape_crop).T*(1-ions_pre_sheath_acceleration) + 2*Te_all/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
+		target_Bohm_heat_flow_corrected_voltage = target_Bohm_adiabatic_flow*((2.5*boltzmann_constant_J*T_Hp-electron_charge*corrected_total_wall_potential_negative)*(1-ions_pre_sheath_acceleration) + 2*Te_all/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
 		ion_flux_target = np.sum(target_Bohm_adiabatic_flow * dt/1000 * area,axis=-1)
 		label_ion_sink_at_target = "ion sink at the target using it's own TS Te and ne at %.3g mm from it" %target_OES_distance
 
-	plt.figure(figsize=(8, 5));
-	plt.errorbar(time_crop,target_voltage_shape_crop,yerr=target_voltage_shape_std_crop,label='target voltage - %.3gV' %(mean_steady_state_target_voltage))
-	plt.errorbar(time_crop,voltage_shape_crop,yerr=voltage_shape_std_crop,label='source voltage - %.3gV' %(mean_steady_state_voltage))
+	plt.figure(figsize=(10, 10));
+	plt.errorbar(time_crop,target_voltage_shape_crop,yerr=target_voltage_shape_std_crop,label='SS target voltage %.3gV' %(mean_steady_state_target_voltage))
+	plt.errorbar(time_crop,voltage_shape_crop,yerr=voltage_shape_std_crop,label='SS source voltage %.3gV' %(mean_steady_state_voltage))
 	plt.plot(time_crop,target_voltage_shape_crop-voltage_shape_crop,label='target-source')
-	plt.plot(time_crop,np.min(total_wall_potential,axis=-1),label='min plasma wall potential')
-	plt.plot(time_crop,np.min(corrected_total_wall_potential,axis=-1),label='min "real" plasma wall potential')
+	plt.plot(time_crop,np.min(total_wall_potential,axis=-1),label='calculated plasma wall potential')
+	plt.plot(time_crop,np.min(corrected_total_wall_potential,axis=-1),label='calculated plasma wall potential + target - source')
 	plt.grid()
 	plt.legend(loc='best', fontsize='xx-small')
 	plt.xlabel('time [ms]')
@@ -942,17 +978,20 @@ if initial_conditions:
 	ions_pre_sheath_acceleration = 0.4
 	electrons_pre_sheath_acceleration = 0.2
 	neutrals_natural_reflection = 0.6
-	Bohm_heat_flow = Bohm_adiabatic_flow*((2.5*boltzmann_constant_J*Te_all/eV_to_K-electron_charge*sheath_potential_drop-electron_charge*presheath_potential_drop)*(1-ions_pre_sheath_acceleration) + 2*Te_all/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
+	Bohm_heat_flow = Bohm_adiabatic_flow*((2.5*boltzmann_constant_J*Te_all/eV_to_K-electron_charge*(sheath_potential_drop+presheath_potential_drop))*(1-ions_pre_sheath_acceleration) + 2*Te_all/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
+	Bohm_heat_flow_target_voltage = Bohm_adiabatic_flow*((2.5*boltzmann_constant_J*Te_all.T/eV_to_K-electron_charge*target_voltage_shape_crop).T*(1-ions_pre_sheath_acceleration) + 2*Te_all/eV_to_K*boltzmann_constant_J*(1-electrons_pre_sheath_acceleration) + ionisation_potential/J_to_eV + dissociation_potential/J_to_eV*(1-neutrals_natural_reflection))
 	plt.figure(figsize=(8, 5));
 	plt.plot(time_crop,power_pulse_shape_crop*1e-3,label='plasma source power input')
-	plt.plot(time_crop,np.sum(upstream_power_density_distribution_uniform_mach*area,axis=1)*1e-3,label='upstream power flow')
-	plt.plot(time_crop,np.sum(power_density_distribution_uniform_mach*area,axis=1)*1e-3,label='downstream power flow')
-	plt.plot(time_crop,np.sum(target_Bohm_heat_flow*area,axis=1)*1e-3,label='Bohm target heat flux target location')
-	plt.plot(time_crop,np.sum(target_Bohm_heat_flow_target_voltage*area,axis=1)*1e-3,label='Bohm target heat flux target location\ntarget voltage bias used')
-	plt.plot(time_crop,np.sum(Bohm_heat_flow*area,axis=1)*1e-3,'--',label='Bohm target heat flux TS location')
+	plt.plot(time_crop,np.sum(upstream_power_density_distribution_uniform_mach*area,axis=1)*1e-3,'--',label='upstream power flow upstream speed')
+	plt.plot(time_crop,np.sum(power_density_distribution_uniform_mach*area,axis=1)*1e-3,':',label='downstream power flow upstream speed')
+	plt.plot(time_crop,np.sum(target_Bohm_heat_flow*area,axis=1)*1e-3,label='Bohm target heat flux target location\ntot=%.3gJ' %(np.sum(np.sum(target_Bohm_heat_flow*area,axis=1)*dt/1000)))
+	plt.plot(time_crop,np.sum(target_Bohm_heat_flow_target_voltage*area,axis=1)*1e-3,label='Bohm target heat flux target location\ntarget voltage bias used\ntot=%.3gJ' %(np.sum(np.sum(target_Bohm_heat_flow_target_voltage*area,axis=1)*dt/1000)))
+	plt.plot(time_crop,np.sum(Bohm_heat_flow*area,axis=1)*1e-3,'--',label='Bohm target heat flux TS location\ntot=%.3gJ' %(np.sum(np.sum(Bohm_heat_flow*area,axis=1)*dt/1000)))
+	plt.plot(time_crop,np.sum(Bohm_heat_flow_target_voltage*area,axis=1)*1e-3,':',label='Bohm target heat flux TS location\ntarget voltage bias used\ntot=%.3gJ' %(np.sum(np.sum(Bohm_heat_flow_target_voltage*area,axis=1)*dt/1000)))
 	plt.legend(loc='best', fontsize='xx-small')
 	plt.xlabel('time [ms]')
 	plt.ylabel('power [kW]      ')
+	plt.ylim(top=(power_pulse_shape_crop*1e-3).max()*1.1)
 	plt.title(pre_title+'Comparison of the power avaliable with detected')
 	figure_index += 1
 	plt.savefig(path_where_to_save_everything + mod4 + '/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
@@ -968,7 +1007,7 @@ if initial_conditions:
 	plt.figure(figsize=(8, 5));
 	plt.plot(time_crop, plasma_inflow_upstream_homogeneous_mach_number,label='upstream flow Mach from power');
 	plt.plot(time_crop, plasma_inflow_TS_location_homogeneous_mach_number,'--',label='TS location flow Mach from power and upstream flow');
-	plt.plot(time_crop, plasma_inflow_TS_location_sonic,label='TS location flow Mach=1');
+	# plt.plot(time_crop, plasma_inflow_TS_location_sonic,label='TS location flow Mach=1');	# pointless. this is calculated wrong, as at the sheath edge n~0.5nbulk. still don't get why
 	plt.plot(time_crop, np.sum(upstream_Bohm_adiabatic_flow*area,axis=1),label='Bohm flow upstream');
 	plt.plot(time_crop, np.sum(Bohm_adiabatic_flow*area,axis=1),'--',label='Bohm flow TS location');
 	plt.plot(time_crop, np.array(plasma_inflow_upstream_max),'k--',label='upstream inflow fixed velocity range')
@@ -1163,9 +1202,9 @@ else:
 	excitation_full = []
 	for isel in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
 		if isel==0:
-			temp = read_adf15(pecfile_2, 1, Te_all.flatten(),(ne_all * 10 ** (20 - 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^-3
+			temp = read_adf15(pecfile_2, 1, Te_all.flatten(),(ne_all * 10 ** (20 - 6)).flatten())  # ADAS database is in cm^3   # photons s^-1 cm^-3
 		else:
-			temp = read_adf15(pecfile, isel, Te_all.flatten(),(ne_all * 10 ** (20 - 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^-3
+			temp = read_adf15(pecfile, isel, Te_all.flatten(),(ne_all * 10 ** (20 - 6)).flatten())  # ADAS database is in cm^3   # photons s^-1 cm^-3
 		temp[np.isnan(temp)] = 0
 		temp[np.isinf(temp)] = 0
 		temp = temp.reshape((np.shape(Te_all)))
@@ -1179,9 +1218,9 @@ else:
 	recombination_full = []
 	for isel in [0, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]:
 		if isel==0:
-			temp = read_adf15(pecfile_2, 67, Te_all.flatten(),(ne_all * 10 ** (20 - 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^-3
+			temp = read_adf15(pecfile_2, 67, Te_all.flatten(),(ne_all * 10 ** (20 - 6)).flatten())  # ADAS database is in cm^3   # photons s^-1 cm^-3
 		else:
-			temp = read_adf15(pecfile, isel, Te_all.flatten(),(ne_all * 10 ** (20 - 6)).flatten())[0]  # ADAS database is in cm^3   # photons s^-1 cm^-3
+			temp = read_adf15(pecfile, isel, Te_all.flatten(),(ne_all * 10 ** (20 - 6)).flatten())  # ADAS database is in cm^3   # photons s^-1 cm^-3
 		temp[np.isnan(temp)] = 0
 		temp = temp.reshape((np.shape(Te_all)))
 		recombination_full.append(temp)
@@ -1333,7 +1372,7 @@ else:
 	# 	plt.pcolor(temp_t, temp_r, ne_all * nH_ne_all, cmap='rainbow', norm=LogNorm(),
 	# 			   vmin=0.1, vmax=np.mean(np.sort((ne_all * nH_ne_all).flatten())[-100:-10]));
 	# else:
-	plt.pcolor(temp_t, temp_r, ne_all * nH_ne_all,vmin=max(np.max(ne_all * nH_ne_all)/1e6,1e-3), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, ne_all * nH_ne_all, cmap='rainbow', norm=LogNorm(vmin=max(np.max(ne_all * nH_ne_all)/1e6,1e-3)));
 	plt.colorbar(orientation="horizontal").set_label('density [10^20 # m^-3]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -1407,7 +1446,7 @@ else:
 		# 	plt.pcolor(temp_t, temp_r, ne_all * nH_ne_all, cmap='rainbow', norm=LogNorm(),
 		# 			   vmin=0.1, vmax=np.mean(np.sort((ne_all * nH_ne_all).flatten())[-100:-10]));
 		# else:
-		plt.pcolor(temp_t, temp_r, ne_all * nH2_ne_all, cmap='rainbow',vmin=max(np.max(ne_all * nH2_ne_all)/1e6,1e-3), norm=LogNorm());
+		plt.pcolor(temp_t, temp_r, ne_all * nH2_ne_all, cmap='rainbow', norm=LogNorm(vmin=max(np.max(ne_all * nH2_ne_all)/1e6,1e-3)));
 		plt.colorbar(orientation="horizontal").set_label('density [10^20 # m^-3]')  # ;plt.pause(0.01)
 		plt.axes().set_aspect(20)
 		plt.xlabel('time [ms]')
@@ -1611,7 +1650,7 @@ else:
 	effective_ionisation_rates = (effective_ionisation_rates * (ne_all**2) *1e40* nH_ne_all).astype('float')
 
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, effective_ionisation_rates, cmap='rainbow',vmin=max(np.max(effective_ionisation_rates)/1e4,1e19), norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, effective_ionisation_rates, cmap='rainbow', norm=LogNorm(vmin=max(np.max(effective_ionisation_rates)/1e4,1e19)));
 	plt.colorbar(orientation="horizontal").set_label('effective_ionisation_rates [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -1654,7 +1693,7 @@ else:
 	plt.close()
 
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, effective_recombination_rates, cmap='rainbow',vmin=max(np.max(effective_recombination_rates)/1e4,1e19), norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, effective_recombination_rates, cmap='rainbow', norm=LogNorm(vmin=max(np.max(effective_recombination_rates)/1e4,1e19)));
 	plt.colorbar(orientation="horizontal").set_label('effective_recombination_rates [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -1697,7 +1736,7 @@ else:
 	fig.colorbar(im, ax=ax).set_label('emissivity [W m^-3]')
 
 	ax=fig.add_subplot(1, 10, 4)
-	im = ax.pcolor(1000*temp_r.T,temp_t.T,effective_ionisation_rates.T,cmap='rainbow',vmin=max(np.max(effective_ionisation_rates)/1e6,1e19), norm=LogNorm());
+	im = ax.pcolor(1000*temp_r.T,temp_t.T,effective_ionisation_rates.T,cmap='rainbow', norm=LogNorm(vmin=max(np.max(effective_ionisation_rates)/1e6,1e19)));
 	ax.set_aspect(40)
 	plt.title(pre_title+'effective ionisation\nrates')
 	plt.xlabel('radial location [mm]')
@@ -1716,7 +1755,7 @@ else:
 
 	ax=fig.add_subplot(1, 10, 6)
 	if np.sum(nH_ne_all>0)>0:
-		im = ax.pcolor(1000*temp_r.T,temp_t.T,(ne_all*nH_ne_all).T, cmap='rainbow',vmin=max(np.max(ne_all*nH_ne_all)/1e6,1e-3), norm=LogNorm());
+		im = ax.pcolor(1000*temp_r.T,temp_t.T,(ne_all*nH_ne_all).T, cmap='rainbow', norm=LogNorm(vmin=max(np.max(ne_all*nH_ne_all)/1e6,1e-3)));
 	else:
 		im = ax.pcolor(1000*temp_r.T,temp_t.T,(ne_all*nH_ne_all).T, cmap='rainbow')
 	ax.set_aspect(40)
@@ -1749,7 +1788,7 @@ else:
 
 	ax=fig.add_subplot(1, 10, 9)
 	if np.sum(nH2_ne_all>0)>0:
-		im = ax.pcolor(1000*temp_r.T,temp_t.T,(ne_all*nH2_ne_all).T, cmap='rainbow',vmin=max(np.max(ne_all*nH2_ne_all)/1e6,1e-3), norm=LogNorm());
+		im = ax.pcolor(1000*temp_r.T,temp_t.T,(ne_all*nH2_ne_all).T, cmap='rainbow', norm=LogNorm(vmin=max(np.max(ne_all*nH2_ne_all)/1e6,1e-3)));
 	else:
 		im = ax.pcolor(1000*temp_r.T,temp_t.T,(ne_all*nH2_ne_all).T, cmap='rainbow')
 	ax.set_aspect(40)
@@ -1810,7 +1849,7 @@ else:
 
 
 	ax = fig.add_subplot(1, 5, 3)
-	im = ax.pcolor(1000 * temp_r.T, temp_t.T, effective_ionisation_rates.T, cmap='rainbow',vmin=max(np.max(effective_ionisation_rates)/1e6,1e19), norm=LogNorm());
+	im = ax.pcolor(1000 * temp_r.T, temp_t.T, effective_ionisation_rates.T, cmap='rainbow', norm=LogNorm(vmin=max(np.max(effective_ionisation_rates)/1e6,1e19)));
 	ax.set_aspect(40)
 	plt.title(pre_title+'effective ionisation\nrates')
 	plt.xlabel('radial location [mm]')
@@ -1937,7 +1976,7 @@ else:
 	reaction_rate[np.isnan(reaction_rate)] = 0
 	e_H__Hm = ne_all*1e20 * (ne_all * nH_ne_all* 1e20 - np.sum(population_states,axis=0) ) * reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, e_H__Hm ,vmin=max(np.max(e_H__Hm)*1e-12,np.min(e_H__Hm[e_H__Hm>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, e_H__Hm , cmap='rainbow',norm=LogNorm(vmin=max(np.max(e_H__Hm)*1e-12,np.min(e_H__Hm[e_H__Hm>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -1986,7 +2025,7 @@ else:
 		reaction_rate[reaction_rate<0] = 0
 	e_Hm__e_H_e = ne_all*1e20 *nHm_ne_all*ne_all*1e20*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, e_Hm__e_H_e ,vmin=max(np.max(e_Hm__e_H_e)*1e-12,np.min(e_Hm__e_H_e[e_Hm__e_H_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, e_Hm__e_H_e , cmap='rainbow',norm=LogNorm(vmin=max(np.max(e_Hm__e_H_e)*1e-12,np.min(e_Hm__e_H_e[e_Hm__e_H_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2037,7 +2076,7 @@ else:
 	reaction_rate = np.sum((cross_section*Hp_velocity*Hp_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(Hp_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s
 	Hp_Hm__H_2_H = ne_all*1e20 *nHm_ne_all*ne_all*1e20*nHp_ne_all*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, Hp_Hm__H_2_H ,vmin=max(np.max(Hp_Hm__H_2_H)*1e-12,np.min(Hp_Hm__H_2_H[Hp_Hm__H_2_H>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, Hp_Hm__H_2_H , cmap='rainbow',norm=LogNorm(vmin=max(np.max(Hp_Hm__H_2_H)*1e-12,np.min(Hp_Hm__H_2_H[Hp_Hm__H_2_H>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2087,7 +2126,7 @@ else:
 	reaction_rate = np.sum((cross_section*Hp_velocity*Hp_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(Hp_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s
 	Hp_Hm__H_3_H = ne_all*1e20 *nHm_ne_all*ne_all*1e20*nHp_ne_all*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, Hp_Hm__H_3_H ,vmin=max(np.max(Hp_Hm__H_3_H)*1e-12,np.min(Hp_Hm__H_3_H[Hp_Hm__H_3_H>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, Hp_Hm__H_3_H , cmap='rainbow',norm=LogNorm(vmin=max(np.max(Hp_Hm__H_3_H)*1e-12,np.min(Hp_Hm__H_3_H[Hp_Hm__H_3_H>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2116,7 +2155,7 @@ else:
 	reaction_rate = np.sum((cross_section*Hp_velocity*Hp_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(Hp_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s
 	Hp_Hm__H2p_e = ne_all*1e20 *nHm_ne_all*ne_all*1e20*nHp_ne_all*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, Hp_Hm__H2p_e ,vmin=max(np.max(Hp_Hm__H2p_e)*1e-12,np.min(Hp_Hm__H2p_e[Hp_Hm__H2p_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, Hp_Hm__H2p_e , cmap='rainbow',norm=LogNorm(vmin=max(np.max(Hp_Hm__H2p_e)*1e-12,np.min(Hp_Hm__H2p_e[Hp_Hm__H2p_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2149,7 +2188,7 @@ else:
 	reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s
 	Hm_H1s__H1s_H1s_e = ne_all*1e20 *nHm_ne_all*(ne_all*1e20*nH_ne_all - np.sum(population_states,axis=0))*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, Hm_H1s__H1s_H1s_e ,vmin=max(np.max(Hm_H1s__H1s_H1s_e)*1e-12,np.min(Hm_H1s__H1s_H1s_e[Hm_H1s__H1s_H1s_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, Hm_H1s__H1s_H1s_e , cmap='rainbow',norm=LogNorm(vmin=max(np.max(Hm_H1s__H1s_H1s_e)*1e-12,np.min(Hm_H1s__H1s_H1s_e[Hm_H1s__H1s_H1s_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2182,7 +2221,7 @@ else:
 	reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * Hm_velocity*Hm_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_velocity))*np.mean(np.diff(Hm_velocity))		# m^3 / s
 	Hm_H1s__H2_v_e = ne_all*1e20 *nHm_ne_all*(ne_all*1e20*nH_ne_all - np.sum(population_states,axis=0))*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, Hm_H1s__H2_v_e ,vmin=max(np.max(Hm_H1s__H2_v_e)*1e-12,np.min(Hm_H1s__H2_v_e[Hm_H1s__H2_v_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, Hm_H1s__H2_v_e , cmap='rainbow',norm=LogNorm(vmin=max(np.max(Hm_H1s__H2_v_e)*1e-12,np.min(Hm_H1s__H2_v_e[Hm_H1s__H2_v_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2205,7 +2244,7 @@ else:
 	reaction_rate[temperature>30000]=reaction_rate_max
 	Hp_H_H__Hp_H2 = ne_all*1e20 * nHp_ne_all*((ne_all*1e20 *nH_ne_all - np.sum(population_states,axis=0))**2)*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, Hp_H_H__Hp_H2 ,vmin=max(np.max(Hp_H_H__Hp_H2)*1e-12,np.min(Hp_H_H__Hp_H2[Hp_H_H__Hp_H2>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, Hp_H_H__Hp_H2 , cmap='rainbow',norm=LogNorm(vmin=max(np.max(Hp_H_H__Hp_H2)*1e-12,np.min(Hp_H_H__Hp_H2[Hp_H_H__Hp_H2>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2225,7 +2264,7 @@ else:
 	reaction_rate[T_H>20000]=reaction_rate_max
 	H_H_H__H_H2 = ((ne_all*1e20 *nH_ne_all)**3)*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, H_H_H__H_H2 ,vmin=max(np.max(H_H_H__H_H2)*1e-12,np.min(H_H_H__H_H2[H_H_H__H_H2>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, H_H_H__H_H2 , cmap='rainbow',norm=LogNorm(vmin=max(np.max(H_H_H__H_H2)*1e-12,np.min(H_H_H__H_H2[H_H_H__H_H2>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2384,7 +2423,7 @@ else:
 		reaction_rate[Te_all<min(0.1,Te_all.max()/2)]=0
 		e_H2_X1Σg_x__e_H_H = reaction_rate * ne_all*1e20 * ne_all*nH2_ne_all
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, e_H2_X1Σg_x__e_H_H ,vmin=max(np.max(e_H2_X1Σg_x__e_H_H)*1e-12,np.min(e_H2_X1Σg_x__e_H_H[e_H2_X1Σg_x__e_H_H>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, e_H2_X1Σg_x__e_H_H , cmap='rainbow',norm=LogNorm(vmin=max(np.max(e_H2_X1Σg_x__e_H_H)*1e-12,np.min(e_H2_X1Σg_x__e_H_H[e_H2_X1Σg_x__e_H_H>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2438,7 +2477,7 @@ else:
 		e_H2N13Λσ__e_H2pX2Σg_e = reaction_rate * (ne_all**2)*1e40*nH2_ne_all
 
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, e_H2N13Λσ__e_H2pX2Σg_e ,vmin=max(np.max(e_H2N13Λσ__e_H2pX2Σg_e)*1e-12,np.min(e_H2N13Λσ__e_H2pX2Σg_e[e_H2N13Λσ__e_H2pX2Σg_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, e_H2N13Λσ__e_H2pX2Σg_e , cmap='rainbow',norm=LogNorm(vmin=max(np.max(e_H2N13Λσ__e_H2pX2Σg_e)*1e-12,np.min(e_H2N13Λσ__e_H2pX2Σg_e[e_H2N13Λσ__e_H2pX2Σg_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2491,7 +2530,7 @@ else:
 		reaction_rate[Te_all<min(1,Te_all.max()/2)]=0
 		e_H2N13Λσ__Hp_H_2e = reaction_rate * (ne_all**2)*1e40*nH2_ne_all
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, e_H2N13Λσ__Hp_H_2e ,vmin=max(np.max(e_H2N13Λσ__Hp_H_2e)*1e-12,np.min(e_H2N13Λσ__Hp_H_2e[e_H2N13Λσ__Hp_H_2e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, e_H2N13Λσ__Hp_H_2e , cmap='rainbow',norm=LogNorm(vmin=max(np.max(e_H2N13Λσ__Hp_H_2e)*1e-12,np.min(e_H2N13Λσ__Hp_H_2e[e_H2N13Λσ__Hp_H_2e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2623,7 +2662,7 @@ else:
 			e_H2X1Σg__e_H1s_H1s[v_index] += reaction_rate * ne_all*1e20 * ne_all*nH2_ne_all*1e20 * 1 * np.exp(-(v_index)*plank_constant_eV*light_speed*oscillator_frequency/(T_H2*eV_to_K)) / q_vibr
 	e_H2X1Σg__e_H1s_H1s = np.sum(e_H2X1Σg__e_H1s_H1s,axis=0)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, e_H2X1Σg__e_H1s_H1s  ,vmin=max(np.max(e_H2X1Σg__e_H1s_H1s)*1e-12,np.min(e_H2X1Σg__e_H1s_H1s[e_H2X1Σg__e_H1s_H1s>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, e_H2X1Σg__e_H1s_H1s  , cmap='rainbow',norm=LogNorm(vmin=max(np.max(e_H2X1Σg__e_H1s_H1s)*1e-12,np.min(e_H2X1Σg__e_H1s_H1s[e_H2X1Σg__e_H1s_H1s>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2685,7 +2724,7 @@ else:
 		reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
 		Hp_H2X1Σg__H1s_H2pX2Σg = reaction_rate * nHp_ne_all* ne_all*1e20 * ne_all*nH2_ne_all*1e20
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, Hp_H2X1Σg__H1s_H2pX2Σg ,vmin=max(np.max(Hp_H2X1Σg__H1s_H2pX2Σg)*1e-12,np.min(Hp_H2X1Σg__H1s_H2pX2Σg[Hp_H2X1Σg__H1s_H2pX2Σg>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, Hp_H2X1Σg__H1s_H2pX2Σg , cmap='rainbow',norm=LogNorm(vmin=max(np.max(Hp_H2X1Σg__H1s_H2pX2Σg)*1e-12,np.min(Hp_H2X1Σg__H1s_H2pX2Σg[Hp_H2X1Σg__H1s_H2pX2Σg>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2725,7 +2764,7 @@ else:
 			Hp_H2X1Σg__Hp_H1s_H1s[v_index] += reaction_rate *nHp_ne_all* ne_all*1e20 * ne_all*nH2_ne_all*1e20 * 1 * np.exp(-(v_index)*plank_constant_eV*light_speed*oscillator_frequency/(T_H2*eV_to_K)) / q_vibr
 	Hp_H2X1Σg__Hp_H1s_H1s = np.sum(Hp_H2X1Σg__Hp_H1s_H1s,axis=0)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, Hp_H2X1Σg__Hp_H1s_H1s ,vmin=max(np.max(Hp_H2X1Σg__Hp_H1s_H1s)*1e-12,np.min(Hp_H2X1Σg__Hp_H1s_H1s[Hp_H2X1Σg__Hp_H1s_H1s>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, Hp_H2X1Σg__Hp_H1s_H1s , cmap='rainbow',norm=LogNorm(vmin=max(np.max(Hp_H2X1Σg__Hp_H1s_H1s)*1e-12,np.min(Hp_H2X1Σg__Hp_H1s_H1s[Hp_H2X1Σg__Hp_H1s_H1s>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2770,7 +2809,7 @@ else:
 		reaction_rate = np.sum(cross_section*Hm_velocity*Hm_velocity_PDF,axis=-1)* np.mean(np.diff(Hm_velocity))		# m^3 / s
 		Hm_H2v__H_H2v_e = reaction_rate *nHm_ne_all* (ne_all**2)*1e40 * nH2_ne_all
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, Hm_H2v__H_H2v_e ,vmin=max(np.max(Hm_H2v__H_H2v_e)*1e-12,np.min(Hm_H2v__H_H2v_e[Hm_H2v__H_H2v_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, Hm_H2v__H_H2v_e , cmap='rainbow',norm=LogNorm(vmin=max(np.max(Hm_H2v__H_H2v_e)*1e-12,np.min(Hm_H2v__H_H2v_e[Hm_H2v__H_H2v_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2800,7 +2839,7 @@ else:
 			H1s_H2v__H1s_2H1s[v_index] += reaction_rate * (ne_all*1e20 *nH_ne_all - np.sum(population_states,axis=0)) * ne_all*nH2_ne_all*1e20 * 1 * np.exp(-(v_index)*plank_constant_eV*light_speed*oscillator_frequency/(T_H2*eV_to_K)) / q_vibr
 	H1s_H2v__H1s_2H1s = np.sum(H1s_H2v__H1s_2H1s,axis=0)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, H1s_H2v__H1s_2H1s,vmin=max(np.max(H1s_H2v__H1s_2H1s)*1e-12,np.min(H1s_H2v__H1s_2H1s[H1s_H2v__H1s_2H1s>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, H1s_H2v__H1s_2H1s, cmap='rainbow',norm=LogNorm(vmin=max(np.max(H1s_H2v__H1s_2H1s)*1e-12,np.min(H1s_H2v__H1s_2H1s[H1s_H2v__H1s_2H1s>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2834,7 +2873,7 @@ else:
 			H2v0_H2v__H2v0_2H1s[v_index] += reaction_rate * ne_all*nH2_ne_all*1e20 * 1 * np.exp(0) / q_vibr * ne_all*nH2_ne_all*1e20 * 1 * np.exp(-(v_index)*plank_constant_eV*light_speed*oscillator_frequency/(T_H2*eV_to_K)) / q_vibr
 	H2v0_H2v__H2v0_2H1s = np.sum(H2v0_H2v__H2v0_2H1s,axis=0)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, H2v0_H2v__H2v0_2H1s,vmin=max(np.max(H2v0_H2v__H2v0_2H1s)*1e-12,np.min(H2v0_H2v__H2v0_2H1s[H2v0_H2v__H2v0_2H1s>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, H2v0_H2v__H2v0_2H1s, cmap='rainbow',norm=LogNorm(vmin=max(np.max(H2v0_H2v__H2v0_2H1s)*1e-12,np.min(H2v0_H2v__H2v0_2H1s[H2v0_H2v__H2v0_2H1s>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2877,7 +2916,7 @@ else:
 		e_H2p__XXX__e_Hp_H1s = (ne_all**2)*1e40 *nH2p_ne_all*reaction_rate
 
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, e_H2p__XXX__e_Hp_H1s,vmin=max(np.max(e_H2p__XXX__e_Hp_H1s)*1e-12,np.min(e_H2p__XXX__e_Hp_H1s[e_H2p__XXX__e_Hp_H1s>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, e_H2p__XXX__e_Hp_H1s, cmap='rainbow',norm=LogNorm(vmin=max(np.max(e_H2p__XXX__e_Hp_H1s)*1e-12,np.min(e_H2p__XXX__e_Hp_H1s[e_H2p__XXX__e_Hp_H1s>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2919,7 +2958,7 @@ else:
 		e_H2p__H1s_Hn2 = (ne_all**2)*1e40 *nH2p_ne_all*reaction_rate
 
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, e_H2p__H1s_Hn2,vmin=max(np.max(e_H2p__H1s_Hn2)*1e-12,np.min(e_H2p__H1s_Hn2[e_H2p__H1s_Hn2>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, e_H2p__H1s_Hn2, cmap='rainbow',norm=LogNorm(vmin=max(np.max(e_H2p__H1s_Hn2)*1e-12,np.min(e_H2p__H1s_Hn2[e_H2p__H1s_Hn2>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2957,7 +2996,7 @@ else:
 		e_H2p__e_Hp_Hp_e = reaction_rate * (ne_all**2)*1e40*nH2p_ne_all
 
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, e_H2p__e_Hp_Hp_e,vmin=max(np.max(e_H2p__e_Hp_Hp_e)*1e-12,np.min(e_H2p__e_Hp_Hp_e[e_H2p__e_Hp_Hp_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, e_H2p__e_Hp_Hp_e, cmap='rainbow',norm=LogNorm(vmin=max(np.max(e_H2p__e_Hp_Hp_e)*1e-12,np.min(e_H2p__e_Hp_Hp_e[e_H2p__e_Hp_Hp_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -2997,7 +3036,7 @@ else:
 	plt.figure(figsize=(8, 5));
 	if np.sum(H1s_H2pv__Hp_H_H>0)>20:
 		if np.nanmax(H1s_H2pv__Hp_H_H)>0:
-			plt.pcolor(temp_t, temp_r, H1s_H2pv__Hp_H_H,vmin=max(np.max(H1s_H2pv__Hp_H_H)*1e-12,np.min(H1s_H2pv__Hp_H_H[H1s_H2pv__Hp_H_H>0])), cmap='rainbow',norm=LogNorm());
+			plt.pcolor(temp_t, temp_r, H1s_H2pv__Hp_H_H, cmap='rainbow',norm=LogNorm(vmin=max(np.max(H1s_H2pv__Hp_H_H)*1e-12,np.min(H1s_H2pv__Hp_H_H[H1s_H2pv__Hp_H_H>0]))));
 		else:
 			plt.pcolor(temp_t, temp_r, H1s_H2pv__Hp_H_H,vmin=max(np.max(H1s_H2pv__Hp_H_H)*1e-12,np.min(H1s_H2pv__Hp_H_H)), cmap='rainbow');
 	else:
@@ -3032,7 +3071,7 @@ else:
 	reaction_rate = np.sum(cross_section*H2p_velocity*H2p_velocity_PDF,axis=-1)* np.mean(np.diff(H2p_velocity))		# m^3 / s
 	H2pvi_H2v0__Hp_H_H2v1 = nH2_ne_all*ne_all*1e20 *nH2p_ne_all*ne_all*1e20*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, H2pvi_H2v0__Hp_H_H2v1,vmin=max(np.max(H2pvi_H2v0__Hp_H_H2v1)*1e-12,np.min(H2pvi_H2v0__Hp_H_H2v1[H2pvi_H2v0__Hp_H_H2v1>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, H2pvi_H2v0__Hp_H_H2v1, cmap='rainbow',norm=LogNorm(vmin=max(np.max(H2pvi_H2v0__Hp_H_H2v1)*1e-12,np.min(H2pvi_H2v0__Hp_H_H2v1[H2pvi_H2v0__Hp_H_H2v1>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3079,7 +3118,7 @@ else:
 				H2pvi_H2v0__H3p_H1s[v0_index] += reaction_rate * nH2p_ne_all*ne_all*1e20 * ne_all*nH2_ne_all*1e20 * 1 * np.exp(-(v0_index)*plank_constant_eV*light_speed*oscillator_frequency/(T_H2*eV_to_K)) / q_vibr
 	H2pvi_H2v0__H3p_H1s = np.sum(H2pvi_H2v0__H3p_H1s,axis=0)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, H2pvi_H2v0__H3p_H1s ,vmin=max(np.max(H2pvi_H2v0__H3p_H1s)*1e-12,np.min(H2pvi_H2v0__H3p_H1s[H2pvi_H2v0__H3p_H1s>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, H2pvi_H2v0__H3p_H1s , cmap='rainbow',norm=LogNorm(vmin=max(np.max(H2pvi_H2v0__H3p_H1s)*1e-12,np.min(H2pvi_H2v0__H3p_H1s[H2pvi_H2v0__H3p_H1s>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3115,7 +3154,7 @@ else:
 	reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
 	H2p_Hm__H2N13Λσ_H1s = ne_all*1e20 * nH2p_ne_all*ne_all*1e20 * nHm_ne_all*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, H2p_Hm__H2N13Λσ_H1s,vmin=max(np.max(H2p_Hm__H2N13Λσ_H1s)*1e-12,np.min(H2p_Hm__H2N13Λσ_H1s[H2p_Hm__H2N13Λσ_H1s>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, H2p_Hm__H2N13Λσ_H1s, cmap='rainbow',norm=LogNorm(vmin=max(np.max(H2p_Hm__H2N13Λσ_H1s)*1e-12,np.min(H2p_Hm__H2N13Λσ_H1s[H2p_Hm__H2N13Λσ_H1s>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3143,7 +3182,7 @@ else:
 	reaction_rate[np.logical_not(np.isfinite(reaction_rate))]=0
 	H2p_Hm__H3p_e = ne_all*1e20 * nH2p_ne_all*ne_all*1e20 * nHm_ne_all*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, H2p_Hm__H3p_e,vmin=max(np.max(H2p_Hm__H3p_e)*1e-12,np.min(H2p_Hm__H3p_e[H2p_Hm__H3p_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, H2p_Hm__H3p_e, cmap='rainbow',norm=LogNorm(vmin=max(np.max(H2p_Hm__H3p_e)*1e-12,np.min(H2p_Hm__H3p_e[H2p_Hm__H3p_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3166,7 +3205,7 @@ else:
 	reaction_rate[temperature>30000]=reaction_rate_max
 	Hp_H_H__H_H2p = ne_all*1e20 * nHp_ne_all*((ne_all*1e20 *nH_ne_all - np.sum(population_states,axis=0))**2)*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, Hp_H_H__H_H2p,vmin=max(np.max(Hp_H_H__H_H2p)*1e-12,np.min(Hp_H_H__H_H2p[Hp_H_H__H_H2p>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, Hp_H_H__H_H2p, cmap='rainbow',norm=LogNorm(vmin=max(np.max(Hp_H_H__H_H2p)*1e-12,np.min(Hp_H_H__H_H2p[Hp_H_H__H_H2p>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3198,7 +3237,7 @@ else:
 	# reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * H_velocity*H_velocity_PDF )* np.mean(np.diff(H_velocity))		# m^3 / s
 	H1s_H_2__H2p_e = population_states[0]*(ne_all*1e20 *nH_ne_all - np.sum(population_states,axis=0))*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, H1s_H_2__H2p_e,vmin=max(np.max(H1s_H_2__H2p_e)*1e-12,np.min(H1s_H_2__H2p_e[H1s_H_2__H2p_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, H1s_H_2__H2p_e, cmap='rainbow',norm=LogNorm(vmin=max(np.max(H1s_H_2__H2p_e)*1e-12,np.min(H1s_H_2__H2p_e[H1s_H_2__H2p_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3244,7 +3283,7 @@ else:
 		reaction_rate = np.nansum((cross_section*H_1_velocity*H_1_velocity_PDF).T * H_2_velocity*H_2_velocity_PDF ,axis=(0,-1)).T* np.mean(np.diff(H_1_velocity))*np.mean(np.diff(H_2_velocity))		# m^3 / s
 		H1s_H_3__H2p_e = population_states[1]*(ne_all*1e20 *nH_ne_all - np.sum(population_states,axis=0))*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, H1s_H_3__H2p_e,vmin=max(np.max(H1s_H_3__H2p_e)*1e-12,np.min(H1s_H_3__H2p_e[H1s_H_3__H2p_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, H1s_H_3__H2p_e, cmap='rainbow',norm=LogNorm(vmin=max(np.max(H1s_H_3__H2p_e)*1e-12,np.min(H1s_H_3__H2p_e[H1s_H_3__H2p_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3278,7 +3317,7 @@ else:
 	# reaction_rate = np.sum((cross_section*H_velocity*H_velocity_PDF).T * H_velocity*H_velocity_PDF )* np.mean(np.diff(H_velocity))		# m^3 / s
 	H1s_H_4__H2p_e = population_states[2]*(ne_all*1e20 *nH_ne_all - np.sum(population_states,axis=0))*reaction_rate
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, H1s_H_4__H2p_e,vmin=max(np.max(H1s_H_4__H2p_e)*1e-12,np.min(H1s_H_4__H2p_e[H1s_H_4__H2p_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, H1s_H_4__H2p_e, cmap='rainbow',norm=LogNorm(vmin=max(np.max(H1s_H_4__H2p_e)*1e-12,np.min(H1s_H_4__H2p_e[H1s_H_4__H2p_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3291,7 +3330,7 @@ else:
 
 	rate_creation_Hm = e_H__Hm + e_H2X1Σg__Hm_H1s
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_creation_Hm,vmin=max(np.max(rate_creation_Hm)*1e-3,np.min(rate_creation_Hm[rate_creation_Hm>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_creation_Hm, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_creation_Hm)*1e-3,np.min(rate_creation_Hm[rate_creation_Hm>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3304,7 +3343,7 @@ else:
 
 	rate_destruction_Hm = e_Hm__e_H_e + Hp_Hm__H_2_H + Hp_Hm__H_3_H + Hp_Hm__H2p_e + Hm_H1s__H1s_H1s_e + Hm_H1s__H2_v_e + Hm_H2v__H_H2v_e
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_destruction_Hm,vmin=max(np.max(rate_destruction_Hm)*1e-3,np.min(rate_destruction_Hm[rate_destruction_Hm>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_destruction_Hm, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_destruction_Hm)*1e-3,np.min(rate_destruction_Hm[rate_destruction_Hm>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3341,7 +3380,7 @@ else:
 
 	rate_creation_H2p = Hp_Hm__H2p_e + e_H2N13Λσ__e_H2pX2Σg_e + Hp_H2X1Σg__H1s_H2pX2Σg + Hp_H_H__H_H2p + H1s_H_2__H2p_e + H1s_H_3__H2p_e + H1s_H_4__H2p_e
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_creation_H2p,vmin=max(np.max(rate_creation_H2p)*1e-3,np.min(rate_creation_H2p[rate_creation_H2p>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_creation_H2p, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_creation_H2p)*1e-3,np.min(rate_creation_H2p[rate_creation_H2p>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3410,7 +3449,7 @@ else:
 
 	rate_destruction_H2p = e_H2p__XXX__e_Hp_H1s + e_H2p__H1s_Hn2 + e_H2p__e_Hp_Hp_e + H1s_H2pv__Hp_H_H + H2pvi_H2v0__Hp_H_H2v1 + H2pvi_H2v0__H3p_H1s + H2p_Hm__H2N13Λσ_H1s + H2p_Hm__H3p_e
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_destruction_Hm,vmin=max(np.max(rate_destruction_Hm)*1e-3,np.min(rate_destruction_Hm[rate_destruction_Hm>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_destruction_Hm, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_destruction_Hm)*1e-3,np.min(rate_destruction_Hm[rate_destruction_Hm>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3447,7 +3486,7 @@ else:
 
 	rate_creation_H2 = Hm_H1s__H2_v_e + Hp_H_H__Hp_H2 + H_H_H__H_H2 + H2p_Hm__H2N13Λσ_H1s
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_creation_H2,vmin=max(np.max(rate_creation_H2)*1e-3,np.min(rate_creation_H2[rate_creation_H2>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_creation_H2, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_creation_H2)*1e-3,np.min(rate_creation_H2[rate_creation_H2>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3461,7 +3500,7 @@ else:
 	rate_creation_H2_from_Hm = (Hm_H1s__H2_v_e + H2p_Hm__H2N13Λσ_H1s)/rate_creation_H2
 	rate_creation_H2_from_Hm[np.logical_not(np.isfinite(rate_creation_H2_from_Hm))]=0
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_creation_H2_from_Hm,vmax=1, cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_creation_H2_from_Hm, cmap='rainbow',norm=LogNorm(vmax=1));
 	plt.colorbar(orientation="horizontal").set_label('fractional reatcion rate [au]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3475,7 +3514,7 @@ else:
 	rate_creation_H2_from_Hp = Hp_H_H__Hp_H2/rate_creation_H2
 	rate_creation_H2_from_Hp[np.logical_not(np.isfinite(rate_creation_H2_from_Hp))]=0
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_creation_H2_from_Hp,vmax=1, cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_creation_H2_from_Hp, cmap='rainbow',norm=LogNorm(vmax=1));
 	plt.colorbar(orientation="horizontal").set_label('fractional reatcion rate [au]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3489,7 +3528,7 @@ else:
 	rate_creation_H2_from_H = (Hp_H_H__Hp_H2 + H_H_H__H_H2)/rate_creation_H2
 	rate_creation_H2_from_H[np.logical_not(np.isfinite(rate_creation_H2_from_H))]=0
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_creation_H2,vmax=1, cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_creation_H2, cmap='rainbow',norm=LogNorm(vmax=1));
 	plt.colorbar(orientation="horizontal").set_label('fractional reatcion rate [au]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3503,7 +3542,7 @@ else:
 	rate_creation_H2_from_H2p = H2p_Hm__H2N13Λσ_H1s/rate_creation_H2
 	rate_creation_H2_from_H2p[np.logical_not(np.isfinite(rate_creation_H2_from_H2p))]=0
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_creation_H2_from_H2p,vmax=1, cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_creation_H2_from_H2p, cmap='rainbow',norm=LogNorm(vmax=1));
 	plt.colorbar(orientation="horizontal").set_label('fractional reatcion rate [au]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3516,7 +3555,7 @@ else:
 
 	rate_destruction_H2 = e_H2_X1Σg_x__e_H_H + e_H2N13Λσ__e_H2pX2Σg_e + e_H2N13Λσ__Hp_H_2e + e_H2X1Σg__Hm_H1s + e_H2X1Σg__e_H1s_H1s + Hp_H2X1Σg__H1s_H2pX2Σg + Hp_H2X1Σg__Hp_H1s_H1s + H1s_H2v__H1s_2H1s + H2v0_H2v__H2v0_2H1s + H2pvi_H2v0__H3p_H1s
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_destruction_Hm,vmin=max(np.max(rate_destruction_Hm)*1e-3,np.min(rate_destruction_Hm[rate_destruction_Hm>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_destruction_Hm, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_destruction_Hm)*1e-3,np.min(rate_destruction_Hm[rate_destruction_Hm>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3553,7 +3592,7 @@ else:
 
 	rate_creation_H3p = H2pvi_H2v0__H3p_H1s + H2p_Hm__H3p_e
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_creation_H2p,vmin=max(np.max(rate_creation_H2p)*1e-3,np.min(rate_creation_H2p[rate_creation_H2p>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_creation_H2p, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_creation_H2p)*1e-3,np.min(rate_creation_H2p[rate_creation_H2p>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3566,7 +3605,7 @@ else:
 
 	rate_creation_H = e_Hm__e_H_e + 2*Hp_Hm__H_2_H + 2*Hp_Hm__H_3_H + Hm_H1s__H1s_H1s_e + 2*e_H2_X1Σg_x__e_H_H + e_H2N13Λσ__Hp_H_2e + e_H2X1Σg__Hm_H1s + 2*e_H2X1Σg__e_H1s_H1s + Hp_H2X1Σg__H1s_H2pX2Σg + Hp_H2X1Σg__Hp_H1s_H1s + Hm_H2v__H_H2v_e + 2*H1s_H2v__H1s_2H1s + 2*H2v0_H2v__H2v0_2H1s + e_H2p__XXX__e_Hp_H1s + 2*e_H2p__H1s_Hn2 + H1s_H2pv__Hp_H_H + H2pvi_H2v0__Hp_H_H2v1 + H2pvi_H2v0__H3p_H1s + H2p_Hm__H2N13Λσ_H1s
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_creation_H,vmin=max(np.max(rate_creation_H)*1e-3,np.min(rate_creation_H[rate_creation_H>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_creation_H, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_creation_H)*1e-3,np.min(rate_creation_H[rate_creation_H>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3579,7 +3618,7 @@ else:
 
 	rate_destruction_H = Hm_H1s__H2_v_e + 2*Hp_H_H__Hp_H2 + 2*H_H_H__H_H2 + Hp_H_H__H_H2p + H1s_H_2__H2p_e + H1s_H_3__H2p_e + H1s_H_4__H2p_e + e_H__Hm
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_destruction_H,vmin=max(np.max(rate_destruction_H)*1e-3,np.min(rate_destruction_H[rate_destruction_H>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_destruction_H, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_destruction_H)*1e-3,np.min(rate_destruction_H[rate_destruction_H>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3616,7 +3655,7 @@ else:
 
 	rate_creation_Hp = e_H2N13Λσ__Hp_H_2e + e_H2p__XXX__e_Hp_H1s + 2*e_H2p__e_Hp_Hp_e + H1s_H2pv__Hp_H_H + H2pvi_H2v0__Hp_H_H2v1
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_creation_Hp,vmin=max(np.max(rate_creation_Hp)*1e-3,np.min(rate_creation_Hp[rate_creation_Hp>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_creation_Hp, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_creation_Hp)*1e-3,np.min(rate_creation_Hp[rate_creation_Hp>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3629,7 +3668,7 @@ else:
 
 	rate_destruction_Hp = Hp_Hm__H_2_H + Hp_Hm__H_3_H + Hp_Hm__H2p_e + Hp_H2X1Σg__H1s_H2pX2Σg + Hp_H_H__H_H2p
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_destruction_Hp,vmin=max(np.max(rate_destruction_Hp)*1e-3,np.min(rate_destruction_Hp[rate_destruction_Hp>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_destruction_Hp, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_destruction_Hp)*1e-3,np.min(rate_destruction_Hp[rate_destruction_Hp>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3667,7 +3706,7 @@ else:
 
 	rate_creation_e = e_Hm__e_H_e + Hp_Hm__H2p_e + Hm_H1s__H1s_H1s_e + Hm_H1s__H2_v_e + e_H2N13Λσ__e_H2pX2Σg_e + e_H2N13Λσ__Hp_H_2e + Hm_H2v__H_H2v_e + e_H2p__e_Hp_Hp_e + H2p_Hm__H3p_e + H1s_H_2__H2p_e + H1s_H_3__H2p_e + H1s_H_4__H2p_e
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_creation_e,vmin=max(np.max(rate_creation_e)*1e-3,np.min(rate_creation_e[rate_creation_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_creation_e, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_creation_e)*1e-3,np.min(rate_creation_e[rate_creation_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3680,7 +3719,7 @@ else:
 
 	rate_destruction_e = e_H__Hm + e_H2X1Σg__Hm_H1s + e_H2p__H1s_Hn2
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, rate_destruction_e,vmin=max(np.max(rate_destruction_e)*1e-3,np.min(rate_destruction_e[rate_destruction_e>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, rate_destruction_e, cmap='rainbow',norm=LogNorm(vmin=max(np.max(rate_destruction_e)*1e-3,np.min(rate_destruction_e[rate_destruction_e>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -3767,7 +3806,7 @@ else:
 	# ionization_length_H = np.where(np.isinf(ionization_length_H), np.nan, ionization_length_H)
 	# ionization_length_H = np.where(np.isnan(ionization_length_H), np.nanmax(ionization_length_H[np.isfinite(ionization_length_H)]), ionization_length_H)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, ionization_length_H,vmax=min(np.max(ionization_length_H),1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, ionization_length_H, cmap='rainbow', norm=LogNorm(vmax=min(np.max(ionization_length_H),1)));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	temp1 = np.flip(np.cumsum(np.flip(dx/ionization_length_H,axis=1),axis=1),axis=1)
 	temp1 = 1-temp1
@@ -3801,7 +3840,7 @@ else:
 	# ionization_length_H = np.where(np.isinf(ionization_length_H), np.nan, ionization_length_H)
 	# ionization_length_H = np.where(np.isnan(ionization_length_H), np.nanmax(ionization_length_H[np.isfinite(ionization_length_H)]), ionization_length_H)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, ionization_length_H,vmax=min(np.max(ionization_length_H),1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, ionization_length_H, cmap='rainbow', norm=LogNorm(vmax=min(np.max(ionization_length_H),1)));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	temp1 = np.flip(np.cumsum(np.flip(dx/ionization_length_H,axis=1),axis=1),axis=1)
 	temp1 = 1-temp1
@@ -3832,7 +3871,7 @@ else:
 	# destruction_length_H = np.where(np.isinf(destruction_length_H), np.nan, destruction_length_H)
 	# destruction_length_H = np.where(np.isnan(destruction_length_H), np.nanmax(destruction_length_H[np.isfinite(destruction_length_H)]), destruction_length_H)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, destruction_length_H,vmax=min(np.max(destruction_length_H),1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, destruction_length_H, cmap='rainbow', norm=LogNorm(vmax=min(np.max(destruction_length_H),1)));
 	plt.colorbar(orientation="horizontal").set_label('destruction length [m], limited to 1m')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
@@ -3862,7 +3901,7 @@ else:
 	# destruction_length_H = np.where(np.isinf(destruction_length_H), np.nan, destruction_length_H)
 	# destruction_length_H = np.where(np.isnan(destruction_length_H), np.nanmax(destruction_length_H[np.isfinite(destruction_length_H)]), destruction_length_H)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, destruction_length_H,vmax=min(np.max(destruction_length_H),1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, destruction_length_H, cmap='rainbow', norm=LogNorm(vmax=min(np.max(destruction_length_H),1)));
 	plt.colorbar(orientation="horizontal").set_label('destruction length [m], limited to 1m')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
@@ -3907,7 +3946,7 @@ else:
 	E_HCX = 3/2* (delta_t * eV_to_K) * (effective_charge_exchange_rates/nHp_ne_all) / effective_ionisation_rates * geometric_factor	# eV
 	E_HCX_max = np.sort(E_HCX[np.isfinite(E_HCX)])[-5]
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, E_HCX, cmap='rainbow',vmin=1, vmax=1e6, norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, E_HCX, cmap='rainbow', norm=LogNorm(vmin=1, vmax=1e6));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	plt.legend(loc='best', fontsize='xx-small')
 	# plt.colorbar(orientation="horizontal").set_label('ionization_length [m], limited to 1m')  # ;plt.pause(0.01)
@@ -3923,7 +3962,7 @@ else:
 
 	P_HCX = 3/2* (delta_t * eV_to_K) * effective_charge_exchange_rates / J_to_eV	# W / m^3
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, P_HCX,vmin=max(np.max(P_HCX)/1e6,1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, P_HCX, cmap='rainbow', norm=LogNorm(vmin=max(np.max(P_HCX)/1e6,1)));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	temp2 = np.cumsum(dx/ionisation_length_H_CX,axis=1)
 	temp2 = 1-temp2
@@ -3957,7 +3996,7 @@ else:
 	E_HCX = 3/2* (delta_t * eV_to_K) * (effective_charge_exchange_rates/nHp_ne_all) / effective_ionisation_rates * geometric_factor	# eV
 	E_HCX_max = np.sort(E_HCX[np.isfinite(E_HCX)])[-5]
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, E_HCX, cmap='rainbow',vmin=1, vmax=1e6, norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, E_HCX, cmap='rainbow', norm=LogNorm(vmin=1, vmax=1e6));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	plt.legend(loc='best', fontsize='xx-small')
 	# plt.colorbar(orientation="horizontal").set_label('ionization_length [m], limited to 1m')  # ;plt.pause(0.01)
@@ -3973,7 +4012,7 @@ else:
 
 	P_HCX = 3/2* (delta_t * eV_to_K) * effective_charge_exchange_rates / J_to_eV	# W / m^3
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, P_HCX,vmin=max(np.max(P_HCX)/1e6,1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, P_HCX, cmap='rainbow', norm=LogNorm(vmin=max(np.max(P_HCX)/1e6,1)));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	temp2 = np.cumsum(dx/destruction_length_H_CX,axis=1)
 	temp2 = 1-temp2
@@ -4003,7 +4042,7 @@ else:
 
 	P_HCX = 3/2* (delta_t * eV_to_K) * effective_charge_exchange_rates / J_to_eV	# W / m^3
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, P_HCX,vmin=max(np.max(P_HCX)/1e6,1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, P_HCX, cmap='rainbow', norm=LogNorm(vmin=max(np.max(P_HCX)/1e6,1)));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	temp1 = np.flip(np.cumsum(np.flip(dx/ionisation_length_H_CX,axis=1),axis=1),axis=1)
 	temp1 = 1-temp1
@@ -4033,7 +4072,7 @@ else:
 
 	P_HCX = 3/2* (delta_t * eV_to_K) * effective_charge_exchange_rates / J_to_eV	# W / m^3
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, P_HCX,vmin=max(np.max(P_HCX)/1e6,1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, P_HCX, cmap='rainbow', norm=LogNorm(vmin=max(np.max(P_HCX)/1e6,1)));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	temp1 = np.flip(np.cumsum(np.flip(dx/ionisation_length_H_CX,axis=1),axis=1),axis=1)
 	temp1 = 1-temp1
@@ -4063,7 +4102,7 @@ else:
 	# CX_length_H = np.where(np.isnan(CX_length_H), np.nanmax(CX_length_H[np.isfinite(CX_length_H)]), CX_length_H)
 	P_HCX = 3/2* (delta_t * eV_to_K) * effective_charge_exchange_rates / J_to_eV	# W / m^3
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, CX_length_H,vmax=min(np.max(CX_length_H),1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, CX_length_H, cmap='rainbow', norm=LogNorm(vmax=min(np.max(CX_length_H),1)));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	temp1 = np.flip(np.cumsum(np.flip(dx/CX_length_H,axis=1),axis=1),axis=1)
 	temp1 = 1-temp1
@@ -4097,7 +4136,7 @@ else:
 
 	P_HCX = 3/2* (delta_t * eV_to_K) * effective_charge_exchange_rates / J_to_eV	# W / m^3
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, CX_length_Hp,vmax=min(np.max(CX_length_Hp),1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, CX_length_Hp, cmap='rainbow', norm=LogNorm(vmax=min(np.max(CX_length_Hp),1)));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	temp2 = np.cumsum(dx/CX_length_Hp,axis=1)
 	temp2 = 1-temp2
@@ -4136,7 +4175,7 @@ else:
 
 	if np.nanmax(P_HCX)==0:
 		plt.figure(figsize=(8, 5));
-		plt.pcolor(temp_t, temp_r, P_HCX, cmap='rainbow',vmin=max(np.max(P_HCX)/1e6,1), norm=LogNorm());
+		plt.pcolor(temp_t, temp_r, P_HCX, cmap='rainbow', norm=LogNorm(vmin=max(np.max(P_HCX)/1e6,1)));
 		plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 		plt.legend(loc='best', fontsize='xx-small')
 		# plt.colorbar(orientation="horizontal").set_label('ionization_length [m], limited to 1m')  # ;plt.pause(0.01)
@@ -4167,7 +4206,7 @@ else:
 	E_HCX = np.sum(2*np.pi*r_crop*P_HCX* dr)*dt/1000*length
 
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, P_HCX, cmap='rainbow',vmin=max(np.max(P_HCX)/1e6,1), norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, P_HCX, cmap='rainbow', norm=LogNorm(vmin=max(np.max(P_HCX)/1e6,1)));
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 	plt.legend(loc='best', fontsize='xx-small')
 	# plt.colorbar(orientation="horizontal").set_label('ionization_length [m], limited to 1m')  # ;plt.pause(0.01)
@@ -4189,7 +4228,7 @@ else:
 	# destruction_length_Hm = np.where(np.isinf(destruction_length_Hm), np.nan, destruction_length_Hm)
 	# destruction_length_Hm = np.where(np.isnan(destruction_length_Hm), np.nanmax(destruction_length_Hm[np.isfinite(destruction_length_Hm)]), destruction_length_Hm)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, destruction_length_Hm,vmax=min(np.max(destruction_length_Hm),1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, destruction_length_Hm, cmap='rainbow', norm=LogNorm(vmax=min(np.max(destruction_length_Hm),1)));
 	plt.colorbar(orientation="horizontal").set_label('destruction length [m], limited to 1m')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
@@ -4209,7 +4248,7 @@ else:
 	# destruction_length_H2p = np.where(np.isinf(destruction_length_H2p), np.nan, destruction_length_H2p)
 	# destruction_length_H2p = np.where(np.isnan(destruction_length_H2p), np.nanmax(destruction_length_H2p[np.isfinite(destruction_length_H2p)]), destruction_length_H2p)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, destruction_length_H2p,vmax=min(np.max(destruction_length_H2p),1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, destruction_length_H2p, cmap='rainbow', norm=LogNorm(vmax=min(np.max(destruction_length_H2p),1)));
 	plt.colorbar(orientation="horizontal").set_label('destruction length [m], limited to 1m')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
@@ -4229,7 +4268,7 @@ else:
 	# destruction_length_H2 = np.where(np.isinf(destruction_length_H2), np.nan, destruction_length_H2)
 	# destruction_length_H2 = np.where(np.isnan(destruction_length_H2), np.nanmax(destruction_length_H2[np.isfinite(destruction_length_H2)]), destruction_length_H2)
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, destruction_length_H2,vmax=min(np.max(destruction_length_H2),1), cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, destruction_length_H2, cmap='rainbow', norm=LogNorm(vmax=min(np.max(destruction_length_H2),1)));
 	plt.colorbar(orientation="horizontal").set_label('destruction length [m], limited to 1m')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
@@ -4281,7 +4320,7 @@ else:
 	MAR_via_H2p = np.min([Hp_H2X1Σg__H1s_H2pX2Σg,e_H2p__H1s_Hn2],axis=0)
 	# MAR_via_H2p = e_H2p__H1s_Hn2
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, MAR_via_H2p,vmin=max(np.max(MAR_via_H2p)*1e-3,np.min(MAR_via_H2p[MAR_via_H2p>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, MAR_via_H2p, cmap='rainbow',norm=LogNorm(vmin=max(np.max(MAR_via_H2p)*1e-3,np.min(MAR_via_H2p[MAR_via_H2p>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -4307,7 +4346,7 @@ else:
 	MAR_via_Hm = np.min([e_H2X1Σg__Hm_H1s,Hp_Hm__H_2_H+Hp_Hm__H_3_H],axis=0)
 	# MAR_via_Hm = Hp_Hm__H_2_H+Hp_Hm__H_3_H
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, MAR_via_Hm,vmin=max(np.max(MAR_via_Hm)*1e-3,np.min(MAR_via_Hm[MAR_via_Hm>0])), cmap='rainbow',norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, MAR_via_Hm, cmap='rainbow',norm=LogNorm(vmin=max(np.max(MAR_via_Hm)*1e-3,np.min(MAR_via_Hm[MAR_via_Hm>0]))));
 	plt.colorbar(orientation="horizontal").set_label('reatcion rate [# m^-3 s-1]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -4405,7 +4444,7 @@ else:
 	plt.close()
 
 	plt.figure(figsize=(8, 5));
-	plt.pcolor(temp_t, temp_r, (power_rad_excit*J_to_eV+effective_ionisation_rates*13.6)/effective_ionisation_rates,vmax=100,cmap='rainbow', norm=LogNorm());
+	plt.pcolor(temp_t, temp_r, (power_rad_excit*J_to_eV+effective_ionisation_rates*13.6)/effective_ionisation_rates,cmap='rainbow', norm=LogNorm(vmax=100));
 	plt.colorbar(orientation="horizontal").set_label('energy per ionisation [eV]')  # ;plt.pause(0.01)
 	plt.axes().set_aspect(20)
 	plt.xlabel('time [ms]')
@@ -4671,6 +4710,9 @@ else:
 		intervals_local_CX = np.zeros_like(Te_all).tolist()
 		prob_local_CX = np.zeros_like(Te_all).tolist()
 		actual_values_local_CX = np.zeros_like(Te_all).tolist()
+		intervals_local_elastic_H2 = np.zeros_like(Te_all).tolist()
+		prob_local_elastic_H2 = np.zeros_like(Te_all).tolist()
+		actual_values_local_elastic_H2 = np.zeros_like(Te_all).tolist()
 		intervals_H_destruction_RR = np.zeros_like(Te_all).tolist()
 		prob_H_destruction_RR = np.zeros_like(Te_all).tolist()
 		actual_values_H_destruction_RR = np.zeros_like(Te_all).tolist()
@@ -4693,6 +4735,63 @@ else:
 			intervals_H2_creation_RR = np.zeros_like(Te_all).tolist()
 			prob_H2_creation_RR = np.zeros_like(Te_all).tolist()
 			actual_values_H2_creation_RR = np.zeros_like(Te_all).tolist()
+			intervals_all_MAR_from_Hm = np.zeros_like(Te_all).tolist()
+			prob_all_MAR_from_Hm = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAR_from_Hm = np.zeros_like(Te_all).tolist()
+			intervals_all_MAD_from_Hm = np.zeros_like(Te_all).tolist()
+			prob_all_MAD_from_Hm = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAD_from_Hm = np.zeros_like(Te_all).tolist()
+			intervals_all_MAI_from_Hm = np.zeros_like(Te_all).tolist()
+			prob_all_MAI_from_Hm = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAI_from_Hm = np.zeros_like(Te_all).tolist()
+			intervals_all_MAR_from_H2p = np.zeros_like(Te_all).tolist()
+			prob_all_MAR_from_H2p = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAR_from_H2p = np.zeros_like(Te_all).tolist()
+			intervals_all_MAD_from_H2p = np.zeros_like(Te_all).tolist()
+			prob_all_MAD_from_H2p = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAD_from_H2p = np.zeros_like(Te_all).tolist()
+			intervals_all_MAI_from_H2p = np.zeros_like(Te_all).tolist()
+			prob_all_MAI_from_H2p = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAI_from_H2p = np.zeros_like(Te_all).tolist()
+			intervals_all_MAR_from_H2p_Hm = np.zeros_like(Te_all).tolist()
+			prob_all_MAR_from_H2p_Hm = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAR_from_H2p_Hm = np.zeros_like(Te_all).tolist()
+			intervals_all_MAD_from_H2p_Hm = np.zeros_like(Te_all).tolist()
+			prob_all_MAD_from_H2p_Hm = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAD_from_H2p_Hm = np.zeros_like(Te_all).tolist()
+			intervals_all_MAI_from_H2p_Hm = np.zeros_like(Te_all).tolist()
+			prob_all_MAI_from_H2p_Hm = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAI_from_H2p_Hm = np.zeros_like(Te_all).tolist()
+			intervals_all_MAR_from_Hm_energy = np.zeros_like(Te_all).tolist()
+			prob_all_MAR_from_Hm_energy = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAR_from_Hm_energy = np.zeros_like(Te_all).tolist()
+			intervals_all_MAD_from_Hm_energy = np.zeros_like(Te_all).tolist()
+			prob_all_MAD_from_Hm_energy = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAD_from_Hm_energy = np.zeros_like(Te_all).tolist()
+			intervals_all_MAI_from_Hm_energy = np.zeros_like(Te_all).tolist()
+			prob_all_MAI_from_Hm_energy = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAI_from_Hm_energy = np.zeros_like(Te_all).tolist()
+			intervals_all_MAR_from_H2p_energy = np.zeros_like(Te_all).tolist()
+			prob_all_MAR_from_H2p_energy = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAR_from_H2p_energy = np.zeros_like(Te_all).tolist()
+			intervals_all_MAD_from_H2p_energy = np.zeros_like(Te_all).tolist()
+			prob_all_MAD_from_H2p_energy = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAD_from_H2p_energy = np.zeros_like(Te_all).tolist()
+			intervals_all_MAI_from_H2p_energy = np.zeros_like(Te_all).tolist()
+			prob_all_MAI_from_H2p_energy = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAI_from_H2p_energy = np.zeros_like(Te_all).tolist()
+			intervals_all_MAR_from_H2p_Hm_energy = np.zeros_like(Te_all).tolist()
+			prob_all_MAR_from_H2p_Hm_energy = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAR_from_H2p_Hm_energy = np.zeros_like(Te_all).tolist()
+			intervals_all_MAD_from_H2p_Hm_energy = np.zeros_like(Te_all).tolist()
+			prob_all_MAD_from_H2p_Hm_energy = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAD_from_H2p_Hm_energy = np.zeros_like(Te_all).tolist()
+			intervals_all_MAI_from_H2p_Hm_energy = np.zeros_like(Te_all).tolist()
+			prob_all_MAI_from_H2p_Hm_energy = np.zeros_like(Te_all).tolist()
+			actual_values_all_MAI_from_H2p_Hm_energy = np.zeros_like(Te_all).tolist()
+			intervals_all_atomic_H2_dissociation = np.zeros_like(Te_all).tolist()
+			prob_all_atomic_H2_dissociation = np.zeros_like(Te_all).tolist()
+			actual_values_all_atomic_H2_dissociation = np.zeros_like(Te_all).tolist()
 		intervals_CX_term_1_1 = np.zeros_like(Te_all).tolist()
 		prob_CX_term_1_1 = np.zeros_like(Te_all).tolist()
 		actual_values_CX_term_1_1 = np.zeros_like(Te_all).tolist()
@@ -4791,6 +4890,24 @@ else:
 			intervals_H2p_creation_RR = np.zeros_like(Te_all).tolist()
 			prob_H2p_creation_RR = np.zeros_like(Te_all).tolist()
 			actual_values_H2p_creation_RR = np.zeros_like(Te_all).tolist()
+			intervals_net_H_destruction_RR = np.zeros_like(Te_all).tolist()
+			prob_net_H_destruction_RR = np.zeros_like(Te_all).tolist()
+			actual_values_net_H_destruction_RR = np.zeros_like(Te_all).tolist()
+			intervals_net_H2_destruction_RR = np.zeros_like(Te_all).tolist()
+			prob_net_H2_destruction_RR = np.zeros_like(Te_all).tolist()
+			actual_values_net_H2_destruction_RR = np.zeros_like(Te_all).tolist()
+			intervals_net_e_destruction = np.zeros_like(Te_all).tolist()
+			prob_net_e_destruction = np.zeros_like(Te_all).tolist()
+			actual_values_net_e_destruction = np.zeros_like(Te_all).tolist()
+			intervals_net_Hp_destruction = np.zeros_like(Te_all).tolist()
+			prob_net_Hp_destruction = np.zeros_like(Te_all).tolist()
+			actual_values_net_Hp_destruction = np.zeros_like(Te_all).tolist()
+			intervals_net_Hm_destruction = np.zeros_like(Te_all).tolist()
+			prob_net_Hm_destruction = np.zeros_like(Te_all).tolist()
+			actual_values_net_Hm_destruction = np.zeros_like(Te_all).tolist()
+			intervals_net_H2p_destruction = np.zeros_like(Te_all).tolist()
+			prob_net_H2p_destruction = np.zeros_like(Te_all).tolist()
+			actual_values_net_H2p_destruction = np.zeros_like(Te_all).tolist()
 
 		for i_t in range(np.shape(Te_all)[0]):
 			for i_r in range(np.shape(Te_all)[1]):
@@ -4856,6 +4973,9 @@ else:
 					intervals_local_CX[i_t][i_r] = [0,0]
 					prob_local_CX[i_t][i_r] = [1]
 					actual_values_local_CX[i_t][i_r] = [0]
+					intervals_local_elastic_H2[i_t][i_r] = [0,0]
+					prob_local_elastic_H2[i_t][i_r] = [1]
+					actual_values_local_elastic_H2[i_t][i_r] = [0]
 					intervals_H_destruction_RR[i_t][i_r] = [0,0]
 					prob_H_destruction_RR[i_t][i_r] = [1]
 					actual_values_H_destruction_RR[i_t][i_r] = [0]
@@ -4878,6 +4998,67 @@ else:
 						intervals_H2_creation_RR[i_t][i_r] = [0,0]
 						prob_H2_creation_RR[i_t][i_r] = [1]
 						actual_values_H2_creation_RR[i_t][i_r] = [0]
+
+						intervals_all_MAR_from_Hm[i_t][i_r] = [0,0]
+						prob_all_MAR_from_Hm[i_t][i_r] = [1]
+						actual_values_all_MAR_from_Hm[i_t][i_r] = [0]
+						intervals_all_MAD_from_Hm[i_t][i_r] = [0,0]
+						prob_all_MAD_from_Hm[i_t][i_r] = [1]
+						actual_values_all_MAD_from_Hm[i_t][i_r] = [0]
+						intervals_all_MAI_from_Hm[i_t][i_r] = [0,0]
+						prob_all_MAI_from_Hm[i_t][i_r] = [1]
+						actual_values_all_MAI_from_Hm[i_t][i_r] = [0]
+						intervals_all_MAR_from_H2p[i_t][i_r] = [0,0]
+						prob_all_MAR_from_H2p[i_t][i_r] = [1]
+						actual_values_all_MAR_from_H2p[i_t][i_r] = [0]
+						intervals_all_MAD_from_H2p[i_t][i_r] = [0,0]
+						prob_all_MAD_from_H2p[i_t][i_r] = [1]
+						actual_values_all_MAD_from_H2p[i_t][i_r] = [0]
+						intervals_all_MAI_from_H2p[i_t][i_r] = [0,0]
+						prob_all_MAI_from_H2p[i_t][i_r] = [1]
+						actual_values_all_MAI_from_H2p[i_t][i_r] = [0]
+						intervals_all_MAR_from_H2p_Hm[i_t][i_r] = [0,0]
+						prob_all_MAR_from_H2p_Hm[i_t][i_r] = [1]
+						actual_values_all_MAR_from_H2p_Hm[i_t][i_r] = [0]
+						intervals_all_MAD_from_H2p_Hm[i_t][i_r] = [0,0]
+						prob_all_MAD_from_H2p_Hm[i_t][i_r] = [1]
+						actual_values_all_MAD_from_H2p_Hm[i_t][i_r] = [0]
+						intervals_all_MAI_from_H2p_Hm[i_t][i_r] = [0,0]
+						prob_all_MAI_from_H2p_Hm[i_t][i_r] = [1]
+						actual_values_all_MAI_from_H2p_Hm[i_t][i_r] = [0]
+
+						intervals_all_MAR_from_Hm_energy[i_t][i_r] = [0,0]
+						prob_all_MAR_from_Hm_energy[i_t][i_r] = [1]
+						actual_values_all_MAR_from_Hm_energy[i_t][i_r] = [0]
+						intervals_all_MAD_from_Hm_energy[i_t][i_r] = [0,0]
+						prob_all_MAD_from_Hm_energy[i_t][i_r] = [1]
+						actual_values_all_MAD_from_Hm_energy[i_t][i_r] = [0]
+						intervals_all_MAI_from_Hm_energy[i_t][i_r] = [0,0]
+						prob_all_MAI_from_Hm_energy[i_t][i_r] = [1]
+						actual_values_all_MAI_from_Hm_energy[i_t][i_r] = [0]
+						intervals_all_MAR_from_H2p_energy[i_t][i_r] = [0,0]
+						prob_all_MAR_from_H2p_energy[i_t][i_r] = [1]
+						actual_values_all_MAR_from_H2p_energy[i_t][i_r] = [0]
+						intervals_all_MAD_from_H2p_energy[i_t][i_r] = [0,0]
+						prob_all_MAD_from_H2p_energy[i_t][i_r] = [1]
+						actual_values_all_MAD_from_H2p_energy[i_t][i_r] = [0]
+						intervals_all_MAI_from_H2p_energy[i_t][i_r] = [0,0]
+						prob_all_MAI_from_H2p_energy[i_t][i_r] = [1]
+						actual_values_all_MAI_from_H2p_energy[i_t][i_r] = [0]
+						intervals_all_MAR_from_H2p_Hm_energy[i_t][i_r] = [0,0]
+						prob_all_MAR_from_H2p_Hm_energy[i_t][i_r] = [1]
+						actual_values_all_MAR_from_H2p_Hm_energy[i_t][i_r] = [0]
+						intervals_all_MAD_from_H2p_Hm_energy[i_t][i_r] = [0,0]
+						prob_all_MAD_from_H2p_Hm_energy[i_t][i_r] = [1]
+						actual_values_all_MAD_from_H2p_Hm_energy[i_t][i_r] = [0]
+						intervals_all_MAI_from_H2p_Hm_energy[i_t][i_r] = [0,0]
+						prob_all_MAI_from_H2p_Hm_energy[i_t][i_r] = [1]
+						actual_values_all_MAI_from_H2p_Hm_energy[i_t][i_r] = [0]
+
+
+						intervals_all_atomic_H2_dissociation[i_t][i_r] = [0,0]
+						prob_all_atomic_H2_dissociation[i_t][i_r] = [1]
+						actual_values_all_atomic_H2_dissociation[i_t][i_r] = [0]
 
 						intervals_Hp_destruction_RR[i_t][i_r] = [0,0]
 						prob_Hp_destruction_RR[i_t][i_r] = [1]
@@ -4903,6 +5084,24 @@ else:
 						intervals_H2p_creation_RR[i_t][i_r] = [0,0]
 						prob_H2p_creation_RR[i_t][i_r] = [1]
 						actual_values_H2p_creation_RR[i_t][i_r] = [0]
+						intervals_net_H_destruction_RR[i_t][i_r] = [0,0]
+						prob_net_H_destruction_RR[i_t][i_r] = [1]
+						actual_values_net_H_destruction_RR[i_t][i_r] = [0]
+						intervals_net_H2_destruction_RR[i_t][i_r] = [0,0]
+						prob_net_H2_destruction_RR[i_t][i_r] = [1]
+						actual_values_net_H2_destruction_RR[i_t][i_r] = [0]
+						intervals_net_e_destruction[i_t][i_r] = [0,0]
+						prob_net_e_destruction[i_t][i_r] = [1]
+						actual_values_net_e_destruction[i_t][i_r] = [0]
+						intervals_net_Hp_destruction[i_t][i_r] = [0,0]
+						prob_net_Hp_destruction[i_t][i_r] = [1]
+						actual_values_net_Hp_destruction[i_t][i_r] = [0]
+						intervals_net_Hm_destruction[i_t][i_r] = [0,0]
+						prob_net_Hm_destruction[i_t][i_r] = [1]
+						actual_values_net_Hm_destruction[i_t][i_r] = [0]
+						intervals_net_H2p_destruction[i_t][i_r] = [0,0]
+						prob_net_H2p_destruction[i_t][i_r] = [1]
+						actual_values_net_H2p_destruction[i_t][i_r] = [0]
 
 					intervals_CX_term_1_1[i_t][i_r] = [0,0]
 					prob_CX_term_1_1[i_t][i_r] = [1]
@@ -5038,6 +5237,9 @@ else:
 					intervals_local_CX[i_t][i_r] = power_balance_data_dict[i]['local_CX']['intervals']
 					prob_local_CX[i_t][i_r] = power_balance_data_dict[i]['local_CX']['prob']
 					actual_values_local_CX[i_t][i_r] = power_balance_data_dict[i]['local_CX']['actual_values']
+					intervals_local_elastic_H2[i_t][i_r] = power_balance_data_dict[i]['local_elastic_H2']['intervals']
+					prob_local_elastic_H2[i_t][i_r] = power_balance_data_dict[i]['local_elastic_H2']['prob']
+					actual_values_local_elastic_H2[i_t][i_r] = power_balance_data_dict[i]['local_elastic_H2']['actual_values']
 					intervals_H_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['H_destruction_RR']['intervals']	# m^-3/s / nH
 					prob_H_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['H_destruction_RR']['prob']	# m^-3/s / nH
 					actual_values_H_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['H_destruction_RR']['actual_values']	# m^-3/s / nH
@@ -5060,6 +5262,65 @@ else:
 						intervals_H2_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2_creation_RR']['intervals']	# m^-3/s * 1e-20
 						prob_H2_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2_creation_RR']['prob']	# m^-3/s * 1e-20
 						actual_values_H2_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2_creation_RR']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAR_from_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_Hm']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAR_from_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_Hm']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAR_from_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_Hm']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAD_from_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_Hm']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAD_from_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_Hm']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAD_from_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_Hm']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAI_from_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_Hm']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAI_from_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_Hm']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAI_from_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_Hm']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAR_from_H2p[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAR_from_H2p[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAR_from_H2p[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAD_from_H2p[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAD_from_H2p[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAD_from_H2p[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAI_from_H2p[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAI_from_H2p[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAI_from_H2p[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAR_from_H2p_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p_Hm']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAR_from_H2p_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p_Hm']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAR_from_H2p_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p_Hm']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAD_from_H2p_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p_Hm']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAD_from_H2p_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p_Hm']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAD_from_H2p_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p_Hm']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAI_from_H2p_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p_Hm']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAI_from_H2p_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p_Hm']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAI_from_H2p_Hm[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p_Hm']['actual_values']	# m^-3/s * 1e-20
+
+						intervals_all_MAR_from_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_Hm_energy']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAR_from_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_Hm_energy']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAR_from_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_Hm_energy']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAD_from_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_Hm_energy']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAD_from_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_Hm_energy']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAD_from_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_Hm_energy']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAI_from_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_Hm_energy']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAI_from_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_Hm_energy']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAI_from_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_Hm_energy']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAR_from_H2p_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p_energy']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAR_from_H2p_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p_energy']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAR_from_H2p_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p_energy']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAD_from_H2p_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p_energy']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAD_from_H2p_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p_energy']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAD_from_H2p_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p_energy']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAI_from_H2p_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p_energy']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAI_from_H2p_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p_energy']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAI_from_H2p_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p_energy']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAR_from_H2p_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p_Hm_energy']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAR_from_H2p_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p_Hm_energy']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAR_from_H2p_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAR_from_H2p_Hm_energy']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAD_from_H2p_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p_Hm_energy']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAD_from_H2p_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p_Hm_energy']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAD_from_H2p_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAD_from_H2p_Hm_energy']['actual_values']	# m^-3/s * 1e-20
+						intervals_all_MAI_from_H2p_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p_Hm_energy']['intervals']	# m^-3/s * 1e-20
+						prob_all_MAI_from_H2p_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p_Hm_energy']['prob']	# m^-3/s * 1e-20
+						actual_values_all_MAI_from_H2p_Hm_energy[i_t][i_r] = power_balance_data_dict[i]['all_MAI_from_H2p_Hm_energy']['actual_values']	# m^-3/s * 1e-20
+
+						intervals_all_atomic_H2_dissociation[i_t][i_r] = power_balance_data_dict[i]['all_atomic_H2_dissociation']['intervals']	# m^-3/s * 1e-20
+						prob_all_atomic_H2_dissociation[i_t][i_r] = power_balance_data_dict[i]['all_atomic_H2_dissociation']['prob']	# m^-3/s * 1e-20
+						actual_values_all_atomic_H2_dissociation[i_t][i_r] = power_balance_data_dict[i]['all_atomic_H2_dissociation']['actual_values']	# m^-3/s * 1e-20
 
 						intervals_Hp_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['Hp_destruction_RR']['intervals']	# m^-3/s * 1e-20
 						prob_Hp_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['Hp_destruction_RR']['prob']	# m^-3/s * 1e-20
@@ -5085,6 +5346,24 @@ else:
 						intervals_H2p_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2p_creation_RR']['intervals']	# m^-3/s * 1e-20
 						prob_H2p_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2p_creation_RR']['prob']	# m^-3/s * 1e-20
 						actual_values_H2p_creation_RR[i_t][i_r] = power_balance_data_dict[i]['H2p_creation_RR']['actual_values']	# m^-3/s * 1e-20
+						intervals_net_H_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['net_H_destruction_RR']['intervals']	# m^-3/s * 1e-20
+						prob_net_H_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['net_H_destruction_RR']['prob']	# m^-3/s * 1e-20
+						actual_values_net_H_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['net_H_destruction_RR']['actual_values']	# m^-3/s * 1e-20
+						intervals_net_H2_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['net_H2_destruction_RR']['intervals']	# m^-3/s * 1e-20
+						prob_net_H2_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['net_H2_destruction_RR']['prob']	# m^-3/s * 1e-20
+						actual_values_net_H2_destruction_RR[i_t][i_r] = power_balance_data_dict[i]['net_H2_destruction_RR']['actual_values']	# m^-3/s * 1e-20
+						intervals_net_e_destruction[i_t][i_r] = power_balance_data_dict[i]['net_e_destruction']['intervals']	# m^-3/s * 1e-20
+						prob_net_e_destruction[i_t][i_r] = power_balance_data_dict[i]['net_e_destruction']['prob']	# m^-3/s * 1e-20
+						actual_values_net_e_destruction[i_t][i_r] = power_balance_data_dict[i]['net_e_destruction']['actual_values']	# m^-3/s * 1e-20
+						intervals_net_Hp_destruction[i_t][i_r] = power_balance_data_dict[i]['net_Hp_destruction']['intervals']	# m^-3/s * 1e-20
+						prob_net_Hp_destruction[i_t][i_r] = power_balance_data_dict[i]['net_Hp_destruction']['prob']	# m^-3/s * 1e-20
+						actual_values_net_Hp_destruction[i_t][i_r] = power_balance_data_dict[i]['net_Hp_destruction']['actual_values']	# m^-3/s * 1e-20
+						intervals_net_Hm_destruction[i_t][i_r] = power_balance_data_dict[i]['net_Hm_destruction']['intervals']	# m^-3/s * 1e-20
+						prob_net_Hm_destruction[i_t][i_r] = power_balance_data_dict[i]['net_Hm_destruction']['prob']	# m^-3/s * 1e-20
+						actual_values_net_Hm_destruction[i_t][i_r] = power_balance_data_dict[i]['net_Hm_destruction']['actual_values']	# m^-3/s * 1e-20
+						intervals_net_H2p_destruction[i_t][i_r] = power_balance_data_dict[i]['net_H2p_destruction']['intervals']	# m^-3/s * 1e-20
+						prob_net_H2p_destruction[i_t][i_r] = power_balance_data_dict[i]['net_H2p_destruction']['prob']	# m^-3/s * 1e-20
+						actual_values_net_H2p_destruction[i_t][i_r] = power_balance_data_dict[i]['net_H2p_destruction']['actual_values']	# m^-3/s * 1e-20
 
 					intervals_CX_term_1_1[i_t][i_r] = power_balance_data_dict[i]['CX_term_1_1']['intervals']
 					prob_CX_term_1_1[i_t][i_r] = power_balance_data_dict[i]['CX_term_1_1']['prob']
@@ -5170,7 +5449,7 @@ else:
 			else:
 				bins_zero = []
 			if values.max()>0:
-				temp = np.sort(np.log10(values))
+				temp = np.sort(np.log10(values[values>0]))
 				high = np.nanmax(temp)
 				low = np.nanmin(temp[np.isfinite(temp)])
 				if values.min()<0:
@@ -5181,7 +5460,7 @@ else:
 			else:
 				bins_pos = []
 			if values.min()<0:
-				temp = np.sort(np.log10(-values))
+				temp = np.sort(np.log10(-values[values<0]))
 				high = np.nanmax(temp)
 				low = np.nanmin(temp[np.isfinite(temp)])
 				bins_neg = np.sort(-np.logspace(low,high,intervals+1))
@@ -5199,7 +5478,7 @@ else:
 				temp = np.nanmax([np.zeros_like(most_likely_something),most_likely_something],axis=0)
 				if np.nanmax(temp)<=0:
 					temp = np.nanmax([np.ones_like(most_likely_something)*1e-20,most_likely_something],axis=0)
-				plt.pcolor(temp_t, temp_r, temp,cmap='rainbow',vmin=max(max(ext_vmin,np.nanmin(temp)),np.nanmax(temp)*1e-6), norm=LogNorm());
+				plt.pcolor(temp_t, temp_r, temp,cmap='rainbow', norm=LogNorm(vmin=max(max(ext_vmin,np.nanmin(temp)),np.nanmax(temp)*1e-6)));
 			else:
 				plt.pcolor(temp_t, temp_r, most_likely_something,cmap='rainbow',vmin=max(max(ext_vmin,np.nanmin(most_likely_something)),np.nanmax(most_likely_something)*1e-6));
 			plt.colorbar(orientation="horizontal").set_label(label_units)  # ;plt.pause(0.01)
@@ -5213,63 +5492,154 @@ else:
 			plt.close()
 			return figure_index
 
-		def calculate_most_likely(prob_something,actual_values_something,intervals_something):
+		def find_PDF_full_properties(intervals_something,prob_something,linear_scale=True):
+			if len(prob_something)==1:
+				most_likely_something = np.nanmean(intervals_something)
+				most_likely_something_sigma = 1/(2**0.5) * np.diff(intervals_something)[0]
+			elif (np.nanmin(intervals_something)<0 and np.nanmax(intervals_something)>0) or linear_scale:
+				most_likely_something = np.nansum((np.array(intervals_something)[1:]+np.array(intervals_something)[:-1])/2*np.array(prob_something))	# this is not an approximation, is analytically true for a stepwise PDF
+				most_likely_something_sigma = (np.nansum((np.array(intervals_something)[1:]**2 + np.array(intervals_something)[:-1]**2 + np.array(intervals_something)[1:]*np.array(intervals_something)[:-1]) *np.array(prob_something))/3 - most_likely_something**2)**0.5	# this is not an approximation, is analytically true for a stepwise PDF
+			elif np.nanmin(intervals_something)>=0:
+				intervals_something = np.array(intervals_something)
+				intervals_something[intervals_something==0] = np.nanmin(intervals_something[intervals_something>0])/np.nanmedian(intervals_something[1:]/intervals_something[:-1])
+				most_likely_something = np.exp(np.nansum((np.log(intervals_something[1:])+np.log(intervals_something[:-1]))/2*np.array(prob_something)))
+				most_likely_something_sigma = np.exp((np.nansum((np.log(intervals_something[1:])**2 + np.log(intervals_something[:-1])**2 + np.log(intervals_something[1:])*np.log(intervals_something[:-1])) *np.array(prob_something))/3 - np.log(most_likely_something)**2)**0.5)
+			elif np.nanmax(intervals_something)<=0:
+				intervals_something = -np.array(intervals_something)
+				intervals_something[intervals_something==0] = np.nanmin(intervals_something[intervals_something>0])/np.nanmedian(intervals_something[1:]/intervals_something[:-1])
+				most_likely_something = np.exp(np.nansum((np.log(intervals_something)[1:]+np.log(intervals_something)[:-1])/2*np.array(prob_something)))
+				most_likely_something_sigma = -np.exp((np.nansum((np.log(intervals_something)[1:]**2 + np.log(intervals_something)[:-1]**2 + np.log(intervals_something)[1:]*np.log(intervals_something)[:-1]) *np.array(prob_something))/3 - np.log(most_likely_something)**2)**0.5)
+				most_likely_something = -most_likely_something
+			return most_likely_something,most_likely_something_sigma
+
+		def calculate_most_likely(prob_something,actual_values_something,intervals_something,linear_scale=True):
 			most_likely_something = []
-			most_likely_something_sigma = np.zeros((*np.shape(prob_something)[:2],2))
+			most_likely_something_sigma = np.zeros((len(prob_something),len(prob_something[0]),2))
 			for i_t in range(len(prob_something)):
 				temp=[]
 				for i_r in range(len(prob_something[i_t])):
-					# temp.append((np.add(intervals_something[i_t][i_r][1:],intervals_something[i_t][i_r][:-1])/2)[np.array(prob_something[i_t][i_r]).argmax()])
-					temp.append(actual_values_something[i_t][i_r][np.array(prob_something[i_t][i_r]).argmax()])
-					if len(actual_values_something[i_t][i_r])>1:
-						temp1 = [0,*np.cumsum(prob_something[i_t][i_r])]
-						most_likely_something_sigma[i_t][i_r] = np.abs(np.interp([0.159,1-0.159],temp1,intervals_something[i_t][i_r])-(actual_values_something[i_t][i_r][np.array(prob_something[i_t][i_r]).argmax()]))
+					if False:
+						# temp.append((np.add(intervals_something[i_t][i_r][1:],intervals_something[i_t][i_r][:-1])/2)[np.array(prob_something[i_t][i_r]).argmax()])
+						temp.append(actual_values_something[i_t][i_r][np.array(prob_something[i_t][i_r]).argmax()])
+						if len(actual_values_something[i_t][i_r])>1:
+							temp1 = [0,*np.cumsum(prob_something[i_t][i_r])]
+							most_likely_something_sigma[i_t][i_r] = np.abs(np.interp([0.159,1-0.159],temp1,intervals_something[i_t][i_r])-(actual_values_something[i_t][i_r][np.array(prob_something[i_t][i_r]).argmax()]))
+					else:	# true probabilistic expression for mean and variance
+						gna = find_PDF_full_properties(intervals_something[i_t][i_r],prob_something[i_t][i_r],linear_scale=linear_scale)
+						temp.append(gna[0])
+						most_likely_something_sigma[i_t][i_r] = gna[1]
 				most_likely_something.append(temp)
 			return most_likely_something,most_likely_something_sigma
 
-		def PDF_2_terms_operation_MC(actual_values_item_1,prob_item_1,actual_values_item_2,prob_item_2,operation,intervals=30,samples=100000,multiplier=1):
-			out_values = []
-			out_prob_sum = []
-			out_actual_values = []
-			item_1 = np.zeros((len(actual_values_item_1),len(actual_values_item_1[0]),samples))
-			item_2 = np.zeros((len(actual_values_item_1),len(actual_values_item_1[0]),samples))
-			for i_t in range(len(actual_values_item_1)):
-				for i_r in range(len(actual_values_item_1[0])):
-					if len(actual_values_item_1[i_t][i_r])>1:
-						item_1[i_t][i_r] = np.random.choice(actual_values_item_1[i_t][i_r],size=samples,p=prob_item_1[i_t][i_r])
-						item_2[i_t][i_r] = np.random.choice(actual_values_item_2[i_t][i_r],size=samples,p=prob_item_2[i_t][i_r])
-			product = operation(item_1,item_2)*multiplier
-			product_prob = np.zeros((len(actual_values_item_1),len(actual_values_item_1[0]),intervals))
-			product_actual_values = np.zeros((len(actual_values_item_1),len(actual_values_item_1[0]),intervals))
-			product_intervals = np.zeros((len(actual_values_item_1),len(actual_values_item_1[0]),intervals+1))
-			for i_t in range(len(actual_values_item_1)):
-				for i_r in range(len(actual_values_item_1[0])):
-					product_prob[i_t][i_r],product_intervals[i_t][i_r] = improved_log_histogram(product[i_t][i_r],intervals)
-					if np.sum(product_prob[i_t][i_r])==0:
-						product_prob[i_t][i_r]=np.ones_like(product_prob[i_t][i_r])
-					product_prob[i_t][i_r] = product_prob[i_t][i_r]/np.sum(product_prob[i_t][i_r])
-					temp_actual_values2 = []
-					for i in range(intervals):
-						if i!=intervals-1:
-							temp_actual_values2.append(np.nanmax([product_intervals[i_t][i_r][i],np.mean(product[i_t][i_r][np.logical_and(product[i_t][i_r]>=product_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),product[i_t][i_r]<product_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+		def create_array_from_histogram(actual_values,intervals,prob,samples,linear=False,actual_values_provided=False):
+			import random
+			erf = scipy.special.erf
+			inverf = scipy.special.erfinv
+			cdf = np.cumsum(prob)
+			cdf = cdf / cdf[-1]
+			values = np.random.rand(samples)
+			value_bins = np.searchsorted(cdf, values)
+			out = []
+			for i_bin in np.unique(value_bins):
+				if actual_values_provided:
+					if intervals[i_bin+1] == intervals[i_bin]:	# I don't want problems if the interval is degenerate or the data is just missing
+						out = np.concatenate([ out,intervals[i_bin]+(intervals[i_bin+1]-intervals[i_bin])*np.random.rand(np.sum(value_bins==i_bin)) ])
+					else:
+						mean = actual_values[i_bin]
+						sigma = max(np.abs(np.diff(intervals[i_bin:i_bin+2])[0])/100,np.abs(mean-np.array(intervals[i_bin:i_bin+2])).min())
+						sup_lim = erf((intervals[i_bin+1]-mean)/(2**0.5 * sigma))
+						inf_lim = erf((intervals[i_bin]-mean)/(2**0.5 * sigma))
+						values = np.random.rand(np.sum(value_bins==i_bin))*(sup_lim-inf_lim) + inf_lim	# now the range is inf_lim/sup_lim
+						out = np.concatenate([ out,inverf(values)*(2**0.5 * sigma)+mean ])
+				else:
+					if linear or (0 in [intervals[i_bin],intervals[i_bin+1]]):	# logs don't behave with zeros
+						out = np.concatenate([ out,intervals[i_bin]+(intervals[i_bin+1]-intervals[i_bin])*np.random.rand(np.sum(value_bins==i_bin)) ])
+					else:
+						negative_interval = False
+						if min([intervals[i_bin],intervals[i_bin+1]])<0:
+							negative_interval = True
+						intervals_i_bin = np.log(np.abs(intervals[i_bin]))
+						intervals_i_bin_1 = np.log(np.abs(intervals[i_bin+1]))
+						temp = np.exp(intervals_i_bin+(intervals_i_bin_1-intervals_i_bin)*np.random.rand(np.sum(value_bins==i_bin)))
+						if negative_interval:
+							out = np.concatenate([ out, -temp ])
 						else:
-							temp_actual_values2.append(np.nanmax([product_intervals[i_t][i_r][i],np.mean(product[i_t][i_r][np.logical_and(product[i_t][i_r]>=product_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),product[i_t][i_r]<=product_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
-					product_actual_values[i_t][i_r] = np.array(temp_actual_values2)
-			product_prob = product_prob.tolist()
-			product_actual_values = product_actual_values.tolist()
-			product_intervals = product_intervals.tolist()
-			return product_prob,product_actual_values,product_intervals
+							out = np.concatenate([ out, temp ])
+			random.shuffle(out) 	# randomly shuffles the array, SUPER IMPORTANT even if it takes a bit of time
+			return out
 
-		if not latest_version:
-			prob_nH_values,actual_values_nH_values,intervals_nH_values = PDF_2_terms_operation_MC(actual_values_nH_ne_values,prob_nH_ne_values,actual_values_ne_values,prob_ne_values,np.multiply)
-			prob_H_destruction_RR2,actual_values_H_destruction_RR2,intervals_H_destruction_RR2 = PDF_2_terms_operation_MC(actual_values_nH_values,prob_nH_values,actual_values_H_destruction_RR,prob_H_destruction_RR,np.multiply,multiplier=1e-20)
-			prob_nH2_values,actual_values_nH2_values,intervals_nH2_values = PDF_2_terms_operation_MC(actual_values_nH2_ne_values,prob_nH2_ne_values,actual_values_ne_values,prob_ne_values,np.multiply)
-			prob_H2_destruction_RR2,actual_values_H2_destruction_RR2,intervals_H2_destruction_RR2 = PDF_2_terms_operation_MC(actual_values_nH2_values,prob_nH2_values,actual_values_H2_destruction_RR,prob_H2_destruction_RR,np.multiply,multiplier=1e-20)
-			prob_nH2p_values,actual_values_nH2p_values,intervals_nH2p_values = PDF_2_terms_operation_MC(actual_values_nH2p_ne_values,prob_nH2p_ne_values,actual_values_ne_values,prob_ne_values,np.multiply)
-			prob_nHm_values,actual_values_nHm_values,intervals_nHm_values = PDF_2_terms_operation_MC(actual_values_nHm_ne_values,prob_nHm_ne_values,actual_values_ne_values,prob_ne_values,np.multiply)
 
-			prob_nH2p_nH2_values,actual_values_nH2p_nH2_values,intervals_nH2p_nH2_values = PDF_2_terms_operation_MC(actual_values_nH2p_ne_values,prob_nH2p_ne_values,actual_values_nH2_ne_values,prob_nH2_ne_values,np.divide)
-			prob_nHm_nH2_values,actual_values_nHm_nH2_values,intervals_nHm_nH2_values = PDF_2_terms_operation_MC(actual_values_nHm_ne_values,prob_nHm_ne_values,actual_values_nH2_ne_values,prob_nH2_ne_values,np.divide)
+		# power_pulse_shape_peak = power_pulse_shape.argmax()
+		# # ionisation_peak = time_crop[(actual_values_net_power_removed_plasma_column_r).argmax()]
+		# ionisation_peak = time_crop[(actual_values_power_via_ionisation_r).argmax()]
+		# time_source_power = np.arange(len(power_pulse_shape))*time_resolution*1000	# I work here in ms, while current trace is in s
+		# time_source_power = time_source_power-time_source_power[power_pulse_shape_peak]+ionisation_peak
+		# power_pulse_shape_crop = power_pulse_shape[np.logical_and(time_source_power>=np.min(time_crop),time_source_power<=np.max(time_crop))]
+		# power_pulse_shape_std_crop = power_pulse_shape_std[np.logical_and(time_source_power>=np.min(time_crop),time_source_power<=np.max(time_crop))]
+		# time_source_power_crop = time_source_power[np.logical_and(time_source_power>=np.min(time_crop),time_source_power<=np.max(time_crop))]
+		power_pulse_shape_crop = interpolated_power_pulse_shape(time_crop)
+		power_pulse_shape_std_crop = interpolated_power_pulse_shape_std(time_crop)
+		time_source_power_crop = cp.deepcopy(time_crop)
+
+		if False:	# this is not consistent with what I do for IR traces analysis
+			conventional_start_pulse = np.abs(time_crop-0.05).argmin()
+			conventional_end_pulse = np.abs(time_crop-0.8).argmin()
+		else:
+			conventional_start_pulse = power_pulse_shape_crop.argmax() - np.flip((power_pulse_shape_crop[:power_pulse_shape_crop.argmax()]-steady_state_power)>0,axis=0).argmin()
+			conventional_end_pulse = power_pulse_shape_crop.argmax() + ((power_pulse_shape_crop[power_pulse_shape_crop.argmax():]-steady_state_power)>0).argmin()
+			if (power_pulse_shape_crop[conventional_start_pulse]-steady_state_power)/(power_pulse_shape_crop.max()-steady_state_power)>0.1:
+				conventional_start_pulse -= 1
+			if (power_pulse_shape_crop[conventional_end_pulse-1]-steady_state_power)/(power_pulse_shape_crop.max()-steady_state_power)>0.1:
+				conventional_end_pulse += 1
+		if merge_ID_target in [85,86,87,88,89,95]:
+			conventional_end_pulse = np.abs(time_crop-1).argmin()	# this seems more sensible for the paper
+
+
+		# # obsolete funtion
+		# def PDF_2_terms_operation_MC(actual_values_item_1,prob_item_1,actual_values_item_2,prob_item_2,operation,intervals=30,samples=10000,multiplier=1):
+		# 	out_values = []
+		# 	out_prob_sum = []
+		# 	out_actual_values = []
+		# 	item_1 = np.zeros((len(actual_values_item_1),len(actual_values_item_1[0]),samples))
+		# 	item_2 = np.zeros((len(actual_values_item_1),len(actual_values_item_1[0]),samples))
+		# 	for i_t in range(len(actual_values_item_1)):
+		# 		for i_r in range(len(actual_values_item_1[0])):
+		# 			if len(actual_values_item_1[i_t][i_r])>1:
+		# 				item_1[i_t][i_r] = np.random.choice(actual_values_item_1[i_t][i_r],size=samples,p=prob_item_1[i_t][i_r])
+		# 				item_2[i_t][i_r] = np.random.choice(actual_values_item_2[i_t][i_r],size=samples,p=prob_item_2[i_t][i_r])
+		# 	product = operation(item_1,item_2)*multiplier
+		# 	product_prob = np.zeros((len(actual_values_item_1),len(actual_values_item_1[0]),intervals))
+		# 	product_actual_values = np.zeros((len(actual_values_item_1),len(actual_values_item_1[0]),intervals))
+		# 	product_intervals = np.zeros((len(actual_values_item_1),len(actual_values_item_1[0]),intervals+1))
+		# 	for i_t in range(len(actual_values_item_1)):
+		# 		for i_r in range(len(actual_values_item_1[0])):
+		# 			product_prob[i_t][i_r],product_intervals[i_t][i_r] = improved_log_histogram(product[i_t][i_r],intervals)
+		# 			if np.sum(product_prob[i_t][i_r])==0:
+		# 				product_prob[i_t][i_r]=np.ones_like(product_prob[i_t][i_r])
+		# 			product_prob[i_t][i_r] = product_prob[i_t][i_r]/np.sum(product_prob[i_t][i_r])
+		# 			temp_actual_values2 = []
+		# 			for i in range(intervals):
+		# 				if i!=intervals-1:
+		# 					temp_actual_values2.append(np.nanmax([product_intervals[i_t][i_r][i],np.mean(product[i_t][i_r][np.logical_and(product[i_t][i_r]>=product_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),product[i_t][i_r]<product_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+		# 				else:
+		# 					temp_actual_values2.append(np.nanmax([product_intervals[i_t][i_r][i],np.mean(product[i_t][i_r][np.logical_and(product[i_t][i_r]>=product_intervals[i_t][i_r][i]/(1+10*np.finfo(float).eps),product[i_t][i_r]<=product_intervals[i_t][i_r][i+1]*(1+10*np.finfo(float).eps))])]))
+		# 			product_actual_values[i_t][i_r] = np.array(temp_actual_values2)
+		# 	product_prob = product_prob.tolist()
+		# 	product_actual_values = product_actual_values.tolist()
+		# 	product_intervals = product_intervals.tolist()
+		# 	return product_prob,product_actual_values,product_intervals
+
+
+		# if not latest_version:
+		# 	prob_nH_values,actual_values_nH_values,intervals_nH_values = PDF_2_terms_operation_MC(actual_values_nH_ne_values,prob_nH_ne_values,actual_values_ne_values,prob_ne_values,np.multiply)
+		# 	prob_H_destruction_RR2,actual_values_H_destruction_RR2,intervals_H_destruction_RR2 = PDF_2_terms_operation_MC(actual_values_nH_values,prob_nH_values,actual_values_H_destruction_RR,prob_H_destruction_RR,np.multiply,multiplier=1e-20)
+		# 	prob_nH2_values,actual_values_nH2_values,intervals_nH2_values = PDF_2_terms_operation_MC(actual_values_nH2_ne_values,prob_nH2_ne_values,actual_values_ne_values,prob_ne_values,np.multiply)
+		# 	prob_H2_destruction_RR2,actual_values_H2_destruction_RR2,intervals_H2_destruction_RR2 = PDF_2_terms_operation_MC(actual_values_nH2_values,prob_nH2_values,actual_values_H2_destruction_RR,prob_H2_destruction_RR,np.multiply,multiplier=1e-20)
+		# 	prob_nH2p_values,actual_values_nH2p_values,intervals_nH2p_values = PDF_2_terms_operation_MC(actual_values_nH2p_ne_values,prob_nH2p_ne_values,actual_values_ne_values,prob_ne_values,np.multiply)
+		# 	prob_nHm_values,actual_values_nHm_values,intervals_nHm_values = PDF_2_terms_operation_MC(actual_values_nHm_ne_values,prob_nHm_ne_values,actual_values_ne_values,prob_ne_values,np.multiply)
+		#
+		# 	prob_nH2p_nH2_values,actual_values_nH2p_nH2_values,intervals_nH2p_nH2_values = PDF_2_terms_operation_MC(actual_values_nH2p_ne_values,prob_nH2p_ne_values,actual_values_nH2_ne_values,prob_nH2_ne_values,np.divide)
+		# 	prob_nHm_nH2_values,actual_values_nHm_nH2_values,intervals_nHm_nH2_values = PDF_2_terms_operation_MC(actual_values_nHm_ne_values,prob_nHm_ne_values,actual_values_nH2_ne_values,prob_nH2_ne_values,np.divide)
 
 		most_likely_power_rad_excit,most_likely_power_rad_excit_sigma = calculate_most_likely(prob_power_rad_excit,actual_values_power_rad_excit,intervals_power_rad_excit)
 		figure_index = make_plot_type_1(most_likely_power_rad_excit,'power_rad_excit','power [W/m3]',figure_index)
@@ -5306,7 +5676,7 @@ else:
 		# ionization_length_H = np.where(np.isinf(ionization_length_H), np.nan, ionization_length_H)
 		# ionization_length_H = np.where(np.isnan(ionization_length_H), np.nanmax(ionization_length_H[np.isfinite(ionization_length_H)]), ionization_length_H)
 		plt.figure(figsize=(8, 5));
-		plt.pcolor(temp_t, temp_r, ionization_length_H,vmax=min(np.max(ionization_length_H),1), cmap='rainbow', norm=LogNorm());
+		plt.pcolor(temp_t, temp_r, ionization_length_H, cmap='rainbow', norm=LogNorm(vmax=min(np.max(ionization_length_H),1)));
 		plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)')
 		temp1 = np.flip(np.cumsum(np.flip(dx/ionization_length_H,axis=1),axis=1),axis=1)
 		temp1 = 1-temp1
@@ -5330,7 +5700,7 @@ else:
 		plt.close()
 
 		plt.figure(figsize=(8, 5));
-		plt.pcolor(temp_t, temp_r, (np.array(most_likely_power_rad_excit)*J_to_eV +np.array(most_likely_ionisation_rate)*13.6)/np.array(most_likely_ionisation_rate),cmap='rainbow',vmax=10000, norm=LogNorm());
+		plt.pcolor(temp_t, temp_r, (np.array(most_likely_power_rad_excit)*J_to_eV +np.array(most_likely_ionisation_rate)*13.6)/np.array(most_likely_ionisation_rate),cmap='rainbow', norm=LogNorm(vmax=10000));
 		plt.colorbar(orientation="horizontal").set_label('energy per ionisation [eV]')  # ;plt.pause(0.01)
 		plt.axes().set_aspect(20)
 		plt.xlabel('time [ms]')
@@ -5364,7 +5734,7 @@ else:
 		averaged_radiated_power_sigma = np.array(averaged_radiated_power_sigma)
 
 		plt.figure(figsize=(8, 5));
-		plt.pcolor(temp_t, temp_r, most_likely_tot_rad_power,cmap='rainbow',vmin=max(max(1,np.min(most_likely_tot_rad_power)),np.max(most_likely_tot_rad_power)*1e-6), norm=LogNorm());
+		plt.pcolor(temp_t, temp_r, most_likely_tot_rad_power,cmap='rainbow', norm=LogNorm(vmin=max(max(1,np.min(most_likely_tot_rad_power)),np.max(most_likely_tot_rad_power)*1e-6)));
 		plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)\nmean %.3g' %(np.nanmean(averaged_profile_sigma[averaged_profile_sigma>0]*2.355/2)))
 		plt.plot(time_crop,averaged_radiated_power_sigma*2.355/2,'-.',color='grey',label='tot_rad_power FWHM, mean %.3g' %(np.nanmean(averaged_radiated_power_sigma[averaged_radiated_power_sigma>0]*2.355/2)))
 		plt.colorbar(orientation="horizontal").set_label('power [W/m3]')  # ;plt.pause(0.01)
@@ -5404,7 +5774,7 @@ else:
 		# temp = np.array(temp)
 
 		plt.figure(figsize=(8, 5));
-		plt.pcolor(temp_t, temp_r, most_likely_tot_rad_brightness,cmap='rainbow',vmin=max(max(1,np.min(most_likely_tot_rad_brightness)),np.max(most_likely_tot_rad_brightness)*1e-6), norm=LogNorm());
+		plt.pcolor(temp_t, temp_r, most_likely_tot_rad_brightness,cmap='rainbow', norm=LogNorm(vmin=max(max(1,np.min(most_likely_tot_rad_brightness)),np.max(most_likely_tot_rad_brightness)*1e-6)));
 		plt.plot(time_crop,averaged_profile_sigma*2.355/2,'--',color='grey',label='density FWHM\n(gaussian fit)\nmean %.3g' %(np.nanmean(averaged_profile_sigma[averaged_profile_sigma>0]*2.355/2)))
 		plt.plot(time_crop,averaged_radiated_power_sigma*2.355/2,'-.',color='grey',label='tot_rad_brightness FWHM, mean %.3g' %(np.nanmean(averaged_radiated_power_sigma[averaged_radiated_power_sigma>0]*2.355/2)))
 		plt.colorbar(orientation="horizontal").set_label('power [W/m2]')  # ;plt.pause(0.01)
@@ -5481,7 +5851,7 @@ else:
 		most_likely_local_CX,most_likely_local_CX_sigma = calculate_most_likely(prob_local_CX,actual_values_local_CX,intervals_local_CX)
 		most_likely_local_CX = np.array(most_likely_local_CX)
 		plt.figure(figsize=(8, 5));
-		plt.pcolor(temp_t, temp_r, most_likely_local_CX,cmap='rainbow',vmin=max(max(1,np.min(most_likely_local_CX)),np.max(most_likely_local_CX)*1e-6), norm=LogNorm());
+		plt.pcolor(temp_t, temp_r, most_likely_local_CX,cmap='rainbow', norm=LogNorm(vmin=max(max(1,np.min(most_likely_local_CX)),np.max(most_likely_local_CX)*1e-6)));
 		temp1 = np.flip(np.cumsum(np.flip(dx/ionization_length_H,axis=1),axis=1),axis=1)
 		temp1 = 1-temp1
 		temp1[temp1<0]=0
@@ -5492,7 +5862,22 @@ else:
 		plt.axes().set_aspect(20)
 		plt.xlabel('time [ms]')
 		plt.ylabel('radial location [m]      ')
-		plt.title(pre_title+'Most likely values of local_CX\nPower for atomic hydrogen CX from Bayesian analysis\ncold H (from simul), H destruction RR only ionisation(ADAS)\nlimit on enter=%.3gJ' %(np.sum(most_likely_local_CX*(temp1>0)*area*length*dt/1000)))
+		plt.title(pre_title+'Most likely values of local_CX\nPower for atomic hydrogen CX from Bayesian analysis\ncold H (from B2.5-Eu), H destruction RR only ionisation(ADAS)\nlimit on enter=%.3gJ, up to limit full absorp=%.3gJ' %(np.sum(most_likely_local_CX*area*length*dt/1000),np.sum(most_likely_local_CX*(temp1>0)*area*length*dt/1000)))
+		figure_index += 1
+		plt.savefig(path_where_to_save_everything + mod4 + '/bayesian/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
+			figure_index+1) + '.eps', bbox_inches='tight')
+		plt.close()
+
+		most_likely_local_elastic_H2,most_likely_local_elastic_H2_sigma = calculate_most_likely(prob_local_elastic_H2,actual_values_local_elastic_H2,intervals_local_elastic_H2)
+		most_likely_local_elastic_H2 = np.array(most_likely_local_elastic_H2)
+		plt.figure(figsize=(8, 5));
+		plt.pcolor(temp_t, temp_r, most_likely_local_elastic_H2,cmap='rainbow', norm=LogNorm(vmin=max(max(1,np.min(most_likely_local_elastic_H2)),np.max(most_likely_local_elastic_H2)*1e-6)));
+		plt.legend(loc='best', fontsize='xx-small')
+		plt.colorbar(orientation="horizontal").set_label('power [W/m3]')  # ;plt.pause(0.01)
+		plt.axes().set_aspect(20)
+		plt.xlabel('time [ms]')
+		plt.ylabel('radial location [m]      ')
+		plt.title(pre_title+'Most likely values of local_elastic_H2\nPower for H2  H+ elastic collisions from Bayesian analysis\ncold H2 (from B2.5-Eu) 8/9 of max energy exchanged\nlimit on enter=%.3gJ' %(np.sum(most_likely_local_elastic_H2*area*length*dt/1000)))
 		figure_index += 1
 		plt.savefig(path_where_to_save_everything + mod4 + '/bayesian/pass_'+str(global_pass)+'_merge'+str(merge_ID_target)+'_global_fit' + str(
 			figure_index+1) + '.eps', bbox_inches='tight')
@@ -5528,12 +5913,87 @@ else:
 		most_likely_H2p_creation_RR,most_likely_H2p_creation_RR_sigma = calculate_most_likely(prob_H2p_creation_RR,actual_values_H2p_creation_RR,intervals_H2p_creation_RR)	# m^-3/s * 1e-20
 		figure_index = make_plot_type_1((np.array(most_likely_H2p_creation_RR)*1e20).tolist(),'H2p_creation_RR','reaction rate\n[#/(m^3 s)]',figure_index)
 
+		most_likely_net_H_destruction_RR,most_likely_net_H_destruction_RR_sigma = calculate_most_likely(prob_net_H_destruction_RR,actual_values_net_H_destruction_RR,intervals_net_H_destruction_RR)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_net_H_destruction_RR)*1e20).tolist(),'net_H_destruction_RR','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_net_H2_destruction_RR,most_likely_net_H2_destruction_RR_sigma = calculate_most_likely(prob_net_H2_destruction_RR,actual_values_net_H2_destruction_RR,intervals_net_H2_destruction_RR)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_net_H2_destruction_RR)*1e20).tolist(),'net_H2_destruction_RR','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_net_e_destruction,most_likely_net_e_destruction_sigma = calculate_most_likely(prob_net_e_destruction,actual_values_net_e_destruction,intervals_net_e_destruction)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_net_e_destruction)*1e20).tolist(),'net_e_destruction','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_net_Hp_destruction,most_likely_net_Hp_destruction_sigma = calculate_most_likely(prob_net_Hp_destruction,actual_values_net_Hp_destruction,intervals_net_Hp_destruction)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_net_Hp_destruction)*1e20).tolist(),'net_Hp_destruction','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_net_Hm_destruction,most_likely_net_Hm_destruction_sigma = calculate_most_likely(prob_net_Hm_destruction,actual_values_net_Hm_destruction,intervals_net_Hm_destruction)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_net_Hm_destruction)*1e20).tolist(),'net_Hm_destruction','reaction rate\n[#/(m^3 s)]',figure_index)
+
+		most_likely_net_H2p_destruction,most_likely_net_H2p_destruction_sigma = calculate_most_likely(prob_net_H2p_destruction,actual_values_net_H2p_destruction,intervals_net_H2p_destruction)	# m^-3/s * 1e-20
+		figure_index = make_plot_type_1((np.array(most_likely_net_H2p_destruction)*1e20).tolist(),'net_H2p_destruction','reaction rate\n[#/(m^3 s)]',figure_index)
+
 		if latest_version:
 			most_likely_H_creation_RR,most_likely_H_creation_RR_sigma = calculate_most_likely(prob_H_creation_RR,actual_values_H_creation_RR,intervals_H_creation_RR)	# m^-3/s * 1e-20
 			figure_index = make_plot_type_1((np.array(most_likely_H_creation_RR)*1e20).tolist(),'H_creation_RR','reaction rate\n[#/(m^3 s)]',figure_index)
 
 			most_likely_H2_creation_RR,most_likely_H2_creation_RR_sigma = calculate_most_likely(prob_H2_creation_RR,actual_values_H2_creation_RR,intervals_H2_creation_RR)	# m^-3/s * 1e-20
 			figure_index = make_plot_type_1((np.array(most_likely_H2_creation_RR)*1e20).tolist(),'H2_creation_RR','reaction rate\n[#/(m^3 s)]',figure_index)
+
+			most_likely_all_MAR_from_Hm,most_likely_all_MAR_from_Hm_sigma = calculate_most_likely(prob_all_MAR_from_Hm,actual_values_all_MAR_from_Hm,intervals_all_MAR_from_Hm)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAR_from_Hm)*1e20).tolist(),'all_MAR_from_Hm','reaction rate\n[#/(m^3 s)]',figure_index)
+
+			most_likely_all_MAD_from_Hm,most_likely_all_MAD_from_Hm_sigma = calculate_most_likely(prob_all_MAD_from_Hm,actual_values_all_MAD_from_Hm,intervals_all_MAD_from_Hm)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAD_from_Hm)*1e20).tolist(),'all_MAD_from_Hm','reaction rate\n[#/(m^3 s)]',figure_index)
+
+			most_likely_all_MAI_from_Hm,most_likely_all_MAI_from_Hm_sigma = calculate_most_likely(prob_all_MAI_from_Hm,actual_values_all_MAI_from_Hm,intervals_all_MAI_from_Hm)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAI_from_Hm)*1e20).tolist(),'all_MAI_from_Hm','reaction rate\n[#/(m^3 s)]',figure_index)
+
+			most_likely_all_MAR_from_H2p,most_likely_all_MAR_from_H2p_sigma = calculate_most_likely(prob_all_MAR_from_H2p,actual_values_all_MAR_from_H2p,intervals_all_MAR_from_H2p)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAR_from_H2p)*1e20).tolist(),'all_MAR_from_H2p','reaction rate\n[#/(m^3 s)]',figure_index)
+
+			most_likely_all_MAD_from_H2p,most_likely_all_MAD_from_H2p_sigma = calculate_most_likely(prob_all_MAD_from_H2p,actual_values_all_MAD_from_H2p,intervals_all_MAD_from_H2p)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAD_from_H2p)*1e20).tolist(),'all_MAD_from_H2p','reaction rate\n[#/(m^3 s)]',figure_index)
+
+			most_likely_all_MAI_from_H2p,most_likely_all_MAI_from_H2p_sigma = calculate_most_likely(prob_all_MAI_from_H2p,actual_values_all_MAI_from_H2p,intervals_all_MAI_from_H2p)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAI_from_H2p)*1e20).tolist(),'all_MAI_from_H2p','reaction rate\n[#/(m^3 s)]',figure_index)
+
+			most_likely_all_MAR_from_H2p_Hm,most_likely_all_MAR_from_H2p_Hm_sigma = calculate_most_likely(prob_all_MAR_from_H2p_Hm,actual_values_all_MAR_from_H2p_Hm,intervals_all_MAR_from_H2p_Hm)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAR_from_H2p_Hm)*1e20).tolist(),'all_MAR_from_H2p_Hm','reaction rate\n[#/(m^3 s)]',figure_index)
+
+			most_likely_all_MAD_from_H2p_Hm,most_likely_all_MAD_from_H2p_Hm_sigma = calculate_most_likely(prob_all_MAD_from_H2p_Hm,actual_values_all_MAD_from_H2p_Hm,intervals_all_MAD_from_H2p_Hm)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAD_from_H2p_Hm)*1e20).tolist(),'all_MAD_from_H2p_Hm','reaction rate\n[#/(m^3 s)]',figure_index)
+
+			most_likely_all_MAI_from_H2p_Hm,most_likely_all_MAI_from_H2p_Hm_sigma = calculate_most_likely(prob_all_MAI_from_H2p_Hm,actual_values_all_MAI_from_H2p_Hm,intervals_all_MAI_from_H2p_Hm)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAI_from_H2p_Hm)*1e20).tolist(),'all_MAI_from_H2p_Hm','reaction rate\n[#/(m^3 s)]',figure_index)
+
+			most_likely_all_MAR_from_Hm_energy,most_likely_all_MAR_from_Hm_energy_sigma = calculate_most_likely(prob_all_MAR_from_Hm_energy,actual_values_all_MAR_from_Hm_energy,intervals_all_MAR_from_Hm_energy)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAR_from_Hm_energy)*1e20).tolist(),'all_MAR_from_Hm_energy','power [W/m3]',figure_index)
+
+			most_likely_all_MAD_from_Hm_energy,most_likely_all_MAD_from_Hm_energy_sigma = calculate_most_likely(prob_all_MAD_from_Hm_energy,actual_values_all_MAD_from_Hm_energy,intervals_all_MAD_from_Hm_energy)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAD_from_Hm_energy)*1e20).tolist(),'all_MAD_from_Hm_energy','power [W/m3]',figure_index)
+
+			most_likely_all_MAI_from_Hm_energy,most_likely_all_MAI_from_Hm_energy_sigma = calculate_most_likely(prob_all_MAI_from_Hm_energy,actual_values_all_MAI_from_Hm_energy,intervals_all_MAI_from_Hm_energy)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAI_from_Hm_energy)*1e20).tolist(),'all_MAI_from_Hm_energy','power [W/m3]',figure_index)
+
+			most_likely_all_MAR_from_H2p_energy,most_likely_all_MAR_from_H2p_energy_sigma = calculate_most_likely(prob_all_MAR_from_H2p_energy,actual_values_all_MAR_from_H2p_energy,intervals_all_MAR_from_H2p_energy)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAR_from_H2p_energy)*1e20).tolist(),'all_MAR_from_H2p_energy','power [W/m3]',figure_index)
+
+			most_likely_all_MAD_from_H2p_energy,most_likely_all_MAD_from_H2p_energy_sigma = calculate_most_likely(prob_all_MAD_from_H2p_energy,actual_values_all_MAD_from_H2p_energy,intervals_all_MAD_from_H2p_energy)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAD_from_H2p_energy)*1e20).tolist(),'all_MAD_from_H2p_energy','power [W/m3]',figure_index)
+
+			most_likely_all_MAI_from_H2p_energy,most_likely_all_MAI_from_H2p_energy_sigma = calculate_most_likely(prob_all_MAI_from_H2p_energy,actual_values_all_MAI_from_H2p_energy,intervals_all_MAI_from_H2p_energy)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAI_from_H2p_energy)*1e20).tolist(),'all_MAI_from_H2p_energy','power [W/m3]',figure_index)
+
+			most_likely_all_MAR_from_H2p_Hm_energy,most_likely_all_MAR_from_H2p_Hm_energy_sigma = calculate_most_likely(prob_all_MAR_from_H2p_Hm_energy,actual_values_all_MAR_from_H2p_Hm_energy,intervals_all_MAR_from_H2p_Hm_energy)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAR_from_H2p_Hm_energy)*1e20).tolist(),'all_MAR_from_H2p_Hm_energy','power [W/m3]',figure_index)
+
+			most_likely_all_MAD_from_H2p_Hm_energy,most_likely_all_MAD_from_H2p_Hm_energy_sigma = calculate_most_likely(prob_all_MAD_from_H2p_Hm_energy,actual_values_all_MAD_from_H2p_Hm_energy,intervals_all_MAD_from_H2p_Hm_energy)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAD_from_H2p_Hm_energy)*1e20).tolist(),'all_MAD_from_H2p_Hm_energy','power [W/m3]',figure_index)
+
+			most_likely_all_MAI_from_H2p_Hm_energy,most_likely_all_MAI_from_H2p_Hm_energy_sigma = calculate_most_likely(prob_all_MAI_from_H2p_Hm_energy,actual_values_all_MAI_from_H2p_Hm_energy,intervals_all_MAI_from_H2p_Hm_energy)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_MAI_from_H2p_Hm_energy)*1e20).tolist(),'all_MAI_from_H2p_Hm_energy','power [W/m3]',figure_index)
+
+			most_likely_all_atomic_H2_dissociation,most_likely_all_atomic_H2_dissociation_sigma = calculate_most_likely(prob_all_atomic_H2_dissociation,actual_values_all_atomic_H2_dissociation,intervals_all_atomic_H2_dissociation)	# m^-3/s * 1e-20
+			figure_index = make_plot_type_1((np.array(most_likely_all_atomic_H2_dissociation)*1e20).tolist(),'all_atomic_H2_dissociation','reaction rate\n[#/(m^3 s)]',figure_index)
 
 		most_likely_H_destruction_RR = np.array(most_likely_H_destruction_RR)
 		thermal_velocity_H = ( (T_H*boltzmann_constant_J)/ hydrogen_mass)**0.5
@@ -5545,7 +6005,7 @@ else:
 		temp = 1-temp
 		temp[temp<0]=0
 		plt.figure(figsize=(8, 5));
-		plt.pcolor(temp_t, temp_r, destruction_length_H,cmap='rainbow',vmax=min(np.max(destruction_length_H),1), norm=LogNorm());
+		plt.pcolor(temp_t, temp_r, destruction_length_H,cmap='rainbow', norm=LogNorm(vmax=min(np.max(destruction_length_H),1)));
 		temp1 = np.flip(np.cumsum(np.flip(dx/destruction_length_H,axis=1),axis=1),axis=1)
 		temp1 = 1-temp1
 		temp1[temp1<0]=0
@@ -5568,7 +6028,7 @@ else:
 		CX_length_H = thermal_velocity_H/(most_likely_eff_CX_RR)
 		CX_length_H = np.where(np.isnan(CX_length_H), np.inf, CX_length_H)
 		plt.figure(figsize=(8, 5));
-		plt.pcolor(temp_t, temp_r, CX_length_H,cmap='rainbow',vmax=min(np.max(CX_length_H),1), norm=LogNorm());
+		plt.pcolor(temp_t, temp_r, CX_length_H,cmap='rainbow', norm=LogNorm(vmax=min(np.max(CX_length_H),1)));
 		temp1 = np.flip(np.cumsum(np.flip(dx/CX_length_H,axis=1),axis=1),axis=1)
 		temp1 = 1-temp1
 		temp1[temp1<0]=0
@@ -5599,7 +6059,7 @@ else:
 		# destruction_length_H = np.where(np.isinf(destruction_length_H), np.nan, destruction_length_H)
 		# destruction_length_H = np.where(np.isnan(destruction_length_H), np.nanmax(destruction_length_H[np.isfinite(destruction_length_H)]), destruction_length_H)
 		plt.figure(figsize=(8, 5));
-		plt.pcolor(temp_t, temp_r, destruction_length_H2,cmap='rainbow',vmax=min(np.max(destruction_length_H2),1), norm=LogNorm());
+		plt.pcolor(temp_t, temp_r, destruction_length_H2,cmap='rainbow', norm=LogNorm(vmax=min(np.max(destruction_length_H2),1)));
 		temp1 = np.flip(np.cumsum(np.flip(dx/destruction_length_H2,axis=1),axis=1),axis=1)
 		temp1 = 1-temp1
 		temp1[temp1<0]=0
@@ -5616,7 +6076,7 @@ else:
 			figure_index+1) + '.eps', bbox_inches='tight')
 		plt.close()
 
-		def PDF_CX_MC(actual_values_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_3,prob_CX_term_1_3,actual_values_CX_term_1_4,prob_CX_term_1_4,actual_values_CX_term_1_5,prob_CX_term_1_5,actual_values_CX_term_1_6,prob_CX_term_1_6,actual_values_CX_term_1_8,prob_CX_term_1_8,actual_values_CX_term_1_9,prob_CX_term_1_9,actual_values_CX_term_1_11,prob_CX_term_1_11,actual_values_H2_destruction_RR,prob_H2_destruction_RR,intervals=30,samples=100000):
+		def PDF_CX_MC(intervals_CX_term_1_1,prob_CX_term_1_1,intervals_CX_term_1_2,prob_CX_term_1_2,intervals_CX_term_1_3,prob_CX_term_1_3,intervals_CX_term_1_4,prob_CX_term_1_4,intervals_CX_term_1_5,prob_CX_term_1_5,intervals_CX_term_1_6,prob_CX_term_1_6,intervals_CX_term_1_8,prob_CX_term_1_8,intervals_CX_term_1_9,prob_CX_term_1_9,intervals_CX_term_1_11,prob_CX_term_1_11,intervals_H2_destruction_RR,prob_H2_destruction_RR,actual_values_CX_term_1_1,actual_values_CX_term_1_2,actual_values_CX_term_1_3,actual_values_CX_term_1_4,actual_values_CX_term_1_5,actual_values_CX_term_1_6,actual_values_CX_term_1_8,actual_values_CX_term_1_9,actual_values_CX_term_1_11,actual_values_H2_destruction_RR,intervals=30,samples=10000):
 			out_values = []
 			out_prob_sum = []
 			out_actual_values = []
@@ -5632,17 +6092,27 @@ else:
 			H2_destruction_RR = np.zeros((np.shape(Te_all)[0],np.shape(Te_all)[1],samples))
 			for i_t in range(np.shape(Te_all)[0]):
 				for i_r in range(np.shape(Te_all)[1]):
-					if len(actual_values_CX_term_1_1[i_t][i_r])>1 and len(actual_values_CX_term_1_3[i_t][i_r])>1:
-						CX_term_1_1[i_t][i_r] = np.random.choice(actual_values_CX_term_1_1[i_t][i_r],size=samples,p=prob_CX_term_1_1[i_t][i_r])
-						CX_term_1_2[i_t][i_r] = np.random.choice(actual_values_CX_term_1_2[i_t][i_r],size=samples,p=prob_CX_term_1_2[i_t][i_r])
-						CX_term_1_3[i_t][i_r] = np.random.choice(actual_values_CX_term_1_3[i_t][i_r],size=samples,p=prob_CX_term_1_3[i_t][i_r])
-						CX_term_1_4[i_t][i_r] = np.random.choice(actual_values_CX_term_1_4[i_t][i_r],size=samples,p=prob_CX_term_1_4[i_t][i_r])
-						CX_term_1_5[i_t][i_r] = np.random.choice(actual_values_CX_term_1_5[i_t][i_r],size=samples,p=prob_CX_term_1_5[i_t][i_r])
-						CX_term_1_6[i_t][i_r] = np.random.choice(actual_values_CX_term_1_6[i_t][i_r],size=samples,p=prob_CX_term_1_6[i_t][i_r])
-						CX_term_1_8[i_t][i_r] = np.random.choice(actual_values_CX_term_1_8[i_t][i_r],size=samples,p=prob_CX_term_1_8[i_t][i_r])
-						CX_term_1_9[i_t][i_r] = np.random.choice(actual_values_CX_term_1_9[i_t][i_r],size=samples,p=prob_CX_term_1_9[i_t][i_r])
-						CX_term_1_11[i_t][i_r] = np.random.choice(actual_values_CX_term_1_11[i_t][i_r],size=samples,p=prob_CX_term_1_11[i_t][i_r])
-						H2_destruction_RR[i_t][i_r] = np.random.choice(actual_values_H2_destruction_RR[i_t][i_r],size=samples,p=prob_H2_destruction_RR[i_t][i_r])
+					if len(prob_CX_term_1_1[i_t][i_r])>1 and len(prob_CX_term_1_3[i_t][i_r])>1:
+						# CX_term_1_1[i_t][i_r] = np.random.choice(actual_values_CX_term_1_1[i_t][i_r],size=samples,p=prob_CX_term_1_1[i_t][i_r])
+						# CX_term_1_2[i_t][i_r] = np.random.choice(actual_values_CX_term_1_2[i_t][i_r],size=samples,p=prob_CX_term_1_2[i_t][i_r])
+						# CX_term_1_3[i_t][i_r] = np.random.choice(actual_values_CX_term_1_3[i_t][i_r],size=samples,p=prob_CX_term_1_3[i_t][i_r])
+						# CX_term_1_4[i_t][i_r] = np.random.choice(actual_values_CX_term_1_4[i_t][i_r],size=samples,p=prob_CX_term_1_4[i_t][i_r])
+						# CX_term_1_5[i_t][i_r] = np.random.choice(actual_values_CX_term_1_5[i_t][i_r],size=samples,p=prob_CX_term_1_5[i_t][i_r])
+						# CX_term_1_6[i_t][i_r] = np.random.choice(actual_values_CX_term_1_6[i_t][i_r],size=samples,p=prob_CX_term_1_6[i_t][i_r])
+						# CX_term_1_8[i_t][i_r] = np.random.choice(actual_values_CX_term_1_8[i_t][i_r],size=samples,p=prob_CX_term_1_8[i_t][i_r])
+						# CX_term_1_9[i_t][i_r] = np.random.choice(actual_values_CX_term_1_9[i_t][i_r],size=samples,p=prob_CX_term_1_9[i_t][i_r])
+						# CX_term_1_11[i_t][i_r] = np.random.choice(actual_values_CX_term_1_11[i_t][i_r],size=samples,p=prob_CX_term_1_11[i_t][i_r])
+						# H2_destruction_RR[i_t][i_r] = np.random.choice(actual_values_H2_destruction_RR[i_t][i_r],size=samples,p=prob_H2_destruction_RR[i_t][i_r])
+						CX_term_1_1[i_t][i_r] = create_array_from_histogram(actual_values_CX_term_1_1[i_t][i_r],intervals_CX_term_1_1[i_t][i_r],prob_CX_term_1_1[i_t][i_r],samples)
+						CX_term_1_2[i_t][i_r] = create_array_from_histogram(actual_values_CX_term_1_2[i_t][i_r],intervals_CX_term_1_2[i_t][i_r],prob_CX_term_1_2[i_t][i_r],samples)
+						CX_term_1_3[i_t][i_r] = create_array_from_histogram(actual_values_CX_term_1_3[i_t][i_r],intervals_CX_term_1_3[i_t][i_r],prob_CX_term_1_3[i_t][i_r],samples)
+						CX_term_1_4[i_t][i_r] = create_array_from_histogram(actual_values_CX_term_1_4[i_t][i_r],intervals_CX_term_1_4[i_t][i_r],prob_CX_term_1_4[i_t][i_r],samples)
+						CX_term_1_5[i_t][i_r] = create_array_from_histogram(actual_values_CX_term_1_5[i_t][i_r],intervals_CX_term_1_5[i_t][i_r],prob_CX_term_1_5[i_t][i_r],samples)
+						CX_term_1_6[i_t][i_r] = create_array_from_histogram(actual_values_CX_term_1_6[i_t][i_r],intervals_CX_term_1_6[i_t][i_r],prob_CX_term_1_6[i_t][i_r],samples)
+						CX_term_1_8[i_t][i_r] = create_array_from_histogram(actual_values_CX_term_1_8[i_t][i_r],intervals_CX_term_1_8[i_t][i_r],prob_CX_term_1_8[i_t][i_r],samples)
+						CX_term_1_9[i_t][i_r] = create_array_from_histogram(actual_values_CX_term_1_9[i_t][i_r],intervals_CX_term_1_9[i_t][i_r],prob_CX_term_1_9[i_t][i_r],samples)
+						CX_term_1_11[i_t][i_r] = create_array_from_histogram(actual_values_CX_term_1_11[i_t][i_r],intervals_CX_term_1_11[i_t][i_r],prob_CX_term_1_11[i_t][i_r],samples)
+						H2_destruction_RR[i_t][i_r] = create_array_from_histogram(actual_values_H2_destruction_RR[i_t][i_r],intervals_H2_destruction_RR[i_t][i_r],prob_H2_destruction_RR[i_t][i_r],samples)
 
 			thermal_velocity_Hp = np.transpose([( (T_Hp*boltzmann_constant_J)/ hydrogen_mass)**0.5]*samples,(1,2,0))
 			P_HCX = CX_term_1_3*2*target_chamber_pressure/(boltzmann_constant_J*300)* ( (300*boltzmann_constant_J)/ hydrogen_mass)**0.5 * np.exp(-np.flip(np.cumsum(np.flip(CX_term_1_1,axis=1),axis=1),axis=1)-np.flip(np.cumsum(np.flip(CX_term_1_2,axis=1),axis=1),axis=1)/thermal_velocity_Hp)
@@ -5810,10 +6280,10 @@ else:
 			intervals_P_HCX_3 = intervals_P_HCX_3.tolist()
 			for i_t in range(np.shape(Te_all)[0]):
 				for i_r in range(np.shape(Te_all)[1]):
-					if len(actual_values_CX_term_1_1[i_t][i_r])<=1 or len(actual_values_CX_term_1_3[i_t][i_r])<=1:
+					if len(prob_CX_term_1_1[i_t][i_r])<=1 or len(prob_CX_term_1_3[i_t][i_r])<=1:
 						prob_P_HCX[i_t][i_r] = [1]
 						actual_values_P_HCX[i_t][i_r] = [0]
-						intervals_P_HCX[i_t][i_r] = [0]
+						intervals_P_HCX[i_t][i_r] = [0,0]
 						# prob_n_HCX[i_t][i_r] = [1]
 						# actual_values_n_HCX[i_t][i_r] = [nH_rmax]
 						# intervals_n_HCX[i_t][i_r] = [nH_rmax]
@@ -5828,24 +6298,24 @@ else:
 						# intervals_n_HCX_2[i_t][i_r] = [1e19]	# 1e19 comes from looking at the simulation data for very low temperature: ne~1e19, ne/nH~1
 						prob_P_HCX_2[i_t][i_r] = [1]
 						actual_values_P_HCX_2[i_t][i_r] = [0]
-						intervals_P_HCX_2[i_t][i_r] = [0]
+						intervals_P_HCX_2[i_t][i_r] = [0,0]
 						prob_P_HCX_3[i_t][i_r] = [1]
 						actual_values_P_HCX_3[i_t][i_r] = [0]
-						intervals_P_HCX_3[i_t][i_r] = [0]
+						intervals_P_HCX_3[i_t][i_r] = [0,0]
 
 			return intervals_P_HCX,prob_P_HCX,actual_values_P_HCX,intervals_E_HCX,prob_E_HCX,actual_values_E_HCX,intervals_n_HCX,prob_n_HCX,actual_values_n_HCX,intervals_n_H2CX,prob_n_H2CX,actual_values_n_H2CX,intervals_E_HCX_2,prob_E_HCX_2,actual_values_E_HCX_2,intervals_E_HCX_3,prob_E_HCX_3,actual_values_E_HCX_3,intervals_n_HCX_2,prob_n_HCX_2,actual_values_n_HCX_2,intervals_P_HCX_2,prob_P_HCX_2,actual_values_P_HCX_2,intervals_P_HCX_3,prob_P_HCX_3,actual_values_P_HCX_3,nH_rmax,nH2_rmax,nH2vH2_rmax
 
-		intervals_P_HCX,prob_P_HCX,actual_values_P_HCX,intervals_E_HCX,prob_E_HCX,actual_values_E_HCX,intervals_n_HCX,prob_n_HCX,actual_values_n_HCX,intervals_n_H2CX,prob_n_H2CX,actual_values_n_H2CX,intervals_E_HCX_2,prob_E_HCX_2,actual_values_E_HCX_2,intervals_E_HCX_3,prob_E_HCX_3,actual_values_E_HCX_3,intervals_n_HCX_2,prob_n_HCX_2,actual_values_n_HCX_2,intervals_P_HCX_2,prob_P_HCX_2,actual_values_P_HCX_2,intervals_P_HCX_3,prob_P_HCX_3,actual_values_P_HCX_3,nH_rmax,nH2_rmax,nH2vH2_rmax = PDF_CX_MC(actual_values_CX_term_1_1,prob_CX_term_1_1,actual_values_CX_term_1_2,prob_CX_term_1_2,actual_values_CX_term_1_3,prob_CX_term_1_3,actual_values_CX_term_1_4,prob_CX_term_1_4,actual_values_CX_term_1_5,prob_CX_term_1_5,actual_values_CX_term_1_6,prob_CX_term_1_6,actual_values_CX_term_1_8,prob_CX_term_1_8,actual_values_CX_term_1_9,prob_CX_term_1_9,actual_values_CX_term_1_11,prob_CX_term_1_11,actual_values_H2_destruction_RR,prob_H2_destruction_RR)
+		intervals_P_HCX,prob_P_HCX,actual_values_P_HCX,intervals_E_HCX,prob_E_HCX,actual_values_E_HCX,intervals_n_HCX,prob_n_HCX,actual_values_n_HCX,intervals_n_H2CX,prob_n_H2CX,actual_values_n_H2CX,intervals_E_HCX_2,prob_E_HCX_2,actual_values_E_HCX_2,intervals_E_HCX_3,prob_E_HCX_3,actual_values_E_HCX_3,intervals_n_HCX_2,prob_n_HCX_2,actual_values_n_HCX_2,intervals_P_HCX_2,prob_P_HCX_2,actual_values_P_HCX_2,intervals_P_HCX_3,prob_P_HCX_3,actual_values_P_HCX_3,nH_rmax,nH2_rmax,nH2vH2_rmax = PDF_CX_MC(intervals_CX_term_1_1,prob_CX_term_1_1,intervals_CX_term_1_2,prob_CX_term_1_2,intervals_CX_term_1_3,prob_CX_term_1_3,intervals_CX_term_1_4,prob_CX_term_1_4,intervals_CX_term_1_5,prob_CX_term_1_5,intervals_CX_term_1_6,prob_CX_term_1_6,intervals_CX_term_1_8,prob_CX_term_1_8,intervals_CX_term_1_9,prob_CX_term_1_9,intervals_CX_term_1_11,prob_CX_term_1_11,intervals_H2_destruction_RR,prob_H2_destruction_RR,actual_values_CX_term_1_1,actual_values_CX_term_1_2,actual_values_CX_term_1_3,actual_values_CX_term_1_4,actual_values_CX_term_1_5,actual_values_CX_term_1_6,actual_values_CX_term_1_8,actual_values_CX_term_1_9,actual_values_CX_term_1_11,actual_values_H2_destruction_RR)
 
 		most_likely_n_H2CX,most_likely_n_H2CX_sigma = calculate_most_likely(prob_n_H2CX,actual_values_n_H2CX,intervals_n_H2CX)
 		most_likely_n_H2CX = np.array(most_likely_n_H2CX)
 		most_likely_n_H2CX[np.isnan(most_likely_n_H2CX)]=0
-		arbitrary_plasma_column_border = most_likely_n_H2CX<nH2_rmax
+		arbitrary_plasma_column_border = most_likely_n_H2CX<nH2_rmax*0.95
 		arbitrary_plasma_column_border = np.array([r_crop[max(0,value-1)] for value in np.sum(arbitrary_plasma_column_border,axis=1)])
-		H2_inflow_sides_plasma_column = np.sum(2*np.pi*arbitrary_plasma_column_border*length*nH2vH2_rmax*dt/1000)
+		H2_inflow_sides_plasma_column = np.sum(2*np.pi*arbitrary_plasma_column_border[conventional_start_pulse:conventional_end_pulse]*length*nH2vH2_rmax*dt/1000)
 		H2_pre_ELMlike_pulse = np.pi*(np.max(arbitrary_plasma_column_border)**2)*length*nH2_rmax
 		plt.figure(figsize=(8, 5));
-		plt.pcolor(temp_t, temp_r, most_likely_n_H2CX,cmap='rainbow',vmin=max(max(1,np.nanmin(most_likely_n_H2CX)),np.nanmax(most_likely_n_H2CX)*1e-6), norm=LogNorm());
+		plt.pcolor(temp_t, temp_r, most_likely_n_H2CX,cmap='rainbow', norm=LogNorm(vmin=max(max(1,np.nanmin(most_likely_n_H2CX)),np.nanmax(most_likely_n_H2CX)*1e-6)));
 		plt.colorbar(orientation="horizontal").set_label('density [#/m3]')  # ;plt.pause(0.01)
 		plt.plot(time_crop,arbitrary_plasma_column_border,'--k')
 		plt.axes().set_aspect(20)
@@ -6220,15 +6690,16 @@ else:
 				# plt.close()
 			return out_values,out_prob_sum
 
-		def radial_sum_PDF_MC(actual_values_power,prob_power,intervals=30,samples=100000):
+		def radial_sum_PDF_MC(actual_values_power,intervals_power,prob_power,intervals=60,samples=10000):
 			out_values = []
 			out_prob_sum = []
 			out_actual_values = []
 			for i_t in range(np.shape(Te_all)[0]):
 				temp_values = np.zeros((samples))
 				for i_r in range(np.shape(Te_all)[1]):
-					if len(actual_values_power[i_t][i_r])>1:
-						temp_values += np.random.choice(actual_values_power[i_t][i_r],size=samples,p=prob_power[i_t][i_r]) * area[i_r]
+					# if len(actual_values_power[i_t][i_r])>1:
+						# temp_values += np.random.choice(actual_values_power[i_t][i_r],size=samples,p=prob_power[i_t][i_r]) * area[i_r]
+					temp_values += create_array_from_histogram(actual_values_power[i_t][i_r],intervals_power[i_t][i_r],prob_power[i_t][i_r],samples) * area[i_r]
 				if all(temp_values==0):
 					out_values.append(np.array([0,0]))
 					out_prob_sum.append(np.array([1]))
@@ -6237,10 +6708,14 @@ else:
 					temp_prob,temp_intervals = improved_log_histogram(temp_values,intervals)# np.histogram(temp_values,bins=np.logspace(np.log10(temp_values.min()),np.log10(temp_values.max()),intervals+1))
 					temp_actual_values = []
 					for i in range(intervals):
+						# print(i)
 						if i!=intervals-1:
 							temp_actual_values.append(np.mean(temp_values[np.logical_and(temp_values>=temp_intervals[i]/(1+10*np.finfo(float).eps),temp_values<temp_intervals[i+1]*(1+10*np.finfo(float).eps))]))
 						else:
+							# continue
 							temp_actual_values.append(np.mean(temp_values[np.logical_and(temp_values>=temp_intervals[i]/(1+10*np.finfo(float).eps),temp_values<=temp_intervals[i+1]*(1+10*np.finfo(float).eps))]))
+						# if np.isnan(temp_actual_values[-1]):
+						# 	temp_actual_values[-1] = np.mean([temp_intervals[i],temp_intervals[i+1]])
 					temp_actual_values = length*np.array(temp_actual_values)
 					temp_actual_values[np.isnan(temp_actual_values)]=0
 					out_values.append(length*temp_intervals)
@@ -6254,7 +6729,8 @@ else:
 		# intervals_power_rad_mol_r, prob_power_rad_mol_r = radial_sum_PDF(intervals_power_rad_mol,prob_power_rad_mol)
 		# intervals_power_via_ionisation_r, prob_power_via_ionisation_r = radial_sum_PDF(intervals_power_via_ionisation,prob_power_via_ionisation)
 		# intervals_power_via_recombination_r, prob_power_via_recombination_r = radial_sum_PDF(intervals_power_via_recombination,prob_power_via_recombination)
-		# intervals_tot_rad_power_r, prob_tot_rad_power_r = radial_sum_PDF(intervals_tot_rad_power,prob_tot_rad_power)
+		# intervals_tot_rad_power_r, prob_tot_rad_power_r = radial_sum_PDF(intervals_tot_rad_power,prob_tot_rad_power)np.mean([temp_intervals[i],temp_intervals[i+1]])
+
 		# intervals_power_rad_Hm_r, prob_power_rad_Hm_r = radial_sum_PDF(intervals_power_rad_Hm,prob_power_rad_Hm)
 		# intervals_power_rad_H2_r, prob_power_rad_H2_r = radial_sum_PDF(intervals_power_rad_H2,prob_power_rad_H2)
 		# intervals_power_rad_H2p_r, prob_power_rad_H2p_r = radial_sum_PDF(intervals_power_rad_H2p,prob_power_rad_H2p)
@@ -6263,46 +6739,73 @@ else:
 		# intervals_power_via_brem_r, prob_power_via_brem_r = radial_sum_PDF(intervals_power_via_brem,prob_power_via_brem)
 		# intervals_total_removed_power_r, prob_total_removed_power_r = radial_sum_PDF(intervals_total_removed_power,prob_total_removed_power)
 		# intervals_local_CX_r, prob_local_CX_r = radial_sum_PDF(intervals_local_CX,prob_local_CX)
-		intervals_power_rad_excit_r, prob_power_rad_excit_r, actual_values_power_rad_excit_r = radial_sum_PDF_MC(actual_values_power_rad_excit,prob_power_rad_excit)
-		intervals_power_rad_rec_bremm_r, prob_power_rad_rec_bremm_r, actual_values_power_rad_rec_bremm_r = radial_sum_PDF_MC(actual_values_power_rad_rec_bremm,prob_power_rad_rec_bremm)
-		intervals_power_rad_mol_r, prob_power_rad_mol_r, actual_values_power_rad_mol_r = radial_sum_PDF_MC(actual_values_power_rad_mol,prob_power_rad_mol)
-		intervals_power_potential_r, prob_power_potential_r, actual_values_power_potential_r = radial_sum_PDF_MC(actual_values_power_potential,prob_power_potential)
-		intervals_power_potential_mol_r, prob_power_potential_mol_r, actual_values_power_potential_mol_r = radial_sum_PDF_MC(actual_values_power_potential_mol,prob_power_potential_mol)
-		intervals_power_potential_mol_plasma_heating_r, prob_power_potential_mol_plasma_heating_r, actual_values_power_potential_mol_plasma_heating_r = radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_heating,prob_power_potential_mol_plasma_heating)
-		intervals_power_potential_mol_plasma_cooling_r, prob_power_potential_mol_plasma_cooling_r, actual_values_power_potential_mol_plasma_cooling_r = radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_cooling,prob_power_potential_mol_plasma_cooling)
-		intervals_power_via_ionisation_r, prob_power_via_ionisation_r, actual_values_power_via_ionisation_r = radial_sum_PDF_MC(actual_values_power_via_ionisation,prob_power_via_ionisation)
-		intervals_power_via_recombination_r, prob_power_via_recombination_r, actual_values_power_via_recombination_r = radial_sum_PDF_MC(actual_values_power_via_recombination,prob_power_via_recombination)
-		intervals_tot_rad_power_r, prob_tot_rad_power_r, actual_values_tot_rad_power_r = radial_sum_PDF_MC(actual_values_tot_rad_power,prob_tot_rad_power)
-		intervals_power_rad_Hm_r, prob_power_rad_Hm_r, actual_values_power_rad_Hm_r = radial_sum_PDF_MC(actual_values_power_rad_Hm,prob_power_rad_Hm)
-		intervals_power_rad_Hm_H2p_r, prob_power_rad_Hm_H2p_r, actual_values_power_rad_Hm_H2p_r = radial_sum_PDF_MC(actual_values_power_rad_Hm_H2p,prob_power_rad_Hm_H2p)
-		intervals_power_rad_Hm_Hp_r, prob_power_rad_Hm_Hp_r, actual_values_power_rad_Hm_Hp_r = radial_sum_PDF_MC(actual_values_power_rad_Hm_Hp,prob_power_rad_Hm_Hp)
-		intervals_power_rad_H2_r, prob_power_rad_H2_r, actual_values_power_rad_H2_r = radial_sum_PDF_MC(actual_values_power_rad_H2,prob_power_rad_H2)
-		intervals_power_rad_H2p_r, prob_power_rad_H2p_r, actual_values_power_rad_H2p_r = radial_sum_PDF_MC(actual_values_power_rad_H2p,prob_power_rad_H2p)
-		intervals_power_heating_rec_r, prob_power_heating_rec_r, actual_values_power_heating_rec_r = radial_sum_PDF_MC(actual_values_power_heating_rec,prob_power_heating_rec)
-		intervals_power_rec_neutral_r, prob_power_rec_neutral_r, actual_values_power_rec_neutral_r = radial_sum_PDF_MC(actual_values_power_rec_neutral,prob_power_rec_neutral)
-		intervals_power_via_brem_r, prob_power_via_brem_r, actual_values_power_via_brem_r = radial_sum_PDF_MC(actual_values_power_via_brem,prob_power_via_brem)
-		intervals_total_removed_power_r, prob_total_removed_power_r, actual_values_total_removed_power_r = radial_sum_PDF_MC(actual_values_total_removed_power,prob_total_removed_power)
-		intervals_local_CX_r, prob_local_CX_r, actual_values_local_CX_r = radial_sum_PDF_MC(actual_values_local_CX,prob_local_CX)
-		intervals_total_removed_power_visible_r, prob_total_removed_power_visible_r, actual_values_total_removed_power_visible_r = radial_sum_PDF_MC(actual_values_total_removed_power_visible,prob_total_removed_power_visible)
-		intervals_power_rad_atomic_visible_r, prob_power_rad_atomic_visible_r, actual_values_power_rad_atomic_visible_r = radial_sum_PDF_MC(actual_values_power_rad_atomic_visible,prob_power_rad_atomic_visible)
-		intervals_power_rad_mol_visible_r, prob_power_rad_mol_visible_r, actual_values_power_rad_mol_visible_r = radial_sum_PDF_MC(actual_values_power_rad_mol_visible,prob_power_rad_mol_visible)
-		intervals_P_HCX_r, prob_P_HCX_r, actual_values_P_HCX_r = radial_sum_PDF_MC(actual_values_P_HCX,prob_P_HCX)
-		intervals_P_HCX_2_r, prob_P_HCX_2_r, actual_values_P_HCX_2_r = radial_sum_PDF_MC(actual_values_P_HCX_2,prob_P_HCX_2)
-		intervals_P_HCX_3_r, prob_P_HCX_3_r, actual_values_P_HCX_3_r = radial_sum_PDF_MC(actual_values_P_HCX_3,prob_P_HCX_3)
-		intervals_H_destruction_RR2_r, prob_H_destruction_RR2_r, actual_values_H_destruction_RR2_r = radial_sum_PDF_MC(actual_values_H_destruction_RR2,prob_H_destruction_RR2)	# #/s * 1e-20
-		intervals_H2_destruction_RR2_r, prob_H2_destruction_RR2_r, actual_values_H2_destruction_RR2_r = radial_sum_PDF_MC(actual_values_H2_destruction_RR2,prob_H2_destruction_RR2)	# #/s * 1e-20
+		intervals_power_rad_excit_r, prob_power_rad_excit_r, actual_values_power_rad_excit_r = radial_sum_PDF_MC(actual_values_power_rad_excit,intervals_power_rad_excit,prob_power_rad_excit)
+		intervals_power_rad_rec_bremm_r, prob_power_rad_rec_bremm_r, actual_values_power_rad_rec_bremm_r = radial_sum_PDF_MC(actual_values_power_rad_rec_bremm,intervals_power_rad_rec_bremm,prob_power_rad_rec_bremm)
+		intervals_power_rad_mol_r, prob_power_rad_mol_r, actual_values_power_rad_mol_r = radial_sum_PDF_MC(actual_values_power_rad_mol,intervals_power_rad_mol,prob_power_rad_mol)
+		intervals_power_potential_r, prob_power_potential_r, actual_values_power_potential_r = radial_sum_PDF_MC(actual_values_power_potential,intervals_power_potential,prob_power_potential)
+		intervals_power_potential_mol_r, prob_power_potential_mol_r, actual_values_power_potential_mol_r = radial_sum_PDF_MC(actual_values_power_potential_mol,intervals_power_potential_mol,prob_power_potential_mol)
+		intervals_power_potential_mol_plasma_heating_r, prob_power_potential_mol_plasma_heating_r, actual_values_power_potential_mol_plasma_heating_r = radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_heating,intervals_power_potential_mol_plasma_heating,prob_power_potential_mol_plasma_heating)
+		intervals_power_potential_mol_plasma_cooling_r, prob_power_potential_mol_plasma_cooling_r, actual_values_power_potential_mol_plasma_cooling_r = radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_cooling,intervals_power_potential_mol_plasma_cooling,prob_power_potential_mol_plasma_cooling)
+		intervals_power_via_ionisation_r, prob_power_via_ionisation_r, actual_values_power_via_ionisation_r = radial_sum_PDF_MC(actual_values_power_via_ionisation,intervals_power_via_ionisation,prob_power_via_ionisation)
+		intervals_power_via_recombination_r, prob_power_via_recombination_r, actual_values_power_via_recombination_r = radial_sum_PDF_MC(actual_values_power_via_recombination,intervals_power_via_recombination,prob_power_via_recombination)
+		intervals_tot_rad_power_r, prob_tot_rad_power_r, actual_values_tot_rad_power_r = radial_sum_PDF_MC(actual_values_tot_rad_power,intervals_tot_rad_power,prob_tot_rad_power)
+		intervals_power_rad_Hm_r, prob_power_rad_Hm_r, actual_values_power_rad_Hm_r = radial_sum_PDF_MC(actual_values_power_rad_Hm,intervals_power_rad_Hm,prob_power_rad_Hm)
+		intervals_power_rad_Hm_H2p_r, prob_power_rad_Hm_H2p_r, actual_values_power_rad_Hm_H2p_r = radial_sum_PDF_MC(actual_values_power_rad_Hm_H2p,intervals_power_rad_Hm_H2p,prob_power_rad_Hm_H2p)
+		intervals_power_rad_Hm_Hp_r, prob_power_rad_Hm_Hp_r, actual_values_power_rad_Hm_Hp_r = radial_sum_PDF_MC(actual_values_power_rad_Hm_Hp,intervals_power_rad_Hm_Hp,prob_power_rad_Hm_Hp)
+		intervals_power_rad_H2_r, prob_power_rad_H2_r, actual_values_power_rad_H2_r = radial_sum_PDF_MC(actual_values_power_rad_H2,intervals_power_rad_H2,prob_power_rad_H2)
+		intervals_power_rad_H2p_r, prob_power_rad_H2p_r, actual_values_power_rad_H2p_r = radial_sum_PDF_MC(actual_values_power_rad_H2p,intervals_power_rad_H2p,prob_power_rad_H2p)
+		intervals_power_heating_rec_r, prob_power_heating_rec_r, actual_values_power_heating_rec_r = radial_sum_PDF_MC(actual_values_power_heating_rec,intervals_power_heating_rec,prob_power_heating_rec)
+		intervals_power_rec_neutral_r, prob_power_rec_neutral_r, actual_values_power_rec_neutral_r = radial_sum_PDF_MC(actual_values_power_rec_neutral,intervals_power_rec_neutral,prob_power_rec_neutral)
+		intervals_power_via_brem_r, prob_power_via_brem_r, actual_values_power_via_brem_r = radial_sum_PDF_MC(actual_values_power_via_brem,intervals_power_via_brem,prob_power_via_brem)
+		intervals_total_removed_power_r, prob_total_removed_power_r, actual_values_total_removed_power_r = radial_sum_PDF_MC(actual_values_total_removed_power,intervals_total_removed_power,prob_total_removed_power)
+		intervals_local_CX_r, prob_local_CX_r, actual_values_local_CX_r = radial_sum_PDF_MC(actual_values_local_CX,intervals_local_CX,prob_local_CX)
+		intervals_local_elastic_H2_r, prob_local_elastic_H2_r, actual_values_local_elastic_H2_r = radial_sum_PDF_MC(actual_values_local_elastic_H2,intervals_local_elastic_H2,prob_local_elastic_H2)
+		intervals_total_removed_power_visible_r, prob_total_removed_power_visible_r, actual_values_total_removed_power_visible_r = radial_sum_PDF_MC(actual_values_total_removed_power_visible,intervals_total_removed_power_visible,prob_total_removed_power_visible)
+		intervals_power_rad_atomic_visible_r, prob_power_rad_atomic_visible_r, actual_values_power_rad_atomic_visible_r = radial_sum_PDF_MC(actual_values_power_rad_atomic_visible,intervals_power_rad_atomic_visible,prob_power_rad_atomic_visible)
+		intervals_power_rad_mol_visible_r, prob_power_rad_mol_visible_r, actual_values_power_rad_mol_visible_r = radial_sum_PDF_MC(actual_values_power_rad_mol_visible,intervals_power_rad_mol_visible,prob_power_rad_mol_visible)
+		intervals_P_HCX_r, prob_P_HCX_r, actual_values_P_HCX_r = radial_sum_PDF_MC(actual_values_P_HCX,intervals_P_HCX,prob_P_HCX)
+		intervals_P_HCX_2_r, prob_P_HCX_2_r, actual_values_P_HCX_2_r = radial_sum_PDF_MC(actual_values_P_HCX_2,intervals_P_HCX_2,prob_P_HCX_2)
+		intervals_P_HCX_3_r, prob_P_HCX_3_r, actual_values_P_HCX_3_r = radial_sum_PDF_MC(actual_values_P_HCX_3,intervals_P_HCX_3,prob_P_HCX_3)
+		intervals_H_destruction_RR2_r, prob_H_destruction_RR2_r, actual_values_H_destruction_RR2_r = radial_sum_PDF_MC(actual_values_H_destruction_RR2,intervals_H_destruction_RR2,prob_H_destruction_RR2)	# #/s * 1e-20
+		intervals_H2_destruction_RR2_r, prob_H2_destruction_RR2_r, actual_values_H2_destruction_RR2_r = radial_sum_PDF_MC(actual_values_H2_destruction_RR2,intervals_H2_destruction_RR2,prob_H2_destruction_RR2)	# #/s * 1e-20
 
-		intervals_Hp_destruction_RR_r, prob_Hp_destruction_RR_r, actual_values_Hp_destruction_RR_r = radial_sum_PDF_MC(actual_values_Hp_destruction_RR,prob_Hp_destruction_RR)	# #/s * 1e-20
-		intervals_Hp_creation_RR_r, prob_Hp_creation_RR_r, actual_values_Hp_creation_RR_r = radial_sum_PDF_MC(actual_values_Hp_creation_RR,prob_Hp_creation_RR)	# #/s * 1e-20
-		intervals_e_destruction_RR_r, prob_e_destruction_RR_r, actual_values_e_destruction_RR_r = radial_sum_PDF_MC(actual_values_e_destruction_RR,prob_e_destruction_RR)	# #/s * 1e-20
-		intervals_e_creation_RR_r, prob_e_creation_RR_r, actual_values_e_creation_RR_r = radial_sum_PDF_MC(actual_values_e_creation_RR,prob_e_creation_RR)	# #/s * 1e-20
-		intervals_Hm_destruction_RR_r, prob_Hm_destruction_RR_r, actual_values_Hm_destruction_RR_r = radial_sum_PDF_MC(actual_values_Hm_destruction_RR,prob_Hm_destruction_RR)	# #/s * 1e-20
-		intervals_Hm_creation_RR_r, prob_Hm_creation_RR_r, actual_values_Hm_creation_RR_r = radial_sum_PDF_MC(actual_values_Hm_creation_RR,prob_Hm_creation_RR)	# #/s * 1e-20
-		intervals_H2p_destruction_RR_r, prob_H2p_destruction_RR_r, actual_values_H2p_destruction_RR_r = radial_sum_PDF_MC(actual_values_H2p_destruction_RR,prob_H2p_destruction_RR)	# #/s * 1e-20
-		intervals_H2p_creation_RR_r, prob_H2p_creation_RR_r, actual_values_H2p_creation_RR_r = radial_sum_PDF_MC(actual_values_H2p_creation_RR,prob_H2p_creation_RR)	# #/s * 1e-20
+		intervals_Hp_destruction_RR_r, prob_Hp_destruction_RR_r, actual_values_Hp_destruction_RR_r = radial_sum_PDF_MC(actual_values_Hp_destruction_RR,intervals_Hp_destruction_RR,prob_Hp_destruction_RR)	# #/s * 1e-20
+		intervals_Hp_creation_RR_r, prob_Hp_creation_RR_r, actual_values_Hp_creation_RR_r = radial_sum_PDF_MC(actual_values_Hp_creation_RR,intervals_Hp_creation_RR,prob_Hp_creation_RR)	# #/s * 1e-20
+		intervals_e_destruction_RR_r, prob_e_destruction_RR_r, actual_values_e_destruction_RR_r = radial_sum_PDF_MC(actual_values_e_destruction_RR,intervals_e_destruction_RR,prob_e_destruction_RR)	# #/s * 1e-20
+		intervals_e_creation_RR_r, prob_e_creation_RR_r, actual_values_e_creation_RR_r = radial_sum_PDF_MC(actual_values_e_creation_RR,intervals_e_creation_RR,prob_e_creation_RR)	# #/s * 1e-20
+		intervals_Hm_destruction_RR_r, prob_Hm_destruction_RR_r, actual_values_Hm_destruction_RR_r = radial_sum_PDF_MC(actual_values_Hm_destruction_RR,intervals_Hm_destruction_RR,prob_Hm_destruction_RR)	# #/s * 1e-20
+		intervals_Hm_creation_RR_r, prob_Hm_creation_RR_r, actual_values_Hm_creation_RR_r = radial_sum_PDF_MC(actual_values_Hm_creation_RR,intervals_Hm_creation_RR,prob_Hm_creation_RR)	# #/s * 1e-20
+		intervals_H2p_destruction_RR_r, prob_H2p_destruction_RR_r, actual_values_H2p_destruction_RR_r = radial_sum_PDF_MC(actual_values_H2p_destruction_RR,intervals_H2p_destruction_RR,prob_H2p_destruction_RR)	# #/s * 1e-20
+		intervals_H2p_creation_RR_r, prob_H2p_creation_RR_r, actual_values_H2p_creation_RR_r = radial_sum_PDF_MC(actual_values_H2p_creation_RR,intervals_H2p_creation_RR,prob_H2p_creation_RR)	# #/s * 1e-20
+		intervals_net_H_destruction_RR_r, prob_net_H_destruction_RR_r, actual_values_net_H_destruction_RR_r = radial_sum_PDF_MC(actual_values_net_H_destruction_RR,intervals_net_H_destruction_RR,prob_net_H_destruction_RR)	# #/s * 1e-20
+		intervals_net_H2_destruction_RR_r, prob_net_H2_destruction_RR_r, actual_values_net_H2_destruction_RR_r = radial_sum_PDF_MC(actual_values_net_H2_destruction_RR,intervals_net_H2_destruction_RR,prob_net_H2_destruction_RR)	# #/s * 1e-20
+		intervals_net_e_destruction_r, prob_net_e_destruction_r, actual_values_net_e_destruction_r = radial_sum_PDF_MC(actual_values_net_e_destruction,intervals_net_e_destruction,prob_net_e_destruction)	# #/s * 1e-20
+		intervals_net_Hp_destruction_r, prob_net_Hp_destruction_r, actual_values_net_Hp_destruction_r = radial_sum_PDF_MC(actual_values_net_Hp_destruction,intervals_net_Hp_destruction,prob_net_Hp_destruction)	# #/s * 1e-20
+		intervals_net_Hm_destruction_r, prob_net_Hm_destruction_r, actual_values_net_Hm_destruction_r = radial_sum_PDF_MC(actual_values_net_Hm_destruction,intervals_net_Hm_destruction,prob_net_Hm_destruction)	# #/s * 1e-20
+		intervals_net_H2p_destruction_r, prob_net_H2p_destruction_r, actual_values_net_H2p_destruction_r = radial_sum_PDF_MC(actual_values_net_H2p_destruction,intervals_net_H2p_destruction,prob_net_H2p_destruction)	# #/s * 1e-20
 		if latest_version:
-			intervals_H_creation_RR_r, prob_H_creation_RR_r, actual_values_H_creation_RR_r = radial_sum_PDF_MC(actual_values_H_creation_RR,prob_H_creation_RR)	# #/s * 1e-20
-			intervals_H2_creation_RR_r, prob_H2_creation_RR_r, actual_values_H2_creation_RR_r = radial_sum_PDF_MC(actual_values_H2_creation_RR,prob_H2_creation_RR)	# #/s * 1e-20
+			intervals_H_creation_RR_r, prob_H_creation_RR_r, actual_values_H_creation_RR_r = radial_sum_PDF_MC(actual_values_H_creation_RR,intervals_H_creation_RR,prob_H_creation_RR)	# #/s * 1e-20
+			intervals_H2_creation_RR_r, prob_H2_creation_RR_r, actual_values_H2_creation_RR_r = radial_sum_PDF_MC(actual_values_H2_creation_RR,intervals_H2_creation_RR,prob_H2_creation_RR)	# #/s * 1e-20
+			intervals_all_MAR_from_Hm_r, prob_all_MAR_from_Hm_r, actual_values_all_MAR_from_Hm_r = radial_sum_PDF_MC(actual_values_all_MAR_from_Hm,intervals_all_MAR_from_Hm,prob_all_MAR_from_Hm)	# #/s * 1e-20
+			intervals_all_MAD_from_Hm_r, prob_all_MAD_from_Hm_r, actual_values_all_MAD_from_Hm_r = radial_sum_PDF_MC(actual_values_all_MAD_from_Hm,intervals_all_MAD_from_Hm,prob_all_MAD_from_Hm)	# #/s * 1e-20
+			intervals_all_MAI_from_Hm_r, prob_all_MAI_from_Hm_r, actual_values_all_MAI_from_Hm_r = radial_sum_PDF_MC(actual_values_all_MAI_from_Hm,intervals_all_MAI_from_Hm,prob_all_MAI_from_Hm)	# #/s * 1e-20
+			intervals_all_MAR_from_H2p_r, prob_all_MAR_from_H2p_r, actual_values_all_MAR_from_H2p_r = radial_sum_PDF_MC(actual_values_all_MAR_from_H2p,intervals_all_MAR_from_H2p,prob_all_MAR_from_H2p)	# #/s * 1e-20
+			intervals_all_MAD_from_H2p_r, prob_all_MAD_from_H2p_r, actual_values_all_MAD_from_H2p_r = radial_sum_PDF_MC(actual_values_all_MAD_from_H2p,intervals_all_MAD_from_H2p,prob_all_MAD_from_H2p)	# #/s * 1e-20
+			intervals_all_MAI_from_H2p_r, prob_all_MAI_from_H2p_r, actual_values_all_MAI_from_H2p_r = radial_sum_PDF_MC(actual_values_all_MAI_from_H2p,intervals_all_MAI_from_H2p,prob_all_MAI_from_H2p)	# #/s * 1e-20
+			intervals_all_MAR_from_H2p_Hm_r, prob_all_MAR_from_H2p_Hm_r, actual_values_all_MAR_from_H2p_Hm_r = radial_sum_PDF_MC(actual_values_all_MAR_from_H2p_Hm,intervals_all_MAR_from_H2p_Hm,prob_all_MAR_from_H2p_Hm)	# #/s * 1e-20
+			intervals_all_MAD_from_H2p_Hm_r, prob_all_MAD_from_H2p_Hm_r, actual_values_all_MAD_from_H2p_Hm_r = radial_sum_PDF_MC(actual_values_all_MAD_from_H2p_Hm,intervals_all_MAD_from_H2p_Hm,prob_all_MAD_from_H2p_Hm)	# #/s * 1e-20
+			intervals_all_MAI_from_H2p_Hm_r, prob_all_MAI_from_H2p_Hm_r, actual_values_all_MAI_from_H2p_Hm_r = radial_sum_PDF_MC(actual_values_all_MAI_from_H2p_Hm,intervals_all_MAI_from_H2p_Hm,prob_all_MAI_from_H2p_Hm)	# #/s * 1e-20
+
+			intervals_all_MAR_from_Hm_energy_r, prob_all_MAR_from_Hm_energy_r, actual_values_all_MAR_from_Hm_energy_r = radial_sum_PDF_MC(actual_values_all_MAR_from_Hm_energy,intervals_all_MAR_from_Hm_energy,prob_all_MAR_from_Hm_energy)	# #/s * 1e-20
+			intervals_all_MAD_from_Hm_energy_r, prob_all_MAD_from_Hm_energy_r, actual_values_all_MAD_from_Hm_energy_r = radial_sum_PDF_MC(actual_values_all_MAD_from_Hm_energy,intervals_all_MAD_from_Hm_energy,prob_all_MAD_from_Hm_energy)	# #/s * 1e-20
+			intervals_all_MAI_from_Hm_energy_r, prob_all_MAI_from_Hm_energy_r, actual_values_all_MAI_from_Hm_energy_r = radial_sum_PDF_MC(actual_values_all_MAI_from_Hm_energy,intervals_all_MAI_from_Hm_energy,prob_all_MAI_from_Hm_energy)	# #/s * 1e-20
+			intervals_all_MAR_from_H2p_energy_r, prob_all_MAR_from_H2p_energy_r, actual_values_all_MAR_from_H2p_energy_r = radial_sum_PDF_MC(actual_values_all_MAR_from_H2p_energy,intervals_all_MAR_from_H2p_energy,prob_all_MAR_from_H2p_energy)	# #/s * 1e-20
+			intervals_all_MAD_from_H2p_energy_r, prob_all_MAD_from_H2p_energy_r, actual_values_all_MAD_from_H2p_energy_r = radial_sum_PDF_MC(actual_values_all_MAD_from_H2p_energy,intervals_all_MAD_from_H2p_energy,prob_all_MAD_from_H2p_energy)	# #/s * 1e-20
+			intervals_all_MAI_from_H2p_energy_r, prob_all_MAI_from_H2p_energy_r, actual_values_all_MAI_from_H2p_energy_r = radial_sum_PDF_MC(actual_values_all_MAI_from_H2p_energy,intervals_all_MAI_from_H2p_energy,prob_all_MAI_from_H2p_energy)	# #/s * 1e-20
+			intervals_all_MAR_from_H2p_Hm_energy_r, prob_all_MAR_from_H2p_Hm_energy_r, actual_values_all_MAR_from_H2p_Hm_energy_r = radial_sum_PDF_MC(actual_values_all_MAR_from_H2p_Hm_energy,intervals_all_MAR_from_H2p_Hm_energy,prob_all_MAR_from_H2p_Hm_energy)	# #/s * 1e-20
+			intervals_all_MAD_from_H2p_Hm_energy_r, prob_all_MAD_from_H2p_Hm_energy_r, actual_values_all_MAD_from_H2p_Hm_energy_r = radial_sum_PDF_MC(actual_values_all_MAD_from_H2p_Hm_energy,intervals_all_MAD_from_H2p_Hm_energy,prob_all_MAD_from_H2p_Hm_energy)	# #/s * 1e-20
+			intervals_all_MAI_from_H2p_Hm_energy_r, prob_all_MAI_from_H2p_Hm_energy_r, actual_values_all_MAI_from_H2p_Hm_energy_r = radial_sum_PDF_MC(actual_values_all_MAI_from_H2p_Hm_energy,intervals_all_MAI_from_H2p_Hm_energy,prob_all_MAI_from_H2p_Hm_energy)	# #/s * 1e-20
+			intervals_all_atomic_H2_dissociation_r, prob_all_atomic_H2_dissociation_r, actual_values_all_atomic_H2_dissociation_r = radial_sum_PDF_MC(actual_values_all_atomic_H2_dissociation,intervals_all_atomic_H2_dissociation,prob_all_atomic_H2_dissociation)	# #/s * 1e-20
 
 
 		def find_DPF_range_temporal(actual_values_something_r,prob_something_r,intervals_something_r):
@@ -6310,11 +6813,18 @@ else:
 			actual_values_something_r_up=[]
 			actual_values_something_r_down=[]
 			for i_t in range(len(prob_something_r)):
-				most_likely_something_r.append(actual_values_something_r[i_t][np.array(prob_something_r[i_t]).argmax()])
-				loc_down = np.abs(np.cumsum(prob_something_r[i_t])-0.159).argmin()
-				loc_up = np.abs(np.cumsum(np.flip(prob_something_r[i_t],axis=0))-0.159).argmin()
-				actual_values_something_r_down.append(intervals_something_r[i_t][loc_down+1])
-				actual_values_something_r_up.append(intervals_something_r[i_t][-(loc_up+1)])
+				if False:
+					most_likely_something_r.append(actual_values_something_r[i_t][np.array(prob_something_r[i_t]).argmax()])
+					loc_down = np.abs(np.cumsum(prob_something_r[i_t])-0.159).argmin()
+					loc_up = np.abs(np.cumsum(np.flip(prob_something_r[i_t],axis=0))-0.159).argmin()
+					actual_values_something_r_down.append(intervals_something_r[i_t][loc_down+1])
+					actual_values_something_r_up.append(intervals_something_r[i_t][-(loc_up+1)])
+				else:	# true probabilistic expression for mean and variance
+					gna = find_PDF_full_properties(intervals_something_r[i_t],prob_something_r[i_t])
+					most_likely_something_r.append(gna[0])
+					sigma = gna[1]
+					actual_values_something_r_down.append(most_likely_something_r[-1]-sigma)
+					actual_values_something_r_up.append(most_likely_something_r[-1]+sigma)
 			most_likely_something_r = np.array(most_likely_something_r)
 			actual_values_something_r_up = np.array(actual_values_something_r_up)
 			actual_values_something_r_down = np.array(actual_values_something_r_down)
@@ -6340,6 +6850,7 @@ else:
 		most_likely_power_via_brem_r,actual_values_power_via_brem_r_up,actual_values_power_via_brem_r_down = find_DPF_range_temporal(actual_values_power_via_brem_r,prob_power_via_brem_r,intervals_power_via_brem_r)
 		most_likely_total_removed_power_r,actual_values_total_removed_power_r_up,actual_values_total_removed_power_r_down = find_DPF_range_temporal(actual_values_total_removed_power_r,prob_total_removed_power_r,intervals_total_removed_power_r)
 		most_likely_local_CX_r,actual_values_local_CX_r_up,actual_values_local_CX_r_down = find_DPF_range_temporal(actual_values_local_CX_r,prob_local_CX_r,intervals_local_CX_r)
+		most_likely_local_elastic_H2_r,actual_values_local_elastic_H2_r_up,actual_values_local_elastic_H2_r_down = find_DPF_range_temporal(actual_values_local_elastic_H2_r,prob_local_elastic_H2_r,intervals_local_elastic_H2_r)
 		most_likely_total_removed_power_visible_r,actual_values_total_removed_power_visible_r_up,actual_values_total_removed_power_visible_r_down = find_DPF_range_temporal(actual_values_total_removed_power_visible_r,prob_total_removed_power_visible_r,intervals_total_removed_power_visible_r)
 		most_likely_power_rad_atomic_visible_r,actual_values_power_rad_atomic_visible_r_up,actual_values_power_rad_atomic_visible_r_down = find_DPF_range_temporal(actual_values_power_rad_atomic_visible_r,prob_power_rad_atomic_visible_r,intervals_power_rad_atomic_visible_r)
 		most_likely_power_rad_mol_visible_r,actual_values_power_rad_mol_visible_r_up,actual_values_power_rad_mol_visible_r_down = find_DPF_range_temporal(actual_values_power_rad_mol_visible_r,prob_power_rad_mol_visible_r,intervals_power_rad_mol_visible_r)
@@ -6357,9 +6868,35 @@ else:
 		most_likely_Hm_creation_RR_r,actual_values_Hm_creation_RR_r_up,actual_values_Hm_creation_RR_r_down = find_DPF_range_temporal(actual_values_Hm_creation_RR_r,prob_Hm_creation_RR_r,intervals_Hm_creation_RR_r)	# #/s * 1e-20
 		most_likely_H2p_destruction_RR_r,actual_values_H2p_destruction_RR_r_up,actual_values_H2p_destruction_RR_r_down = find_DPF_range_temporal(actual_values_H2p_destruction_RR_r,prob_H2p_destruction_RR_r,intervals_H2p_destruction_RR_r)	# #/s * 1e-20
 		most_likely_H2p_creation_RR_r,actual_values_H2p_creation_RR_r_up,actual_values_H2p_creation_RR_r_down = find_DPF_range_temporal(actual_values_H2p_creation_RR_r,prob_H2p_creation_RR_r,intervals_H2p_creation_RR_r)	# #/s * 1e-20
+		most_likely_net_H_destruction_RR_r,actual_values_net_H_destruction_RR_r_up,actual_values_net_H_destruction_RR_r_down = find_DPF_range_temporal(actual_values_net_H_destruction_RR_r,prob_net_H_destruction_RR_r,intervals_net_H_destruction_RR_r)	# #/s * 1e-20
+		most_likely_net_H2_destruction_RR_r,actual_values_net_H2_destruction_RR_r_up,actual_values_net_H2_destruction_RR_r_down = find_DPF_range_temporal(actual_values_net_H2_destruction_RR_r,prob_net_H2_destruction_RR_r,intervals_net_H2_destruction_RR_r)	# #/s * 1e-20
+		most_likely_net_e_destruction_r,actual_values_net_e_destruction_r_up,actual_values_net_e_destruction_r_down = find_DPF_range_temporal(actual_values_net_e_destruction_r,prob_net_e_destruction_r,intervals_net_e_destruction_r)	# #/s * 1e-20
+		most_likely_net_Hp_destruction_r,actual_values_net_Hp_destruction_r_up,actual_values_net_Hp_destruction_r_down = find_DPF_range_temporal(actual_values_net_Hp_destruction_r,prob_net_Hp_destruction_r,intervals_net_Hp_destruction_r)	# #/s * 1e-20
+		most_likely_net_Hm_destruction_r,actual_values_net_Hm_destruction_r_up,actual_values_net_Hm_destruction_r_down = find_DPF_range_temporal(actual_values_net_Hm_destruction_r,prob_net_Hm_destruction_r,intervals_net_Hm_destruction_r)	# #/s * 1e-20
+		most_likely_net_H2p_destruction_r,actual_values_net_H2p_destruction_r_up,actual_values_net_H2p_destruction_r_down = find_DPF_range_temporal(actual_values_net_H2p_destruction_r,prob_net_H2p_destruction_r,intervals_net_H2p_destruction_r)	# #/s * 1e-20
 		if latest_version:
 			most_likely_H_creation_RR_r,actual_values_H_creation_RR_r_up,actual_values_H_creation_RR_r_down = find_DPF_range_temporal(actual_values_H_creation_RR_r,prob_H_creation_RR_r,intervals_H_creation_RR_r)	# #/s * 1e-20
 			most_likely_H2_creation_RR_r,actual_values_H2_creation_RR_r_up,actual_values_H2_creation_RR_r_down = find_DPF_range_temporal(actual_values_H2_creation_RR_r,prob_H2_creation_RR_r,intervals_H2_creation_RR_r)	# #/s * 1e-20
+			most_likely_all_MAR_from_Hm_r,actual_values_all_MAR_from_Hm_r_up,actual_values_all_MAR_from_Hm_r_down = find_DPF_range_temporal(actual_values_all_MAR_from_Hm_r,prob_all_MAR_from_Hm_r,intervals_all_MAR_from_Hm_r)	# #/s * 1e-20
+			most_likely_all_MAD_from_Hm_r,actual_values_all_MAD_from_Hm_r_up,actual_values_all_MAD_from_Hm_r_down = find_DPF_range_temporal(actual_values_all_MAD_from_Hm_r,prob_all_MAD_from_Hm_r,intervals_all_MAD_from_Hm_r)	# #/s * 1e-20
+			most_likely_all_MAI_from_Hm_r,actual_values_all_MAI_from_Hm_r_up,actual_values_all_MAI_from_Hm_r_down = find_DPF_range_temporal(actual_values_all_MAI_from_Hm_r,prob_all_MAI_from_Hm_r,intervals_all_MAI_from_Hm_r)	# #/s * 1e-20
+			most_likely_all_MAR_from_H2p_r,actual_values_all_MAR_from_H2p_r_up,actual_values_all_MAR_from_H2p_r_down = find_DPF_range_temporal(actual_values_all_MAR_from_H2p_r,prob_all_MAR_from_H2p_r,intervals_all_MAR_from_H2p_r)	# #/s * 1e-20
+			most_likely_all_MAD_from_H2p_r,actual_values_all_MAD_from_H2p_r_up,actual_values_all_MAD_from_H2p_r_down = find_DPF_range_temporal(actual_values_all_MAD_from_H2p_r,prob_all_MAD_from_H2p_r,intervals_all_MAD_from_H2p_r)	# #/s * 1e-20
+			most_likely_all_MAI_from_H2p_r,actual_values_all_MAI_from_H2p_r_up,actual_values_all_MAI_from_H2p_r_down = find_DPF_range_temporal(actual_values_all_MAI_from_H2p_r,prob_all_MAI_from_H2p_r,intervals_all_MAI_from_H2p_r)	# #/s * 1e-20
+			most_likely_all_MAR_from_H2p_Hm_r,actual_values_all_MAR_from_H2p_Hm_r_up,actual_values_all_MAR_from_H2p_Hm_r_down = find_DPF_range_temporal(actual_values_all_MAR_from_H2p_Hm_r,prob_all_MAR_from_H2p_Hm_r,intervals_all_MAR_from_H2p_Hm_r)	# #/s * 1e-20
+			most_likely_all_MAD_from_H2p_Hm_r,actual_values_all_MAD_from_H2p_Hm_r_up,actual_values_all_MAD_from_H2p_Hm_r_down = find_DPF_range_temporal(actual_values_all_MAD_from_H2p_Hm_r,prob_all_MAD_from_H2p_Hm_r,intervals_all_MAD_from_H2p_Hm_r)	# #/s * 1e-20
+			most_likely_all_MAI_from_H2p_Hm_r,actual_values_all_MAI_from_H2p_Hm_r_up,actual_values_all_MAI_from_H2p_Hm_r_down = find_DPF_range_temporal(actual_values_all_MAI_from_H2p_Hm_r,prob_all_MAI_from_H2p_Hm_r,intervals_all_MAI_from_H2p_Hm_r)	# #/s * 1e-20
+
+			most_likely_all_MAR_from_Hm_energy_r,actual_values_all_MAR_from_Hm_energy_r_up,actual_values_all_MAR_from_Hm_energy_r_down = find_DPF_range_temporal(actual_values_all_MAR_from_Hm_energy_r,prob_all_MAR_from_Hm_energy_r,intervals_all_MAR_from_Hm_energy_r)	# #/s * 1e-20
+			most_likely_all_MAD_from_Hm_energy_r,actual_values_all_MAD_from_Hm_energy_r_up,actual_values_all_MAD_from_Hm_energy_r_down = find_DPF_range_temporal(actual_values_all_MAD_from_Hm_energy_r,prob_all_MAD_from_Hm_energy_r,intervals_all_MAD_from_Hm_energy_r)	# #/s * 1e-20
+			most_likely_all_MAI_from_Hm_energy_r,actual_values_all_MAI_from_Hm_energy_r_up,actual_values_all_MAI_from_Hm_energy_r_down = find_DPF_range_temporal(actual_values_all_MAI_from_Hm_energy_r,prob_all_MAI_from_Hm_energy_r,intervals_all_MAI_from_Hm_energy_r)	# #/s * 1e-20
+			most_likely_all_MAR_from_H2p_energy_r,actual_values_all_MAR_from_H2p_energy_r_up,actual_values_all_MAR_from_H2p_energy_r_down = find_DPF_range_temporal(actual_values_all_MAR_from_H2p_energy_r,prob_all_MAR_from_H2p_energy_r,intervals_all_MAR_from_H2p_energy_r)	# #/s * 1e-20
+			most_likely_all_MAD_from_H2p_energy_r,actual_values_all_MAD_from_H2p_energy_r_up,actual_values_all_MAD_from_H2p_energy_r_down = find_DPF_range_temporal(actual_values_all_MAD_from_H2p_energy_r,prob_all_MAD_from_H2p_energy_r,intervals_all_MAD_from_H2p_energy_r)	# #/s * 1e-20
+			most_likely_all_MAI_from_H2p_energy_r,actual_values_all_MAI_from_H2p_energy_r_up,actual_values_all_MAI_from_H2p_energy_r_down = find_DPF_range_temporal(actual_values_all_MAI_from_H2p_energy_r,prob_all_MAI_from_H2p_energy_r,intervals_all_MAI_from_H2p_energy_r)	# #/s * 1e-20
+			most_likely_all_MAR_from_H2p_Hm_energy_r,actual_values_all_MAR_from_H2p_Hm_energy_r_up,actual_values_all_MAR_from_H2p_Hm_energy_r_down = find_DPF_range_temporal(actual_values_all_MAR_from_H2p_Hm_energy_r,prob_all_MAR_from_H2p_Hm_energy_r,intervals_all_MAR_from_H2p_Hm_energy_r)	# #/s * 1e-20
+			most_likely_all_MAD_from_H2p_Hm_energy_r,actual_values_all_MAD_from_H2p_Hm_energy_r_up,actual_values_all_MAD_from_H2p_Hm_energy_r_down = find_DPF_range_temporal(actual_values_all_MAD_from_H2p_Hm_energy_r,prob_all_MAD_from_H2p_Hm_energy_r,intervals_all_MAD_from_H2p_Hm_energy_r)	# #/s * 1e-20
+			most_likely_all_MAI_from_H2p_Hm_energy_r,actual_values_all_MAI_from_H2p_Hm_energy_r_up,actual_values_all_MAI_from_H2p_Hm_energy_r_down = find_DPF_range_temporal(actual_values_all_MAI_from_H2p_Hm_energy_r,prob_all_MAI_from_H2p_Hm_energy_r,intervals_all_MAI_from_H2p_Hm_energy_r)	# #/s * 1e-20
+			most_likely_all_atomic_H2_dissociation_r,actual_values_all_atomic_H2_dissociation_r_up,actual_values_all_atomic_H2_dissociation_r_down = find_DPF_range_temporal(actual_values_all_atomic_H2_dissociation_r,prob_all_atomic_H2_dissociation_r,intervals_all_atomic_H2_dissociation_r)	# #/s * 1e-20
 
 
 		# def total_lost_power_radially_averaged_PDF(treshold_sum=1.1,treshold_prob=1e-50):
@@ -6526,7 +7063,7 @@ else:
 			return out_values,out_prob_sum
 		# intervals_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r = net_lost_power_radially_averaged_PDF()
 
-		def radial_sum_net_lost_power_PDF_MC(intervals=30,samples=100000):
+		def radial_sum_net_lost_power_PDF_MC(intervals=60,samples=10000):
 			out_values = []
 			out_prob_sum = []
 			out_actual_values = []
@@ -6534,13 +7071,15 @@ else:
 				temp_values = np.zeros((samples))
 				for i_r in range(np.shape(Te_all)[1]):
 					if ((len(actual_values_power_rec_neutral[i_t][i_r])>1) and (len(actual_values_tot_rad_power[i_t][i_r])>1)):
-						temp_values += (np.random.choice(actual_values_power_rec_neutral[i_t][i_r],size=samples,p=prob_power_rec_neutral[i_t][i_r]) + np.random.choice(actual_values_tot_rad_power[i_t][i_r],size=samples,p=prob_tot_rad_power[i_t][i_r]))* area[i_r]
+						# temp_values += (np.random.choice(actual_values_power_rec_neutral[i_t][i_r],size=samples,p=prob_power_rec_neutral[i_t][i_r]) + np.random.choice(actual_values_tot_rad_power[i_t][i_r],size=samples,p=prob_tot_rad_power[i_t][i_r]))* area[i_r]
+						temp_values += (create_array_from_histogram(actual_values_power_rec_neutral[i_t][i_r],intervals_power_rec_neutral[i_t][i_r],prob_power_rec_neutral[i_t][i_r],samples) + create_array_from_histogram(actual_values_tot_rad_power[i_t][i_r],intervals_tot_rad_power[i_t][i_r],prob_tot_rad_power[i_t][i_r],samples))* area[i_r]
 				if all(temp_values==0):
 					out_values.append(np.array([0,0]))
 					out_prob_sum.append(np.array([1]))
 					out_actual_values.append(np.array([0]))
 				else:
-					temp_prob,temp_intervals = np.histogram(temp_values,bins=np.logspace(np.log10(temp_values.min()),np.log10(temp_values.max()),intervals+1))
+					# temp_prob,temp_intervals = np.histogram(temp_values,bins=np.logspace(np.log10(temp_values.min()),np.log10(temp_values.max()),intervals+1))
+					temp_prob,temp_intervals = improved_log_histogram(temp_values,intervals)
 					temp_actual_values = []
 					for i in range(intervals):
 						if i!=intervals-1:
@@ -6570,28 +7109,30 @@ else:
 		actual_values_net_power_removed_plasma_column_r_down = np.array(actual_values_net_power_removed_plasma_column_r_down)
 
 
-		# power_pulse_shape_peak = power_pulse_shape.argmax()
-		# # ionisation_peak = time_crop[(actual_values_net_power_removed_plasma_column_r).argmax()]
-		# ionisation_peak = time_crop[(actual_values_power_via_ionisation_r).argmax()]
-		# time_source_power = np.arange(len(power_pulse_shape))*time_resolution*1000	# I work here in ms, while current trace is in s
-		# time_source_power = time_source_power-time_source_power[power_pulse_shape_peak]+ionisation_peak
-		# power_pulse_shape_crop = power_pulse_shape[np.logical_and(time_source_power>=np.min(time_crop),time_source_power<=np.max(time_crop))]
-		# power_pulse_shape_std_crop = power_pulse_shape_std[np.logical_and(time_source_power>=np.min(time_crop),time_source_power<=np.max(time_crop))]
-		# time_source_power_crop = time_source_power[np.logical_and(time_source_power>=np.min(time_crop),time_source_power<=np.max(time_crop))]
-		power_pulse_shape_crop = interpolated_power_pulse_shape(time_crop)
-		power_pulse_shape_std_crop = interpolated_power_pulse_shape_std(time_crop)
-		time_source_power_crop = cp.deepcopy(time_crop)
-
-		if False:	# this is not consistent with what I do for IR traces analysis
-			conventional_start_pulse = np.abs(time_crop-0.05).argmin()
-			conventional_end_pulse = np.abs(time_crop-0.8).argmin()
-		else:
-			conventional_start_pulse = power_pulse_shape_crop.argmax() - np.flip((power_pulse_shape_crop[:power_pulse_shape_crop.argmax()]-steady_state_power)>0,axis=0).argmin()
-			conventional_end_pulse = power_pulse_shape_crop.argmax() + ((power_pulse_shape_crop[power_pulse_shape_crop.argmax():]-steady_state_power)>0).argmin()
-			if (power_pulse_shape_crop[conventional_start_pulse]-steady_state_power)/(power_pulse_shape_crop.max()-steady_state_power)>0.1:
-				conventional_start_pulse -= 1
-			if (power_pulse_shape_crop[conventional_end_pulse-1]-steady_state_power)/(power_pulse_shape_crop.max()-steady_state_power)>0.1:
-				conventional_end_pulse += 1
+		# # power_pulse_shape_peak = power_pulse_shape.argmax()
+		# # # ionisation_peak = time_crop[(actual_values_net_power_removed_plasma_column_r).argmax()]
+		# # ionisation_peak = time_crop[(actual_values_power_via_ionisation_r).argmax()]
+		# # time_source_power = np.arange(len(power_pulse_shape))*time_resolution*1000	# I work here in ms, while current trace is in s
+		# # time_source_power = time_source_power-time_source_power[power_pulse_shape_peak]+ionisation_peak
+		# # power_pulse_shape_crop = power_pulse_shape[np.logical_and(time_source_power>=np.min(time_crop),time_source_power<=np.max(time_crop))]
+		# # power_pulse_shape_std_crop = power_pulse_shape_std[np.logical_and(time_source_power>=np.min(time_crop),time_source_power<=np.max(time_crop))]
+		# # time_source_power_crop = time_source_power[np.logical_and(time_source_power>=np.min(time_crop),time_source_power<=np.max(time_crop))]
+		# power_pulse_shape_crop = interpolated_power_pulse_shape(time_crop)
+		# power_pulse_shape_std_crop = interpolated_power_pulse_shape_std(time_crop)
+		# time_source_power_crop = cp.deepcopy(time_crop)
+		#
+		# if False:	# this is not consistent with what I do for IR traces analysis
+		# 	conventional_start_pulse = np.abs(time_crop-0.05).argmin()
+		# 	conventional_end_pulse = np.abs(time_crop-0.8).argmin()
+		# else:
+		# 	conventional_start_pulse = power_pulse_shape_crop.argmax() - np.flip((power_pulse_shape_crop[:power_pulse_shape_crop.argmax()]-steady_state_power)>0,axis=0).argmin()
+		# 	conventional_end_pulse = power_pulse_shape_crop.argmax() + ((power_pulse_shape_crop[power_pulse_shape_crop.argmax():]-steady_state_power)>0).argmin()
+		# 	if (power_pulse_shape_crop[conventional_start_pulse]-steady_state_power)/(power_pulse_shape_crop.max()-steady_state_power)>0.1:
+		# 		conventional_start_pulse -= 1
+		# 	if (power_pulse_shape_crop[conventional_end_pulse-1]-steady_state_power)/(power_pulse_shape_crop.max()-steady_state_power)>0.1:
+		# 		conventional_end_pulse += 1
+		# if merge_ID_target in [85,86,87,88,89,95]:
+		# 	conventional_end_pulse = np.abs(time_crop-1).argmin()	# this seems more sensible for the paper
 
 		def make_plot_type_2(intervals_something_r,prob_something_r,most_likely_something_r,actual_values_something_r_down,actual_values_something_r_up,label,label_units,figure_index,multiplier=1,power_plot=True,flow_plot=False):
 			fig, ax = plt.subplots(1,figsize=(20, 10))
@@ -6649,6 +7190,7 @@ else:
 		if np.sum(np.array(most_likely_total_removed_power_r)>0)>0:
 			figure_index = make_plot_type_2(intervals_total_removed_power_r,prob_total_removed_power_r,most_likely_total_removed_power_r,actual_values_total_removed_power_r_down,actual_values_total_removed_power_r_up,'total_removed_power, --=from upstream\n(ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral + potential_mol - recombination heating)','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_local_CX_r,prob_local_CX_r,most_likely_local_CX_r,actual_values_local_CX_r_down,actual_values_local_CX_r_up,'local_CX','Power loss [W]',figure_index)
+		figure_index = make_plot_type_2(intervals_local_elastic_H2_r,prob_local_elastic_H2_r,most_likely_local_elastic_H2_r,actual_values_local_elastic_H2_r_down,actual_values_local_elastic_H2_r_up,'local_elastic_H2','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r,most_likely_net_power_removed_plasma_column_r,actual_values_net_power_removed_plasma_column_r_down,actual_values_net_power_removed_plasma_column_r_up,'net_power_removed_plasma_column, --=from upstream\n(net power removed from plasma column radiated + recombination neutral)','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_total_removed_power_visible_r,prob_total_removed_power_visible_r,most_likely_total_removed_power_visible_r,actual_values_total_removed_power_visible_r_down,actual_values_total_removed_power_visible_r_up,'total_removed_power_visible','Power loss [W]',figure_index)
 		figure_index = make_plot_type_2(intervals_power_rad_atomic_visible_r,prob_power_rad_atomic_visible_r,most_likely_power_rad_atomic_visible_r,actual_values_power_rad_atomic_visible_r_down,actual_values_power_rad_atomic_visible_r_up,'power_rad_atomic_visible','Power loss [W]',figure_index)
@@ -6667,9 +7209,25 @@ else:
 		figure_index = make_plot_type_2(intervals_Hm_creation_RR_r,prob_Hm_creation_RR_r,most_likely_Hm_creation_RR_r,actual_values_Hm_creation_RR_r_down,actual_values_Hm_creation_RR_r_up,'Hm_creation_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
 		figure_index = make_plot_type_2(intervals_H2p_destruction_RR_r,prob_H2p_destruction_RR_r,most_likely_H2p_destruction_RR_r,actual_values_H2p_destruction_RR_r_down,actual_values_H2p_destruction_RR_r_up,'H2p_destruction_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
 		figure_index = make_plot_type_2(intervals_H2p_creation_RR_r,prob_H2p_creation_RR_r,most_likely_H2p_creation_RR_r,actual_values_H2p_creation_RR_r_down,actual_values_H2p_creation_RR_r_up,'H2p_creation_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_net_H_destruction_RR_r,prob_net_H_destruction_RR_r,most_likely_net_H_destruction_RR_r,actual_values_net_H_destruction_RR_r_down,actual_values_net_H_destruction_RR_r_up,'net_H_destruction_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_net_H2_destruction_RR_r,prob_net_H2_destruction_RR_r,most_likely_net_H2_destruction_RR_r,actual_values_net_H2_destruction_RR_r_down,actual_values_net_H2_destruction_RR_r_up,'net_H2_destruction_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_net_e_destruction_r,prob_net_e_destruction_r,most_likely_net_e_destruction_r,actual_values_net_e_destruction_r_down,actual_values_net_e_destruction_r_up,'net_e_destruction','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_net_Hp_destruction_r,prob_net_Hp_destruction_r,most_likely_net_Hp_destruction_r,actual_values_net_Hp_destruction_r_down,actual_values_net_Hp_destruction_r_up,'net_Hp_destruction','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_net_Hm_destruction_r,prob_net_Hm_destruction_r,most_likely_net_Hm_destruction_r,actual_values_net_Hm_destruction_r_down,actual_values_net_Hm_destruction_r_up,'net_Hm_destruction','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+		figure_index = make_plot_type_2(intervals_net_H2p_destruction_r,prob_net_H2p_destruction_r,most_likely_net_H2p_destruction_r,actual_values_net_H2p_destruction_r_down,actual_values_net_H2p_destruction_r_up,'net_H2p_destruction','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
 		if latest_version:
 			figure_index = make_plot_type_2(intervals_H_creation_RR_r,prob_H_creation_RR_r,most_likely_H_creation_RR_r,actual_values_H_creation_RR_r_down,actual_values_H_creation_RR_r_up,'H_creation_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
 			figure_index = make_plot_type_2(intervals_H2_creation_RR_r,prob_H2_creation_RR_r,most_likely_H2_creation_RR_r,actual_values_H2_creation_RR_r_down,actual_values_H2_creation_RR_r_up,'H2_creation_RR','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+			figure_index = make_plot_type_2(intervals_all_MAR_from_Hm_r,prob_all_MAR_from_Hm_r,most_likely_all_MAR_from_Hm_r,actual_values_all_MAR_from_Hm_r_down,actual_values_all_MAR_from_Hm_r_up,'all_MAR_from_Hm','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+			figure_index = make_plot_type_2(intervals_all_MAD_from_Hm_r,prob_all_MAD_from_Hm_r,most_likely_all_MAD_from_Hm_r,actual_values_all_MAD_from_Hm_r_down,actual_values_all_MAD_from_Hm_r_up,'all_MAD_from_Hm','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+			figure_index = make_plot_type_2(intervals_all_MAI_from_Hm_r,prob_all_MAI_from_Hm_r,most_likely_all_MAI_from_Hm_r,actual_values_all_MAI_from_Hm_r_down,actual_values_all_MAI_from_Hm_r_up,'all_MAI_from_Hm','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+			figure_index = make_plot_type_2(intervals_all_MAR_from_H2p_r,prob_all_MAR_from_H2p_r,most_likely_all_MAR_from_H2p_r,actual_values_all_MAR_from_H2p_r_down,actual_values_all_MAR_from_H2p_r_up,'all_MAR_from_H2p','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+			figure_index = make_plot_type_2(intervals_all_MAD_from_H2p_r,prob_all_MAD_from_H2p_r,most_likely_all_MAD_from_H2p_r,actual_values_all_MAD_from_H2p_r_down,actual_values_all_MAD_from_H2p_r_up,'all_MAD_from_H2p','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+			figure_index = make_plot_type_2(intervals_all_MAI_from_H2p_r,prob_all_MAI_from_H2p_r,most_likely_all_MAI_from_H2p_r,actual_values_all_MAI_from_H2p_r_down,actual_values_all_MAI_from_H2p_r_up,'all_MAI_from_H2p','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+			figure_index = make_plot_type_2(intervals_all_MAR_from_H2p_Hm_r,prob_all_MAR_from_H2p_Hm_r,most_likely_all_MAR_from_H2p_Hm_r,actual_values_all_MAR_from_H2p_Hm_r_down,actual_values_all_MAR_from_H2p_Hm_r_up,'all_MAR_from_H2p_Hm','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+			figure_index = make_plot_type_2(intervals_all_MAD_from_H2p_Hm_r,prob_all_MAD_from_H2p_Hm_r,most_likely_all_MAD_from_H2p_Hm_r,actual_values_all_MAD_from_H2p_Hm_r_down,actual_values_all_MAD_from_H2p_Hm_r_up,'all_MAD_from_H2p_Hm','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+			figure_index = make_plot_type_2(intervals_all_MAI_from_H2p_Hm_r,prob_all_MAI_from_H2p_Hm_r,most_likely_all_MAI_from_H2p_Hm_r,actual_values_all_MAI_from_H2p_Hm_r_down,actual_values_all_MAI_from_H2p_Hm_r_up,'all_MAI_from_H2p_Hm','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
+			figure_index = make_plot_type_2(intervals_all_atomic_H2_dissociation_r,prob_all_atomic_H2_dissociation_r,most_likely_all_atomic_H2_dissociation_r,actual_values_all_atomic_H2_dissociation_r_down,actual_values_all_atomic_H2_dissociation_r_up,'all_atomic_H2_dissociation','reaction rate [#]',figure_index,multiplier=1e20*dt/1000,power_plot=False,flow_plot=True)	# #/s * 1e-20
 
 		# fig, ax = plt.subplots(1,figsize=(20, 10))
 		# for i_t in range(len(prob_total_power_removed_plasma_fluid_r)):
@@ -7133,21 +7691,27 @@ else:
 
 			return values*dt/1000,prob_sum
 
-		def temporal_radial_sum_PDF_MC(actual_values_power_ext,prob_power_ext,intervals=30,samples=100000,conventional_start_pulse=conventional_start_pulse,conventional_end_pulse=conventional_end_pulse):
+		def temporal_radial_sum_PDF_MC(intervals_power_ext,prob_power_ext,intervals=60,samples=10000,conventional_start_pulse=conventional_start_pulse,conventional_end_pulse=conventional_end_pulse):
 			if conventional_start_pulse!=0 or conventional_end_pulse!=len(prob_power_ext):
-				actual_values_power = actual_values_power_ext[conventional_start_pulse:conventional_end_pulse]
+				intervals_power = intervals_power_ext[conventional_start_pulse:conventional_end_pulse]
 				prob_power = prob_power_ext[conventional_start_pulse:conventional_end_pulse]
 			temp_values = np.zeros((samples))
 			for i_t in range(len(prob_power)-1):
-				if len(actual_values_power[i_t])>1:
-					temp_values += np.random.choice(actual_values_power[i_t],size=samples,p=prob_power[i_t])
+				if len(prob_power[i_t])>1:
+					if np.sum(np.logical_not(np.isnan(prob_power[i_t])))>0 and np.sum(np.logical_not(np.isnan(prob_power[i_t])))>0:
+						# temp_values += np.random.choice(actual_values_power[i_t],size=samples,p=prob_power[i_t])
+						temp_values += create_array_from_histogram(None,intervals_power[i_t],prob_power[i_t],samples,actual_values_provided=False)
+					else:
+						print('warning! something wrong happened and the array of the probabilities is full of NaN!!')
 			if all(temp_values==0):
 				out_values=np.array([0,0])
 				out_prob_sum=np.array([1])
 			else:
-				temp_prob,temp_intervals = np.histogram(temp_values,bins=np.logspace(np.log10(temp_values.min()),np.log10(temp_values.max()),intervals+1))
+				# temp_prob,temp_intervals = np.histogram(temp_values,bins=np.logspace(np.log10(temp_values.min()),np.log10(temp_values.max()),intervals+1))
+				temp_prob,temp_intervals = improved_log_histogram(temp_values,intervals)
 				out_values=temp_intervals*dt/1000
 				out_prob_sum=temp_prob/np.sum(temp_prob)
+
 			return out_values,out_prob_sum
 
 
@@ -7167,174 +7731,152 @@ else:
 		# intervals_local_CX_tr, prob_local_CX_tr = temporal_radial_sum_PDF(intervals_local_CX_r,prob_local_CX_r)
 		# # intervals_total_power_removed_plasma_fluid_tr, prob_total_power_removed_plasma_fluid_tr = temporal_radial_sum_PDF(intervals_total_power_removed_plasma_fluid_r,prob_total_power_removed_plasma_fluid_r)
 		# intervals_net_power_removed_plasma_column_tr, prob_net_power_removed_plasma_column_tr = temporal_radial_sum_PDF(intervals_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r)
-		intervals_power_rad_excit_tr, prob_power_rad_excit_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_excit_r,prob_power_rad_excit_r)
-		intervals_power_rad_rec_bremm_tr, prob_power_rad_rec_bremm_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r)
-		intervals_power_rad_mol_tr, prob_power_rad_mol_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_mol_r,prob_power_rad_mol_r)
-		intervals_power_potential_tr, prob_power_potential_tr = temporal_radial_sum_PDF_MC(actual_values_power_potential_r,prob_power_potential_r)
-		intervals_power_potential_mol_tr, prob_power_potential_mol_tr = temporal_radial_sum_PDF_MC(actual_values_power_potential_mol_r,prob_power_potential_mol_r)
-		intervals_power_potential_mol_plasma_heating_tr, prob_power_potential_mol_plasma_heating_tr = temporal_radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_heating_r,prob_power_potential_mol_plasma_heating_r)
-		intervals_power_potential_mol_plasma_cooling_tr, prob_power_potential_mol_plasma_cooling_tr = temporal_radial_sum_PDF_MC(actual_values_power_potential_mol_plasma_cooling_r,prob_power_potential_mol_plasma_cooling_r)
-		intervals_power_via_ionisation_tr, prob_power_via_ionisation_tr = temporal_radial_sum_PDF_MC(actual_values_power_via_ionisation_r,prob_power_via_ionisation_r)
-		intervals_power_via_recombination_tr, prob_power_via_recombination_tr = temporal_radial_sum_PDF_MC(actual_values_power_via_recombination_r,prob_power_via_recombination_r)
-		intervals_tot_rad_power_tr, prob_tot_rad_power_tr = temporal_radial_sum_PDF_MC(actual_values_tot_rad_power_r, prob_tot_rad_power_r)
-		intervals_power_rad_Hm_tr, prob_power_rad_Hm_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_Hm_r,prob_power_rad_Hm_r)
-		intervals_power_rad_Hm_H2p_tr, prob_power_rad_Hm_H2p_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_Hm_H2p_r,prob_power_rad_Hm_H2p_r)
-		intervals_power_rad_Hm_Hp_tr, prob_power_rad_Hm_Hp_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_Hm_Hp_r,prob_power_rad_Hm_Hp_r)
-		intervals_power_rad_H2_tr, prob_power_rad_H2_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_H2_r,prob_power_rad_H2_r)
-		intervals_power_rad_H2p_tr, prob_power_rad_H2p_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_H2p_r,prob_power_rad_H2p_r)
-		intervals_power_heating_rec_tr, prob_power_heating_rec_tr = temporal_radial_sum_PDF_MC(actual_values_power_heating_rec_r,prob_power_heating_rec_r)
-		intervals_power_rec_neutral_tr, prob_power_rec_neutral_tr = temporal_radial_sum_PDF_MC(actual_values_power_rec_neutral_r,prob_power_rec_neutral_r)
-		intervals_power_via_brem_tr, prob_power_via_brem_tr = temporal_radial_sum_PDF_MC(actual_values_power_via_brem_r,prob_power_via_brem_r)
-		intervals_P_HCX_tr, prob_P_HCX_tr = temporal_radial_sum_PDF_MC(actual_values_P_HCX_r,prob_P_HCX_r)
-		intervals_P_HCX_2_tr, prob_P_HCX_2_tr = temporal_radial_sum_PDF_MC(actual_values_P_HCX_2_r,prob_P_HCX_2_r)
-		intervals_P_HCX_3_tr, prob_P_HCX_3_tr = temporal_radial_sum_PDF_MC(actual_values_P_HCX_3_r,prob_P_HCX_3_r)
-		intervals_total_removed_power_tr, prob_total_removed_power_tr = temporal_radial_sum_PDF_MC(actual_values_total_removed_power_r,prob_total_removed_power_r)
-		intervals_local_CX_tr, prob_local_CX_tr = temporal_radial_sum_PDF_MC(actual_values_local_CX_r,prob_local_CX_r)
-		# intervals_total_power_removed_plasma_fluid_tr, prob_total_power_removed_plasma_fluid_tr = temporal_radial_sum_PDF_MC(actual_values_total_power_removed_plasma_fluid_r,prob_total_power_removed_plasma_fluid_r)
-		intervals_net_power_removed_plasma_column_tr, prob_net_power_removed_plasma_column_tr = temporal_radial_sum_PDF_MC(actual_values_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r)
-		intervals_total_removed_power_visible_tr, prob_total_removed_power_visible_tr = temporal_radial_sum_PDF_MC(actual_values_total_removed_power_visible_r,prob_total_removed_power_visible_r)
-		intervals_power_rad_atomic_visible_tr, prob_power_rad_atomic_visible_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_atomic_visible_r,prob_power_rad_atomic_visible_r)
-		intervals_power_rad_mol_visible_tr, prob_power_rad_mol_visible_tr = temporal_radial_sum_PDF_MC(actual_values_power_rad_mol_visible_r,prob_power_rad_mol_visible_r)
-		intervals_H_destruction_RR2_tr, prob_H_destruction_RR2_tr = temporal_radial_sum_PDF_MC(actual_values_H_destruction_RR2_r,prob_H_destruction_RR2_r)	# # * 1e-20
-		intervals_H2_destruction_RR2_tr, prob_H2_destruction_RR2_tr = temporal_radial_sum_PDF_MC(actual_values_H2_destruction_RR2_r,prob_H2_destruction_RR2_r)	# # * 1e-20
+		intervals_power_rad_excit_tr, prob_power_rad_excit_tr = temporal_radial_sum_PDF_MC(intervals_power_rad_excit_r,prob_power_rad_excit_r)
+		intervals_power_rad_rec_bremm_tr, prob_power_rad_rec_bremm_tr = temporal_radial_sum_PDF_MC(intervals_power_rad_rec_bremm_r,prob_power_rad_rec_bremm_r)
+		intervals_power_rad_mol_tr, prob_power_rad_mol_tr = temporal_radial_sum_PDF_MC(intervals_power_rad_mol_r,prob_power_rad_mol_r)
+		intervals_power_potential_tr, prob_power_potential_tr = temporal_radial_sum_PDF_MC(intervals_power_potential_r,prob_power_potential_r)
+		intervals_power_potential_mol_tr, prob_power_potential_mol_tr = temporal_radial_sum_PDF_MC(intervals_power_potential_mol_r,prob_power_potential_mol_r)
+		intervals_power_potential_mol_plasma_heating_tr, prob_power_potential_mol_plasma_heating_tr = temporal_radial_sum_PDF_MC(intervals_power_potential_mol_plasma_heating_r,prob_power_potential_mol_plasma_heating_r)
+		intervals_power_potential_mol_plasma_cooling_tr, prob_power_potential_mol_plasma_cooling_tr = temporal_radial_sum_PDF_MC(intervals_power_potential_mol_plasma_cooling_r,prob_power_potential_mol_plasma_cooling_r)
+		intervals_power_via_ionisation_tr, prob_power_via_ionisation_tr = temporal_radial_sum_PDF_MC(intervals_power_via_ionisation_r,prob_power_via_ionisation_r)
+		intervals_power_via_recombination_tr, prob_power_via_recombination_tr = temporal_radial_sum_PDF_MC(intervals_power_via_recombination_r,prob_power_via_recombination_r)
+		intervals_tot_rad_power_tr, prob_tot_rad_power_tr = temporal_radial_sum_PDF_MC(intervals_tot_rad_power_r, prob_tot_rad_power_r)
+		intervals_power_rad_Hm_tr, prob_power_rad_Hm_tr = temporal_radial_sum_PDF_MC(intervals_power_rad_Hm_r,prob_power_rad_Hm_r)
+		intervals_power_rad_Hm_H2p_tr, prob_power_rad_Hm_H2p_tr = temporal_radial_sum_PDF_MC(intervals_power_rad_Hm_H2p_r,prob_power_rad_Hm_H2p_r)
+		intervals_power_rad_Hm_Hp_tr, prob_power_rad_Hm_Hp_tr = temporal_radial_sum_PDF_MC(intervals_power_rad_Hm_Hp_r,prob_power_rad_Hm_Hp_r)
+		intervals_power_rad_H2_tr, prob_power_rad_H2_tr = temporal_radial_sum_PDF_MC(intervals_power_rad_H2_r,prob_power_rad_H2_r)
+		intervals_power_rad_H2p_tr, prob_power_rad_H2p_tr = temporal_radial_sum_PDF_MC(intervals_power_rad_H2p_r,prob_power_rad_H2p_r)
+		intervals_power_heating_rec_tr, prob_power_heating_rec_tr = temporal_radial_sum_PDF_MC(intervals_power_heating_rec_r,prob_power_heating_rec_r)
+		intervals_power_rec_neutral_tr, prob_power_rec_neutral_tr = temporal_radial_sum_PDF_MC(intervals_power_rec_neutral_r,prob_power_rec_neutral_r)
+		intervals_power_via_brem_tr, prob_power_via_brem_tr = temporal_radial_sum_PDF_MC(intervals_power_via_brem_r,prob_power_via_brem_r)
+		intervals_P_HCX_tr, prob_P_HCX_tr = temporal_radial_sum_PDF_MC(intervals_P_HCX_r,prob_P_HCX_r)
+		intervals_P_HCX_2_tr, prob_P_HCX_2_tr = temporal_radial_sum_PDF_MC(intervals_P_HCX_2_r,prob_P_HCX_2_r)
+		intervals_P_HCX_3_tr, prob_P_HCX_3_tr = temporal_radial_sum_PDF_MC(intervals_P_HCX_3_r,prob_P_HCX_3_r)
+		intervals_total_removed_power_tr, prob_total_removed_power_tr = temporal_radial_sum_PDF_MC(intervals_total_removed_power_r,prob_total_removed_power_r)
+		intervals_local_CX_tr, prob_local_CX_tr = temporal_radial_sum_PDF_MC(intervals_local_CX_r,prob_local_CX_r)
+		intervals_local_elastic_H2_tr, prob_local_elastic_H2_tr = temporal_radial_sum_PDF_MC(intervals_local_elastic_H2_r,prob_local_elastic_H2_r)
+		# intervals_total_power_removed_plasma_fluid_tr, prob_total_power_removed_plasma_fluid_tr = temporal_radial_sum_PDF_MC(intervals_total_power_removed_plasma_fluid_r,prob_total_power_removed_plasma_fluid_r)
+		intervals_net_power_removed_plasma_column_tr, prob_net_power_removed_plasma_column_tr = temporal_radial_sum_PDF_MC(intervals_net_power_removed_plasma_column_r,prob_net_power_removed_plasma_column_r)
+		intervals_total_removed_power_visible_tr, prob_total_removed_power_visible_tr = temporal_radial_sum_PDF_MC(intervals_total_removed_power_visible_r,prob_total_removed_power_visible_r)
+		intervals_power_rad_atomic_visible_tr, prob_power_rad_atomic_visible_tr = temporal_radial_sum_PDF_MC(intervals_power_rad_atomic_visible_r,prob_power_rad_atomic_visible_r)
+		intervals_power_rad_mol_visible_tr, prob_power_rad_mol_visible_tr = temporal_radial_sum_PDF_MC(intervals_power_rad_mol_visible_r,prob_power_rad_mol_visible_r)
+		intervals_H_destruction_RR2_tr, prob_H_destruction_RR2_tr = temporal_radial_sum_PDF_MC(intervals_H_destruction_RR2_r,prob_H_destruction_RR2_r)	# # * 1e-20
+		intervals_H2_destruction_RR2_tr, prob_H2_destruction_RR2_tr = temporal_radial_sum_PDF_MC(intervals_H2_destruction_RR2_r,prob_H2_destruction_RR2_r)	# # * 1e-20
 
-		intervals_Hp_destruction_RR_tr, prob_Hp_destruction_RR_tr = temporal_radial_sum_PDF_MC(actual_values_Hp_destruction_RR_r,prob_Hp_destruction_RR_r)	# # * 1e-20
-		intervals_Hp_creation_RR_tr, prob_Hp_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_Hp_creation_RR_r,prob_Hp_creation_RR_r)	# # * 1e-20
-		intervals_e_destruction_RR_tr, prob_e_destruction_RR_tr = temporal_radial_sum_PDF_MC(actual_values_e_destruction_RR_r,prob_e_destruction_RR_r)	# # * 1e-20
-		intervals_e_creation_RR_tr, prob_e_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_e_creation_RR_r,prob_e_creation_RR_r)	# # * 1e-20
-		intervals_Hm_destruction_RR_tr, prob_Hm_destruction_RR_tr = temporal_radial_sum_PDF_MC(actual_values_Hm_destruction_RR_r,prob_Hm_destruction_RR_r)	# # * 1e-20
-		intervals_Hm_creation_RR_tr, prob_Hm_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_Hm_creation_RR_r,prob_Hm_creation_RR_r)	# # * 1e-20
-		intervals_H2p_destruction_RR_tr, prob_H2p_destruction_RR_tr = temporal_radial_sum_PDF_MC(actual_values_H2p_destruction_RR_r,prob_H2p_destruction_RR_r)	# # * 1e-20
-		intervals_H2p_creation_RR_tr, prob_H2p_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_H2p_creation_RR_r,prob_H2p_creation_RR_r)	# # * 1e-20
+		intervals_Hp_destruction_RR_tr, prob_Hp_destruction_RR_tr = temporal_radial_sum_PDF_MC(intervals_Hp_destruction_RR_r,prob_Hp_destruction_RR_r)	# # * 1e-20
+		intervals_Hp_creation_RR_tr, prob_Hp_creation_RR_tr = temporal_radial_sum_PDF_MC(intervals_Hp_creation_RR_r,prob_Hp_creation_RR_r)	# # * 1e-20
+		intervals_e_destruction_RR_tr, prob_e_destruction_RR_tr = temporal_radial_sum_PDF_MC(intervals_e_destruction_RR_r,prob_e_destruction_RR_r)	# # * 1e-20
+		intervals_e_creation_RR_tr, prob_e_creation_RR_tr = temporal_radial_sum_PDF_MC(intervals_e_creation_RR_r,prob_e_creation_RR_r)	# # * 1e-20
+		intervals_Hm_destruction_RR_tr, prob_Hm_destruction_RR_tr = temporal_radial_sum_PDF_MC(intervals_Hm_destruction_RR_r,prob_Hm_destruction_RR_r)	# # * 1e-20
+		intervals_Hm_creation_RR_tr, prob_Hm_creation_RR_tr = temporal_radial_sum_PDF_MC(intervals_Hm_creation_RR_r,prob_Hm_creation_RR_r)	# # * 1e-20
+		intervals_H2p_destruction_RR_tr, prob_H2p_destruction_RR_tr = temporal_radial_sum_PDF_MC(intervals_H2p_destruction_RR_r,prob_H2p_destruction_RR_r)	# # * 1e-20
+		intervals_H2p_creation_RR_tr, prob_H2p_creation_RR_tr = temporal_radial_sum_PDF_MC(intervals_H2p_creation_RR_r,prob_H2p_creation_RR_r)	# # * 1e-20
+		intervals_net_H_destruction_RR_tr, prob_net_H_destruction_RR_tr = temporal_radial_sum_PDF_MC(intervals_net_H_destruction_RR_r,prob_net_H_destruction_RR_r)	# # * 1e-20
+		intervals_net_H2_destruction_RR_tr, prob_net_H2_destruction_RR_tr = temporal_radial_sum_PDF_MC(intervals_net_H2_destruction_RR_r,prob_net_H2_destruction_RR_r)	# # * 1e-20
+		intervals_net_e_destruction_tr, prob_net_e_destruction_tr = temporal_radial_sum_PDF_MC(intervals_net_e_destruction_r,prob_net_e_destruction_r)	# # * 1e-20
+		intervals_net_Hp_destruction_tr, prob_net_Hp_destruction_tr = temporal_radial_sum_PDF_MC(intervals_net_Hp_destruction_r,prob_net_Hp_destruction_r)	# # * 1e-20
+		intervals_net_Hm_destruction_tr, prob_net_Hm_destruction_tr = temporal_radial_sum_PDF_MC(intervals_net_Hm_destruction_r,prob_net_Hm_destruction_r)	# # * 1e-20
+		intervals_net_H2p_destruction_tr, prob_net_H2p_destruction_tr = temporal_radial_sum_PDF_MC(intervals_net_H2p_destruction_r,prob_net_H2p_destruction_r)	# # * 1e-20
 		if latest_version:
-			intervals_H_creation_RR_tr, prob_H_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_H_creation_RR_r,prob_H_creation_RR_r)	# # * 1e-20
-			intervals_H2_creation_RR_tr, prob_H2_creation_RR_tr = temporal_radial_sum_PDF_MC(actual_values_H2_creation_RR_r,prob_H2_creation_RR_r)	# # * 1e-20
+			intervals_H_creation_RR_tr, prob_H_creation_RR_tr = temporal_radial_sum_PDF_MC(intervals_H_creation_RR_r,prob_H_creation_RR_r)	# # * 1e-20
+			intervals_H2_creation_RR_tr, prob_H2_creation_RR_tr = temporal_radial_sum_PDF_MC(intervals_H2_creation_RR_r,prob_H2_creation_RR_r)	# # * 1e-20
+			intervals_all_MAR_from_Hm_tr, prob_all_MAR_from_Hm_tr = temporal_radial_sum_PDF_MC(intervals_all_MAR_from_Hm_r,prob_all_MAR_from_Hm_r)	# # * 1e-20
+			intervals_all_MAD_from_Hm_tr, prob_all_MAD_from_Hm_tr = temporal_radial_sum_PDF_MC(intervals_all_MAD_from_Hm_r,prob_all_MAD_from_Hm_r)	# # * 1e-20
+			intervals_all_MAI_from_Hm_tr, prob_all_MAI_from_Hm_tr = temporal_radial_sum_PDF_MC(intervals_all_MAI_from_Hm_r,prob_all_MAI_from_Hm_r)	# # * 1e-20
+			intervals_all_MAR_from_H2p_tr, prob_all_MAR_from_H2p_tr = temporal_radial_sum_PDF_MC(intervals_all_MAR_from_H2p_r,prob_all_MAR_from_H2p_r)	# # * 1e-20
+			intervals_all_MAD_from_H2p_tr, prob_all_MAD_from_H2p_tr = temporal_radial_sum_PDF_MC(intervals_all_MAD_from_H2p_r,prob_all_MAD_from_H2p_r)	# # * 1e-20
+			intervals_all_MAI_from_H2p_tr, prob_all_MAI_from_H2p_tr = temporal_radial_sum_PDF_MC(intervals_all_MAI_from_H2p_r,prob_all_MAI_from_H2p_r)	# # * 1e-20
+			intervals_all_MAR_from_H2p_Hm_tr, prob_all_MAR_from_H2p_Hm_tr = temporal_radial_sum_PDF_MC(intervals_all_MAR_from_H2p_Hm_r,prob_all_MAR_from_H2p_Hm_r)	# # * 1e-20
+			intervals_all_MAD_from_H2p_Hm_tr, prob_all_MAD_from_H2p_Hm_tr = temporal_radial_sum_PDF_MC(intervals_all_MAD_from_H2p_Hm_r,prob_all_MAD_from_H2p_Hm_r)	# # * 1e-20
+			intervals_all_MAI_from_H2p_Hm_tr, prob_all_MAI_from_H2p_Hm_tr = temporal_radial_sum_PDF_MC(intervals_all_MAI_from_H2p_Hm_r,prob_all_MAI_from_H2p_Hm_r)	# # * 1e-20
 
-		ML_power_rad_excit = (np.add(intervals_power_rad_excit_tr[1:],intervals_power_rad_excit_tr[:-1])/2)[np.array(prob_power_rad_excit_tr).argmax()]
-		temp = np.cumsum(prob_power_rad_excit_tr)
-		ML_power_rad_excit_sigma = np.mean([ML_power_rad_excit-intervals_power_rad_excit_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_excit_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_excit])
-		ML_power_rad_rec_bremm = (np.add(intervals_power_rad_rec_bremm_tr[1:],intervals_power_rad_rec_bremm_tr[:-1])/2)[np.array(prob_power_rad_rec_bremm_tr).argmax()]
-		temp = np.cumsum(prob_power_rad_rec_bremm_tr)
-		ML_power_rad_rec_bremm_sigma = np.mean([ML_power_rad_rec_bremm-intervals_power_rad_rec_bremm_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_rec_bremm_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_rec_bremm])
-		ML_power_rad_mol = (np.add(intervals_power_rad_mol_tr[1:],intervals_power_rad_mol_tr[:-1])/2)[np.array(prob_power_rad_mol_tr).argmax()]
-		temp = np.cumsum(prob_power_rad_mol_tr)
-		ML_power_rad_mol_sigma = np.mean([ML_power_rad_mol-intervals_power_rad_mol_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_mol_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_mol])
-		ML_power_potential = (np.add(intervals_power_potential_tr[1:],intervals_power_potential_tr[:-1])/2)[np.array(prob_power_potential_tr).argmax()]
-		temp = np.cumsum(prob_power_potential_tr)
-		ML_power_potential_sigma = np.mean([ML_power_potential-intervals_power_potential_tr[np.abs(temp-0.159).argmin()+1],intervals_power_potential_tr[np.abs(temp-1+0.159).argmin()]-ML_power_potential])
-		ML_power_potential_mol = (np.add(intervals_power_potential_mol_tr[1:],intervals_power_potential_mol_tr[:-1])/2)[np.array(prob_power_potential_mol_tr).argmax()]
-		temp = np.cumsum(prob_power_potential_mol_tr)
-		ML_power_potential_mol_sigma = np.mean([ML_power_potential_mol-intervals_power_potential_mol_tr[np.abs(temp-0.159).argmin()+1],intervals_power_potential_mol_tr[np.abs(temp-1+0.159).argmin()]-ML_power_potential_mol])
-		ML_power_potential_mol_plasma_heating = (np.add(intervals_power_potential_mol_plasma_heating_tr[1:],intervals_power_potential_mol_plasma_heating_tr[:-1])/2)[np.array(prob_power_potential_mol_plasma_heating_tr).argmax()]
-		temp = np.cumsum(prob_power_potential_mol_plasma_heating_tr)
-		ML_power_potential_mol_plasma_heating_sigma = np.mean([ML_power_potential_mol_plasma_heating-intervals_power_potential_mol_plasma_heating_tr[np.abs(temp-0.159).argmin()+1],intervals_power_potential_mol_plasma_heating_tr[np.abs(temp-1+0.159).argmin()]-ML_power_potential_mol_plasma_heating])
-		ML_power_potential_mol_plasma_cooling = (np.add(intervals_power_potential_mol_plasma_cooling_tr[1:],intervals_power_potential_mol_plasma_cooling_tr[:-1])/2)[np.array(prob_power_potential_mol_plasma_cooling_tr).argmax()]
-		temp = np.cumsum(prob_power_potential_mol_plasma_cooling_tr)
-		ML_power_potential_mol_plasma_cooling_sigma = np.mean([ML_power_potential_mol_plasma_cooling-intervals_power_potential_mol_plasma_cooling_tr[np.abs(temp-0.159).argmin()+1],intervals_power_potential_mol_plasma_cooling_tr[np.abs(temp-1+0.159).argmin()]-ML_power_potential_mol_plasma_cooling])
-		ML_power_via_ionisation = (np.add(intervals_power_via_ionisation_tr[1:],intervals_power_via_ionisation_tr[:-1])/2)[np.array(prob_power_via_ionisation_tr).argmax()]
-		temp = np.cumsum(prob_power_via_ionisation_tr)
-		ML_power_via_ionisation_sigma = np.mean([ML_power_via_ionisation-intervals_power_via_ionisation_tr[np.abs(temp-0.159).argmin()+1],intervals_power_via_ionisation_tr[np.abs(temp-1+0.159).argmin()]-ML_power_via_ionisation])
-		ML_power_via_recombination = (np.add(intervals_power_via_recombination_tr[1:],intervals_power_via_recombination_tr[:-1])/2)[np.array(prob_power_via_recombination_tr).argmax()]
-		temp = np.cumsum(prob_power_via_recombination_tr)
-		ML_power_via_recombination_sigma = np.mean([ML_power_via_recombination-intervals_power_via_recombination_tr[np.abs(temp-0.159).argmin()+1],intervals_power_via_recombination_tr[np.abs(temp-1+0.159).argmin()]-ML_power_via_recombination])
-		ML_tot_rad_power = (np.add(intervals_tot_rad_power_tr[1:],intervals_tot_rad_power_tr[:-1])/2)[np.array(prob_tot_rad_power_tr).argmax()]
-		temp = np.cumsum(prob_tot_rad_power_tr)
-		ML_tot_rad_power_sigma = np.mean([ML_tot_rad_power-intervals_tot_rad_power_tr[np.abs(temp-0.159).argmin()+1],intervals_tot_rad_power_tr[np.abs(temp-1+0.159).argmin()]-ML_tot_rad_power])
-		ML_power_rad_Hm = (np.add(intervals_power_rad_Hm_tr[1:],intervals_power_rad_Hm_tr[:-1])/2)[np.array(prob_power_rad_Hm_tr).argmax()]
-		temp = np.cumsum(prob_power_rad_Hm_tr)
-		ML_power_rad_Hm_sigma = np.mean([ML_power_rad_Hm-intervals_power_rad_Hm_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_Hm_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_Hm])
-		ML_power_rad_Hm_H2p = (np.add(intervals_power_rad_Hm_H2p_tr[1:],intervals_power_rad_Hm_H2p_tr[:-1])/2)[np.array(prob_power_rad_Hm_H2p_tr).argmax()]
-		temp = np.cumsum(prob_power_rad_Hm_H2p_tr)
-		ML_power_rad_Hm_H2p_sigma = np.mean([ML_power_rad_Hm_H2p-intervals_power_rad_Hm_H2p_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_Hm_H2p_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_Hm_H2p])
-		ML_power_rad_Hm_Hp = (np.add(intervals_power_rad_Hm_Hp_tr[1:],intervals_power_rad_Hm_Hp_tr[:-1])/2)[np.array(prob_power_rad_Hm_Hp_tr).argmax()]
-		temp = np.cumsum(prob_power_rad_Hm_Hp_tr)
-		ML_power_rad_Hm_Hp_sigma = np.mean([ML_power_rad_Hm_Hp-intervals_power_rad_Hm_Hp_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_Hm_Hp_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_Hm_Hp])
-		ML_power_rad_H2 = (np.add(intervals_power_rad_H2_tr[1:],intervals_power_rad_H2_tr[:-1])/2)[np.array(prob_power_rad_H2_tr).argmax()]
-		temp = np.cumsum(prob_power_rad_H2_tr)
-		ML_power_rad_H2_sigma = np.mean([ML_power_rad_H2-intervals_power_rad_H2_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_H2_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_H2])
-		ML_power_rad_H2p = (np.add(intervals_power_rad_H2p_tr[1:],intervals_power_rad_H2p_tr[:-1])/2)[np.array(prob_power_rad_H2p_tr).argmax()]
-		temp = np.cumsum(prob_power_rad_H2p_tr)
-		ML_power_rad_H2p_sigma = np.mean([ML_power_rad_H2p-intervals_power_rad_H2p_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_H2p_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_H2p])
-		ML_power_heating_rec = (np.add(intervals_power_heating_rec_tr[1:],intervals_power_heating_rec_tr[:-1])/2)[np.array(prob_power_heating_rec_tr).argmax()]
-		temp = np.cumsum(prob_power_heating_rec_tr)
-		ML_power_heating_rec_sigma = np.mean([ML_power_heating_rec-intervals_power_heating_rec_tr[np.abs(temp-0.159).argmin()+1],intervals_power_heating_rec_tr[np.abs(temp-1+0.159).argmin()]-ML_power_heating_rec])
-		ML_power_rec_neutral = (np.add(intervals_power_rec_neutral_tr[1:],intervals_power_rec_neutral_tr[:-1])/2)[np.array(prob_power_rec_neutral_tr).argmax()]
-		temp = np.cumsum(prob_power_rec_neutral_tr)
-		ML_power_rec_neutral_sigma = np.mean([ML_power_rec_neutral-intervals_power_rec_neutral_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rec_neutral_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rec_neutral])
-		ML_power_via_brem = (np.add(intervals_power_via_brem_tr[1:],intervals_power_via_brem_tr[:-1])/2)[np.array(prob_power_via_brem_tr).argmax()]
-		temp = np.cumsum(prob_power_via_brem_tr)
-		ML_power_via_brem_sigma = np.mean([ML_power_via_brem-intervals_power_via_brem_tr[np.abs(temp-0.159).argmin()+1],intervals_power_via_brem_tr[np.abs(temp-1+0.159).argmin()]-ML_power_via_brem])
-		ML_P_HCX = (np.add(intervals_P_HCX_tr[1:],intervals_P_HCX_tr[:-1])/2)[np.array(prob_P_HCX_tr).argmax()]
-		temp = np.cumsum(prob_P_HCX_tr)
-		ML_P_HCX_sigma = np.mean([ML_P_HCX-intervals_P_HCX_tr[np.abs(temp-0.159).argmin()+1],intervals_P_HCX_tr[np.abs(temp-1+0.159).argmin()]-ML_P_HCX])
-		ML_P_HCX_2 = (np.add(intervals_P_HCX_2_tr[1:],intervals_P_HCX_2_tr[:-1])/2)[np.array(prob_P_HCX_2_tr).argmax()]
-		temp = np.cumsum(prob_P_HCX_2_tr)
-		ML_P_HCX_2_sigma = np.mean([ML_P_HCX_2-intervals_P_HCX_2_tr[np.abs(temp-0.159).argmin()+1],intervals_P_HCX_2_tr[np.abs(temp-1+0.159).argmin()]-ML_P_HCX_2])
-		ML_P_HCX_3 = (np.add(intervals_P_HCX_3_tr[1:],intervals_P_HCX_3_tr[:-1])/2)[np.array(prob_P_HCX_3_tr).argmax()]
-		temp = np.cumsum(prob_P_HCX_3_tr)
-		ML_P_HCX_3_sigma = np.mean([ML_P_HCX_3-intervals_P_HCX_3_tr[np.abs(temp-0.159).argmin()+1],intervals_P_HCX_3_tr[np.abs(temp-1+0.159).argmin()]-ML_P_HCX_3])
-		ML_total_removed_power = (np.add(intervals_total_removed_power_tr[1:],intervals_total_removed_power_tr[:-1])/2)[np.array(prob_total_removed_power_tr).argmax()]
-		temp = np.cumsum(prob_total_removed_power_tr)
-		ML_total_removed_power_sigma = np.mean([ML_total_removed_power-intervals_total_removed_power_tr[np.abs(temp-0.159).argmin()+1],intervals_total_removed_power_tr[np.abs(temp-1+0.159).argmin()]-ML_total_removed_power])
-		ML_local_CX = (np.add(intervals_local_CX_tr[1:],intervals_local_CX_tr[:-1])/2)[np.array(prob_local_CX_tr).argmax()]
-		temp = np.cumsum(prob_local_CX_tr)
-		ML_local_CX_sigma = np.mean([ML_local_CX-intervals_local_CX_tr[np.abs(temp-0.159).argmin()+1],intervals_local_CX_tr[np.abs(temp-1+0.159).argmin()]-ML_local_CX])
-		ML_net_power_removed_plasma_column = (np.add(intervals_net_power_removed_plasma_column_tr[1:],intervals_net_power_removed_plasma_column_tr[:-1])/2)[np.array(prob_net_power_removed_plasma_column_tr).argmax()]
-		temp = np.cumsum(prob_net_power_removed_plasma_column_tr)
-		ML_net_power_removed_plasma_column_sigma = np.mean([ML_net_power_removed_plasma_column-intervals_net_power_removed_plasma_column_tr[np.abs(temp-0.159).argmin()+1],intervals_net_power_removed_plasma_column_tr[np.abs(temp-1+0.159).argmin()]-ML_net_power_removed_plasma_column])
-		ML_total_removed_power_visible = (np.add(intervals_total_removed_power_visible_tr[1:],intervals_total_removed_power_visible_tr[:-1])/2)[np.array(prob_total_removed_power_visible_tr).argmax()]
-		temp = np.cumsum(prob_total_removed_power_visible_tr)
-		ML_total_removed_power_visible_sigma = np.mean([ML_total_removed_power_visible-intervals_total_removed_power_visible_tr[np.abs(temp-0.159).argmin()+1],intervals_total_removed_power_visible_tr[np.abs(temp-1+0.159).argmin()]-ML_total_removed_power_visible])
-		ML_power_rad_atomic_visible = (np.add(intervals_power_rad_atomic_visible_tr[1:],intervals_power_rad_atomic_visible_tr[:-1])/2)[np.array(prob_power_rad_atomic_visible_tr).argmax()]
-		temp = np.cumsum(prob_power_rad_atomic_visible_tr)
-		ML_power_rad_atomic_visible_sigma = np.mean([ML_power_rad_atomic_visible-intervals_power_rad_atomic_visible_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_atomic_visible_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_atomic_visible])
-		ML_power_rad_mol_visible = (np.add(intervals_power_rad_mol_visible_tr[1:],intervals_power_rad_mol_visible_tr[:-1])/2)[np.array(prob_power_rad_mol_visible_tr).argmax()]
-		temp = np.cumsum(prob_power_rad_mol_visible_tr)
-		ML_power_rad_mol_visible_sigma = np.mean([ML_power_rad_mol_visible-intervals_power_rad_mol_visible_tr[np.abs(temp-0.159).argmin()+1],intervals_power_rad_mol_visible_tr[np.abs(temp-1+0.159).argmin()]-ML_power_rad_mol_visible])
-		ML_H_destruction_RR2 = (np.add(intervals_H_destruction_RR2_tr[1:],intervals_H_destruction_RR2_tr[:-1])/2)[np.array(prob_H_destruction_RR2_tr).argmax()]	# # * 1e-20
-		temp = np.cumsum(prob_H_destruction_RR2_tr)	# # * 1e-20
-		ML_H_destruction_RR2_sigma = np.mean([ML_H_destruction_RR2-intervals_H_destruction_RR2_tr[np.abs(temp-0.159).argmin()+1],intervals_H_destruction_RR2_tr[np.abs(temp-1+0.159).argmin()]-ML_H_destruction_RR2])	# # * 1e-20
+			intervals_all_MAR_from_Hm_energy_tr, prob_all_MAR_from_Hm_energy_tr = temporal_radial_sum_PDF_MC(intervals_all_MAR_from_Hm_energy_r,prob_all_MAR_from_Hm_energy_r)	# # * 1e-20
+			intervals_all_MAD_from_Hm_energy_tr, prob_all_MAD_from_Hm_energy_tr = temporal_radial_sum_PDF_MC(intervals_all_MAD_from_Hm_energy_r,prob_all_MAD_from_Hm_energy_r)	# # * 1e-20
+			intervals_all_MAI_from_Hm_energy_tr, prob_all_MAI_from_Hm_energy_tr = temporal_radial_sum_PDF_MC(intervals_all_MAI_from_Hm_energy_r,prob_all_MAI_from_Hm_energy_r)	# # * 1e-20
+			intervals_all_MAR_from_H2p_energy_tr, prob_all_MAR_from_H2p_energy_tr = temporal_radial_sum_PDF_MC(intervals_all_MAR_from_H2p_energy_r,prob_all_MAR_from_H2p_energy_r)	# # * 1e-20
+			intervals_all_MAD_from_H2p_energy_tr, prob_all_MAD_from_H2p_energy_tr = temporal_radial_sum_PDF_MC(intervals_all_MAD_from_H2p_energy_r,prob_all_MAD_from_H2p_energy_r)	# # * 1e-20
+			intervals_all_MAI_from_H2p_energy_tr, prob_all_MAI_from_H2p_energy_tr = temporal_radial_sum_PDF_MC(intervals_all_MAI_from_H2p_energy_r,prob_all_MAI_from_H2p_energy_r)	# # * 1e-20
+			intervals_all_MAR_from_H2p_Hm_energy_tr, prob_all_MAR_from_H2p_Hm_energy_tr = temporal_radial_sum_PDF_MC(intervals_all_MAR_from_H2p_Hm_energy_r,prob_all_MAR_from_H2p_Hm_energy_r)	# # * 1e-20
+			intervals_all_MAD_from_H2p_Hm_energy_tr, prob_all_MAD_from_H2p_Hm_energy_tr = temporal_radial_sum_PDF_MC(intervals_all_MAD_from_H2p_Hm_energy_r,prob_all_MAD_from_H2p_Hm_energy_r)	# # * 1e-20
+			intervals_all_MAI_from_H2p_Hm_energy_tr, prob_all_MAI_from_H2p_Hm_energy_tr = temporal_radial_sum_PDF_MC(intervals_all_MAI_from_H2p_Hm_energy_r,prob_all_MAI_from_H2p_Hm_energy_r)	# # * 1e-20
+			intervals_all_atomic_H2_dissociation_tr, prob_all_atomic_H2_dissociation_tr = temporal_radial_sum_PDF_MC(intervals_all_atomic_H2_dissociation_r,prob_all_atomic_H2_dissociation_r)	# # * 1e-20
 
-		ML_Hp_destruction_RR = (np.add(intervals_Hp_destruction_RR_tr[1:],intervals_Hp_destruction_RR_tr[:-1])/2)[np.array(prob_Hp_destruction_RR_tr).argmax()]	# # * 1e-20
-		temp = np.cumsum(prob_Hp_destruction_RR_tr)	# # * 1e-20
-		ML_Hp_destruction_RR_sigma = np.mean([ML_Hp_destruction_RR-intervals_Hp_destruction_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_Hp_destruction_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_Hp_destruction_RR])	# # * 1e-20
-		ML_H2_destruction_RR2 = (np.add(intervals_H2_destruction_RR2_tr[1:],intervals_H2_destruction_RR2_tr[:-1])/2)[np.array(prob_H2_destruction_RR2_tr).argmax()]	# # * 1e-20
-		temp = np.cumsum(prob_H2_destruction_RR2_tr)	# # * 1e-20
-		ML_H2_destruction_RR2_sigma = np.mean([ML_H2_destruction_RR2-intervals_H2_destruction_RR2_tr[np.abs(temp-0.159).argmin()+1],intervals_H2_destruction_RR2_tr[np.abs(temp-1+0.159).argmin()]-ML_H2_destruction_RR2])	# # * 1e-20
-		ML_Hp_creation_RR = (np.add(intervals_Hp_creation_RR_tr[1:],intervals_Hp_creation_RR_tr[:-1])/2)[np.array(prob_Hp_creation_RR_tr).argmax()]	# # * 1e-20
-		temp = np.cumsum(prob_Hp_creation_RR_tr)	# # * 1e-20
-		ML_Hp_creation_RR_sigma = np.mean([ML_Hp_creation_RR-intervals_Hp_creation_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_Hp_creation_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_Hp_creation_RR])	# # * 1e-20
-		ML_e_destruction_RR = (np.add(intervals_e_destruction_RR_tr[1:],intervals_e_destruction_RR_tr[:-1])/2)[np.array(prob_e_destruction_RR_tr).argmax()]	# # * 1e-20
-		temp = np.cumsum(prob_e_destruction_RR_tr)	# # * 1e-20
-		ML_e_destruction_RR_sigma = np.mean([ML_e_destruction_RR-intervals_e_destruction_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_e_destruction_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_e_destruction_RR])	# # * 1e-20
-		ML_e_creation_RR = (np.add(intervals_e_creation_RR_tr[1:],intervals_e_creation_RR_tr[:-1])/2)[np.array(prob_e_creation_RR_tr).argmax()]	# # * 1e-20
-		temp = np.cumsum(prob_e_creation_RR_tr)	# # * 1e-20
-		ML_e_creation_RR_sigma = np.mean([ML_e_creation_RR-intervals_e_creation_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_e_creation_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_e_creation_RR])	# # * 1e-20
-		ML_Hm_destruction_RR = (np.add(intervals_Hm_destruction_RR_tr[1:],intervals_Hm_destruction_RR_tr[:-1])/2)[np.array(prob_Hm_destruction_RR_tr).argmax()]	# # * 1e-20
-		temp = np.cumsum(prob_Hm_destruction_RR_tr)	# # * 1e-20
-		ML_Hm_destruction_RR_sigma = np.mean([ML_Hm_destruction_RR-intervals_Hm_destruction_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_Hm_destruction_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_Hm_destruction_RR])	# # * 1e-20
-		ML_Hm_creation_RR = (np.add(intervals_Hm_creation_RR_tr[1:],intervals_Hm_creation_RR_tr[:-1])/2)[np.array(prob_Hm_creation_RR_tr).argmax()]	# # * 1e-20
-		temp = np.cumsum(prob_Hm_creation_RR_tr)	# # * 1e-20
-		ML_Hm_creation_RR_sigma = np.mean([ML_Hm_creation_RR-intervals_Hm_creation_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_Hm_creation_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_Hm_creation_RR])	# # * 1e-20
-		ML_H2p_destruction_RR = (np.add(intervals_H2p_destruction_RR_tr[1:],intervals_H2p_destruction_RR_tr[:-1])/2)[np.array(prob_H2p_destruction_RR_tr).argmax()]	# # * 1e-20
-		temp = np.cumsum(prob_H2p_destruction_RR_tr)	# # * 1e-20
-		ML_H2p_destruction_RR_sigma = np.mean([ML_H2p_destruction_RR-intervals_H2p_destruction_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_H2p_destruction_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_H2p_destruction_RR])	# # * 1e-20
-		ML_H2p_creation_RR = (np.add(intervals_H2p_creation_RR_tr[1:],intervals_H2p_creation_RR_tr[:-1])/2)[np.array(prob_H2p_creation_RR_tr).argmax()]	# # * 1e-20
-		temp = np.cumsum(prob_H2p_creation_RR_tr)	# # * 1e-20
-		ML_H2p_creation_RR_sigma = np.mean([ML_H2p_creation_RR-intervals_H2p_creation_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_H2p_creation_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_H2p_creation_RR])	# # * 1e-20
+		ML_power_rad_excit,ML_power_rad_excit_sigma = find_PDF_full_properties(intervals_power_rad_excit_tr,prob_power_rad_excit_tr)
+		ML_power_rad_rec_bremm,ML_power_rad_rec_bremm_sigma = find_PDF_full_properties(intervals_power_rad_rec_bremm_tr,prob_power_rad_rec_bremm_tr)
+		ML_power_rad_mol,ML_power_rad_mol_sigma = find_PDF_full_properties(intervals_power_rad_mol_tr,prob_power_rad_mol_tr)
+		ML_power_potential,ML_power_potential_sigma = find_PDF_full_properties(intervals_power_potential_tr,prob_power_potential_tr)
+		ML_power_potential_mol,ML_power_potential_mol_sigma = find_PDF_full_properties(intervals_power_potential_mol_tr,prob_power_potential_mol_tr)
+		ML_power_potential_mol_plasma_heating,ML_power_potential_mol_plasma_heating_sigma = find_PDF_full_properties(intervals_power_potential_mol_plasma_heating_tr,prob_power_potential_mol_plasma_heating_tr)
+		ML_power_potential_mol_plasma_cooling,ML_power_potential_mol_plasma_cooling_sigma = find_PDF_full_properties(intervals_power_potential_mol_plasma_cooling_tr,prob_power_potential_mol_plasma_cooling_tr)
+		ML_power_via_ionisation,ML_power_via_ionisation_sigma = find_PDF_full_properties(intervals_power_via_ionisation_tr,prob_power_via_ionisation_tr)
+		ML_power_via_recombination,ML_power_via_recombination_sigma = find_PDF_full_properties(intervals_power_via_recombination_tr,prob_power_via_recombination_tr)
+		ML_tot_rad_power,ML_tot_rad_power_sigma = find_PDF_full_properties(intervals_tot_rad_power_tr,prob_tot_rad_power_tr)
+		ML_power_rad_Hm,ML_power_rad_Hm_sigma = find_PDF_full_properties(intervals_power_rad_Hm_tr,prob_power_rad_Hm_tr)
+		ML_power_rad_Hm_H2p,ML_power_rad_Hm_H2p_sigma = find_PDF_full_properties(intervals_power_rad_Hm_H2p_tr,prob_power_rad_Hm_H2p_tr)
+		ML_power_rad_Hm_Hp,ML_power_rad_Hm_Hp_sigma = find_PDF_full_properties(intervals_power_rad_Hm_Hp_tr,prob_power_rad_Hm_Hp_tr)
+		ML_power_rad_H2,ML_power_rad_H2_sigma = find_PDF_full_properties(intervals_power_rad_H2_tr,prob_power_rad_H2_tr)
+		ML_power_rad_H2p,ML_power_rad_H2p_sigma = find_PDF_full_properties(intervals_power_rad_H2p_tr,prob_power_rad_H2p_tr)
+		ML_power_heating_rec,ML_power_heating_rec_sigma = find_PDF_full_properties(intervals_power_heating_rec_tr,prob_power_heating_rec_tr)
+		ML_power_rec_neutral,ML_power_rec_neutral_sigma = find_PDF_full_properties(intervals_power_rec_neutral_tr,prob_power_rec_neutral_tr)
+		ML_power_via_brem,ML_power_via_brem_sigma = find_PDF_full_properties(intervals_power_via_brem_tr,prob_power_via_brem_tr)
+		ML_P_HCX,ML_P_HCX_sigma = find_PDF_full_properties(intervals_P_HCX_tr,prob_P_HCX_tr)
+		ML_P_HCX_2,ML_P_HCX_2_sigma = find_PDF_full_properties(intervals_P_HCX_2_tr,prob_P_HCX_2_tr)
+		ML_P_HCX_3,ML_P_HCX_3_sigma = find_PDF_full_properties(intervals_P_HCX_3_tr,prob_P_HCX_3_tr)
+		ML_total_removed_power,ML_total_removed_power_sigma = find_PDF_full_properties(intervals_total_removed_power_tr,prob_total_removed_power_tr)
+		ML_local_CX,ML_local_CX_sigma = find_PDF_full_properties(intervals_local_CX_tr,prob_local_CX_tr)
+		ML_local_elastic_H2,ML_local_elastic_H2_sigma = find_PDF_full_properties(intervals_local_elastic_H2_tr,prob_local_elastic_H2_tr)
+		ML_net_power_removed_plasma_column,ML_net_power_removed_plasma_column_sigma = find_PDF_full_properties(intervals_net_power_removed_plasma_column_tr,prob_net_power_removed_plasma_column_tr)
+		ML_total_removed_power_visible,ML_total_removed_power_visible_sigma = find_PDF_full_properties(intervals_total_removed_power_visible_tr,prob_total_removed_power_visible_tr)
+		ML_power_rad_atomic_visible,ML_power_rad_atomic_visible_sigma = find_PDF_full_properties(intervals_power_rad_atomic_visible_tr,prob_power_rad_atomic_visible_tr)
+		ML_power_rad_mol_visible,ML_power_rad_mol_visible_sigma = find_PDF_full_properties(intervals_power_rad_mol_visible_tr,prob_power_rad_mol_visible_tr)
+		ML_H_destruction_RR2,ML_H_destruction_RR2_sigma = find_PDF_full_properties(intervals_H_destruction_RR2_tr,prob_H_destruction_RR2_tr)
+		ML_Hp_destruction_RR,ML_Hp_destruction_RR_sigma = find_PDF_full_properties(intervals_Hp_destruction_RR_tr,prob_Hp_destruction_RR_tr)	# # * 1e-20
+		ML_H2_destruction_RR2,ML_H2_destruction_RR2_sigma = find_PDF_full_properties(intervals_H2_destruction_RR2_tr,prob_H2_destruction_RR2_tr)	# # * 1e-20
+		ML_Hp_creation_RR,ML_Hp_creation_RR_sigma = find_PDF_full_properties(intervals_Hp_creation_RR_tr,prob_Hp_creation_RR_tr)
+		ML_e_destruction_RR,ML_e_destruction_RR_sigma = find_PDF_full_properties(intervals_e_destruction_RR_tr,prob_e_destruction_RR_tr)
+		ML_e_creation_RR,ML_e_creation_RR_sigma = find_PDF_full_properties(intervals_e_creation_RR_tr,prob_e_creation_RR_tr)
+		ML_Hm_destruction_RR,ML_Hm_destruction_RR_sigma = find_PDF_full_properties(intervals_Hm_destruction_RR_tr,prob_Hm_destruction_RR_tr)
+		ML_Hm_creation_RR,ML_Hm_creation_RR_sigma = find_PDF_full_properties(intervals_Hm_creation_RR_tr,prob_Hm_creation_RR_tr)
+		ML_H2p_destruction_RR,ML_H2p_destruction_RR_sigma = find_PDF_full_properties(intervals_H2p_destruction_RR_tr,prob_H2p_destruction_RR_tr)
+		ML_H2p_creation_RR,ML_H2p_creation_RR_sigma = find_PDF_full_properties(intervals_H2p_creation_RR_tr,prob_H2p_creation_RR_tr)
+		ML_net_H_destruction_RR,ML_net_H_destruction_RR_sigma = find_PDF_full_properties(intervals_net_H_destruction_RR_tr,prob_net_H_destruction_RR_tr)	# # * 1e-20
+		ML_net_H2_destruction_RR,ML_net_H2_destruction_RR_sigma = find_PDF_full_properties(intervals_net_H2_destruction_RR_tr,prob_net_H2_destruction_RR_tr)	# # * 1e-20
+		ML_net_e_destruction,ML_net_e_destruction_sigma = find_PDF_full_properties(intervals_net_e_destruction_tr,prob_net_e_destruction_tr)	# # * 1e-20
+		ML_net_Hp_destruction,ML_net_Hp_destruction_sigma = find_PDF_full_properties(intervals_net_Hp_destruction_tr,prob_net_Hp_destruction_tr)	# # * 1e-20
+		ML_net_Hm_destruction,ML_net_Hm_destruction_sigma = find_PDF_full_properties(intervals_net_Hm_destruction_tr,prob_net_Hm_destruction_tr)	# # * 1e-20
+		ML_net_H2p_destruction,ML_net_H2p_destruction_sigma = find_PDF_full_properties(intervals_net_H2p_destruction_tr,prob_net_H2p_destruction_tr)	# # * 1e-20
+
 		if latest_version:
-			ML_H_creation_RR = (np.add(intervals_H_creation_RR_tr[1:],intervals_H_creation_RR_tr[:-1])/2)[np.array(prob_H_creation_RR_tr).argmax()]	# # * 1e-20
-			temp = np.cumsum(prob_H_creation_RR_tr)	# # * 1e-20
-			ML_H_creation_RR_sigma = np.mean([ML_H_creation_RR-intervals_H_creation_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_H_creation_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_H_creation_RR])	# # * 1e-20
-			ML_H2_creation_RR = (np.add(intervals_H2_creation_RR_tr[1:],intervals_H2_creation_RR_tr[:-1])/2)[np.array(prob_H2_creation_RR_tr).argmax()]	# # * 1e-20
-			temp = np.cumsum(prob_H2_creation_RR_tr)	# # * 1e-20
-			ML_H2_creation_RR_sigma = np.mean([ML_H2_creation_RR-intervals_H2_creation_RR_tr[np.abs(temp-0.159).argmin()+1],intervals_H2_creation_RR_tr[np.abs(temp-1+0.159).argmin()]-ML_H2_creation_RR])	# # * 1e-20
+			ML_H_creation_RR,ML_H_creation_RR_sigma = find_PDF_full_properties(intervals_H_creation_RR_tr,prob_H_creation_RR_tr)
+			ML_H2_creation_RR,ML_H2_creation_RR_sigma = find_PDF_full_properties(intervals_H2_creation_RR_tr,prob_H2_creation_RR_tr)
+
+			ML_all_MAR_from_Hm,ML_all_MAR_from_Hm_sigma = find_PDF_full_properties(intervals_all_MAR_from_Hm_tr,prob_all_MAR_from_Hm_tr)
+			ML_all_MAD_from_Hm,ML_all_MAD_from_Hm_sigma = find_PDF_full_properties(intervals_all_MAD_from_Hm_tr,prob_all_MAD_from_Hm_tr)
+			ML_all_MAI_from_Hm,ML_all_MAI_from_Hm_sigma = find_PDF_full_properties(intervals_all_MAI_from_Hm_tr,prob_all_MAI_from_Hm_tr)
+			ML_all_MAR_from_H2p,ML_all_MAR_from_H2p_sigma = find_PDF_full_properties(intervals_all_MAR_from_H2p_tr,prob_all_MAR_from_H2p_tr)
+			ML_all_MAD_from_H2p,ML_all_MAD_from_H2p_sigma = find_PDF_full_properties(intervals_all_MAD_from_H2p_tr,prob_all_MAD_from_H2p_tr)
+			ML_all_MAI_from_H2p,ML_all_MAI_from_H2p_sigma = find_PDF_full_properties(intervals_all_MAI_from_H2p_tr,prob_all_MAI_from_H2p_tr)
+			ML_all_MAR_from_H2p_Hm,ML_all_MAR_from_H2p_Hm_sigma = find_PDF_full_properties(intervals_all_MAR_from_H2p_Hm_tr,prob_all_MAR_from_H2p_Hm_tr)
+			ML_all_MAD_from_H2p_Hm,ML_all_MAD_from_H2p_Hm_sigma = find_PDF_full_properties(intervals_all_MAD_from_H2p_Hm_tr,prob_all_MAD_from_H2p_Hm_tr)
+			ML_all_MAI_from_H2p_Hm,ML_all_MAI_from_H2p_Hm_sigma = find_PDF_full_properties(intervals_all_MAI_from_H2p_Hm_tr,prob_all_MAI_from_H2p_Hm_tr)
+
+			ML_all_MAR_from_Hm_energy,ML_all_MAR_from_Hm_energy_sigma = find_PDF_full_properties(intervals_all_MAR_from_Hm_energy_tr,prob_all_MAR_from_Hm_energy_tr)
+			ML_all_MAD_from_Hm_energy,ML_all_MAD_from_Hm_energy_sigma = find_PDF_full_properties(intervals_all_MAD_from_Hm_energy_tr,prob_all_MAD_from_Hm_energy_tr)
+			ML_all_MAI_from_Hm_energy,ML_all_MAI_from_Hm_energy_sigma = find_PDF_full_properties(intervals_all_MAI_from_Hm_energy_tr,prob_all_MAI_from_Hm_energy_tr)
+			ML_all_MAR_from_H2p_energy,ML_all_MAR_from_H2p_energy_sigma = find_PDF_full_properties(intervals_all_MAR_from_H2p_energy_tr,prob_all_MAR_from_H2p_energy_tr)
+			ML_all_MAD_from_H2p_energy,ML_all_MAD_from_H2p_energy_sigma = find_PDF_full_properties(intervals_all_MAD_from_H2p_energy_tr,prob_all_MAD_from_H2p_energy_tr)
+			ML_all_MAI_from_H2p_energy,ML_all_MAI_from_H2p_energy_sigma = find_PDF_full_properties(intervals_all_MAI_from_H2p_energy_tr,prob_all_MAI_from_H2p_tr)
+			ML_all_MAR_from_H2p_Hm_energy,ML_all_MAR_from_H2p_Hm_energy_sigma = find_PDF_full_properties(intervals_all_MAR_from_H2p_Hm_energy_tr,prob_all_MAR_from_H2p_Hm_energy_tr)
+			ML_all_MAD_from_H2p_Hm_energy,ML_all_MAD_from_H2p_Hm_energy_sigma = find_PDF_full_properties(intervals_all_MAD_from_H2p_Hm_energy_tr,prob_all_MAD_from_H2p_Hm_energy_tr)
+			ML_all_MAI_from_H2p_Hm_energy,ML_all_MAI_from_H2p_Hm_energy_sigma = find_PDF_full_properties(intervals_all_MAI_from_H2p_Hm_energy_tr,prob_all_MAI_from_H2p_Hm_energy_tr)
+			ML_all_atomic_H2_dissociation,ML_all_atomic_H2_dissociation_sigma = find_PDF_full_properties(intervals_all_atomic_H2_dissociation_tr,prob_all_atomic_H2_dissociation_tr)
+
 
 		results_summary = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv',index_col=0)
 		results_summary.loc[merge_ID_target,['B','Seed','p_n [Pa]','CB energy [J]','Delivered energy [J]','T_axial','Target','power_rad_excit','power_rad_excit_sigma','power_rad_rec_bremm','power_rad_rec_bremm_sigma','power_rad_mol','power_rad_mol_sigma','power_via_ionisation','power_via_ionisation_sigma','power_via_recombination','power_via_recombination_sigma','tot_rad_power','tot_rad_power_sigma','power_rad_Hm','power_rad_Hm_sigma','power_rad_Hm_H2p','power_rad_Hm_H2p_sigma','power_rad_Hm_Hp','power_rad_Hm_Hp_sigma','power_rad_H2','power_rad_H2_sigma','power_rad_H2p','power_rad_H2p_sigma','power_heating_rec','power_heating_rec_sigma','power_rec_neutral','power_rec_neutral_sigma','power_via_brem','power_via_brem_sigma','total_removed_power','total_removed_power_sigma','local_CX','local_CX_sigma','max_CX_energy','max_CX_energy_sigma','net_power_removed_plasma_column','net_power_removed_plasma_column_sigma']]=magnetic_field,feed_rate_SLM,target_chamber_pressure,0.5*(capacitor_voltage**2)*150e-6,energy_delivered_good_pulses,target_OES_distance,target_material,ML_power_rad_excit,ML_power_rad_excit_sigma,ML_power_rad_rec_bremm,ML_power_rad_rec_bremm_sigma,ML_power_rad_mol,ML_power_rad_mol_sigma,ML_power_via_ionisation,ML_power_via_ionisation_sigma,ML_power_via_recombination,ML_power_via_recombination_sigma,ML_tot_rad_power,ML_tot_rad_power_sigma,ML_power_rad_Hm,ML_power_rad_Hm_sigma,ML_power_rad_Hm_H2p,ML_power_rad_Hm_H2p_sigma,ML_power_rad_Hm_Hp,ML_power_rad_Hm_Hp_sigma,ML_power_rad_H2,ML_power_rad_H2_sigma,ML_power_rad_H2p,ML_power_rad_H2p_sigma,ML_power_heating_rec,ML_power_heating_rec_sigma,ML_power_rec_neutral,ML_power_rec_neutral_sigma,ML_power_via_brem,ML_power_via_brem_sigma,ML_total_removed_power,ML_total_removed_power_sigma,ML_local_CX,ML_local_CX_sigma,ML_E_HCX,ML_E_HCX_sigma,ML_net_power_removed_plasma_column,ML_net_power_removed_plasma_column_sigma
 		results_summary.to_csv(path_or_buf='/home/ffederic/work/Collaboratory/test/experimental_data/results_summary.csv')
 
-		plt.figure(figsize=(20, 10));
+		plt.figure(figsize=(20, 20));
 		plt.plot(np.sort(intervals_power_rad_excit_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_excit_tr]*2).T.flatten(),label='power_rad_excit ML=%.3g+/-%.3gJ' %(ML_power_rad_excit,ML_power_rad_excit_sigma))
 		plt.plot(np.sort(intervals_power_rad_rec_bremm_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_rec_bremm_tr]*2).T.flatten(),label='power_rad_rec_bremm ML=%.3g+/-%.3gJ' %(ML_power_rad_rec_bremm,ML_power_rad_rec_bremm_sigma))
 		plt.plot(np.sort(intervals_power_rad_mol_tr.tolist()*2)[1:-1],100*np.array([prob_power_rad_mol_tr]*2).T.flatten(),label='power_rad_mol ML=%.3g+/-%.3gJ' %(ML_power_rad_mol,ML_power_rad_mol_sigma))
@@ -7359,6 +7901,8 @@ else:
 		plt.plot(np.sort(intervals_E_HCX.tolist()*2)[1:-1],100*np.array([prob_E_HCX]*2).T.flatten(),label='max CX ML MODE 1=%.3g+/-%.3gJ' %(ML_E_HCX,ML_E_HCX_sigma))
 		plt.plot(np.sort(intervals_E_HCX_2.tolist()*2)[1:-1],100*np.array([prob_E_HCX_2]*2).T.flatten(),label='max CX ML MODE 2=%.3g+/-%.3gJ' %(ML_E_HCX_2,ML_E_HCX_2_sigma))
 		plt.plot(np.sort(intervals_E_HCX_3.tolist()*2)[1:-1],100*np.array([prob_E_HCX_3]*2).T.flatten(),label='max CX ML MODE 3=%.3g+/-%.3gJ' %(ML_E_HCX_3,ML_E_HCX_3_sigma))
+		plt.plot(np.sort(intervals_local_CX_tr.tolist()*2)[1:-1],100*np.array([prob_local_CX_tr]*2).T.flatten(),label='local_CX ML=%.3g+/-%.3gJ' %(ML_local_CX,ML_local_CX_sigma))
+		plt.plot(np.sort(intervals_local_elastic_H2_tr.tolist()*2)[1:-1],100*np.array([prob_local_elastic_H2_tr]*2).T.flatten(),label='local_elastic_H2 ML=%.3g+/-%.3gJ' %(ML_local_elastic_H2,ML_local_elastic_H2_sigma))
 		plt.plot(np.sort(intervals_total_removed_power_tr.tolist()*2)[1:-1],100*np.array([prob_total_removed_power_tr]*2).T.flatten(),label='total_removed_power from plasma fliud\ionisation*pot + rad_mol + rad_excit + recombination rad + brem + rec_neutral\n+ potential_mol - recombination heating ML=%.3g+/-%.3gJ' %(ML_total_removed_power,ML_total_removed_power_sigma))
 		plt.plot(np.sort(intervals_net_power_removed_plasma_column_tr.tolist()*2)[1:-1],100*np.array([prob_net_power_removed_plasma_column_tr]*2).T.flatten(),label='net power removed from plasma column\nradiated + recombination neutral ML=%.3g+/-%.3gJ' %(ML_net_power_removed_plasma_column,ML_net_power_removed_plasma_column_sigma))
 		plt.plot(np.sort(intervals_total_removed_power_visible_tr.tolist()*2)[1:-1],100*np.array([prob_total_removed_power_visible_tr]*2).T.flatten(),label='total_removed_power_visible ML=%.3g+/-%.3gJ' %(ML_total_removed_power_visible,ML_total_removed_power_visible_sigma))
@@ -7371,9 +7915,19 @@ else:
 		plt.plot([np.sum(np.sum(target_Bohm_heat_flow*area,axis=1)[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'--',label='Bohm target heat flux target location=%.3gJ' %(np.sum(np.sum(target_Bohm_heat_flow*area,axis=1)[conventional_start_pulse:conventional_end_pulse])*dt/1000));
 		plt.plot([np.sum(np.sum(target_Bohm_heat_flow_target_voltage*area,axis=1)[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'--',label='Bohm target heat flux target location target voltage bias used=%.3gJ' %(np.sum(np.sum(target_Bohm_heat_flow_target_voltage*area,axis=1)[conventional_start_pulse:conventional_end_pulse])*dt/1000));
 		plt.plot([np.sum(np.sum(Bohm_heat_flow*area,axis=1)[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'--',label='Bohm target heat flux TS location=%.3gJ' %(np.sum(np.sum(Bohm_heat_flow*area,axis=1)[conventional_start_pulse:conventional_end_pulse])*dt/1000));
+		if latest_version:
+			plt.plot(-np.sort((intervals_all_MAR_from_Hm_energy_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAR_from_Hm_energy_tr]*2).T.flatten(),'--',color=color[6],label='all_MAR_from_Hm_energy ML=%.3g+/-%.3g#' %((ML_all_MAR_from_Hm_energy),(ML_all_MAR_from_Hm_energy_sigma)))
+			plt.plot(np.sort((intervals_all_MAD_from_Hm_energy_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAD_from_Hm_energy_tr]*2).T.flatten(),':',color=color[6],label='all_MAD_from_Hm_energy ML=%.3g+/-%.3g#' %((ML_all_MAD_from_Hm_energy),(ML_all_MAD_from_Hm_energy_sigma)))
+			plt.plot(np.sort((intervals_all_MAI_from_Hm_energy_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAI_from_Hm_energy_tr]*2).T.flatten(),'-',color=color[6],label='all_MAI_from_Hm_energy ML=%.3g+/-%.3g#' %((ML_all_MAI_from_Hm_energy),(ML_all_MAI_from_Hm_energy_sigma)))
+			plt.plot(-np.sort((intervals_all_MAR_from_H2p_energy_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAR_from_H2p_energy_tr]*2).T.flatten(),'--',color=color[7],label='all_MAR_from_H2p_energy ML=%.3g+/-%.3g#' %((ML_all_MAR_from_H2p_energy),(ML_all_MAR_from_H2p_energy_sigma)))
+			plt.plot(np.sort((intervals_all_MAD_from_H2p_energy_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAD_from_H2p_energy_tr]*2).T.flatten(),':',color=color[7],label='all_MAD_from_H2p_energy ML=%.3g+/-%.3g#' %((ML_all_MAD_from_H2p_energy),(ML_all_MAD_from_H2p_energy_sigma)))
+			plt.plot(np.sort((intervals_all_MAI_from_H2p_energy_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAI_from_H2p_energy_tr]*2).T.flatten(),'-',color=color[7],label='all_MAI_from_H2p_energy ML=%.3g+/-%.3g#' %((ML_all_MAI_from_H2p_energy),(ML_all_MAI_from_H2p_energy_sigma)))
+			plt.plot(-np.sort((intervals_all_MAR_from_H2p_Hm_energy_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAR_from_H2p_Hm_energy_tr]*2).T.flatten(),'--',color=color[8],label='all_MAR_from_H2p_Hm_energy ML=%.3g+/-%.3g#' %((ML_all_MAR_from_H2p_Hm_energy),(ML_all_MAR_from_H2p_Hm_energy_sigma)))
+			plt.plot(np.sort((intervals_all_MAD_from_H2p_Hm_energy_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAD_from_H2p_Hm_energy_tr]*2).T.flatten(),':',color=color[8],label='all_MAD_from_H2p_Hm_energy ML=%.3g+/-%.3g#' %((ML_all_MAD_from_H2p_Hm_energy),(ML_all_MAD_from_H2p_Hm_energy_sigma)))
+			plt.plot(np.sort((intervals_all_MAI_from_H2p_Hm_energy_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAI_from_H2p_Hm_energy_tr]*2).T.flatten(),'-',color=color[8],label='all_MAI_from_H2p_Hm_energy ML=%.3g+/-%.3g#' %((ML_all_MAI_from_H2p_Hm_energy),(ML_all_MAI_from_H2p_Hm_energy_sigma)))
 		plt.semilogx()
 		plt.grid()
-		plt.legend(loc='best', fontsize='xx-small')
+		plt.legend(loc='best', fontsize='small')
 		# plt.xlim(left=np.min(intervals_power_rad_excit_tr[1:][np.array(prob_power_rad_excit_tr)>1e-20]),right=np.max(intervals_power_rad_excit_tr[1:][np.array(prob_power_rad_excit_tr)>1e-20]))
 		plt.xlim(left=1e0)
 		# plt.ylim(bottom=1e-1)
@@ -7385,21 +7939,37 @@ else:
 			figure_index+1) + '.eps', bbox_inches='tight')
 		plt.close('all')
 
-		plt.figure(figsize=(20, 10));
+		plt.figure(figsize=(20, 20));
 		plt.plot(np.sort((1e20*intervals_H_destruction_RR2_tr).tolist()*2)[1:-1],100*np.array([prob_H_destruction_RR2_tr]*2).T.flatten(),'-',color=color[0],label='H_destruction_RR2 ML=%.3g+/-%.3g#' %((1e20*ML_H_destruction_RR2),(1e20*ML_H_destruction_RR2_sigma)))
 		if latest_version:
 			plt.plot(np.sort((1e20*intervals_H_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H_creation_RR_tr]*2).T.flatten(),'--',color=color[0],label='H_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H_creation_RR),(1e20*ML_H_creation_RR_sigma)))
+			# plt.plot(np.sort((1e20*intervals_net_H_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_net_H_destruction_RR_tr]*2).T.flatten(),':',color=color[0],label='net_H_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_net_H_destruction_RR),(1e20*ML_net_H_destruction_RR_sigma)))
 		plt.plot(np.sort((1e20*intervals_Hp_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hp_destruction_RR_tr]*2).T.flatten(),'-',color=color[1],label='Hp_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hp_destruction_RR),(1e20*ML_Hp_destruction_RR_sigma)))
 		plt.plot(np.sort((1e20*intervals_Hp_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hp_creation_RR_tr]*2).T.flatten(),'--',color=color[1],label='Hp_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hp_creation_RR),(1e20*ML_Hp_creation_RR_sigma)))
+		# plt.plot(np.sort((1e20*intervals_net_Hp_destruction_tr).tolist()*2)[1:-1],100*np.array([prob_net_Hp_destruction_tr]*2).T.flatten(),':',color=color[1],label='net_Hp_destruction ML=%.3g+/-%.3g#' %((1e20*ML_net_Hp_destruction),(1e20*ML_net_Hp_destruction_sigma)))
 		plt.plot(np.sort((1e20*intervals_e_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_e_destruction_RR_tr]*2).T.flatten(),'-',color=color[2],label='e_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_e_destruction_RR),(1e20*ML_e_destruction_RR_sigma)))
 		plt.plot(np.sort((1e20*intervals_e_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_e_creation_RR_tr]*2).T.flatten(),'--',color=color[2],label='e_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_e_creation_RR),(1e20*ML_e_creation_RR_sigma)))
+		# plt.plot(np.sort((1e20*intervals_net_e_destruction_tr).tolist()*2)[1:-1],100*np.array([prob_net_e_destruction_tr]*2).T.flatten(),':',color=color[2],label='net_e_destruction ML=%.3g+/-%.3g#' %((1e20*ML_net_e_destruction),(1e20*ML_net_e_destruction_sigma)))
 		plt.plot(np.sort((1e20*intervals_Hm_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hm_destruction_RR_tr]*2).T.flatten(),'-',color=color[3],label='Hm_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hm_destruction_RR),(1e20*ML_Hm_destruction_RR_sigma)))
 		plt.plot(np.sort((1e20*intervals_Hm_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_Hm_creation_RR_tr]*2).T.flatten(),'--',color=color[3],label='Hm_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_Hm_creation_RR),(1e20*ML_Hm_creation_RR_sigma)))
+		# plt.plot(np.sort((1e20*intervals_net_Hm_destruction_tr).tolist()*2)[1:-1],100*np.array([prob_net_Hm_destruction_tr]*2).T.flatten(),':',color=color[3],label='net_Hm_destruction ML=%.3g+/-%.3g#' %((1e20*ML_net_Hm_destruction),(1e20*ML_net_Hm_destruction_sigma)))
 		plt.plot(np.sort((1e20*intervals_H2p_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2p_destruction_RR_tr]*2).T.flatten(),'-',color=color[4],label='H2p_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2p_destruction_RR),(1e20*ML_H2p_destruction_RR_sigma)))
 		plt.plot(np.sort((1e20*intervals_H2p_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2p_creation_RR_tr]*2).T.flatten(),'--',color=color[4],label='H2p_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2p_creation_RR),(1e20*ML_H2p_creation_RR_sigma)))
+		# plt.plot(np.sort((1e20*intervals_net_H2p_destruction_tr).tolist()*2)[1:-1],100*np.array([prob_net_H2p_destruction_tr]*2).T.flatten(),':',color=color[4],label='net_H2p_destruction ML=%.3g+/-%.3g#' %((1e20*ML_net_H2p_destruction),(1e20*ML_net_H2p_destruction_sigma)))
 		plt.plot(np.sort((1e20*intervals_H2_destruction_RR2_tr).tolist()*2)[1:-1],100*np.array([prob_H2_destruction_RR2_tr]*2).T.flatten(),'-',color=color[5],label='H2_destruction_RR2 ML=%.3g+/-%.3g#' %((1e20*ML_H2_destruction_RR2),(1e20*ML_H2_destruction_RR2_sigma)))
+		# plt.plot(np.sort((1e20*intervals_net_H2_destruction_RR_tr).tolist()*2)[1:-1],100*np.array([prob_net_H2_destruction_RR_tr]*2).T.flatten(),':',color=color[5],label='net_H2_destruction_RR ML=%.3g+/-%.3g#' %((1e20*ML_net_H2_destruction_RR),(1e20*ML_net_H2_destruction_RR_sigma)))
 		if latest_version:
 			plt.plot(np.sort((1e20*intervals_H2_creation_RR_tr).tolist()*2)[1:-1],100*np.array([prob_H2_creation_RR_tr]*2).T.flatten(),'--',color=color[5],label='H2_creation_RR ML=%.3g+/-%.3g#' %((1e20*ML_H2_creation_RR),(1e20*ML_H2_creation_RR_sigma)))
+			plt.plot(np.sort((1e20*intervals_all_MAR_from_Hm_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAR_from_Hm_tr]*2).T.flatten(),'--',color=color[6],label='all_MAR_from_Hm ML=%.3g+/-%.3g#' %((1e20*ML_all_MAR_from_Hm),(1e20*ML_all_MAR_from_Hm_sigma)))
+			plt.plot(np.sort((1e20*intervals_all_MAD_from_Hm_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAD_from_Hm_tr]*2).T.flatten(),':',color=color[6],label='all_MAD_from_Hm ML=%.3g+/-%.3g#' %((1e20*ML_all_MAD_from_Hm),(1e20*ML_all_MAD_from_Hm_sigma)))
+			plt.plot(np.sort((1e20*intervals_all_MAI_from_Hm_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAI_from_Hm_tr]*2).T.flatten(),'-',color=color[6],label='all_MAI_from_Hm ML=%.3g+/-%.3g#' %((1e20*ML_all_MAI_from_Hm),(1e20*ML_all_MAI_from_Hm_sigma)))
+			plt.plot(np.sort((1e20*intervals_all_MAR_from_H2p_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAR_from_H2p_tr]*2).T.flatten(),'--',color=color[7],label='all_MAR_from_H2p ML=%.3g+/-%.3g#' %((1e20*ML_all_MAR_from_H2p),(1e20*ML_all_MAR_from_H2p_sigma)))
+			plt.plot(np.sort((1e20*intervals_all_MAD_from_H2p_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAD_from_H2p_tr]*2).T.flatten(),':',color=color[7],label='all_MAD_from_H2p ML=%.3g+/-%.3g#' %((1e20*ML_all_MAD_from_H2p),(1e20*ML_all_MAD_from_H2p_sigma)))
+			plt.plot(np.sort((1e20*intervals_all_MAI_from_H2p_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAI_from_H2p_tr]*2).T.flatten(),'-',color=color[7],label='all_MAI_from_H2p ML=%.3g+/-%.3g#' %((1e20*ML_all_MAI_from_H2p),(1e20*ML_all_MAI_from_H2p_sigma)))
+			plt.plot(np.sort((1e20*intervals_all_MAR_from_H2p_Hm_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAR_from_H2p_Hm_tr]*2).T.flatten(),'--',color=color[8],label='all_MAR_from_H2p_Hm ML=%.3g+/-%.3g#' %((1e20*ML_all_MAR_from_H2p_Hm),(1e20*ML_all_MAR_from_H2p_Hm_sigma)))
+			plt.plot(np.sort((1e20*intervals_all_MAD_from_H2p_Hm_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAD_from_H2p_Hm_tr]*2).T.flatten(),':',color=color[8],label='all_MAD_from_H2p_Hm ML=%.3g+/-%.3g#' %((1e20*ML_all_MAD_from_H2p_Hm),(1e20*ML_all_MAD_from_H2p_Hm_sigma)))
+			plt.plot(np.sort((1e20*intervals_all_MAI_from_H2p_Hm_tr).tolist()*2)[1:-1],100*np.array([prob_all_MAI_from_H2p_Hm_tr]*2).T.flatten(),'-',color=color[8],label='all_MAI_from_H2p_Hm ML=%.3g+/-%.3g#' %((1e20*ML_all_MAI_from_H2p_Hm),(1e20*ML_all_MAI_from_H2p_Hm_sigma)))
+			plt.plot(np.sort((1e20*intervals_all_atomic_H2_dissociation_tr).tolist()*2)[1:-1],100*np.array([prob_all_atomic_H2_dissociation_tr]*2).T.flatten(),'-',color=color[9],label='all_atomic_H2_dissociation ML=%.3g+/-%.3g#' %((1e20*ML_all_atomic_H2_dissociation),(1e20*ML_all_atomic_H2_dissociation_sigma)))
 		plt.plot([H2_pre_ELMlike_pulse]*2,[0,100],'--',label='H2 in the plasma volume before the pulse = %.3g#' %(H2_pre_ELMlike_pulse));
 		plt.plot([H2_inflow_sides_plasma_column]*2,[0,100],'--',label='H2 incoming from sides during pulse (fixed pressure=%.3gPa) = %.3g#' %(target_chamber_pressure,H2_inflow_sides_plasma_column));
 		plt.plot([source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000]*2,[0,100],'--',label='H2 flow to the source = %.3g#' %(source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J) * (conventional_end_pulse - conventional_start_pulse)*dt/1000));
@@ -7413,7 +7983,7 @@ else:
 		plt.plot([np.sum(plasma_inflow_upstream_homogeneous_mach_number[conventional_start_pulse:conventional_end_pulse])*dt/1000]*2,[0,100],'k--',label='upstream flow Mach from power')
 		plt.semilogx()
 		plt.grid()
-		plt.legend(loc='best', fontsize='xx-small')
+		plt.legend(loc='best', fontsize='small')
 		# plt.xlim(left=np.min(intervals_power_rad_excit_tr[1:][np.array(prob_power_rad_excit_tr)>1e-20]),right=np.max(intervals_power_rad_excit_tr[1:][np.array(prob_power_rad_excit_tr)>1e-20]))
 		# plt.xlim(left=1e0)
 		# plt.ylim(bottom=1e-1)
@@ -7432,9 +8002,16 @@ else:
 		bayesian_results_dict['miscellaneous']['coord_info'] = dict([('r_crop',r_crop),('time_crop',time_crop),('area',area),('length',length)])
 		bayesian_results_dict['miscellaneous']['homogeneous_mach_number'] = homogeneous_mach_number
 		bayesian_results_dict['miscellaneous']['homogeneous_flow_vel'] = homogeneous_flow_vel
+		bayesian_results_dict['miscellaneous']['conventional_start_pulse'] = conventional_start_pulse
+		bayesian_results_dict['miscellaneous']['conventional_end_pulse'] = conventional_end_pulse
 		bayesian_results_dict['miscellaneous']['shift_TS_to_power_source'] = dict([('internal',internal_shift_TS_to_power_source),('upstream',shift_TS_to_power_source)])
 		bayesian_results_dict['input_power'] = dict([])
 		bayesian_results_dict['input_power']['energy'] = (np.sum(power_pulse_shape_crop[conventional_start_pulse:conventional_end_pulse])+np.sum(power_pulse_shape_std_crop[conventional_start_pulse:conventional_end_pulse]**2)**0.5)*dt/1000
+		bayesian_results_dict['input_power']['power'] = dict([])
+		bayesian_results_dict['input_power']['power']['most_likely'] = power_pulse_shape_crop
+		bayesian_results_dict['input_power']['power']['sigma'] = power_pulse_shape_std_crop
+		bayesian_results_dict['input_power']['power']['time'] = time_source_power_crop
+		bayesian_results_dict['input_power']['power']['unit'] = 'W'
 		bayesian_results_dict['input_power']['TS'] = dict([])
 		bayesian_results_dict['input_power']['TS']['upstream_power_density_distribution_uniform_mach'] = dict([])
 		bayesian_results_dict['input_power']['TS']['upstream_power_density_distribution_uniform_mach']['full'] = upstream_power_density_distribution_uniform_mach
@@ -7461,6 +8038,7 @@ else:
 		bayesian_results_dict['input_power']['TS']['flow']['plasma_inflow_upstream_min'] = plasma_inflow_upstream_min
 		bayesian_results_dict['input_power']['TS']['flow']['H2_source_inflow'] = source_flow_rate /60/1000 * 101325/(273*boltzmann_constant_J)
 		bayesian_results_dict['input_power']['TS']['flow']['H2_target_inflow'] = feed_rate_SLM /60/1000 * 101325/(273*boltzmann_constant_J)
+		bayesian_results_dict['input_power']['TS']['flow']['H2_before_pulse_target_chamber'] = np.pi*(0.25**2)*target_chamber_length*target_chamber_pressure/(273*boltzmann_constant_J)
 
 		bayesian_results_dict['power_rad_excit'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['power_rad_excit']['full'] = dict([('intervals',intervals_power_rad_excit),('prob',prob_power_rad_excit),('actual_values',actual_values_power_rad_excit),('most_likely',most_likely_power_rad_excit),('most_likely_sigma',most_likely_power_rad_excit_sigma),('unit','W m^-3')])
@@ -7509,7 +8087,7 @@ else:
 
 		bayesian_results_dict['tot_rad_power'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['tot_rad_power']['full'] = dict([('intervals',intervals_tot_rad_power),('prob',prob_tot_rad_power),('actual_values',actual_values_tot_rad_power),('most_likely',most_likely_tot_rad_power),('most_likely_sigma',most_likely_tot_rad_power_sigma),('unit','W m^-3')])
-		bayesian_results_dict['tot_rad_power']['radial_sum'] = dict([('intervals',intervals_tot_rad_power_r),('prob',prob_tot_rad_power_r),('actual_values',actual_values_tot_rad_power_r),('most_likely',most_likely_tot_rad_power_r),('unit','W')])
+		bayesian_results_dict['tot_rad_power']['radial_sum'] = dict([('intervals',intervals_tot_rad_power_r),('prob',prob_tot_rad_power_r),('actual_values',actual_values_tot_rad_power_r),('most_likely',most_likely_tot_rad_power_r),('most_likely_sigma_up',actual_values_tot_rad_power_r_up),('most_likely_sigma_down',actual_values_tot_rad_power_r_down),('unit','W')])
 		bayesian_results_dict['tot_rad_power']['radial_time_sum'] = dict([('intervals',intervals_tot_rad_power_tr),('prob',prob_tot_rad_power_tr),('most_likely',ML_tot_rad_power),('most_likely_sigma',ML_tot_rad_power_sigma),('unit','J')])
 
 		bayesian_results_dict['power_rad_Hm'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
@@ -7598,7 +8176,7 @@ else:
 
 		bayesian_results_dict['total_removed_power'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['total_removed_power']['full'] = dict([('intervals',intervals_total_removed_power),('prob',prob_total_removed_power),('actual_values',actual_values_total_removed_power),('most_likely',most_likely_total_removed_power),('most_likely_sigma',most_likely_total_removed_power_sigma),('unit','W m^-3')])
-		bayesian_results_dict['total_removed_power']['radial_sum'] = dict([('intervals',intervals_total_removed_power_r),('prob',prob_total_removed_power_r),('actual_values',actual_values_total_removed_power_r),('most_likely',most_likely_total_removed_power_r),('unit','W')])
+		bayesian_results_dict['total_removed_power']['radial_sum'] = dict([('intervals',intervals_total_removed_power_r),('prob',prob_total_removed_power_r),('actual_values',actual_values_total_removed_power_r),('most_likely',most_likely_total_removed_power_r),('most_likely_sigma_up',actual_values_total_removed_power_r_up),('most_likely_sigma_down',actual_values_total_removed_power_r_down),('unit','W')])
 		bayesian_results_dict['total_removed_power']['radial_time_sum'] = dict([('intervals',intervals_total_removed_power_tr),('prob',prob_total_removed_power_tr),('most_likely',ML_total_removed_power),('most_likely_sigma',ML_total_removed_power_sigma),('unit','J')])
 
 		bayesian_results_dict['total_removed_power_visible'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([])),('brightness',dict([])),('average_brightness',dict([])),('long_average_brightness',dict([]))])
@@ -7614,6 +8192,11 @@ else:
 		bayesian_results_dict['local_CX']['full'] = dict([('intervals',intervals_local_CX),('prob',prob_local_CX),('actual_values',actual_values_local_CX),('most_likely',most_likely_local_CX),('unit','W m^-3')])
 		bayesian_results_dict['local_CX']['radial_sum'] = dict([('intervals',intervals_local_CX_r),('prob',prob_local_CX_r),('actual_values',actual_values_local_CX_r),('most_likely',most_likely_local_CX_r),('unit','W')])
 		bayesian_results_dict['local_CX']['radial_time_sum'] = dict([('intervals',intervals_local_CX_tr),('prob',prob_local_CX_tr),('most_likely',ML_local_CX),('most_likely_sigma',ML_local_CX_sigma),('unit','J')])
+
+		bayesian_results_dict['local_elastic_H2'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['local_elastic_H2']['full'] = dict([('intervals',intervals_local_elastic_H2),('prob',prob_local_elastic_H2),('actual_values',actual_values_local_elastic_H2),('most_likely',most_likely_local_elastic_H2),('unit','W m^-3')])
+		bayesian_results_dict['local_elastic_H2']['radial_sum'] = dict([('intervals',intervals_local_elastic_H2_r),('prob',prob_local_elastic_H2_r),('actual_values',actual_values_local_elastic_H2_r),('most_likely',most_likely_local_elastic_H2_r),('unit','W')])
+		bayesian_results_dict['local_elastic_H2']['radial_time_sum'] = dict([('intervals',intervals_local_elastic_H2_tr),('prob',prob_local_elastic_H2_tr),('most_likely',ML_local_elastic_H2),('most_likely_sigma',ML_local_elastic_H2_sigma),('unit','J')])
 
 		bayesian_results_dict['n_H2CX'] = dict([('full',dict([]))])
 		bayesian_results_dict['n_H2CX']['full'] = dict([('intervals',intervals_n_H2CX),('prob',prob_n_H2CX),('actual_values',actual_values_n_H2CX),('most_likely',most_likely_n_H2CX),('most_likely_sigma',most_likely_n_H2CX_sigma),('unit','# m^-3')])
@@ -7642,25 +8225,25 @@ else:
 
 		bayesian_results_dict['H_destruction_RR2'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['H_destruction_RR2']['full'] = dict([('intervals',intervals_H_destruction_RR2),('prob',prob_H_destruction_RR2),('actual_values',actual_values_H_destruction_RR2),('most_likely',most_likely_H_destruction_RR2),('most_likely_sigma',most_likely_H_destruction_RR2_sigma),('unit','# 1e-20 m^-3 s^-1')])
-		bayesian_results_dict['H_destruction_RR2']['radial_sum'] = dict([('intervals',intervals_H_destruction_RR2_r),('prob',prob_H_destruction_RR2_r),('actual_values',actual_values_H_destruction_RR2_r),('most_likely',most_likely_H_destruction_RR2_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['H_destruction_RR2']['radial_sum'] = dict([('intervals',intervals_H_destruction_RR2_r),('prob',prob_H_destruction_RR2_r),('actual_values',actual_values_H_destruction_RR2_r),('most_likely',most_likely_H_destruction_RR2_r),('most_likely_sigma_up',actual_values_H_destruction_RR2_r_up),('most_likely_sigma_down',actual_values_H_destruction_RR2_r_down),('unit','# 1e-20 s^-1')])
 		bayesian_results_dict['H_destruction_RR2']['radial_time_sum'] = dict([('intervals',intervals_H_destruction_RR2_tr),('prob',prob_H_destruction_RR2_tr),('most_likely',ML_H_destruction_RR2),('most_likely_sigma',ML_H_destruction_RR2_sigma),('unit','# 1e-20')])
 
 		bayesian_results_dict['H2_destruction_RR2'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['H2_destruction_RR2']['full'] = dict([('intervals',intervals_H2_destruction_RR2),('prob',prob_H2_destruction_RR2),('actual_values',actual_values_H2_destruction_RR2),('most_likely',most_likely_H2_destruction_RR2),('most_likely_sigma',most_likely_H2_destruction_RR2_sigma),('unit','# 1e-20 m^-3 s^-1')])
-		bayesian_results_dict['H2_destruction_RR2']['radial_sum'] = dict([('intervals',intervals_H2_destruction_RR2_r),('prob',prob_H2_destruction_RR2_r),('actual_values',actual_values_H2_destruction_RR2_r),('most_likely',most_likely_H2_destruction_RR2_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['H2_destruction_RR2']['radial_sum'] = dict([('intervals',intervals_H2_destruction_RR2_r),('prob',prob_H2_destruction_RR2_r),('actual_values',actual_values_H2_destruction_RR2_r),('most_likely',most_likely_H2_destruction_RR2_r),('most_likely_sigma_up',actual_values_H2_destruction_RR2_r_up),('most_likely_sigma_down',actual_values_H2_destruction_RR2_r_down),('unit','# 1e-20 s^-1')])
 		bayesian_results_dict['H2_destruction_RR2']['radial_time_sum'] = dict([('intervals',intervals_H2_destruction_RR2_tr),('prob',prob_H2_destruction_RR2_tr),('most_likely',ML_H2_destruction_RR2),('most_likely_sigma',ML_H2_destruction_RR2_sigma),('unit','# 1e-20')])
 
 		bayesian_results_dict['Hp_destruction_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['Hp_destruction_RR']['full'] = dict([('intervals',intervals_Hp_destruction_RR),('prob',prob_Hp_destruction_RR),('actual_values',actual_values_Hp_destruction_RR),('most_likely',most_likely_Hp_destruction_RR),('most_likely_sigma',most_likely_Hp_destruction_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
-		bayesian_results_dict['Hp_destruction_RR']['radial_sum'] = dict([('intervals',intervals_Hp_destruction_RR_r),('prob',prob_Hp_destruction_RR_r),('actual_values',actual_values_Hp_destruction_RR_r),('most_likely',most_likely_Hp_destruction_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['Hp_destruction_RR']['radial_sum'] = dict([('intervals',intervals_Hp_destruction_RR_r),('prob',prob_Hp_destruction_RR_r),('actual_values',actual_values_Hp_destruction_RR_r),('most_likely',most_likely_Hp_destruction_RR_r),('most_likely_sigma_up',actual_values_Hp_destruction_RR_r_up),('most_likely_sigma_down',actual_values_Hp_destruction_RR_r_down),('unit','# 1e-20 s^-1')])
 		bayesian_results_dict['Hp_destruction_RR']['radial_time_sum'] = dict([('intervals',intervals_Hp_destruction_RR_tr),('prob',prob_Hp_destruction_RR_tr),('most_likely',ML_Hp_destruction_RR),('most_likely_sigma',ML_Hp_destruction_RR_sigma),('unit','# 1e-20')])
 		bayesian_results_dict['Hp_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['Hp_creation_RR']['full'] = dict([('intervals',intervals_Hp_creation_RR),('prob',prob_Hp_creation_RR),('actual_values',actual_values_Hp_creation_RR),('most_likely',most_likely_Hp_creation_RR),('most_likely_sigma',most_likely_Hp_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
-		bayesian_results_dict['Hp_creation_RR']['radial_sum'] = dict([('intervals',intervals_Hp_creation_RR_r),('prob',prob_Hp_creation_RR_r),('actual_values',actual_values_Hp_creation_RR_r),('most_likely',most_likely_Hp_creation_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['Hp_creation_RR']['radial_sum'] = dict([('intervals',intervals_Hp_creation_RR_r),('prob',prob_Hp_creation_RR_r),('actual_values',actual_values_Hp_creation_RR_r),('most_likely',most_likely_Hp_creation_RR_r),('most_likely_sigma_up',actual_values_Hp_creation_RR_r_up),('most_likely_sigma_down',actual_values_Hp_creation_RR_r_down),('unit','# 1e-20 s^-1')])
 		bayesian_results_dict['Hp_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_Hp_creation_RR_tr),('prob',prob_Hp_creation_RR_tr),('most_likely',ML_Hp_creation_RR),('most_likely_sigma',ML_Hp_creation_RR_sigma),('unit','# 1e-20')])
 		bayesian_results_dict['e_destruction_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['e_destruction_RR']['full'] = dict([('intervals',intervals_e_destruction_RR),('prob',prob_e_destruction_RR),('actual_values',actual_values_e_destruction_RR),('most_likely',most_likely_e_destruction_RR),('most_likely_sigma',most_likely_e_destruction_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
-		bayesian_results_dict['e_destruction_RR']['radial_sum'] = dict([('intervals',intervals_e_destruction_RR_r),('prob',prob_e_destruction_RR_r),('actual_values',actual_values_e_destruction_RR_r),('most_likely',most_likely_e_destruction_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['e_destruction_RR']['radial_sum'] = dict([('intervals',intervals_e_destruction_RR_r),('prob',prob_e_destruction_RR_r),('actual_values',actual_values_e_destruction_RR_r),('most_likely',most_likely_e_destruction_RR_r),('most_likely_sigma_up',actual_values_e_destruction_RR_r_up),('most_likely_sigma_down',actual_values_e_destruction_RR_r_down),('unit','# 1e-20 s^-1')])
 		bayesian_results_dict['e_destruction_RR']['radial_time_sum'] = dict([('intervals',intervals_e_destruction_RR_tr),('prob',prob_e_destruction_RR_tr),('most_likely',ML_e_destruction_RR),('most_likely_sigma',ML_e_destruction_RR_sigma),('unit','# 1e-20')])
 		bayesian_results_dict['e_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['e_creation_RR']['full'] = dict([('intervals',intervals_e_creation_RR),('prob',prob_e_creation_RR),('actual_values',actual_values_e_creation_RR),('most_likely',most_likely_e_creation_RR),('most_likely_sigma',most_likely_e_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
@@ -7668,32 +8251,151 @@ else:
 		bayesian_results_dict['e_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_e_creation_RR_tr),('prob',prob_e_creation_RR_tr),('most_likely',ML_e_creation_RR),('most_likely_sigma',ML_e_creation_RR_sigma),('unit','# 1e-20')])
 		bayesian_results_dict['Hm_destruction_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['Hm_destruction_RR']['full'] = dict([('intervals',intervals_Hm_destruction_RR),('prob',prob_Hm_destruction_RR),('actual_values',actual_values_Hm_destruction_RR),('most_likely',most_likely_Hm_destruction_RR),('most_likely_sigma',most_likely_Hm_destruction_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
-		bayesian_results_dict['Hm_destruction_RR']['radial_sum'] = dict([('intervals',intervals_Hm_destruction_RR_r),('prob',prob_Hm_destruction_RR_r),('actual_values',actual_values_Hm_destruction_RR_r),('most_likely',most_likely_Hm_destruction_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['Hm_destruction_RR']['radial_sum'] = dict([('intervals',intervals_Hm_destruction_RR_r),('prob',prob_Hm_destruction_RR_r),('actual_values',actual_values_Hm_destruction_RR_r),('most_likely',most_likely_Hm_destruction_RR_r),('most_likely_sigma_up',actual_values_Hm_destruction_RR_r_up),('most_likely_sigma_down',actual_values_Hm_destruction_RR_r_down),('unit','# 1e-20 s^-1')])
 		bayesian_results_dict['Hm_destruction_RR']['radial_time_sum'] = dict([('intervals',intervals_Hm_destruction_RR_tr),('prob',prob_Hm_destruction_RR_tr),('most_likely',ML_Hm_destruction_RR),('most_likely_sigma',ML_Hm_destruction_RR_sigma),('unit','# 1e-20')])
 		bayesian_results_dict['Hm_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['Hm_creation_RR']['full'] = dict([('intervals',intervals_Hm_creation_RR),('prob',prob_Hm_creation_RR),('actual_values',actual_values_Hm_creation_RR),('most_likely',most_likely_Hm_creation_RR),('most_likely_sigma',most_likely_Hm_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
-		bayesian_results_dict['Hm_creation_RR']['radial_sum'] = dict([('intervals',intervals_Hm_creation_RR_r),('prob',prob_Hm_creation_RR_r),('actual_values',actual_values_Hm_creation_RR_r),('most_likely',most_likely_Hm_creation_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['Hm_creation_RR']['radial_sum'] = dict([('intervals',intervals_Hm_creation_RR_r),('prob',prob_Hm_creation_RR_r),('actual_values',actual_values_Hm_creation_RR_r),('most_likely',most_likely_Hm_creation_RR_r),('most_likely_sigma_up',actual_values_Hm_creation_RR_r_up),('most_likely_sigma_down',actual_values_Hm_creation_RR_r_down),('unit','# 1e-20 s^-1')])
 		bayesian_results_dict['Hm_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_Hm_creation_RR_tr),('prob',prob_Hm_creation_RR_tr),('most_likely',ML_Hm_creation_RR),('most_likely_sigma',ML_Hm_creation_RR_sigma),('unit','# 1e-20')])
 		bayesian_results_dict['H2p_destruction_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['H2p_destruction_RR']['full'] = dict([('intervals',intervals_H2p_destruction_RR),('prob',prob_H2p_destruction_RR),('actual_values',actual_values_H2p_destruction_RR),('most_likely',most_likely_H2p_destruction_RR),('most_likely_sigma',most_likely_H2p_destruction_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
-		bayesian_results_dict['H2p_destruction_RR']['radial_sum'] = dict([('intervals',intervals_H2p_destruction_RR_r),('prob',prob_H2p_destruction_RR_r),('actual_values',actual_values_H2p_destruction_RR_r),('most_likely',most_likely_H2p_destruction_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['H2p_destruction_RR']['radial_sum'] = dict([('intervals',intervals_H2p_destruction_RR_r),('prob',prob_H2p_destruction_RR_r),('actual_values',actual_values_H2p_destruction_RR_r),('most_likely',most_likely_H2p_destruction_RR_r),('most_likely_sigma_up',actual_values_H2p_destruction_RR_r_up),('most_likely_sigma_down',actual_values_H2p_destruction_RR_r_down),('unit','# 1e-20 s^-1')])
 		bayesian_results_dict['H2p_destruction_RR']['radial_time_sum'] = dict([('intervals',intervals_H2p_destruction_RR_tr),('prob',prob_H2p_destruction_RR_tr),('most_likely',ML_H2p_destruction_RR),('most_likely_sigma',ML_H2p_destruction_RR_sigma),('unit','# 1e-20')])
 		bayesian_results_dict['H2p_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 		bayesian_results_dict['H2p_creation_RR']['full'] = dict([('intervals',intervals_H2p_creation_RR),('prob',prob_H2p_creation_RR),('actual_values',actual_values_H2p_creation_RR),('most_likely',most_likely_H2p_creation_RR),('most_likely_sigma',most_likely_H2p_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
-		bayesian_results_dict['H2p_creation_RR']['radial_sum'] = dict([('intervals',intervals_H2p_creation_RR_r),('prob',prob_H2p_creation_RR_r),('actual_values',actual_values_H2p_creation_RR_r),('most_likely',most_likely_H2p_creation_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['H2p_creation_RR']['radial_sum'] = dict([('intervals',intervals_H2p_creation_RR_r),('prob',prob_H2p_creation_RR_r),('actual_values',actual_values_H2p_creation_RR_r),('most_likely',most_likely_H2p_creation_RR_r),('most_likely_sigma_up',actual_values_H2p_creation_RR_r_up),('most_likely_sigma_down',actual_values_H2p_creation_RR_r_down),('unit','# 1e-20 s^-1')])
 		bayesian_results_dict['H2p_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_H2p_creation_RR_tr),('prob',prob_H2p_creation_RR_tr),('most_likely',ML_H2p_creation_RR),('most_likely_sigma',ML_H2p_creation_RR_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['net_H_destruction_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['net_H_destruction_RR']['full'] = dict([('intervals',intervals_net_H_destruction_RR),('prob',prob_net_H_destruction_RR),('actual_values',actual_values_net_H_destruction_RR),('most_likely',most_likely_net_H_destruction_RR),('most_likely_sigma',most_likely_net_H_destruction_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['net_H_destruction_RR']['radial_sum'] = dict([('intervals',intervals_net_H_destruction_RR_r),('prob',prob_net_H_destruction_RR_r),('actual_values',actual_values_net_H_destruction_RR_r),('most_likely',most_likely_net_H_destruction_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['net_H_destruction_RR']['radial_time_sum'] = dict([('intervals',intervals_net_H_destruction_RR_tr),('prob',prob_net_H_destruction_RR_tr),('most_likely',ML_net_H_destruction_RR),('most_likely_sigma',ML_net_H_destruction_RR_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['net_H2_destruction_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['net_H2_destruction_RR']['full'] = dict([('intervals',intervals_net_H2_destruction_RR),('prob',prob_net_H2_destruction_RR),('actual_values',actual_values_net_H2_destruction_RR),('most_likely',most_likely_net_H2_destruction_RR),('most_likely_sigma',most_likely_net_H2_destruction_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['net_H2_destruction_RR']['radial_sum'] = dict([('intervals',intervals_net_H2_destruction_RR_r),('prob',prob_net_H2_destruction_RR_r),('actual_values',actual_values_net_H2_destruction_RR_r),('most_likely',most_likely_net_H2_destruction_RR_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['net_H2_destruction_RR']['radial_time_sum'] = dict([('intervals',intervals_net_H2_destruction_RR_tr),('prob',prob_net_H2_destruction_RR_tr),('most_likely',ML_net_H2_destruction_RR),('most_likely_sigma',ML_net_H2_destruction_RR_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['net_e_destruction'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['net_e_destruction']['full'] = dict([('intervals',intervals_net_e_destruction),('prob',prob_net_e_destruction),('actual_values',actual_values_net_e_destruction),('most_likely',most_likely_net_e_destruction),('most_likely_sigma',most_likely_net_e_destruction_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['net_e_destruction']['radial_sum'] = dict([('intervals',intervals_net_e_destruction_r),('prob',prob_net_e_destruction_r),('actual_values',actual_values_net_e_destruction_r),('most_likely',most_likely_net_e_destruction_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['net_e_destruction']['radial_time_sum'] = dict([('intervals',intervals_net_e_destruction_tr),('prob',prob_net_e_destruction_tr),('most_likely',ML_net_e_destruction),('most_likely_sigma',ML_net_e_destruction_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['net_Hp_destruction'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['net_Hp_destruction']['full'] = dict([('intervals',intervals_net_Hp_destruction),('prob',prob_net_Hp_destruction),('actual_values',actual_values_net_Hp_destruction),('most_likely',most_likely_net_Hp_destruction),('most_likely_sigma',most_likely_net_Hp_destruction_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['net_Hp_destruction']['radial_sum'] = dict([('intervals',intervals_net_Hp_destruction_r),('prob',prob_net_Hp_destruction_r),('actual_values',actual_values_net_Hp_destruction_r),('most_likely',most_likely_net_Hp_destruction_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['net_Hp_destruction']['radial_time_sum'] = dict([('intervals',intervals_net_Hp_destruction_tr),('prob',prob_net_Hp_destruction_tr),('most_likely',ML_net_Hp_destruction),('most_likely_sigma',ML_net_Hp_destruction_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['net_Hm_destruction'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['net_Hm_destruction']['full'] = dict([('intervals',intervals_net_Hm_destruction),('prob',prob_net_Hm_destruction),('actual_values',actual_values_net_Hm_destruction),('most_likely',most_likely_net_Hm_destruction),('most_likely_sigma',most_likely_net_Hm_destruction_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['net_Hm_destruction']['radial_sum'] = dict([('intervals',intervals_net_Hm_destruction_r),('prob',prob_net_Hm_destruction_r),('actual_values',actual_values_net_Hm_destruction_r),('most_likely',most_likely_net_Hm_destruction_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['net_Hm_destruction']['radial_time_sum'] = dict([('intervals',intervals_net_Hm_destruction_tr),('prob',prob_net_Hm_destruction_tr),('most_likely',ML_net_Hm_destruction),('most_likely_sigma',ML_net_Hm_destruction_sigma),('unit','# 1e-20')])
+		bayesian_results_dict['net_H2p_destruction'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+		bayesian_results_dict['net_H2p_destruction']['full'] = dict([('intervals',intervals_net_H2p_destruction),('prob',prob_net_H2p_destruction),('actual_values',actual_values_net_H2p_destruction),('most_likely',most_likely_net_H2p_destruction),('most_likely_sigma',most_likely_net_H2p_destruction_sigma),('unit','# 1e-20 m^-3 s^-1')])
+		bayesian_results_dict['net_H2p_destruction']['radial_sum'] = dict([('intervals',intervals_net_H2p_destruction_r),('prob',prob_net_H2p_destruction_r),('actual_values',actual_values_net_H2p_destruction_r),('most_likely',most_likely_net_H2p_destruction_r),('unit','# 1e-20 s^-1')])
+		bayesian_results_dict['net_H2p_destruction']['radial_time_sum'] = dict([('intervals',intervals_net_H2p_destruction_tr),('prob',prob_net_H2p_destruction_tr),('most_likely',ML_net_H2p_destruction),('most_likely_sigma',ML_net_H2p_destruction_sigma),('unit','# 1e-20')])
 
 
 		if latest_version:
 			bayesian_results_dict['H_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 			bayesian_results_dict['H_creation_RR']['full'] = dict([('intervals',intervals_H_creation_RR),('prob',prob_H_creation_RR),('actual_values',actual_values_H_creation_RR),('most_likely',most_likely_H_creation_RR),('most_likely_sigma',most_likely_H_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
-			bayesian_results_dict['H_creation_RR']['radial_sum'] = dict([('intervals',intervals_H_creation_RR_r),('prob',prob_H_creation_RR_r),('actual_values',actual_values_H_creation_RR_r),('most_likely',most_likely_H_creation_RR_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['H_creation_RR']['radial_sum'] = dict([('intervals',intervals_H_creation_RR_r),('prob',prob_H_creation_RR_r),('actual_values',actual_values_H_creation_RR_r),('most_likely',most_likely_H_creation_RR_r),('most_likely_sigma_up',actual_values_H_creation_RR_r_up),('most_likely_sigma_down',actual_values_H_creation_RR_r_down),('unit','# 1e-20 s^-1')])
 			bayesian_results_dict['H_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_H_creation_RR_tr),('prob',prob_H_creation_RR_tr),('most_likely',ML_H_creation_RR),('most_likely_sigma',ML_H_creation_RR_sigma),('unit','# 1e-20')])
 
 			bayesian_results_dict['H2_creation_RR'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
 			bayesian_results_dict['H2_creation_RR']['full'] = dict([('intervals',intervals_H2_creation_RR),('prob',prob_H2_creation_RR),('actual_values',actual_values_H2_creation_RR),('most_likely',most_likely_H2_creation_RR),('most_likely_sigma',most_likely_H2_creation_RR_sigma),('unit','# 1e-20 m^-3 s^-1')])
-			bayesian_results_dict['H2_creation_RR']['radial_sum'] = dict([('intervals',intervals_H2_creation_RR_r),('prob',prob_H2_creation_RR_r),('actual_values',actual_values_H2_creation_RR_r),('most_likely',most_likely_H2_creation_RR_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['H2_creation_RR']['radial_sum'] = dict([('intervals',intervals_H2_creation_RR_r),('prob',prob_H2_creation_RR_r),('actual_values',actual_values_H2_creation_RR_r),('most_likely',most_likely_H2_creation_RR_r),('most_likely_sigma_up',actual_values_H2_creation_RR_r_up),('most_likely_sigma_down',actual_values_H2_creation_RR_r_down),('unit','# 1e-20 s^-1')])
 			bayesian_results_dict['H2_creation_RR']['radial_time_sum'] = dict([('intervals',intervals_H2_creation_RR_tr),('prob',prob_H2_creation_RR_tr),('most_likely',ML_H2_creation_RR),('most_likely_sigma',ML_H2_creation_RR_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAR_from_Hm'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAR_from_Hm']['full'] = dict([('intervals',intervals_all_MAR_from_Hm),('prob',prob_all_MAR_from_Hm),('actual_values',actual_values_all_MAR_from_Hm),('most_likely',most_likely_all_MAR_from_Hm),('most_likely_sigma',most_likely_all_MAR_from_Hm_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAR_from_Hm']['radial_sum'] = dict([('intervals',intervals_all_MAR_from_Hm_r),('prob',prob_all_MAR_from_Hm_r),('actual_values',actual_values_all_MAR_from_Hm_r),('most_likely',most_likely_all_MAR_from_Hm_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAR_from_Hm']['radial_time_sum'] = dict([('intervals',intervals_all_MAR_from_Hm_tr),('prob',prob_all_MAR_from_Hm_tr),('most_likely',ML_all_MAR_from_Hm),('most_likely_sigma',ML_all_MAR_from_Hm_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAD_from_Hm'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAD_from_Hm']['full'] = dict([('intervals',intervals_all_MAD_from_Hm),('prob',prob_all_MAD_from_Hm),('actual_values',actual_values_all_MAD_from_Hm),('most_likely',most_likely_all_MAD_from_Hm),('most_likely_sigma',most_likely_all_MAD_from_Hm_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAD_from_Hm']['radial_sum'] = dict([('intervals',intervals_all_MAD_from_Hm_r),('prob',prob_all_MAD_from_Hm_r),('actual_values',actual_values_all_MAD_from_Hm_r),('most_likely',most_likely_all_MAD_from_Hm_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAD_from_Hm']['radial_time_sum'] = dict([('intervals',intervals_all_MAD_from_Hm_tr),('prob',prob_all_MAD_from_Hm_tr),('most_likely',ML_all_MAD_from_Hm),('most_likely_sigma',ML_all_MAD_from_Hm_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAI_from_Hm'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAI_from_Hm']['full'] = dict([('intervals',intervals_all_MAI_from_Hm),('prob',prob_all_MAI_from_Hm),('actual_values',actual_values_all_MAI_from_Hm),('most_likely',most_likely_all_MAI_from_Hm),('most_likely_sigma',most_likely_all_MAI_from_Hm_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAI_from_Hm']['radial_sum'] = dict([('intervals',intervals_all_MAI_from_Hm_r),('prob',prob_all_MAI_from_Hm_r),('actual_values',actual_values_all_MAI_from_Hm_r),('most_likely',most_likely_all_MAI_from_Hm_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAI_from_Hm']['radial_time_sum'] = dict([('intervals',intervals_all_MAI_from_Hm_tr),('prob',prob_all_MAI_from_Hm_tr),('most_likely',ML_all_MAI_from_Hm),('most_likely_sigma',ML_all_MAI_from_Hm_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAR_from_H2p'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAR_from_H2p']['full'] = dict([('intervals',intervals_all_MAR_from_H2p),('prob',prob_all_MAR_from_H2p),('actual_values',actual_values_all_MAR_from_H2p),('most_likely',most_likely_all_MAR_from_H2p),('most_likely_sigma',most_likely_all_MAR_from_H2p_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAR_from_H2p']['radial_sum'] = dict([('intervals',intervals_all_MAR_from_H2p_r),('prob',prob_all_MAR_from_H2p_r),('actual_values',actual_values_all_MAR_from_H2p_r),('most_likely',most_likely_all_MAR_from_H2p_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAR_from_H2p']['radial_time_sum'] = dict([('intervals',intervals_all_MAR_from_H2p_tr),('prob',prob_all_MAR_from_H2p_tr),('most_likely',ML_all_MAR_from_H2p),('most_likely_sigma',ML_all_MAR_from_H2p_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAD_from_H2p'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAD_from_H2p']['full'] = dict([('intervals',intervals_all_MAD_from_H2p),('prob',prob_all_MAD_from_H2p),('actual_values',actual_values_all_MAD_from_H2p),('most_likely',most_likely_all_MAD_from_H2p),('most_likely_sigma',most_likely_all_MAD_from_H2p_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAD_from_H2p']['radial_sum'] = dict([('intervals',intervals_all_MAD_from_H2p_r),('prob',prob_all_MAD_from_H2p_r),('actual_values',actual_values_all_MAD_from_H2p_r),('most_likely',most_likely_all_MAD_from_H2p_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAD_from_H2p']['radial_time_sum'] = dict([('intervals',intervals_all_MAD_from_H2p_tr),('prob',prob_all_MAD_from_H2p_tr),('most_likely',ML_all_MAD_from_H2p),('most_likely_sigma',ML_all_MAD_from_H2p_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAI_from_H2p'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAI_from_H2p']['full'] = dict([('intervals',intervals_all_MAI_from_H2p),('prob',prob_all_MAI_from_H2p),('actual_values',actual_values_all_MAI_from_H2p),('most_likely',most_likely_all_MAI_from_H2p),('most_likely_sigma',most_likely_all_MAI_from_H2p_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAI_from_H2p']['radial_sum'] = dict([('intervals',intervals_all_MAI_from_H2p_r),('prob',prob_all_MAI_from_H2p_r),('actual_values',actual_values_all_MAI_from_H2p_r),('most_likely',most_likely_all_MAI_from_H2p_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAI_from_H2p']['radial_time_sum'] = dict([('intervals',intervals_all_MAI_from_H2p_tr),('prob',prob_all_MAI_from_H2p_tr),('most_likely',ML_all_MAI_from_H2p),('most_likely_sigma',ML_all_MAI_from_H2p_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAR_from_H2p_Hm'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAR_from_H2p_Hm']['full'] = dict([('intervals',intervals_all_MAR_from_H2p_Hm),('prob',prob_all_MAR_from_H2p_Hm),('actual_values',actual_values_all_MAR_from_H2p_Hm),('most_likely',most_likely_all_MAR_from_H2p_Hm),('most_likely_sigma',most_likely_all_MAR_from_H2p_Hm_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAR_from_H2p_Hm']['radial_sum'] = dict([('intervals',intervals_all_MAR_from_H2p_Hm_r),('prob',prob_all_MAR_from_H2p_Hm_r),('actual_values',actual_values_all_MAR_from_H2p_Hm_r),('most_likely',most_likely_all_MAR_from_H2p_Hm_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAR_from_H2p_Hm']['radial_time_sum'] = dict([('intervals',intervals_all_MAR_from_H2p_Hm_tr),('prob',prob_all_MAR_from_H2p_Hm_tr),('most_likely',ML_all_MAR_from_H2p_Hm),('most_likely_sigma',ML_all_MAR_from_H2p_Hm_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAD_from_H2p_Hm'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAD_from_H2p_Hm']['full'] = dict([('intervals',intervals_all_MAD_from_H2p_Hm),('prob',prob_all_MAD_from_H2p_Hm),('actual_values',actual_values_all_MAD_from_H2p_Hm),('most_likely',most_likely_all_MAD_from_H2p_Hm),('most_likely_sigma',most_likely_all_MAD_from_H2p_Hm_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAD_from_H2p_Hm']['radial_sum'] = dict([('intervals',intervals_all_MAD_from_H2p_Hm_r),('prob',prob_all_MAD_from_H2p_Hm_r),('actual_values',actual_values_all_MAD_from_H2p_Hm_r),('most_likely',most_likely_all_MAD_from_H2p_Hm_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAD_from_H2p_Hm']['radial_time_sum'] = dict([('intervals',intervals_all_MAD_from_H2p_Hm_tr),('prob',prob_all_MAD_from_H2p_Hm_tr),('most_likely',ML_all_MAD_from_H2p_Hm),('most_likely_sigma',ML_all_MAD_from_H2p_Hm_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAI_from_H2p_Hm'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAI_from_H2p_Hm']['full'] = dict([('intervals',intervals_all_MAI_from_H2p_Hm),('prob',prob_all_MAI_from_H2p_Hm),('actual_values',actual_values_all_MAI_from_H2p_Hm),('most_likely',most_likely_all_MAI_from_H2p_Hm),('most_likely_sigma',most_likely_all_MAI_from_H2p_Hm_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAI_from_H2p_Hm']['radial_sum'] = dict([('intervals',intervals_all_MAI_from_H2p_Hm_r),('prob',prob_all_MAI_from_H2p_Hm_r),('actual_values',actual_values_all_MAI_from_H2p_Hm_r),('most_likely',most_likely_all_MAI_from_H2p_Hm_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAI_from_H2p_Hm']['radial_time_sum'] = dict([('intervals',intervals_all_MAI_from_H2p_Hm_tr),('prob',prob_all_MAI_from_H2p_Hm_tr),('most_likely',ML_all_MAI_from_H2p_Hm),('most_likely_sigma',ML_all_MAI_from_H2p_Hm_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAR_from_Hm_energy'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAR_from_Hm_energy']['full'] = dict([('intervals',intervals_all_MAR_from_Hm_energy),('prob',prob_all_MAR_from_Hm_energy),('actual_values',actual_values_all_MAR_from_Hm_energy),('most_likely',most_likely_all_MAR_from_Hm_energy),('most_likely_sigma',most_likely_all_MAR_from_Hm_energy_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAR_from_Hm_energy']['radial_sum'] = dict([('intervals',intervals_all_MAR_from_Hm_energy_r),('prob',prob_all_MAR_from_Hm_energy_r),('actual_values',actual_values_all_MAR_from_Hm_energy_r),('most_likely',most_likely_all_MAR_from_Hm_energy_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAR_from_Hm_energy']['radial_time_sum'] = dict([('intervals',intervals_all_MAR_from_Hm_energy_tr),('prob',prob_all_MAR_from_Hm_energy_tr),('most_likely',ML_all_MAR_from_Hm_energy),('most_likely_sigma',ML_all_MAR_from_Hm_energy_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAD_from_Hm_energy'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAD_from_Hm_energy']['full'] = dict([('intervals',intervals_all_MAD_from_Hm_energy),('prob',prob_all_MAD_from_Hm_energy),('actual_values',actual_values_all_MAD_from_Hm_energy),('most_likely',most_likely_all_MAD_from_Hm_energy),('most_likely_sigma',most_likely_all_MAD_from_Hm_energy_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAD_from_Hm_energy']['radial_sum'] = dict([('intervals',intervals_all_MAD_from_Hm_energy_r),('prob',prob_all_MAD_from_Hm_energy_r),('actual_values',actual_values_all_MAD_from_Hm_energy_r),('most_likely',most_likely_all_MAD_from_Hm_energy_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAD_from_Hm_energy']['radial_time_sum'] = dict([('intervals',intervals_all_MAD_from_Hm_energy_tr),('prob',prob_all_MAD_from_Hm_energy_tr),('most_likely',ML_all_MAD_from_Hm_energy),('most_likely_sigma',ML_all_MAD_from_Hm_energy_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAI_from_Hm_energy'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAI_from_Hm_energy']['full'] = dict([('intervals',intervals_all_MAI_from_Hm_energy),('prob',prob_all_MAI_from_Hm_energy),('actual_values',actual_values_all_MAI_from_Hm_energy),('most_likely',most_likely_all_MAI_from_Hm_energy),('most_likely_sigma',most_likely_all_MAI_from_Hm_energy_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAI_from_Hm_energy']['radial_sum'] = dict([('intervals',intervals_all_MAI_from_Hm_energy_r),('prob',prob_all_MAI_from_Hm_energy_r),('actual_values',actual_values_all_MAI_from_Hm_energy_r),('most_likely',most_likely_all_MAI_from_Hm_energy_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAI_from_Hm_energy']['radial_time_sum'] = dict([('intervals',intervals_all_MAI_from_Hm_energy_tr),('prob',prob_all_MAI_from_Hm_energy_tr),('most_likely',ML_all_MAI_from_Hm),('most_likely_sigma',ML_all_MAI_from_Hm_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAR_from_H2p_energy'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAR_from_H2p_energy']['full'] = dict([('intervals',intervals_all_MAR_from_H2p_energy),('prob',prob_all_MAR_from_H2p_energy),('actual_values',actual_values_all_MAR_from_H2p_energy),('most_likely',most_likely_all_MAR_from_H2p_energy),('most_likely_sigma',most_likely_all_MAR_from_H2p_energy_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAR_from_H2p_energy']['radial_sum'] = dict([('intervals',intervals_all_MAR_from_H2p_energy_r),('prob',prob_all_MAR_from_H2p_energy_r),('actual_values',actual_values_all_MAR_from_H2p_energy_r),('most_likely',most_likely_all_MAR_from_H2p_energy_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAR_from_H2p_energy']['radial_time_sum'] = dict([('intervals',intervals_all_MAR_from_H2p_energy_tr),('prob',prob_all_MAR_from_H2p_energy_tr),('most_likely',ML_all_MAR_from_H2p_energy),('most_likely_sigma',ML_all_MAR_from_H2p_energy_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAD_from_H2p_energy'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAD_from_H2p_energy']['full'] = dict([('intervals',intervals_all_MAD_from_H2p_energy),('prob',prob_all_MAD_from_H2p_energy),('actual_values',actual_values_all_MAD_from_H2p_energy),('most_likely',most_likely_all_MAD_from_H2p_energy),('most_likely_sigma',most_likely_all_MAD_from_H2p_energy_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAD_from_H2p_energy']['radial_sum'] = dict([('intervals',intervals_all_MAD_from_H2p_energy_r),('prob',prob_all_MAD_from_H2p_energy_r),('actual_values',actual_values_all_MAD_from_H2p_energy_r),('most_likely',most_likely_all_MAD_from_H2p_energy_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAD_from_H2p_energy']['radial_time_sum'] = dict([('intervals',intervals_all_MAD_from_H2p_energy_tr),('prob',prob_all_MAD_from_H2p_energy_tr),('most_likely',ML_all_MAD_from_H2p_energy),('most_likely_sigma',ML_all_MAD_from_H2p_energy_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAI_from_H2p_energy'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAI_from_H2p_energy']['full'] = dict([('intervals',intervals_all_MAI_from_H2p_energy),('prob',prob_all_MAI_from_H2p_energy),('actual_values',actual_values_all_MAI_from_H2p_energy),('most_likely',most_likely_all_MAI_from_H2p_energy),('most_likely_sigma',most_likely_all_MAI_from_H2p_energy_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAI_from_H2p_energy']['radial_sum'] = dict([('intervals',intervals_all_MAI_from_H2p_energy_r),('prob',prob_all_MAI_from_H2p_energy_r),('actual_values',actual_values_all_MAI_from_H2p_energy_r),('most_likely',most_likely_all_MAI_from_H2p_energy_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAI_from_H2p_energy']['radial_time_sum'] = dict([('intervals',intervals_all_MAI_from_H2p_energy_tr),('prob',prob_all_MAI_from_H2p_energy_tr),('most_likely',ML_all_MAI_from_H2p_energy),('most_likely_sigma',ML_all_MAI_from_H2p_energy_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAR_from_H2p_Hm_energy'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAR_from_H2p_Hm_energy']['full'] = dict([('intervals',intervals_all_MAR_from_H2p_Hm_energy),('prob',prob_all_MAR_from_H2p_Hm_energy),('actual_values',actual_values_all_MAR_from_H2p_Hm_energy),('most_likely',most_likely_all_MAR_from_H2p_Hm_energy),('most_likely_sigma',most_likely_all_MAR_from_H2p_Hm_energy_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAR_from_H2p_Hm_energy']['radial_sum'] = dict([('intervals',intervals_all_MAR_from_H2p_Hm_energy_r),('prob',prob_all_MAR_from_H2p_Hm_energy_r),('actual_values',actual_values_all_MAR_from_H2p_Hm_energy_r),('most_likely',most_likely_all_MAR_from_H2p_Hm_energy_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAR_from_H2p_Hm_energy']['radial_time_sum'] = dict([('intervals',intervals_all_MAR_from_H2p_Hm_energy_tr),('prob',prob_all_MAR_from_H2p_Hm_energy_tr),('most_likely',ML_all_MAR_from_H2p_Hm_energy),('most_likely_sigma',ML_all_MAR_from_H2p_Hm_energy_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAD_from_H2p_Hm_energy'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAD_from_H2p_Hm_energy']['full'] = dict([('intervals',intervals_all_MAD_from_H2p_Hm_energy),('prob',prob_all_MAD_from_H2p_Hm_energy),('actual_values',actual_values_all_MAD_from_H2p_Hm_energy),('most_likely',most_likely_all_MAD_from_H2p_Hm_energy),('most_likely_sigma',most_likely_all_MAD_from_H2p_Hm_energy_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAD_from_H2p_Hm_energy']['radial_sum'] = dict([('intervals',intervals_all_MAD_from_H2p_Hm_energy_r),('prob',prob_all_MAD_from_H2p_Hm_energy_r),('actual_values',actual_values_all_MAD_from_H2p_Hm_energy_r),('most_likely',most_likely_all_MAD_from_H2p_Hm_energy_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAD_from_H2p_Hm_energy']['radial_time_sum'] = dict([('intervals',intervals_all_MAD_from_H2p_Hm_energy_tr),('prob',prob_all_MAD_from_H2p_Hm_energy_tr),('most_likely',ML_all_MAD_from_H2p_Hm_energy),('most_likely_sigma',ML_all_MAD_from_H2p_Hm_energy_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_MAI_from_H2p_Hm_energy'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_MAI_from_H2p_Hm_energy']['full'] = dict([('intervals',intervals_all_MAI_from_H2p_Hm_energy),('prob',prob_all_MAI_from_H2p_Hm_energy),('actual_values',actual_values_all_MAI_from_H2p_Hm_energy),('most_likely',most_likely_all_MAI_from_H2p_Hm_energy),('most_likely_sigma',most_likely_all_MAI_from_H2p_Hm_energy_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_MAI_from_H2p_Hm_energy']['radial_sum'] = dict([('intervals',intervals_all_MAI_from_H2p_Hm_energy_r),('prob',prob_all_MAI_from_H2p_Hm_energy_r),('actual_values',actual_values_all_MAI_from_H2p_Hm_energy_r),('most_likely',most_likely_all_MAI_from_H2p_Hm_energy_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_MAI_from_H2p_Hm_energy']['radial_time_sum'] = dict([('intervals',intervals_all_MAI_from_H2p_Hm_energy_tr),('prob',prob_all_MAI_from_H2p_Hm_energy_tr),('most_likely',ML_all_MAI_from_H2p_Hm_energy),('most_likely_sigma',ML_all_MAI_from_H2p_Hm_energy_sigma),('unit','# 1e-20')])
+
+			bayesian_results_dict['all_atomic_H2_dissociation'] = dict([('full',dict([])),('radial_sum',dict([])),('radial_time_sum',dict([]))])
+			bayesian_results_dict['all_atomic_H2_dissociation']['full'] = dict([('intervals',intervals_all_atomic_H2_dissociation),('prob',prob_all_atomic_H2_dissociation),('actual_values',actual_values_all_atomic_H2_dissociation),('most_likely',most_likely_all_atomic_H2_dissociation),('most_likely_sigma',most_likely_all_atomic_H2_dissociation_sigma),('unit','# 1e-20 m^-3 s^-1')])
+			bayesian_results_dict['all_atomic_H2_dissociation']['radial_sum'] = dict([('intervals',intervals_all_atomic_H2_dissociation_r),('prob',prob_all_atomic_H2_dissociation_r),('actual_values',actual_values_all_atomic_H2_dissociation_r),('most_likely',most_likely_all_atomic_H2_dissociation_r),('unit','# 1e-20 s^-1')])
+			bayesian_results_dict['all_atomic_H2_dissociation']['radial_time_sum'] = dict([('intervals',intervals_all_atomic_H2_dissociation_tr),('prob',prob_all_atomic_H2_dissociation_tr),('most_likely',ML_all_atomic_H2_dissociation),('most_likely_sigma',ML_all_atomic_H2_dissociation_sigma),('unit','# 1e-20')])
 
 
 		bayesian_results_dict['net_power_removed_plasma_column'] = dict([('radial_sum',dict([])),('radial_time_sum',dict([]))])

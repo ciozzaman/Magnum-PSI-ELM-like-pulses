@@ -151,6 +151,7 @@ else:
 
 plt.close('all')
 for i_index in range(0,13):
+	print(index[i_index*3+2])
 	plt.figure()
 	plt.title(index[i_index*3+2])
 	date_time_stamp = multi_1[multi_1.keys()[i_index*3]]
@@ -160,6 +161,31 @@ for i_index in range(0,13):
 	plt.legend(loc='best')
 	plt.grid()
 plt.pause(0.1)
+
+if False:
+	# I want to find the time constant of the target. I can get it looking at its cooling from high temp
+	# whith i_index=8
+	temp = np.array(multi_1[multi_1.keys()[i_index*3]])
+	x=np.array(multi_1[multi_1.keys()[i_index*3+1]])[np.isfinite(temp)][-138:-100]
+	y=np.array(multi_1[multi_1.keys()[i_index*3+2]])[np.isfinite(temp)][-138:-100]
+	y = y-y.min()
+	time = np.arange(len(y))*2.
+
+	def temp(t,tau,amp):
+		t0=0
+		print(str([t0,tau,amp]))
+		out = np.zeros_like(t)
+		out[t>=t0] = amp*(np.exp(-((t[t>=t0]-t0)/(tau))**1))
+		return out
+
+	guess=curve_fit(temp, time,y, p0=[10,1],bounds=[[0,0],[np.inf,np.inf]],verbose=2,maxfev=1e5)
+
+	plt.figure()
+	plt.plot(time,y)
+	plt.plot(time,temp(time,*guess[0]),'+')
+
+
+
 
 plt.close('all')
 plt.figure()
@@ -211,19 +237,156 @@ multi_3 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/
 multi_3_array = np.array(multi_3)
 
 for i_index in range(11):
+	print(index[i_index*2+1+1])
 	date_time_stamp = multi_3[multi_3.keys()[i_index*2+1]]
 	date_time_stamp2time = DOM52sec_for_list(date_time_stamp)
 	# date_time_stamp2time = [dt.datetime.fromtimestamp(int(_)) for _ in date_time_stamp2sec//1 ]
 	plt.figure()
 	plt.title(index[i_index*2+1+1])
+	print(index[i_index*2+1+1])
 	plt.plot(date_time_stamp2time,multi_3[multi_3.keys()[i_index*2+1+1]][:len(date_time_stamp2time)])
 	plt.pause(0.1)
+
+
+if False:
+	# I want to find the time constant of the target skimmer. I can get it looking at its cooling from high temp
+	# whith i_index=1
+	i_index = 1
+	x=np.array(date_time_stamp2time)[51980:][:250]
+	y=np.array(multi_3[multi_3.keys()[i_index*2+1+1]])[51980:][:250]
+	y = y-y.min()
+	time = np.arange(len(y))*1.
+
+	def temp(t,tau,amp):
+		t0=0
+		print(str([t0,tau,amp]))
+		out = np.zeros_like(t)
+		out[t>=t0] = amp*(np.exp(-((t[t>=t0]-t0)/(tau))**1))
+		return out
+
+	guess=curve_fit(temp, time,y, p0=[10,1],bounds=[[0,0],[np.inf,np.inf]],verbose=2,maxfev=1e5)
+
+	plt.figure()
+	plt.plot(time,y)
+	plt.plot(time,temp(time,*guess[0]),'+')
+
+
+multi_3 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/from_Tijs_target_skimmer_temp/new/flow-and-temp-cathode-3.csv',index_col=False,sep='|')
+index1 = list(multi_3.head(0))
+for index in range(1,(len(index1)+1)//3):
+	index1[index*3-1]=index1[index*3]
+multi_3 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/from_Tijs_target_skimmer_temp/new/flow-and-temp-cathode-3.csv',index_col=False,header=1,sep='|')
+index2 = list(multi_3.head(0))
+index = [_+' '+__ for _,__ in zip(index1,index2)]
+for i_text,text in enumerate(index):
+	if (text.find('.'))!=-1:
+		index[i_text] = text[:text.find('.')]
+multi_3 = pd.read_csv('/home/ffederic/work/Collaboratory/test/experimental_data/from_Tijs_target_skimmer_temp/new/flow-and-temp-cathode-3.csv',index_col=False,header=2,sep='|')
+multi_3_array = np.array(multi_3)
+
+for i_index in range(11):
+	print(index[i_index*3+1])
+	# time = []
+	# for value in multi_3[multi_3.keys()[i_index*2+1]]:
+	# 	try:
+	# 		time.append(datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f'))
+	# 	except:
+	# 		time.append(datetime.strptime(value, '%Y-%m-%d %H:%M:%S'))
+	# date_time_stamp2time = np.array(time)
+	date_time_stamp = multi_3[multi_3.keys()[i_index*3]]
+	date_time_stamp2time = DOM52sec_for_list(date_time_stamp)
+	# date_time_stamp2time = [dt.datetime.fromtimestamp(int(_)) for _ in date_time_stamp2sec//1 ]
+	plt.figure()
+	plt.title(index[i_index*3+1])
+	plt.plot(date_time_stamp2time,multi_3[multi_3.keys()[i_index*3+1+1]][:len(date_time_stamp2time)])
+	plt.pause(0.1)
+
+if False:
+	# I want to find the time constant of the target skimmer. I can get it looking at its cooling from high temp
+	# whith i_index=1
+	i_index = 0
+	x=np.array(date_time_stamp2time)[11355:][:120]
+	y=np.array(multi_3[multi_3.keys()[i_index*3+1+1]])[11355:][:120]
+	y = y-y.min()
+	time = np.arange(len(y))*2.
+
+	def temp(t,tau,amp):
+		t0=0
+		print(str([t0,tau,amp]))
+		out = np.zeros_like(t)
+		out[t>=t0] = amp*(np.exp(-((t[t>=t0]-t0)/(tau))**1))
+		return out
+
+	guess=curve_fit(temp, time,y, p0=[10,1],bounds=[[0,0],[np.inf,np.inf]],verbose=2,maxfev=1e5)
+
+	plt.figure()
+	plt.plot(time,y)
+	plt.plot(time,temp(time,*guess[0]),'+')
+if False:
+	# I want to find the time constant of the anode. I can get it looking at its cooling from high temp
+	# whith i_index=0
+	i_index = 0
+	x=np.array(date_time_stamp2time)[5995:][:45]
+	y=np.array(multi_3[multi_3.keys()[i_index*3+1+1]])[5995:][:45]
+	y = y-y.min()
+	time = np.arange(len(y))*2.
+
+	def temp(t,tau,amp):
+		t0=0
+		print(str([t0,tau,amp]))
+		out = np.zeros_like(t)
+		out[t>=t0] = amp*(np.exp(-((t[t>=t0]-t0)/(tau))**1))
+		return out
+
+	guess=curve_fit(temp, time,y, p0=[10,1],bounds=[[0,0],[np.inf,np.inf]],verbose=2,maxfev=1e5)
+
+	plt.figure()
+	plt.plot(time,y)
+	plt.plot(time,temp(time,*guess[0]),'+')
+if False:
+	# I want to find the time constant of the cathode. I can get it looking at its cooling from high temp
+	# whith i_index=0
+	i_index = 0
+	x=np.array(date_time_stamp2time)[5995:][:45]
+	y=np.array(multi_3[multi_3.keys()[i_index*3+1+1]])[5995:][:45]
+	y = y-y.min()
+	time = np.arange(len(y))*2.
+
+	def temp(t,tau,amp):
+		t0=0
+		print(str([t0,tau,amp]))
+		out = np.zeros_like(t)
+		out[t>=t0] = amp*(np.exp(-((t[t>=t0]-t0)/(tau))**1))
+		return out
+
+	guess=curve_fit(temp, time,y, p0=[10,1],bounds=[[0,0],[np.inf,np.inf]],verbose=2,maxfev=1e5)
+
+	plt.figure()
+	plt.plot(time,y)
+	plt.plot(time,temp(time,*guess[0]),'+')
 
 
 
 # from the ENERGY 2D forward model (see forward model Energy 2D excel file)
 SS_heat_flux = lambda x : np.polyval([141184,-3e6],x)	# in degree C
 ELM_heat_flux = lambda x : np.polyval([2e+6,5e+7],x)	# in degree C
+
+def temp(t,t0,tau,amp):
+	print(str([t0,tau,amp]))
+	out = np.zeros_like(t)
+	out[t>t0] = amp*(np.exp(-((t[t>t0]-t0)/(tau))**1))
+	return out
+
+time = np.linspace(0,58,num=len(multi_3[multi_3.keys()[0]][5846-20:5846+10]))
+plt.figure()
+plt.plot(multi_3[multi_3.keys()[0]][5846-20:5846+10]-multi_3[multi_3.keys()[0]][5846-20:5846+10].min(),multi_3[multi_3.keys()[2]][5846-20:5846+10])
+plt.plot(multi_3[multi_3.keys()[1]][5846-20:5846+10],multi_3[multi_3.keys()[2]][5846-20:5846+10])
+x=np.array(multi_3[multi_3.keys()[2]][5846-20:5846+10])-np.array(multi_3[multi_3.keys()[2]][5846-20:5846+10]).min()
+guess=curve_fit(temp, time,x,sigma=1/(x+1), p0=[25,10,1],bounds=[[0,0,0],[time.max(),np.inf,np.inf]],verbose=2,maxfev=1e5)
+
+plt.figure()
+plt.plot(time,x)
+plt.plot(time,temp(time,*guess[0]),'+')
 
 
 # import IR camera data of the pressure scan

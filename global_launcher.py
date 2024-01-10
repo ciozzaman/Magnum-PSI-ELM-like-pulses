@@ -44,7 +44,7 @@ perform_convolution = True
 # for merge_ID_target in np.flip([90,91,89,99,85,97],axis=0):
 merge_ID_target_all = [95]
 
-merge_ID_target_all = np.flip(merge_ID_target_all,axis=0)
+# merge_ID_target_all = np.flip(merge_ID_target_all,axis=0)
 
 for merge_ID_target in merge_ID_target_all:
 # for merge_ID_target in np.flip([96,97,98,89,85,86,87,88,90,91,92],axis=0):

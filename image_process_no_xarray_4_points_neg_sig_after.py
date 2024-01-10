@@ -189,8 +189,9 @@ elif (merge_ID_target<=52 or merge_ID_target==54):
 	if ( (last_merge_done<=52 or last_merge_done==54) and not (merge_ID_target<=39) ):
 		no_calculate_presets = 1
 elif (merge_ID_target <= 84):
-	binnedSens = np.load('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_'+str(type_of_sensitivity)+'/Sensitivity_4'+mod_convolution+'.npy')
+	binnedSens = np.load('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_'+str(type_of_sensitivity)+'/Sensitivity_4'+mod_convolution+'_smoothed.npy')
 	binnedSens_sigma = np.load('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_'+str(type_of_sensitivity)+'/Sensitivity_4'+mod_convolution+'_sigma.npy')
+	binnedSens_waveLcoefs = np.load('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_'+str(type_of_sensitivity)+'/calibration_waveLcoefs.npy')
 	# limits_angle = [66,84]
 	# limits_tilt = [66,84]
 	# limits_wave = [66,84]
@@ -209,8 +210,9 @@ elif (merge_ID_target <= 84):
 	if (last_merge_done<=84 and last_merge_done>=66):
 		no_calculate_presets = 1
 elif (merge_ID_target <= 1000):
-	binnedSens = np.load('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_'+str(type_of_sensitivity)+'/Sensitivity_4'+mod_convolution+'.npy')
+	binnedSens = np.load('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_'+str(type_of_sensitivity)+'/Sensitivity_4'+mod_convolution+'_smoothed.npy')
 	binnedSens_sigma = np.load('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_'+str(type_of_sensitivity)+'/Sensitivity_4'+mod_convolution+'_sigma.npy')
+	binnedSens_waveLcoefs = np.load('/home/ffederic/work/Collaboratory/test/experimental_data/functions/Calibrations/sensitivity_'+str(type_of_sensitivity)+'/calibration_waveLcoefs.npy')
 	# limits_angle = [85,98]
 	# limits_tilt = [85,98]
 	# limits_wave = [85,98]
@@ -544,6 +546,202 @@ merge_overexposed = []
 merge_wavelengths = []
 # step to merge together all the time depemdent camera images
 path_where_to_save_everything = '/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)
+
+
+# I notice that the LOS are found quite badly for merge85, but much better for merge95. I'll use merge95 for all
+if (merge_ID_target in np.arange(85,96)) or (merge_ID_target==185):
+	merge_ID_target_for_calibration = 95
+elif (merge_ID_target in np.arange(96,100)) or (merge_ID_target==185):
+	merge_ID_target_for_calibration = 99
+else:
+	merge_ID_target_for_calibration = cp.deepcopy(merge_ID_target)
+all_j=find_index_of_file(merge_ID_target_for_calibration,df_settings,df_log,only_OES=True)
+temp_gain = []
+for j in all_j:
+	(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
+	type = '.txt'
+	filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0', type)[0]
+	# filename_metadata = functions.all_file_names(pathfiles, type)[0]
+	(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder, sequence,untitled,filename_metadata)
+	temp_gain.append(Gain[0])
+all_j = np.array([all_j for _, all_j in sorted(zip(temp_gain, all_j))])
+
+# first loop only to find bininterv and first bin for fix_minimum_signal_experiment
+data_sum=0
+for j in all_j:
+	(folder,date,sequence,untitled) = df_log.loc[j,['folder','date','sequence','untitled']]
+	type = '.tif'
+	filenames = all_file_names(fdir+'/'+folder+'/'+"{0:0=2g}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0', type)
+	(CB_to_OES_initial_delay,incremental_step,first_pulse_at_this_frame,bad_pulses_indexes,number_of_pulses) = df_log.loc[j,['CB_to_OES_initial_delay','incremental_step','first_pulse_at_this_frame','bad_pulses_indexes','number_of_pulses']]
+	first_pulse_at_this_frame = int(first_pulse_at_this_frame)
+	number_of_pulses = int(number_of_pulses)
+	if bad_pulses_indexes=='':
+		bad_pulses_indexes=[0]
+	elif (isinstance(bad_pulses_indexes, float) or isinstance(bad_pulses_indexes, int)):
+		bad_pulses_indexes=[bad_pulses_indexes]
+	else:
+		bad_pulses_indexes = bad_pulses_indexes.replace(' ', '').split(',')
+		bad_pulses_indexes = list(map(int, bad_pulses_indexes))
+
+	if -100 in bad_pulses_indexes:	# "keyword" in case I do not want to consider any of the pulses
+		bad_pulses_indexes = np.linspace(1,number_of_pulses,number_of_pulses).astype('int')
+
+	data_all=[]
+	for index,filename in enumerate(filenames):
+		if (index<first_pulse_at_this_frame-1 or index>=(first_pulse_at_this_frame+number_of_pulses-1)):
+			continue
+		elif (index-first_pulse_at_this_frame+2) in bad_pulses_indexes:
+			continue
+		if time_resolution_scan:
+			if index%(1+time_resolution_extra_skip)!=0:
+				continue	# The purpose of this is to test how things change for different time skippings
+		print(filename)
+		fname = fdir+'/'+folder+'/'+"{0:0=2d}".format(int(sequence))+'/Untitled_'+str(int(untitled))+'/Pos0/'+filename
+		im = Image.open(fname)
+		data = np.array(im)
+		data_all.append(data)
+	data_sum += np.mean(data_all,axis=0)
+intermediate_wavelength,last_wavelength = get_line_position(data_sum,2)
+tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),intermediate_wavelength)
+tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),last_wavelength)
+
+# second loop in which I check for binning parameters
+data_sum=0
+dataDark_all = []
+for j in all_j:
+	dataDark = load_dark(j, df_settings, df_log, fdir, geom_null)
+	dataDark_all.append(dataDark)
+	(folder, date, sequence, untitled) = df_log.loc[j, ['folder', 'date', 'sequence', 'untitled']]
+	type = '.tif'
+	filenames = all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0', type)
+	# filenames = functions.all_file_names(pathfiles, type)
+	type = '.txt'
+	filename_metadata = all_file_names(fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0', type)[0]
+	# filename_metadata = functions.all_file_names(pathfiles, type)[0]
+	(bof, eof, roi_lb, roi_tr, elapsed_time, real_exposure_time, PixelType, Gain,Noise) = get_metadata(fdir, folder,sequence,untitled,filename_metadata)
+	if PixelType[-1] == 12:
+		time_range_for_interp = rows_range_for_interp * row_shift / 2
+	elif PixelType[-1] == 16:
+		time_range_for_interp = rows_range_for_interp * row_shift
+	(CB_to_OES_initial_delay, incremental_step, first_pulse_at_this_frame, bad_pulses_indexes,
+	 number_of_pulses) = df_log.loc[
+		j, ['CB_to_OES_initial_delay', 'incremental_step', 'first_pulse_at_this_frame', 'bad_pulses_indexes',
+			'number_of_pulses']]
+	if bad_pulses_indexes == '':
+		bad_pulses_indexes = [0]
+	elif (isinstance(bad_pulses_indexes, float) or isinstance(bad_pulses_indexes, int)):
+		bad_pulses_indexes = [bad_pulses_indexes]
+	else:
+		bad_pulses_indexes = bad_pulses_indexes.replace(' ', '').split(',')
+		bad_pulses_indexes = list(map(int, bad_pulses_indexes))
+	data_all=[]
+	for index, filename in enumerate(filenames):
+		if (index < first_pulse_at_this_frame - 1 or index > (
+				first_pulse_at_this_frame + number_of_pulses - 1)):
+			data_all.append(np.zeros_like(dataDark))
+			continue
+		elif (index - first_pulse_at_this_frame + 2) in bad_pulses_indexes:
+			data_all.append(np.zeros_like(dataDark))
+			continue
+		if time_resolution_scan:
+			if index % (1 + time_resolution_extra_skip) != 0:
+				continue  # The purpose of this is to test how things change for different time skippings
+		print(filename)
+		fname = fdir + '/' + folder + '/' + "{0:0=2g}".format(int(sequence)) + '/Untitled_' + str(int(untitled)) + '/Pos0/' + filename
+		im = Image.open(fname)
+		data = np.array(im)
+		# data = data - dataDark  # I checked that for 16 or 12 bit the dark is always around 100 counts
+		# data = data * Gain[index]
+		# data = fix_minimum_signal3(data)
+
+		data_sigma=np.sqrt(data)
+		additive_factor,additive_factor_sigma = fix_minimum_signal_experiment(data,intermediate_wavelength,last_wavelength,tilt_intermediate_column,tilt_last_column,counts_treshold_fixed_increase=106,dx_to_etrapolate_to=dx_to_etrapolate_to)
+		data = (data.T + additive_factor).T
+		data_sigma = np.sqrt((data_sigma**2).T + (additive_factor_sigma**2)).T
+
+		data_all.append(data)
+		# merge_Noise.extend(np.ones((len(data)))*Noise[index])
+
+	data_sum += np.mean(data_all,axis=0)
+
+dataDark = np.mean(dataDark_all,axis=0)
+path_filename = path_where_to_save_everything+'/merge' + str(merge_ID_target_for_calibration) + '_stats.csv'
+# if not os.path.exists(path_filename):
+file = open(path_filename, 'w')
+writer = csv.writer(file)
+writer.writerow(['Stats about merge ' + str(merge_ID_target_for_calibration)])
+# file.close()
+
+intermediate_wavelength,last_wavelength = get_line_position(data_sum,2)
+tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),intermediate_wavelength)
+writer.writerow(['LOS start and bin interval at '+str(intermediate_wavelength)+' wavelength axis', str(tilt_intermediate_column)])
+tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),last_wavelength)
+writer.writerow(['LOS start and bin interval at '+str(last_wavelength)+' wavelength axis', str(tilt_last_column)])
+
+result = 0
+nLines = 8
+while (result == 0 and nLines > 0):
+	try:
+		angle = get_angle_2(data_sum, nLines=nLines)
+		print(angle)
+		result = 1
+		geom['angle'] = np.nansum(np.multiply(angle[0], np.divide(1, np.power(angle[1], 2)))) / np.nansum(np.divide(1, np.power(angle[1], 2)))
+		print(geom['angle'])
+		writer.writerow(['Specific angle of ', str(geom['angle'][0]), ' found with nLines=', str(nLines)])
+	except:
+		nLines -= 1
+# if np.abs(geom['angle'][0])>2*np.abs(geom_store['angle'][0]):
+if np.abs(geom['angle'][0]-geom_store['angle'][0]) > np.abs(geom_store['angle'][0]):
+	geom['angle'][0] = geom_store['angle'][0]
+	writer.writerow(['No specific angle found. Used standard of ', str(geom['angle'][0])])
+data_sum = rotate(data_sum, geom['angle'][0])
+# file = open(path_filename, 'r')
+result = 0
+nLines = 8
+tilt_4_points = np.nan
+tilt = (np.nan,np.nan,np.nan)
+# while ((result == 0 or np.isnan(tilt[1]) or np.isnan(tilt[2])) and nLines > 0 ):
+while ((result == 0 or np.isnan(tilt[0]) or np.isnan(tilt[2])) and nLines > 0):
+	try:
+		tilt_4_points = get_4_points(data_sum, nLines=nLines)
+		if np.sum(np.isnan(tilt_4_points)) > 0:
+			tilt_4_points = np.array([[0, np.shape(data_sum)[0]],
+									  [np.shape(data_sum)[1], np.shape(data_sum)[0]],
+									  [0, 0],
+									  [np.shape(data_sum)[1], 0]])
+		data_sum_tilted = four_point_transform(data_sum, tilt_4_points)
+		tilt = get_tilt(data_sum_tilted, nLines=nLines)
+		print(tilt_4_points)
+		print(tilt)
+		result = 1
+		geom['binInterv'] = tilt[0]
+		geom['tilt'][0] = np.array(tilt_4_points)
+		geom['bin00a'] = tilt[2]
+		geom['bin00b'] = tilt[2]
+		nLines -= 1
+		writer.writerow(['Specific tilt of ', str(geom['tilt'][0]), ' found with nLines=', str(nLines), 'binInterv',str(geom['binInterv'][0]), 'first bin', str(geom['bin00a'][0])])
+	except:
+		nLines -= 1
+if (np.isnan(tilt[0]) or np.isnan(tilt[2])):
+	geom['binInterv'] = geom_store['binInterv']
+	geom['tilt'] = geom_store['tilt']
+	geom['bin00a'] = geom_store['bin00a']
+	geom['bin00b'] = geom_store['bin00b']
+	writer.writerow(['No specific tilt found. Used standard of ', str(geom['tilt'][0]), 'binInterv',
+				 str(geom['binInterv'][0]), 'first bin', str(geom['bin00a'][0])])
+
+try:
+	data_sum_tilted = four_point_transform(data_sum, geom['tilt'][0])
+	binnedData,trash = binData_with_sigma(data_sum_tilted,np.ones_like(data_sum_tilted),geom['bin00b'],geom['binInterv'],check_overExp=False)
+	waveLcoefs = do_waveL_Calib_simplified(binnedData)
+	print('waveLcoefs')
+	print(waveLcoefs)
+	writer.writerow(['Specific wavelength coefficients found' ,str(waveLcoefs)])
+except:
+	writer.writerow(['No specific wavelength coefficients found. Used standard of' ,str(waveLcoefs)])
+
+
+# back to the stuff related to this merge
 if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everything + '/merge'+str(merge_ID_target)+'_merge_tot.npz')) or (time_resolution_scan and not os.path.exists(path_where_to_save_everything+'/merge'+str(merge_ID_target)+'_skip_of_'+str(time_resolution_extra_skip+1)+'row_merge_tot.npz'))) or overwrite_everything[0]):
 # if True:
 	all_j=find_index_of_file(merge_ID_target,df_settings,df_log,only_OES=True)
@@ -592,9 +790,11 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 			data = np.array(im)
 			data_all.append(data)
 		data_sum += np.mean(data_all,axis=0)
-	intermediate_wavelength,last_wavelength = get_line_position(data_sum,2)
-	tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),intermediate_wavelength)
-	tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),last_wavelength)
+
+	if False: # done before hand now
+		intermediate_wavelength,last_wavelength = get_line_position(data_sum,2)
+		tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),intermediate_wavelength)
+		tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),last_wavelength)
 
 	# second loop in which I actually build up the merge of all images
 	data_sum=0
@@ -920,72 +1120,80 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 	writer.writerow(['Stats about merge ' + str(merge_ID_target)])
 		# file.close()
 
-	intermediate_wavelength,last_wavelength = get_line_position(data_sum,2)
-	tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),intermediate_wavelength)
+	if False: # done before hand now
+		intermediate_wavelength,last_wavelength = get_line_position(data_sum,2)
+		tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),intermediate_wavelength)
 	writer.writerow(['LOS start and bin interval at '+str(intermediate_wavelength)+' wavelength axis', str(tilt_intermediate_column)])
-	tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),last_wavelength)
+	if False: # done before hand now
+		tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),last_wavelength)
 	writer.writerow(['LOS start and bin interval at '+str(last_wavelength)+' wavelength axis', str(tilt_last_column)])
 
-	result = 0
-	nLines = 8
-	while (result == 0 and nLines>0):
-		try:
-			angle = get_angle_2(data_sum,nLines=nLines)
-			print(angle)
-			result = 1
-			geom['angle'] = np.nansum(np.multiply(angle[0], np.divide(1, np.power(angle[1], 2)))) / np.nansum(np.divide(1, np.power(angle[1], 2)))
-			writer.writerow(['Specific angle of ',str(geom['angle'][0]),' found with nLines=',str(nLines)])
-		except:
-			nLines-=1
-	# if np.abs(geom['angle'][0])>2*np.abs(geom_store['angle'][0]):
-	if np.abs(geom['angle'][0]-geom_store['angle'][0]) > np.abs(geom_store['angle'][0]):
-		geom['angle'][0]=geom_store['angle'][0]
-		writer.writerow(['No specific angle found. Used standard of ', str(geom['angle'][0])])
-	data_sum = rotate(data_sum, geom['angle'])
-	# file = open(path_filename, 'r')
-	result = 0
-	nLines = 8
-	tilt_4_points = np.nan
-	tilt = (np.nan,np.nan,np.nan)
-	# while ((result == 0 or np.isnan(tilt[1]) or np.isnan(tilt[2])) and nLines > 0 ):
-	while ((result == 0 or np.isnan(tilt[0]) or np.isnan(tilt[2])) and nLines > 0):
-		try:
-			tilt_4_points = get_4_points(data_sum, nLines=nLines)
-			if np.sum(np.isnan(tilt_4_points)) > 0:
-				tilt_4_points = np.array([[0, np.shape(data_sum)[0]],
-										  [np.shape(data_sum)[1], np.shape(data_sum)[0]],
-										  [0, 0],
-										  [np.shape(data_sum)[1], 0]])
-			data_sum_tilted = four_point_transform(data_sum, tilt_4_points)
-			tilt = get_tilt(data_sum_tilted, nLines=nLines)
-			print(tilt_4_points)
-			print(tilt)
-			result = 1
-			geom['binInterv'] = tilt[0]
-			geom['tilt'][0] = np.array(tilt_4_points)
-			geom['bin00a'] = tilt[2]
-			geom['bin00b'] = tilt[2]
-			nLines -= 1
-			writer.writerow(['Specific tilt of ', str(geom['tilt'][0]), ' found with nLines=', str(nLines), 'binInterv',str(geom['binInterv'][0]), 'first bin', str(geom['bin00a'][0])])
-		except:
-			nLines -= 1
-	if (np.isnan(tilt[0]) or np.isnan(tilt[2])):
-			geom['binInterv'] = geom_store['binInterv']
-			geom['tilt'] = geom_store['tilt']
-			geom['bin00a'] = geom_store['bin00a']
-			geom['bin00b'] = geom_store['bin00b']
-			writer.writerow(['No specific tilt found. Used standard of ', str(geom['tilt'][0]), 'binInterv',
-						 str(geom['binInterv'][0]), 'first bin', str(geom['bin00a'][0])])
+	if False: # done before hand now
+		result = 0
+		nLines = 8
+		while (result == 0 and nLines>0):
+			try:
+				angle = get_angle_2(data_sum,nLines=nLines)
+				print(angle)
+				result = 1
+				geom['angle'] = np.nansum(np.multiply(angle[0], np.divide(1, np.power(angle[1], 2)))) / np.nansum(np.divide(1, np.power(angle[1], 2)))
+				writer.writerow(['Specific angle of ',str(geom['angle'][0]),' found with nLines=',str(nLines)])
+			except:
+				nLines-=1
+		# if np.abs(geom['angle'][0])>2*np.abs(geom_store['angle'][0]):
+		if np.abs(geom['angle'][0]-geom_store['angle'][0]) > np.abs(geom_store['angle'][0]):
+			geom['angle'][0]=geom_store['angle'][0]
+			writer.writerow(['No specific angle found. Used standard of ', str(geom['angle'][0])])
+		data_sum = rotate(data_sum, geom['angle'])
+		# file = open(path_filename, 'r')
+		result = 0
+		nLines = 8
+		tilt_4_points = np.nan
+		tilt = (np.nan,np.nan,np.nan)
+		# while ((result == 0 or np.isnan(tilt[1]) or np.isnan(tilt[2])) and nLines > 0 ):
+		while ((result == 0 or np.isnan(tilt[0]) or np.isnan(tilt[2])) and nLines > 0):
+			try:
+				tilt_4_points = get_4_points(data_sum, nLines=nLines)
+				if np.sum(np.isnan(tilt_4_points)) > 0:
+					tilt_4_points = np.array([[0, np.shape(data_sum)[0]],
+											  [np.shape(data_sum)[1], np.shape(data_sum)[0]],
+											  [0, 0],
+											  [np.shape(data_sum)[1], 0]])
+				data_sum_tilted = four_point_transform(data_sum, tilt_4_points)
+				tilt = get_tilt(data_sum_tilted, nLines=nLines)
+				print(tilt_4_points)
+				print(tilt)
+				result = 1
+				geom['binInterv'] = tilt[0]
+				geom['tilt'][0] = np.array(tilt_4_points)
+				geom['bin00a'] = tilt[2]
+				geom['bin00b'] = tilt[2]
+				nLines -= 1
+				writer.writerow(['Specific tilt of ', str(geom['tilt'][0]), ' found with nLines=', str(nLines), 'binInterv',str(geom['binInterv'][0]), 'first bin', str(geom['bin00a'][0])])
+			except:
+				nLines -= 1
+		if (np.isnan(tilt[0]) or np.isnan(tilt[2])):
+				geom['binInterv'] = geom_store['binInterv']
+				geom['tilt'] = geom_store['tilt']
+				geom['bin00a'] = geom_store['bin00a']
+				geom['bin00b'] = geom_store['bin00b']
+				writer.writerow(['No specific tilt found. Used standard of ', str(geom['tilt'][0]), 'binInterv',
+							 str(geom['binInterv'][0]), 'first bin', str(geom['bin00a'][0])])
 
-	try:
-		data_sum_tilted = four_point_transform(data_sum, geom['tilt'][0])
-		binnedData,trash = binData_with_sigma(data_sum_tilted,np.ones_like(data_sum_tilted),geom['bin00b'],geom['binInterv'],check_overExp=False)
-		waveLcoefs = do_waveL_Calib_simplified(binnedData)
-		print('waveLcoefs')
-		print(waveLcoefs)
-		writer.writerow(['Specific wavelength coefficients found' ,str(waveLcoefs)])
-	except:
-		writer.writerow(['No specific wavelength coefficients found. Used standard of' ,str(waveLcoefs)])
+		try:
+			data_sum_tilted = four_point_transform(data_sum, geom['tilt'][0])
+			binnedData,trash = binData_with_sigma(data_sum_tilted,np.ones_like(data_sum_tilted),geom['bin00b'],geom['binInterv'],check_overExp=False)
+			waveLcoefs = do_waveL_Calib_simplified(binnedData)
+			print('waveLcoefs')
+			print(waveLcoefs)
+			writer.writerow(['Specific wavelength coefficients found' ,str(waveLcoefs)])
+		except:
+			writer.writerow(['No specific wavelength coefficients found. Used standard of' ,str(waveLcoefs)])
+	elif True:
+		writer.writerow(['Wavelength coefficients found' ,str(waveLcoefs)])
+		data_sum = rotate(data_sum, geom['angle'])
+		data_sum_tilted = four_point_transform(data_sum, tilt_4_points)
+
 	# else:
 	# 	writer.writerow(
 	# 		['Specific tilt of ', str(geom['tilt'][0]), ' found with nLines=', str(nLines), 'binInterv',
@@ -1047,9 +1255,10 @@ else:
 			data = np.array(im)
 			data_all.append(data)
 		data_sum += np.mean(data_all,axis=0)
-	intermediate_wavelength,last_wavelength = get_line_position(data_sum,2)
-	tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),intermediate_wavelength)
-	tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),last_wavelength)
+	if False: # done before hand now
+		intermediate_wavelength,last_wavelength = get_line_position(data_sum,2)
+		tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),intermediate_wavelength)
+		tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),last_wavelength)
 
 	# second loop in which I check for binning parameters
 	data_sum=0
@@ -1131,74 +1340,81 @@ else:
 	writer.writerow(['Stats about merge ' + str(merge_ID_target)])
 	# file.close()
 
-	intermediate_wavelength,last_wavelength = get_line_position(data_sum,2)
-	tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),intermediate_wavelength)
+	if False: # done before hand now
+		intermediate_wavelength,last_wavelength = get_line_position(data_sum,2)
+		tilt_intermediate_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),intermediate_wavelength)
 	writer.writerow(['LOS start and bin interval at '+str(intermediate_wavelength)+' wavelength axis', str(tilt_intermediate_column)])
-	tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),last_wavelength)
+	if False: # done before hand now
+		tilt_last_column = get_bin_and_interv_specific_wavelength(fix_minimum_signal2(data_sum),last_wavelength)
 	writer.writerow(['LOS start and bin interval at '+str(last_wavelength)+' wavelength axis', str(tilt_last_column)])
 
-	result = 0
-	nLines = 8
-	while (result == 0 and nLines > 0):
-		try:
-			angle = get_angle_2(data_sum, nLines=nLines)
-			print(angle)
-			result = 1
-			geom['angle'] = np.nansum(np.multiply(angle[0], np.divide(1, np.power(angle[1], 2)))) / np.nansum(np.divide(1, np.power(angle[1], 2)))
-			print(geom['angle'])
-			writer.writerow(['Specific angle of ', str(geom['angle'][0]), ' found with nLines=', str(nLines)])
-		except:
-			nLines -= 1
-	# if np.abs(geom['angle'][0])>2*np.abs(geom_store['angle'][0]):
-	if np.abs(geom['angle'][0]-geom_store['angle'][0]) > np.abs(geom_store['angle'][0]):
-		geom['angle'][0] = geom_store['angle'][0]
-		writer.writerow(['No specific angle found. Used standard of ', str(geom['angle'][0])])
-	data_sum = rotate(data_sum, geom['angle'][0])
-	# file = open(path_filename, 'r')
-	result = 0
-	nLines = 8
-	tilt_4_points = np.nan
-	tilt = (np.nan,np.nan,np.nan)
-	# while ((result == 0 or np.isnan(tilt[1]) or np.isnan(tilt[2])) and nLines > 0 ):
-	while ((result == 0 or np.isnan(tilt[0]) or np.isnan(tilt[2])) and nLines > 0):
-		try:
-			tilt_4_points = get_4_points(data_sum, nLines=nLines)
-			if np.sum(np.isnan(tilt_4_points)) > 0:
-				tilt_4_points = np.array([[0, np.shape(data_sum)[0]],
-										  [np.shape(data_sum)[1], np.shape(data_sum)[0]],
-										  [0, 0],
-										  [np.shape(data_sum)[1], 0]])
-			data_sum_tilted = four_point_transform(data_sum, tilt_4_points)
-			tilt = get_tilt(data_sum_tilted, nLines=nLines)
-			print(tilt_4_points)
-			print(tilt)
-			result = 1
-			geom['binInterv'] = tilt[0]
-			geom['tilt'][0] = np.array(tilt_4_points)
-			geom['bin00a'] = tilt[2]
-			geom['bin00b'] = tilt[2]
-			nLines -= 1
-			writer.writerow(['Specific tilt of ', str(geom['tilt'][0]), ' found with nLines=', str(nLines), 'binInterv',str(geom['binInterv'][0]), 'first bin', str(geom['bin00a'][0])])
-		except:
-			nLines -= 1
-	if (np.isnan(tilt[0]) or np.isnan(tilt[2])):
-		geom['binInterv'] = geom_store['binInterv']
-		geom['tilt'] = geom_store['tilt']
-		geom['bin00a'] = geom_store['bin00a']
-		geom['bin00b'] = geom_store['bin00b']
-		writer.writerow(['No specific tilt found. Used standard of ', str(geom['tilt'][0]), 'binInterv',
-					 str(geom['binInterv'][0]), 'first bin', str(geom['bin00a'][0])])
+	if False: # done before hand now
+		result = 0
+		nLines = 8
+		while (result == 0 and nLines > 0):
+			try:
+				angle = get_angle_2(data_sum, nLines=nLines)
+				print(angle)
+				result = 1
+				geom['angle'] = np.nansum(np.multiply(angle[0], np.divide(1, np.power(angle[1], 2)))) / np.nansum(np.divide(1, np.power(angle[1], 2)))
+				print(geom['angle'])
+				writer.writerow(['Specific angle of ', str(geom['angle'][0]), ' found with nLines=', str(nLines)])
+			except:
+				nLines -= 1
+		# if np.abs(geom['angle'][0])>2*np.abs(geom_store['angle'][0]):
+		if np.abs(geom['angle'][0]-geom_store['angle'][0]) > np.abs(geom_store['angle'][0]):
+			geom['angle'][0] = geom_store['angle'][0]
+			writer.writerow(['No specific angle found. Used standard of ', str(geom['angle'][0])])
+		data_sum = rotate(data_sum, geom['angle'][0])
+		# file = open(path_filename, 'r')
+		result = 0
+		nLines = 8
+		tilt_4_points = np.nan
+		tilt = (np.nan,np.nan,np.nan)
+		# while ((result == 0 or np.isnan(tilt[1]) or np.isnan(tilt[2])) and nLines > 0 ):
+		while ((result == 0 or np.isnan(tilt[0]) or np.isnan(tilt[2])) and nLines > 0):
+			try:
+				tilt_4_points = get_4_points(data_sum, nLines=nLines)
+				if np.sum(np.isnan(tilt_4_points)) > 0:
+					tilt_4_points = np.array([[0, np.shape(data_sum)[0]],
+											  [np.shape(data_sum)[1], np.shape(data_sum)[0]],
+											  [0, 0],
+											  [np.shape(data_sum)[1], 0]])
+				data_sum_tilted = four_point_transform(data_sum, tilt_4_points)
+				tilt = get_tilt(data_sum_tilted, nLines=nLines)
+				print(tilt_4_points)
+				print(tilt)
+				result = 1
+				geom['binInterv'] = tilt[0]
+				geom['tilt'][0] = np.array(tilt_4_points)
+				geom['bin00a'] = tilt[2]
+				geom['bin00b'] = tilt[2]
+				nLines -= 1
+				writer.writerow(['Specific tilt of ', str(geom['tilt'][0]), ' found with nLines=', str(nLines), 'binInterv',str(geom['binInterv'][0]), 'first bin', str(geom['bin00a'][0])])
+			except:
+				nLines -= 1
+		if (np.isnan(tilt[0]) or np.isnan(tilt[2])):
+			geom['binInterv'] = geom_store['binInterv']
+			geom['tilt'] = geom_store['tilt']
+			geom['bin00a'] = geom_store['bin00a']
+			geom['bin00b'] = geom_store['bin00b']
+			writer.writerow(['No specific tilt found. Used standard of ', str(geom['tilt'][0]), 'binInterv',
+						 str(geom['binInterv'][0]), 'first bin', str(geom['bin00a'][0])])
 
-	try:
-		data_sum_tilted = four_point_transform(data_sum, geom['tilt'][0])
-		binnedData,trash = binData_with_sigma(data_sum_tilted,np.ones_like(data_sum_tilted),geom['bin00b'],geom['binInterv'],check_overExp=False)
-		waveLcoefs = do_waveL_Calib_simplified(binnedData)
-		print('waveLcoefs')
-		print(waveLcoefs)
-		writer.writerow(['Specific wavelength coefficients found' ,str(waveLcoefs)])
-	except:
-		writer.writerow(['No specific wavelength coefficients found. Used standard of' ,str(waveLcoefs)])
-	# file.close()
+		try:
+			data_sum_tilted = four_point_transform(data_sum, geom['tilt'][0])
+			binnedData,trash = binData_with_sigma(data_sum_tilted,np.ones_like(data_sum_tilted),geom['bin00b'],geom['binInterv'],check_overExp=False)
+			waveLcoefs = do_waveL_Calib_simplified(binnedData)
+			print('waveLcoefs')
+			print(waveLcoefs)
+			writer.writerow(['Specific wavelength coefficients found' ,str(waveLcoefs)])
+		except:
+			writer.writerow(['No specific wavelength coefficients found. Used standard of' ,str(waveLcoefs)])
+		# file.close()
+	elif True:
+		writer.writerow(['Wavelength coefficients found' ,str(waveLcoefs)])
+		data_sum = rotate(data_sum, geom['angle'])
+		data_sum_tilted = four_point_transform(data_sum, tilt_4_points)
 
 	if time_resolution_scan:
 		# merge_tot = xr.open_dataarray('/home/ffederic/work/Collaboratory/test/experimental_data/merge' + str(merge_ID_target)+'_skip_of_'+str(time_resolution_extra_skip+1)+'row_merge_tot.nc')
@@ -1371,7 +1587,8 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 
 	grade_of_interpolation = 2	#this is the exponent used for the weights
 
-	rows_range_for_interp = 2
+	rows_range_for_interp = 4
+	columns_range_for_interp = 4
 	max_row_expansion = 2
 	time_range_for_interp = conventional_time_step/2
 	max_time_expansion = time_range_for_interp
@@ -1661,20 +1878,24 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 	elif True:	# here a 2D polinomial fit fith weights on the distance, and a median filter beforehand. Here I include also the sigma of single pixels
 
 		time_range_for_interp = conventional_time_step*1.5
-		rows_range_for_interp = 4
+		columns_range_for_interp = 4
 		# time_range_for_interp = conventional_time_step*1.7
 		# rows_range_for_interp = 4
 		max_time_expansion = conventional_time_step
 		max_row_expansion = 2
 		min_points_for_interp = 17
 
-		merge_values_medianfiltered = medfilt(merge_values,[1,3])
-		# merge_values_sigma_medianfiltered = np.zeros((3,*np.shape(merge_values_sigma)))
-		# merge_values_sigma_medianfiltered[1] = merge_values_sigma
-		# merge_values_sigma_medianfiltered[0,:,:-1] = merge_values_sigma[:,:-1]
-		# merge_values_sigma_medianfiltered[2,:,1:] = merge_values_sigma[:,1:]
-		# merge_values_sigma_medianfiltered = np.max(merge_values_sigma_medianfiltered,axis=0)
-		merge_values_sigma_medianfiltered = generic_filter(merge_values_sigma,np.max,size=[1,3])
+		if False:	# this is now done in 1 go fitting time and wavelength
+			merge_values_medianfiltered = medfilt(merge_values,[1,3])
+			# merge_values_sigma_medianfiltered = np.zeros((3,*np.shape(merge_values_sigma)))
+			# merge_values_sigma_medianfiltered[1] = merge_values_sigma
+			# merge_values_sigma_medianfiltered[0,:,:-1] = merge_values_sigma[:,:-1]
+			# merge_values_sigma_medianfiltered[2,:,1:] = merge_values_sigma[:,1:]
+			# merge_values_sigma_medianfiltered = np.max(merge_values_sigma_medianfiltered,axis=0)
+			merge_values_sigma_medianfiltered = generic_filter(merge_values_sigma,np.max,size=[1,3])
+		else:
+			merge_values_medianfiltered = cp.deepcopy(merge_values)
+			merge_values_sigma_medianfiltered = cp.deepcopy(merge_values_sigma)
 
 		from scipy.optimize import least_squares
 		def polynomial_2D_residuals(coord):
@@ -1698,7 +1919,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 				return residuals
 			return internal_func
 
-		def polynomial_2D_residuals_11(coord):
+		def polynomial_2D_11_residuals(coord):
 			# coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
 			def internal_func(coeff):
 				residuals = ((np.array(coord[0])-coord[4])**2)*coeff[0] + (np.array(coord[0])-coord[4])*coeff[1] + coeff[2]*( np.exp(coeff[3]*(np.array(coord[0])-coord[4])) -1) + ((np.array(coord[1])-coord[5])**2)*coeff[4] + (np.array(coord[1])-coord[5])*coeff[5] + coeff[6] - np.array(coord[2])
@@ -1715,6 +1936,52 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 				residuals = ((np.array(coord[0])-coord[4])**2)*coeff[0] + (np.array(coord[0])-coord[4])*coeff[1] + coeff[2]*( np.exp(coeff[3]*(np.array(coord[0])-coord[4])) -1) + ((np.array(coord[1])-coord[5])**2)*coeff[4] + (np.array(coord[1])-coord[5])*coeff[5] + coeff[6] - np.array(coord[2])
 				# residuals = (residuals)**2 / (np.array(coord[3])**2)
 				residuals = residuals**2 /np.abs(np.abs(np.array(coord[0])-coord[4])+0.01)
+				return residuals
+			return internal_func
+
+		def polynomial_3D(coord):
+			# coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
+			def internal_func(trash,*coeff):
+				# print(trash)
+				# print(coeff)
+				residuals = (((np.array(coord[0])-coord[4])**2)*coeff[0] + (np.array(coord[0])-coord[4])*coeff[1] + coeff[2]*( np.exp(coeff[3]*(np.array(coord[0])-coord[4])) -1) + ((np.array(coord[1])-coord[5])**2)*coeff[4] + (np.array(coord[1])-coord[5])*coeff[5] + coeff[6] - np.array(coord[2]).T).T + ((np.array(coord[6])-coord[7])**2)*coeff[7] + (np.array(coord[6])-coord[7])*coeff[8]
+				# residuals = (residuals)**2 / (np.array(coord[3])**2)
+				residuals = residuals.flatten() /(np.array(np.abs(np.array(coord[0])-coord[4]).tolist()*len(coord[6]))+np.array([np.abs(np.array(coord[6])-coord[7])/10]*len(coord[0])).T.flatten()+0.01)
+				return residuals
+			return internal_func
+
+		def polynomial_3D_with_gradient(coord):
+			# coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
+			def internal_func(coeff):
+				# print(trash)
+				# print(coeff)
+				residuals = (((np.array(coord[0])-coord[4])**2)*coeff[0] + (np.array(coord[0])-coord[4])*coeff[1] + coeff[2]*( np.exp(coeff[3]*(np.array(coord[0])-coord[4])) -1) + ((np.array(coord[1])-coord[5])**2)*coeff[4] + (np.array(coord[1])-coord[5])*coeff[5] + coeff[6] - np.array(coord[2]).T).T + ((np.array(coord[6])-coord[7])**2)*coeff[7] + (np.array(coord[6])-coord[7])*coeff[8]
+				multiplier = 1 / (np.array(np.abs(np.array(coord[0])-coord[4]).tolist()*len(coord[6]))+np.array([np.abs(np.array(coord[6])-coord[7])/10]*len(coord[0])).T.flatten()+0.01)
+				residuals = residuals.flatten() * multiplier
+				gradient = np.array([
+				( ((np.array(coord[0])-coord[4])**2) - np.zeros_like(coord[2]).T).T ,
+				( (np.array(coord[0])-coord[4]) - np.zeros_like(coord[2]).T).T ,
+				(( np.exp(coeff[3]*(np.array(coord[0])-coord[4])) -1) - np.zeros_like(coord[2]).T).T ,
+				( coeff[2]*( np.exp(coeff[3]*(np.array(coord[0])-coord[4]))*(np.array(coord[0])-coord[4]) -0) - np.zeros_like(coord[2]).T).T ,
+				( ((np.array(coord[1])-coord[5])**2) - np.zeros_like(coord[2]).T).T ,
+				( (np.array(coord[1])-coord[5]) - np.zeros_like(coord[2]).T).T ,
+				( 1 - np.zeros_like(coord[2]).T).T ,
+				np.zeros_like(coord[2]) + ((np.array(coord[6])-coord[7])**2) ,
+				np.zeros_like(coord[2]) + (np.array(coord[6])-coord[7])
+				]) . reshape((len(coeff),len(multiplier)))
+				gradient = 2*np.sum(gradient * residuals * multiplier / (np.array(coord[3]).flatten()**2),axis=-1)
+				residuals = np.sum((residuals)**2 / (np.array(coord[3]).flatten()**2))
+				return residuals,gradient
+			return internal_func
+
+		def polynomial_3D_residuals(coord):
+			# coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
+			def internal_func(coeff):
+				# print(trash)
+				# print(coeff)
+				residuals = (((np.array(coord[0])-coord[4])**2)*coeff[0] + (np.array(coord[0])-coord[4])*coeff[1] + coeff[2]*( np.exp(coeff[3]*(np.array(coord[0])-coord[4])) -1) + ((np.array(coord[1])-coord[5])**2)*coeff[4] + (np.array(coord[1])-coord[5])*coeff[5] + coeff[6] - np.array(coord[2]).T).T + ((np.array(coord[6])-coord[7])**2)*coeff[7] + (np.array(coord[6])-coord[7])*coeff[8]
+				residuals = (residuals) / (np.array(coord[3]) )
+				residuals = residuals.flatten() /(np.array(np.abs(np.array(coord[0])-coord[4]).tolist()*len(coord[6]))+np.array([np.abs(np.array(coord[6])-coord[7])/10]*len(coord[0])).T.flatten()+0.01)
 				return residuals
 			return internal_func
 
@@ -1750,7 +2017,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 			composed_array_sigma = np.zeros((len(row_steps),1608))
 
 			# bds=[[-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf],[np.inf,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf]]
-			bds=[[-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,0],[np.inf,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf]]
+			bds=[[-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,0,-np.inf,-np.inf],[np.inf,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf]]
 
 			# for i, interpolated_time in enumerate(new_timesteps):
 			selected_time = np.abs(merge_time - interpolated_time) <=time_range_for_interp
@@ -1763,6 +2030,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 				def __init__(self, out):
 					self.out = out
 			for j, interpolated_row in enumerate(row_steps):
+				start_time_row = tm.time()
 				selected_row = np.abs(merge_row - interpolated_row) <=rows_range_for_interp
 				selected = selected_time*selected_row
 				if np.sum(selected)<min_points_for_interp:
@@ -1774,36 +2042,55 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 				merge_row_selected = merge_row[selected]
 				# interpolation_borders_expanded[i,j] = np.sum(selected)
 				number_of_points_for_interpolation[j] = np.sum(selected)
-				guess = [0,0,0,0,0,0,100]
+				# guess = [0,0,0,0,0,0,100]
 				# for z, interpolated_wave in enumerate(range(1608)):
 				def calc_fit(z,record_previous_sol=record_previous_sol,j=j,merge_values_medianfiltered_int=merge_values_medianfiltered[selected],merge_values_sigma_medianfiltered_int=merge_values_sigma_medianfiltered[selected],merge_time_selected=merge_time_selected,merge_row_selected=merge_row_selected,interpolated_time=interpolated_time,interpolated_row=interpolated_row,bds=bds):
 					# values = merge_values[selected,z]
-					values = merge_values_medianfiltered_int[:,z]	# modified 29/03/2020 to do the filtering only once
-					values_sigma = merge_values_sigma_medianfiltered_int[:,z]
+					start_time = tm.time()
+					if False:
+						values = merge_values_medianfiltered_int[:,z]	# modified 29/03/2020 to do the filtering only once
+						values_sigma = merge_values_sigma_medianfiltered_int[:,z]
+					else:
+						select_some_columns = np.abs(np.arange(np.shape(merge_values_medianfiltered_int)[1])-z) <= columns_range_for_interp
+						merge_columns_selected = np.arange(np.shape(merge_values_medianfiltered_int)[1])[select_some_columns]
+						values = merge_values_medianfiltered_int[:,select_some_columns]	# 2023/04/10 added to improve the fit
+						values_sigma = merge_values_sigma_medianfiltered_int[:,select_some_columns]
 					# start = tm.time()
 					if record_previous_sol==0:
 						# guess = [1,1,1,1,1,1,1]
-						guess = [0,0,0,0,0,0,0]
+						guess = [0,0,1e-3,1e-3,0,0,0,0,0]
 					else:
 						guess = record_previous_sol[z]
-					guess[-1]=np.nanmean(values)
+					guess[6]=np.nanmean(values)
+					bds[0][6] = 2*np.nanmin(values)-np.nanmax(values)
+					bds[1][6] = 2*np.nanmax(values)-np.nanmin(values)
+					fmin_l_bfgs_b_bds = np.array(bds).T.tolist()
 					time_scale = (merge_time_selected.max()-merge_time_selected.min())/np.std(values)
 					row_scale = (merge_row_selected.max()-merge_row_selected.min())/np.std(values)
-					x_scale=[time_scale**2,time_scale,time_scale,1,row_scale**2,row_scale,1]
-					coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
+					column_scale = (merge_columns_selected.max()-merge_columns_selected.min())/np.std(values)
+					# x_scale=[time_scale**2,time_scale,time_scale,1,row_scale**2,row_scale,1]
+					# coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
+					x_scale=[time_scale**2,time_scale,time_scale,0.5,row_scale**2,row_scale,1,column_scale**2,column_scale]
+					interpolated_column = cp.deepcopy(z)
+					coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row,merge_columns_selected,interpolated_column]
+					x_optimal, y_opt, opt_info = scipy.optimize.fmin_l_bfgs_b(polynomial_3D_with_gradient(coord), x0=guess, iprint=0, factr=1e1, pgtol=1e-6, maxiter=1000,bounds=fmin_l_bfgs_b_bds)#,m=1000, maxls=1000, pgtol=1e-10, factr=1e0)#,approx_grad = True)
 					try:
 						if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
-							fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7,maxfev=1e5)
+							# fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7,maxfev=1e5)
 							# verified 2022/01/17. it could be sped up with scipy.optimize.fmin_l_bfgs_b but it actually works fine, so I won't
+							fit = curve_fit(polynomial_3D(coord),np.zeros_like(values.flatten()),np.zeros_like(values.flatten()),p0=x_optimal,sigma=values_sigma.flatten(),absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7,maxfev=1e4)
 						else:
-							fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5,maxfev=1e5)
-						return z,fit[0][-1],fit[1][-1,-1]**0.5,output(fit[0])
+							# fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5,maxfev=1e5)
+							fit = curve_fit(polynomial_3D(coord),np.zeros_like(values.flatten()),np.zeros_like(values.flatten()),p0=x_optimal,sigma=values_sigma.flatten(),absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5,maxfev=1e4)
+						return z,fit[0][6],fit[1][6,6]**0.5,output(fit[0])
 					except Exception as e:
-						print('time ' + str(interpolated_time) +' main fast fit failed, z='+str(z)+', j='+str(j) + ' , e='+str(e))
+						print('time ' + str(interpolated_time) +' main fast fit failed, z='+str(z)+', j='+str(j) + ' , e='+str(e)+', in %.3gs' %(tm.time()-start_time))
 						if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
-							fit = least_squares(polynomial_2D_residuals_11(coord),guess,bounds=bds,max_nfev=125,ftol=1e-7)
+							# fit = least_squares(polynomial_2D_11_residuals(coord),guess,bounds=bds,max_nfev=125,ftol=1e-7)
+							fit = least_squares(polynomial_3D_residuals(coord),x_optimal,bounds=bds,max_nfev=1e4,ftol=1e-7,x_scale=x_scale)
 						else:
-							fit = least_squares(polynomial_2D_residuals_11(coord),guess,bounds=bds,max_nfev=75,ftol=1e-5)
+							# fit = least_squares(polynomial_2D_11_residuals(coord),guess,bounds=bds,max_nfev=75,ftol=1e-5)
+							fit = least_squares(polynomial_3D_residuals(coord),x_optimal,bounds=bds,max_nfev=1e4,ftol=1e-5,x_scale=x_scale)
 						# print(tm.time()-start)
 						_, s, VT = svd(fit.jac, full_matrices=False)	# this method is from https://stackoverflow.com/questions/40187517/getting-covariance-matrix-of-fitted-parameters-from-scipy-optimize-least-squares
 						threshold = np.finfo(float).eps * max(fit.jac.shape) * s[0]
@@ -1820,7 +2107,8 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 						# plt.figure();plt.tricontourf(merge_time_selected,merge_row_selected,polynomial_2D_1([merge_time_selected,merge_row_selected,interpolated_time,interpolated_row],fit[0]).astype(float));plt.colorbar();plt.plot(merge_time_selected,merge_row_selected,'+k');index+=1;plt.savefig('/home/ffederic/work/Collaboratory/image'+str(index)+ '.eps',bbox_inches='tight');plt.close()
 						# # plt.pause(0.01)
 						# composed_array[i,j,z] = polynomial_2D([interpolated_time,interpolated_row],fit.x)
-						return z,fit.x[-1],pcov[-1,-1]**0.5,output(fit.x)
+						print('time ' + str(interpolated_time) +' main fast fit failed, z='+str(z)+', j='+str(j) + ' , still managed to do it'+' in %.3gs' %(tm.time()-start_time))
+						return z,fit.x[6],pcov[6,6]**0.5,output(fit.x)
 
 
 				composed_row = map(calc_fit, range(1608))
@@ -1830,7 +2118,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 				composed_array_sigma[j] = np.array([peaks for _, peaks in sorted(zip(composed_row[0], composed_row[2]))])
 				record_previous_sol = [peaks.out for _, peaks in sorted(zip(composed_row[0], composed_row[3]))]
 
-				print('time '+str(interpolated_time)+' , row '+str(j) + ' , '+str(number_of_points_for_interpolation[j]) + ' points')
+				print('time '+str(interpolated_time)+' , row '+str(j) + ' , '+str(number_of_points_for_interpolation[j]) + ' points'+', in %.3gs' %(tm.time()-start_time_row))
 
 				# # this takes about the same time so it's not usefull
 				# def calc_fit(z,merge_values=merge_values,selected=selected,interpolated_time=interpolated_time,interpolated_row=interpolated_row):
@@ -1845,7 +2133,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 
 			if np.min(number_of_points_for_interpolation) == 0:
 				for j, interpolated_row in enumerate(row_steps):
-					guess = [0,0,0,0,0,0,100]
+					guess = [0,0,1e-3,1e-3,0,0,100,0,0]
 					if (j<=0 or j>=len(row_steps)-1):
 						continue
 					else:
@@ -1886,34 +2174,54 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 							interpolation_borders_expanded_time[j] = additional_time_range
 							max_value_index = (np.max(merge_values_medianfiltered[selected],axis=0)).argmax()
 							for z, interpolated_wave in enumerate(range(1608)):
-								values = merge_values_medianfiltered[selected,z]	# modified 29/03/2020 to do the filtering only once
-								values_sigma = merge_values_sigma_medianfiltered[selected,z]
+								start_time = tm.time()
+								if False:
+									values = merge_values_medianfiltered[selected,z]	# modified 29/03/2020 to do the filtering only once
+									values_sigma = merge_values_sigma_medianfiltered[selected,z]
+								else:
+									select_some_columns = np.abs(np.arange(np.shape(merge_values_medianfiltered)[1])-z) <= columns_range_for_interp
+									merge_columns_selected = np.arange(np.shape(merge_values_medianfiltered)[1])[select_some_columns]
+									values = merge_values_medianfiltered[selected][:,select_some_columns]	# 2023/04/10 added to improve the fit
+									values_sigma = merge_values_sigma_medianfiltered[selected][:,select_some_columns]
 								guess = record_previous_sol[z]
 								guess[-1]=np.nanmean(values)
+								bds[0][6] = 2*np.nanmin(values)-np.nanmax(values)
+								bds[1][6] = 2*np.nanmax(values)-np.nanmin(values)
+								fmin_l_bfgs_b_bds = np.array(bds).T.tolist()
 								time_scale = (merge_time_selected.max()-merge_time_selected.min())/np.std(values)
 								row_scale = (merge_row_selected.max()-merge_row_selected.min())/np.std(values)
-								x_scale=[time_scale**2,time_scale,time_scale,1,row_scale**2,row_scale,1]
-								coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
+								column_scale = (merge_columns_selected.max()-merge_columns_selected.min())/np.std(values)
+								# x_scale=[time_scale**2,time_scale,time_scale,1,row_scale**2,row_scale,1]
+								# coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row]
+								x_scale=[time_scale**2,time_scale,time_scale,1,row_scale**2,row_scale,0.5,column_scale**2,column_scale]
+								interpolated_column = cp.deepcopy(z)
+								coord = [merge_time_selected,merge_row_selected,values,values_sigma,interpolated_time,interpolated_row,merge_columns_selected,interpolated_column]
+								x_optimal, y_opt, opt_info = scipy.optimize.fmin_l_bfgs_b(polynomial_3D_with_gradient(coord), x0=guess, iprint=0, factr=1e1, pgtol=1e-6, maxiter=1000,bounds=fmin_l_bfgs_b_bds)#,m=1000, maxls=1000, pgtol=1e-10, factr=1e0)#,approx_grad = True)
 								try:
 									if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
-										fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7,maxfev=1e5)
+										# fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7,maxfev=1e5)
+										fit = curve_fit(polynomial_3D(coord),np.zeros_like(values.flatten()),np.zeros_like(values.flatten()),p0=x_optimal,sigma=values_sigma.flatten(),absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-7,maxfev=1e4)
 									else:
-										fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5,maxfev=1e5)
-									composed_array[j,z] = fit[0][-1]
-									composed_array_sigma[j,z] = fit[0][-1,-1]**0.5
-								except:
-									print('main fast fit failed, z='+str(z)+', j='+str(j))
+										# fit = curve_fit(polynomial_2D_11(coord),np.zeros_like(values),np.zeros_like(values),p0=guess,sigma=values_sigma,absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5,maxfev=1e5)
+										fit = curve_fit(polynomial_3D(coord),np.zeros_like(values.flatten()),np.zeros_like(values.flatten()),p0=x_optimal,sigma=values_sigma.flatten(),absolute_sigma=True,x_scale=x_scale,bounds=bds,ftol=1e-5,maxfev=1e4)
+									composed_array[j,z] = fit[0][6]
+									composed_array_sigma[j,z] = fit[1][6,6]**0.5
+								except Exception as e:
+									print('second fast fit failed, z='+str(z)+', j='+str(j)+ ' , e='+str(e)+', in %.3gs' %(tm.time()-start_time))
 									if (z<1+np.interp(j,geom['tilt'][0][:2,0],geom['tilt'][0][:2,1])) and (z>-1+np.interp(j,geom['tilt'][0][2:,0],geom['tilt'][0][2:,1])):
-										fit = least_squares(polynomial_2D_residuals_11(coord),guess,bounds=bds,max_nfev=500,ftol=1e-7)
+										# fit = least_squares(polynomial_2D_11_residuals(coord),guess,bounds=bds,max_nfev=500,ftol=1e-7)
+										fit = least_squares(polynomial_3D_residuals(coord),x_optimal,bounds=bds,max_nfev=1e4,ftol=1e-7,x_scale=x_scale)
 									else:
-										fit = least_squares(polynomial_2D_residuals_11(coord),guess,bounds=bds,max_nfev=100,ftol=1e-5)
+										# fit = least_squares(polynomial_2D_11_residuals(coord),guess,bounds=bds,max_nfev=100,ftol=1e-5)
+										fit = least_squares(polynomial_3D_residuals(coord),x_optimal,bounds=bds,max_nfev=1e4,ftol=1e-5,x_scale=x_scale)
 									_, s, VT = svd(fit.jac, full_matrices=False)	# this method is from https://stackoverflow.com/questions/40187517/getting-covariance-matrix-of-fitted-parameters-from-scipy-optimize-least-squares
 									threshold = np.finfo(float).eps * max(fit.jac.shape) * s[0]
 									s = s[s > threshold]
 									VT = VT[:s.size]
 									pcov = np.dot(VT.T / s**2, VT)
-									composed_array[j,z] = fit.x[-1]
-									composed_array_sigma[j,z] = pcov[-1,-1]**0.5
+									composed_array[j,z] = fit.x[6]
+									composed_array_sigma[j,z] = pcov[6,6]**0.5
+									print('second fast fit failed, z='+str(z)+', j='+str(j) + ' , still managed to do it'+' in %.3gs' %(tm.time()-start_time))
 									# guess = fit.x
 								if False:	# I stop doing the plots because it slows down too much the process 25/05/2020
 									if ( (z == max_value_index) and (j%140==0) ):
@@ -1953,7 +2261,8 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 										except:
 											print('there was some error in plotting fitting_expanded_example_time'+str(i)+'_row'+str(j)+'_wavel_pos'+str(z)+'.eps')
 										plt.close('all')
-
+								else:
+									pass
 
 
 							print('time ' + str(interpolated_time) + ' , row ' + str(j)+ ' recovered expanding the time range from ' + str(time_range_for_interp ) + ' to ' +str(time_range_for_interp + additional_time_range) + ' ms and the row range from ' + str(rows_range_for_interp ) + ' to ' + str(rows_range_for_interp + additional_row_range) + ' rows')
@@ -2635,7 +2944,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 			to_print = True
 		print('fit of ' + str(time) + 'ms')
 		try:
-			fit,fit_sigma = doSpecFit_single_frame_with_sigma(np.array(binned_data[index]),np.array(binned_data_sigma[index]),df_settings, df_log, geom, waveLcoefs, binnedSens,binnedSens_sigma,path_where_to_save_everything,time,to_print,perform_convolution=perform_convolution)
+			fit,fit_sigma = doSpecFit_single_frame_with_sigma(np.array(binned_data[index]),np.array(binned_data_sigma[index]),df_settings, df_log, geom, waveLcoefs, binnedSens,binnedSens_sigma,path_where_to_save_everything,time,to_print,perform_convolution=perform_convolution,binnedSens_waveLcoefs=binnedSens_waveLcoefs)	# W m-2 sr-1
 			print('ok')
 		except:
 			print(str(index) + ' fitting failed')
@@ -2665,7 +2974,7 @@ if (((not time_resolution_scan and not os.path.exists(path_where_to_save_everyth
 	time_indexes = []
 	for i in range(len(all_fits)):
 		time_indexes.append(all_fits[i].time)
-	all_fits = np.array([peaks for _, peaks in sorted(zip(time_indexes, all_fits))])
+	all_fits = np.array([peaks for _, peaks in sorted(zip(time_indexes, all_fits))])	# W m-2 sr-1
 	temp = []
 	for i in range(len(all_fits)):
 		# print(np.shape(all_fits[i].fit))
@@ -2760,14 +3069,14 @@ ss_image_sigma=np.array(ss_image_sigma)
 
 plt.figure(figsize=(20, 10))
 plt.imshow(ss_image,'rainbow',origin='lower')
-plt.colorbar()
+plt.colorbar().set_label('counts [au]')
 plt.title('SS image negative corrected')
 plt.savefig(path_where_to_save_everything + '/' + 'SS_image_negative_corrected.eps', bbox_inches='tight')
 plt.close()
 
 plt.figure(figsize=(20, 10))
 plt.imshow(ss_image_sigma,'rainbow',origin='lower')
-plt.colorbar()
+plt.colorbar().set_label('counts [au]')
 plt.title('SS image negative corrected sigma')
 plt.savefig(path_where_to_save_everything + '/' + 'SS_image_negative_corrected_sigma.eps', bbox_inches='tight')
 plt.close()
@@ -2784,14 +3093,14 @@ ss_image[ss_image<0]=0
 
 plt.figure(figsize=(20, 10))
 plt.imshow(ss_image,'rainbow',origin='lower')
-plt.colorbar()
+plt.colorbar().set_label('counts [au]')
 plt.title('SS image proportionality corrected')
 plt.savefig(path_where_to_save_everything + '/' + 'SS_image_prop_corrected.eps', bbox_inches='tight')
 plt.close()
 
 plt.figure(figsize=(20, 10))
 plt.imshow(ss_image_sigma,'rainbow',origin='lower')
-plt.colorbar()
+plt.colorbar().set_label('counts [au]')
 plt.title('SS image proportionality corrected sigma')
 plt.savefig(path_where_to_save_everything + '/' + 'SS_image_prop_corrected_sigma.eps', bbox_inches='tight')
 plt.close()
@@ -2808,7 +3117,7 @@ frame_sigma=four_point_transform(frame_sigma,geom['tilt'][0])
 
 plt.figure(figsize=(20, 10))
 plt.imshow(frame,'rainbow',origin='lower')
-plt.colorbar()
+plt.colorbar().set_label('counts [au]')
 for i in range(41):
 	plt.plot([0,np.shape(data_sum)[-1]],[geom['bin00b']+i*geom['binInterv'],geom['bin00b']+i*geom['binInterv']],'--k',linewidth=0.5)
 plt.title('SS image final')
@@ -2817,7 +3126,7 @@ plt.close()
 
 plt.figure(figsize=(20, 10))
 plt.imshow(frame_sigma,'rainbow',origin='lower')
-plt.colorbar()
+plt.colorbar().set_label('counts [au]')
 for i in range(41):
 	plt.plot([0,np.shape(data_sum)[-1]],[geom['bin00b']+i*geom['binInterv'],geom['bin00b']+i*geom['binInterv']],'--k',linewidth=0.5)
 plt.title('SS image final sigma')
@@ -2825,22 +3134,23 @@ plt.savefig(path_where_to_save_everything + '/' + 'SS_image_sigma.eps', bbox_inc
 plt.close()
 
 
-binnedss_image,binnedss_image_sigma = binData_with_sigma(frame,frame_sigma,geom['bin00b'],geom['binInterv'],check_overExp=False)
+binnedss_image,binnedss_image_sigma = binData_with_sigma(frame,frame_sigma,geom['bin00b'],geom['binInterv'],check_overExp=False)	# counts
 
-fit,fit_sigma = doSpecFit_single_frame_with_sigma(binnedss_image,binnedss_image_sigma,df_settings, df_log, geom, waveLcoefs, binnedSens,binnedSens_sigma,path_where_to_save_everything,999,True,perform_convolution=perform_convolution)
-all_fits_ss = np.array(fit).astype(float)
-all_fits_ss_sigma = np.array(fit_sigma).astype(float)
+fit,fit_sigma = doSpecFit_single_frame_with_sigma(binnedss_image,binnedss_image_sigma,df_settings, df_log, geom, waveLcoefs, binnedSens,binnedSens_sigma,path_where_to_save_everything,999,True,perform_convolution=perform_convolution,binnedSens_waveLcoefs=binnedSens_waveLcoefs)	# W m-2 sr-1
+all_fits_ss = np.array(fit).astype(float)	# W m-2 sr-1
+all_fits_ss_sigma = np.array(fit_sigma).astype(float)	# W m-2 sr-1
 
 
 np.save(path_where_to_save_everything+'/merge'+str(merge_ID_target)+'_SS_all_fits',all_fits_ss)
 np.save(path_where_to_save_everything+'/merge'+str(merge_ID_target)+'_SS_all_fits_sigma',all_fits_ss_sigma)
-all_fits_ss = np.load(path_where_to_save_everything+'/merge'+str(merge_ID_target)+'_SS_all_fits.npy')
-all_fits_ss_sigma = np.load(path_where_to_save_everything+'/merge'+str(merge_ID_target)+'_SS_all_fits_sigma.npy')
+all_fits_ss = np.load(path_where_to_save_everything+'/merge'+str(merge_ID_target)+'_SS_all_fits.npy')	# W m-2 sr-1
+all_fits_ss_sigma = np.load(path_where_to_save_everything+'/merge'+str(merge_ID_target)+'_SS_all_fits_sigma.npy')	# W m-2 sr-1
+
 
 # all_fits_ss = all_fits[:time_step]
 # all_fits_ss[all_fits_ss==0]=np.nan
 # all_fits_ss = np.nanmean(all_fits_ss,axis=0)
-profile_centre_to_trash = doLateralfit_single_with_sigma(df_settings, all_fits_ss,all_fits_ss_sigma, merge_ID_target,dx,xx,r,same_centre_every_line=True,force_glogal_center=force_glogal_center)
+# profile_centre_to_trash = doLateralfit_single_with_sigma(df_settings, all_fits_ss,all_fits_ss_sigma, merge_ID_target,dx,xx,r,same_centre_every_line=True,force_glogal_center=force_glogal_center)
 doLateralfit_single_with_sigma_pure_Abel(df_settings, all_fits_ss,all_fits_ss_sigma, merge_ID_target,new_timesteps,dx,xx,r,same_centre_every_line=True,force_glogal_center=force_glogal_center)
 
 mkl.set_num_threads(1)
@@ -2860,9 +3170,9 @@ mkl.set_num_threads(number_cpu_available)
 # r_actual_new = doLateralfit_time_tependent_LOS_overlapping(df_settings,all_fits,all_fits_sigma, merge_ID_target, new_timesteps,dx,xx,r,N,force_glogal_center)
 
 print('mark2')
-inverted_profiles = np.load(path_where_to_save_everything+'/inverted_profiles.npy')
-inverted_profiles_sigma = np.load(path_where_to_save_everything+'/inverted_profiles_sigma.npy')
-
+inverted_profiles = np.load(path_where_to_save_everything+'/inverted_profiles.npy')	# W sr-1
+inverted_profiles_sigma = np.load(path_where_to_save_everything+'/inverted_profiles_sigma.npy')	# W sr-1
+# W sr-1 is ok. in post_process_PSI_parameter_search_Yacora_final.py I then multiply by 4*np.pi, to it becomes W, as it should be
 
 
 if os.path.exists(path_where_to_save_everything+'/TS_data_merge_'+str(merge_ID_target)+'.npz'):
@@ -2995,20 +3305,25 @@ try:
 	for time_step in sample_time_step:
 		# time_step=19
 		max_value = 0
+		min_value = 0
 		plt.figure(figsize=(20, 10))
 		to_plot_all = []
 		for index, loc in enumerate(r[sample_radious]):
-			to_plot = np.divide(np.pi * 4 * np.mean(inverted_profiles[time_step-1:time_step+2, :, sample_radious[index]],axis=0),statistical_weigth * einstein_coeff * energy_difference / J_to_eV)
+			to_plot = np.divide(np.pi * 4 * np.nanmean(inverted_profiles[time_step-1:time_step+2, :, sample_radious[index]],axis=0),statistical_weigth * einstein_coeff * energy_difference / J_to_eV)
 			if np.sum(to_plot > 0) > 4:
 				to_plot_all.append(to_plot > 0)
 		# to_plot_all.append(to_plot)
 		to_plot_all = np.array(to_plot_all)
 		relative_index = int(np.max((np.sum(to_plot_all, axis=(0)) == np.max(np.sum(to_plot_all, axis=(0)))) * np.linspace(1, len(to_plot),len(to_plot)))) - 1
 		for index, loc in enumerate(r[sample_radious]):
-			to_plot = np.divide(np.pi * 4 * np.mean(inverted_profiles[max(time_step-1,0):time_step+2, :, sample_radious[index]],axis=0),statistical_weigth * einstein_coeff * energy_difference / J_to_eV)
-			plt.plot(energy_levels, to_plot / np.min(to_plot[relative_index]),color[index],label='axial pos=' + str(np.around(1000*loc, decimals=1)))
+			to_plot = np.divide(np.pi * 4 * np.nanmean(inverted_profiles[max(time_step-1,0):time_step+2, :, sample_radious[index]],axis=0),statistical_weigth * einstein_coeff * energy_difference / J_to_eV)
+			to_plot_sigma = np.abs(1/to_plot) * np.divide(np.pi * 4 * np.nanmean(inverted_profiles_sigma[max(time_step-1,0):time_step+2, :, sample_radious[index]],axis=0),statistical_weigth * einstein_coeff * energy_difference / J_to_eV)	# the initial 1/to_plot is the derivative of the log
+			plt.errorbar(energy_levels, to_plot / np.min(to_plot[relative_index]),yerr=to_plot_sigma/np.abs(1/to_plot) / np.min(to_plot[relative_index]),color=color[index],label='axial pos=' + str(np.around(1000*loc, decimals=1)))
 			max_value = max(np.max(to_plot / np.min(to_plot[relative_index])),max_value)
-			fit = np.polyfit(energy_difference[4:],np.log(to_plot[4:]),1)
+			min_value = min(np.min(to_plot / np.min(to_plot[relative_index])),min_value)
+			fit = np.polyfit(energy_difference,np.log(to_plot),1,w=1/to_plot_sigma)
+			plt.plot(energy_levels,np.exp(np.polyval(fit,energy_difference)),'-.',color=color[index],label='est. temp=%.3geV' %(-1/fit[0]))
+			fit = np.polyfit(energy_difference[4:],np.log(to_plot[4:]),1,w=1/to_plot_sigma[4:])
 			plt.plot(energy_levels,np.exp(np.polyval(fit,energy_difference)),':',color=color[index],label='est. temp=%.3geV' %(-1/fit[0]))
 			if os.path.exists(path_where_to_save_everything+'/TS_data_merge_'+str(merge_ID_target)+'.npz'):
 				to_plot = np.exp(np.polyval(fit,energy_difference[-3])) * np.exp(-(energy_difference-energy_difference[-3])/merge_Te_prof_multipulse_interp_crop[time_step,sample_radious[index]])
@@ -3019,18 +3334,23 @@ try:
 		# plt.semilogx()
 		plt.xlabel('state energy [eV]')
 		plt.ylabel('relative population density/statistical weight scaled to the min value [au]')
-		plt.ylim(top=max_value*1.1)
+		plt.ylim(top=max_value*1.1,bottom=min_value*0.9)
 		plt.savefig(path_where_to_save_everything+'/Bplot_relative_time_' + str(np.around(new_timesteps[time_step], decimals=2)) + '.eps',bbox_inches='tight')
 		plt.close()
 
 		plt.figure(figsize=(20, 10))
 		to_plot_all = []
 		max_value = 0
+		min_value = 0
 		for index, loc in enumerate(r[sample_radious]):
-			to_plot = np.divide(np.pi * 4 * np.mean(inverted_profiles[max(time_step-1,0):time_step+2, :, sample_radious[index]],axis=0),statistical_weigth * einstein_coeff * energy_difference / J_to_eV)
-			plt.plot(energy_levels, to_plot,color=color[index], label='axial pos=' + str(np.around(1000*loc, decimals=1)))
+			to_plot = np.divide(np.pi * 4 * np.nanmean(inverted_profiles[max(time_step-1,0):time_step+2, :, sample_radious[index]],axis=0),statistical_weigth * einstein_coeff * energy_difference / J_to_eV)
+			to_plot_sigma = np.abs(1/to_plot) * np.divide(np.pi * 4 * np.nanmean(inverted_profiles_sigma[max(time_step-1,0):time_step+2, :, sample_radious[index]],axis=0),statistical_weigth * einstein_coeff * energy_difference / J_to_eV)	# the initial 1/to_plot is the derivative of the log
+			plt.errorbar(energy_levels, to_plot,yerr=to_plot_sigma/np.abs(1/to_plot),color=color[index], label='axial pos=' + str(np.around(1000*loc, decimals=1)))
 			max_value = max(np.max(to_plot),max_value)
-			fit = np.polyfit(energy_difference[4:],np.log(to_plot[4:]),1)
+			min_value = min(np.min(to_plot),min_value)
+			fit = np.polyfit(energy_difference,np.log(to_plot),1,w=1/to_plot_sigma)
+			plt.plot(energy_levels,np.exp(np.polyval(fit,energy_difference)),'-.',color=color[index],label='est. temp=%.3geV' %(-1/fit[0]))
+			fit = np.polyfit(energy_difference[4:],np.log(to_plot[4:]),1,w=1/to_plot_sigma[4:])
 			plt.plot(energy_levels,np.exp(np.polyval(fit,energy_difference)),':',color=color[index],label='est. temp=%.3geV' %(-1/fit[0]))
 			if os.path.exists(path_where_to_save_everything+'/TS_data_merge_'+str(merge_ID_target)+'.npz'):
 				to_plot = np.exp(np.polyval(fit,energy_difference[-3])) * np.exp(-(energy_difference-energy_difference[-3])/merge_Te_prof_multipulse_interp_crop[time_step,sample_radious[index]])
@@ -3042,13 +3362,13 @@ try:
 		# plt.semilogx()
 		plt.xlabel('state energy [eV]')
 		plt.ylabel('population density/statistical weight [#/m^3]')
-		plt.ylim(top=max_value*1.1)
+		plt.ylim(top=max_value*1.1,bottom=min_value*0.9)
 		plt.savefig(path_where_to_save_everything+'/Bplot_absolute_time_' + str(np.around(new_timesteps[time_step], decimals=2)) + '.eps',bbox_inches='tight')
 		plt.close()
 
 		plt.figure(figsize=(20, 10))
 		for iR in range(np.shape(inverted_profiles)[1]):
-			plt.plot(r * 1000, np.divide(np.pi * 4 * np.mean(inverted_profiles[max(time_step-1,0):time_step+2, iR],axis=0), einstein_coeff[iR] * energy_difference[iR] / J_to_eV),color[iR], label='n=' + str(iR + 4))
+			plt.errorbar(r * 1000, np.divide(np.pi * 4 * np.nanmean(inverted_profiles[max(time_step-1,0):time_step+2, iR],axis=0), einstein_coeff[iR] * energy_difference[iR] / J_to_eV),yerr=np.divide(np.pi * 4 * np.nanmean(inverted_profiles_sigma[max(time_step-1,0):time_step+2, iR],axis=0), einstein_coeff[iR] * energy_difference[iR] / J_to_eV),color=color[iR], label='n=' + str(iR + 4))
 		plt.legend(loc='best')
 		plt.title('Excited states density plot at ' + str(np.around(new_timesteps[time_step], decimals=2)) + '+/-'+str(conventional_time_step)+' ms')
 		# plt.semilogy()
@@ -3058,9 +3378,9 @@ try:
 		plt.ylabel('excited state density [m^-3]')
 		plt.savefig(path_where_to_save_everything + '/Excited_dens_time_' + str(np.around(new_timesteps[time_step], decimals=2)) + '.eps',bbox_inches='tight')
 		plt.close()
-
-except:
+except Exception as e:
 	print('failed merge' + str(merge_ID_target))
+	print(e)
 	plt.close()
 
 for index, loc in enumerate(sample_radious):
@@ -3330,6 +3650,7 @@ plt.savefig(path_where_to_save_everything + '/SS_Excited_dens.eps',bbox_inches='
 plt.close()
 
 max_value = 0
+min_value = 0
 plt.figure(figsize=(20, 10))
 to_plot_all = []
 for index, loc in enumerate(r[sample_radious]):
@@ -3343,6 +3664,7 @@ for index, loc in enumerate(r[sample_radious]):
 	to_plot = np.divide(np.pi * 4 * SS_inverted_profiles[ :, sample_radious[index]],statistical_weigth * einstein_coeff * energy_difference / J_to_eV)
 	plt.plot(energy_levels, to_plot / np.min(to_plot[relative_index]),color[index],label='axial pos=' + str(np.around(1000*loc, decimals=1)))
 	max_value = max(np.max(to_plot / np.min(to_plot[relative_index])),max_value)
+	min_value = min(np.min(to_plot / np.min(to_plot[relative_index])),min_value)
 	fit = np.polyfit(energy_difference[4:],np.log(to_plot[4:]),1)
 	plt.plot(energy_levels[3:],np.exp(np.polyval(fit,energy_difference[3:])),':',color=color[index],label='est. temp=%.3geV' %(-1/fit[0]))
 	if os.path.exists(path_where_to_save_everything+'/TS_SS_data_merge_'+str(merge_ID_target)+'.npz'):
@@ -3355,17 +3677,19 @@ plt.semilogy()
 # plt.semilogx()
 plt.xlabel('state energy [eV]')
 plt.ylabel('relative population density/statistical weight scaled to the min value [au]')
-plt.ylim(top=max_value*1.1)
+plt.ylim(top=max_value*1.1,bottom=min_value*0.9)
 plt.savefig(path_where_to_save_everything+'/SS_Bplot_relative.eps',bbox_inches='tight')
 plt.close()
 
 plt.figure(figsize=(20, 10))
 to_plot_all = []
 max_value = 0
+min_value = 0
 for index, loc in enumerate(r[sample_radious]):
 	to_plot = np.divide(np.pi * 4 * SS_inverted_profiles[:, sample_radious[index]],statistical_weigth * einstein_coeff * energy_difference / J_to_eV)
 	plt.plot(energy_levels, to_plot,color=color[index], label='axial pos=' + str(np.around(1000*loc, decimals=1)))
 	max_value = max(np.max(to_plot),max_value)
+	min_value = min(np.min(to_plot),min_value)
 	fit = np.polyfit(energy_difference[4:],np.log(to_plot[4:]),1)
 	plt.plot(energy_levels,np.exp(np.polyval(fit,energy_difference)),':',color=color[index],label='est. temp=%.3geV' %(-1/fit[0]))
 	if os.path.exists(path_where_to_save_everything+'/TS_SS_data_merge_'+str(merge_ID_target)+'.npz'):
@@ -3378,7 +3702,7 @@ plt.semilogy()
 # plt.semilogx()
 plt.xlabel('state energy [eV]')
 plt.ylabel('population density/statistical weight [#/m^3]')
-plt.ylim(top=max_value*1.1)
+plt.ylim(top=max_value*1.1,bottom=min_value*0.9)
 plt.savefig(path_where_to_save_everything+'/SS_Bplot_absolute.eps',bbox_inches='tight')
 plt.close()
 
